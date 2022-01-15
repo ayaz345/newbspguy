@@ -14,7 +14,11 @@
 #include "icons/object.h"
 #include "icons/face.h"
 
+#ifdef WIN32
 #include <Windows.h>
+#else
+#define MAX_PATH 256
+#endif
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
 

@@ -237,7 +237,7 @@ int merge_maps(CommandLine& cli) {
 }
 
 int print_info(CommandLine& cli) {
-	Bsp & map = Bsp(cli.bspfile);
+	Bsp map = Bsp(cli.bspfile);
 	if (!map.valid)
 	{
 		return 1;
@@ -277,7 +277,7 @@ int print_info(CommandLine& cli) {
 }
 
 int noclip(CommandLine& cli) {
-	Bsp & map = Bsp(cli.bspfile);
+	Bsp map = Bsp(cli.bspfile);
 	if (!map.valid)
 	{
 		return 1;
@@ -383,7 +383,7 @@ int noclip(CommandLine& cli) {
 }
 
 int simplify(CommandLine& cli) {
-	Bsp & map = Bsp(cli.bspfile);
+	Bsp map = Bsp(cli.bspfile);
 	if (!map.valid)
 	{
 		return 1;
@@ -453,7 +453,7 @@ int simplify(CommandLine& cli) {
 }
 
 int deleteCmd(CommandLine& cli) {
-	Bsp & map = Bsp(cli.bspfile);
+	Bsp map = Bsp(cli.bspfile);
 	if (!map.valid)
 	{
 		return 1;
@@ -489,7 +489,7 @@ int deleteCmd(CommandLine& cli) {
 }
 
 int transform(CommandLine& cli) {
-	Bsp & map = Bsp(cli.bspfile);
+	Bsp map = Bsp(cli.bspfile);
 	if (!map.valid)
 	{
 		return 1;
@@ -519,7 +519,7 @@ int transform(CommandLine& cli) {
 }
 
 int unembed(CommandLine& cli) {
-	Bsp & map = Bsp(cli.bspfile);
+	Bsp map = Bsp(cli.bspfile);
 	if (!map.valid)
 	{
 		return 1;
