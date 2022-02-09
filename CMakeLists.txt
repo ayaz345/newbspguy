@@ -15,7 +15,7 @@ set(SOURCE_FILES
 	src/cli/ProgressMeter.h			src/cli/ProgressMeter.cpp
 	
 	# BSP and related structures
-	src/bsp/forcecrc32.h			src/bsp/forcecrc32.c
+	src/bsp/forcecrc32.h			src/bsp/forcecrc32.cpp
 	src/bsp/BspMerger.h				src/bsp/BspMerger.cpp
 	src/bsp/Bsp.h					src/bsp/Bsp.cpp
 	src/bsp/bsplimits.h
@@ -64,8 +64,7 @@ set(SOURCE_FILES
 	src/util/lodepng.cpp
 	
 	# 3D model viewer
-	src/mdlviewer/mathlib.h			src/mdlviewer/mathlib.c
-	src/mdlviewer/cmdlib.h			src/mdlviewer/cmdlib.c
+	src/mdlviewer/mathlib.h			src/mdlviewer/mathlib.cpp
 	src/mdlviewer/studio_event.h
 	src/mdlviewer/studio.h
 	src/mdlviewer/studio_render.h	src/mdlviewer/studio_render.cpp
@@ -118,7 +117,7 @@ if(MSVC)
 											src/bsp/Wad.h
 											src/bsp/remap.h)
 											
-	source_group("Source Files\\bsp" FILES	src/bsp/forcecrc32.c
+	source_group("Source Files\\bsp" FILES	src/bsp/forcecrc32.cpp
 											src/bsp/BspMerger.cpp
 											src/bsp/Bsp.cpp
 											src/bsp/bsptypes.cpp

@@ -64,7 +64,7 @@ struct WADTEX
 #ifdef WIN32
 		sprintf_s(szName, MAXTEXTURENAME, "%s", tex->szName);
 #else 
-		snprintf(szName, "%s", tex->szName);
+		snprintf(szName, MAXTEXTURENAME, "%s", tex->szName);
 #endif
 
 		nWidth = tex->nWidth;

@@ -52,9 +52,9 @@ unsigned int GetCrc32InMemory(unsigned char* f, unsigned int length, unsigned in
 		for (int j = 0; j < 8; j++) {
 			unsigned int bit = ((unsigned char)f[i] >> j) & 1;
 			crc ^= bit << 31;
-			bool xor = (crc >> 31) != 0;
+			bool xorval = (crc >> 31) != 0;
 			crc = (crc & UINT32_C(0x7FFFFFFF)) << 1;
-			if (xor)
+			if (xorval)
 				crc ^= (unsigned int)POLYNOMIAL;
 		}
 	}

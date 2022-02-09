@@ -3116,8 +3116,8 @@ void Renderer::pushModelUndoState(const std::string & actionDesc, int targetLump
 
 	if (pickInfo.modelIdx <= 0)
 		pickInfo.modelIdx = 0;
-	if (pickInfo.ent <= 0)
-		pickInfo.ent = 0;
+// 	if (pickInfo.ent <= 0)
+// 		pickInfo.ent = 0;
 	if (!map) {
 		logf("Impossible, no map, ent or model idx\n");
 		return;
