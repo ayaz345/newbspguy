@@ -1532,10 +1532,6 @@ void Gui::drawDebugWidget() {
 				ImGui::Text("No model selected");
 			}
 		}
-		else {
-			ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen);
-			ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen);
-		}
 
 		if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
 		{
