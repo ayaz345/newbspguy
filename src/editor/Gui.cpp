@@ -2012,8 +2012,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 	ImVec4 dragButColor = style.Colors[ImGuiCol_Header];
 
 	static bool hoveredDrag[MAX_KEYS_PER_ENT];
-	static int ignoreErrors = 0;
-
 	static bool wasKeyDragging = false;
 	bool keyDragging = false;
 
@@ -2055,9 +2053,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 					ent->keyOrder[i] = ent->keyOrder[n_next];
 					ent->keyOrder[n_next] = temp;
 
-					// fix false-positive error highlight
-					ignoreErrors = 2;
-
 					ImGui::ResetMouseDragDelta();
 				}
 			}
@@ -2069,7 +2064,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 		std::string value = ent->keyvalues[key];
 
 		{
-			bool invalidKey = ignoreErrors == 0 && lastPickCount == app->pickCount && key != keyNames[i];
+			bool invalidKey = lastPickCount == app->pickCount && key != keyNames[i];
 
 
 			if (key.size() >= MAX_KEY_LEN)
@@ -2155,7 +2150,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 				map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
 				if (key == "model")
 					map->getBspRender()->preRenderEnts();
-				ignoreErrors = 2;
 				g_app->updateEntConnections();
 				g_app->pushEntityUndoState("Delete Keyvalue");
 			}
@@ -2176,25 +2170,21 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 
 	ImGui::Dummy(ImVec2(0, style.FramePadding.y));
 	ImGui::Dummy(ImVec2(butColWidth, 0)); ImGui::SameLine();
-	if (ImGui::Button(" Add ")) {
-		std::string baseKeyName = "NewKey";
-		std::string keyName = "NewKey";
-		for (int i = 0; i < 128; i++) {
-			if (!ent->hasKey(keyName)) {
-				break;
-			}
-			keyName = baseKeyName + "#" + std::to_string(i + 2);
-		}
-		ent->addKeyvalue(keyName, "");
-		map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
-		app->updateEntConnections();
-		ignoreErrors = 2;
-		app->pushEntityUndoState("Add Keyvalue");
-	}
 
-	if (ignoreErrors > 0) {
-		ignoreErrors--;
+	static char keyName[128] = "NewKey";
+
+
+	if (ImGui::Button(" Add : ")) {
+		if (!ent->hasKey(keyName))
+		{
+			ent->addKeyvalue(keyName, "");
+			map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
+			app->updateEntConnections();
+			app->pushEntityUndoState("Add Keyvalue");
+		}
 	}
+	ImGui::SameLine();
+	ImGui::InputText("##gamedir", keyName, 256);
 
 	ImGui::EndChild();
 }

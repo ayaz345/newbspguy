@@ -2211,7 +2211,7 @@ void Bsp::load_ents()
 			Keyvalues k(line);
 			for (int i = 0; i < k.keys.size(); i++)
 			{
-				ent->addKeyvalue(k.keys[i],k.values[i]);
+				ent->addKeyvalue(k.keys[i],k.values[i],true);
 			}
 
 			if (line.find('}') != std::string::npos)

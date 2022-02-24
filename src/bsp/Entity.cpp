@@ -9,22 +9,41 @@ Entity::Entity(const std::string& classname)
 	addKeyvalue("classname", classname);
 }
 
-void Entity::addKeyvalue(const std::string& key, const std::string& value)
+void Entity::addKeyvalue(const std::string& key, const std::string& value, bool multisupport)
 {
 	int dup = 1;
-	if (keyvalues.find(key) == keyvalues.end()) {
+	if (keyvalues.find(key) == keyvalues.end())
+	{
 		keyvalues[key] = value;
-		keyOrder.push_back(key);
 	}
-	else
+	else if (multisupport)
 	{
 		while (true)
 		{
-			std::string newKey = key + '#' + std::to_string((long long)dup);
+			std::string newKey = key + "#" + std::to_string(dup);
 			if (keyvalues.find(newKey) == keyvalues.end())
 			{
-				//println("wrote dup key " + newKey);
 				keyvalues[newKey] = value;
+				break;
+			}
+			dup++;
+		}
+	}
+	else 
+		keyvalues[key] = value;
+	dup = 1;
+
+	if (find(keyOrder.begin(), keyOrder.end(), key) == keyOrder.end()) 
+	{
+		keyOrder.push_back(key);
+	}
+	else if(multisupport)
+	{
+		while (true)
+		{
+			std::string newKey = key + "#" + std::to_string(dup);
+			if (find(keyOrder.begin(), keyOrder.end(), newKey) == keyOrder.end())
+			{
 				keyOrder.push_back(newKey);
 				break;
 			}
@@ -40,10 +59,6 @@ void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value) 
 	cachedModelIdx = -2;
 	targetsCached = false;
 
-	if (hasKey(key)) {
-		keyvalues[key] = value;
-		return;
-	}
 	addKeyvalue(key, value);
 }
 
@@ -368,7 +383,7 @@ std::vector<std::string> Entity::getTargets() {
 		// multi_manager is a special case where the targets are in the key names
 		for (int i = 0; i < keyOrder.size(); i++) {
 			std::string tname = keyOrder[i];
-			size_t hashPos = tname.find('#');
+			size_t hashPos = tname.find("#");
 			// std::string suffix;
 
 			// duplicate targetnames have a #X suffix to differentiate them
@@ -412,7 +427,7 @@ void Entity::renameTargetnameValues(const std::string& oldTargetname, const std:
 		// multi_manager is a special case where the targets are in the key names
 		for (int i = 0; i < keyOrder.size(); i++) {
 			std::string tname = keyOrder[i];
-			size_t hashPos = tname.find('#');
+			size_t hashPos = tname.find("#");
 			std::string suffix;
 
 			// duplicate targetnames have a #X suffix to differentiate them
