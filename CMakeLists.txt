@@ -91,7 +91,7 @@ include_directories(imgui/backends)
 include_directories(glew/include)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} glfw)
+target_link_libraries(${PROJECT_NAME} glfw ${CMAKE_DL_LIBS})
 
 add_definitions(-DGLEW_STATIC)
 
