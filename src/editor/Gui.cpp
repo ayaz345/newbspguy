@@ -3459,7 +3459,6 @@ void Gui::drawEntityReport() {
 		}
 		else {
 			ImGui::BeginGroup();
-			static int lastmapidx = -1;
 			const int MAX_FILTERS = 1;
 			static char keyFilter[MAX_FILTERS][MAX_KEY_LEN];
 			static char valueFilter[MAX_FILTERS][MAX_VAL_LEN];
@@ -3473,9 +3472,6 @@ void Gui::drawEntityReport() {
 
 			float footerHeight = ImGui::GetFrameHeightWithSpacing() * 5.f + 16.f;
 			ImGui::BeginChild("entlist", ImVec2(0.f, -footerHeight));
-
-			filterNeeded = app->getSelectedMapId() != lastmapidx;
-			lastmapidx = app->getSelectedMapId();
 
 			if (filterNeeded) {
 				visibleEnts.clear();
