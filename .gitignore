@@ -16,8 +16,8 @@ build/CMakeFiles/*
 *.stamp
 *.in
 *.cmake
-vs-project/.vs/bspguy/v17/.suo
-vs-project/.vs/bspguy/v17/fileList.bin
+*.suo
+*.bin
 *.db-shm
 *.db
 *.db-wal
@@ -27,3 +27,6 @@ vs-project/.vs/bspguy/v17/fileList.bin
 *.ilk
 *.bsp
 *.bak
+*.vsidx
+*.lock
+*.exe

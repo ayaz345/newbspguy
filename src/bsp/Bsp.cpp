@@ -165,6 +165,15 @@ Bsp::Bsp(std::string fpath)
 
 	renderer = NULL;
 	valid = true;
+
+
+	if (ents.size() && !ents[0]->hasKey("CRC"))
+	{
+		logf("Saving CRC key to Worldspawn\n");
+		ents[0]->addKeyvalue("CRC",std::to_string(reverse_bits(originCrc32)));
+		update_ent_lump();
+	}
+
 }
 
 Bsp::~Bsp()
@@ -1999,7 +2008,14 @@ void Bsp::write(std::string path) {
 
 	if (g_settings.preserveCrc32)
 	{
-		logf("HACKING CRC value. Original crc: %u. ", reverse_bits(originCrc32));
+		if (ents.size() && ents[0]->hasKey("CRC"))
+		{
+			originCrc32 = reverse_bits(std::stoul(ents[0]->keyvalues["CRC"]));
+			logf("HACKING CRC value. Loading original CRC key from WORLDSPAWN: %u. ", 
+				reverse_bits(originCrc32));
+		}
+		else 
+			logf("HACKING CRC value. Original crc: %u. ", reverse_bits(originCrc32));
 		unsigned int crc32 = UINT32_C(0xFFFFFFFF);
 
 
