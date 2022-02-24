@@ -1,6 +1,6 @@
-
 build/.vs/*
 build/CMakeFiles/*
+vs-project/Release/bspguy.exe
 *.obj
 *.tlog
 *.log
