@@ -7,7 +7,6 @@ build/CMakeFiles/*
 *.txt
 *.recipe
 *.exp
-*.lib
 *.html
 *.png
 *.css
