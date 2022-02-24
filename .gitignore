@@ -29,3 +29,4 @@ vs-project/Release/bspguy.exe
 *.vsidx
 *.lock
 *.exe
+vs-project/Release/bspguy.cfg
