@@ -127,7 +127,12 @@ Bsp::Bsp(std::string fpath)
 		{
 			BSPMODEL& lastModel = models[modelCount - 1];
 			if (lastModel.nVisLeafs == 0 &&
+				lastModel.iHeadnodes[0] == 0 &&
+				lastModel.iHeadnodes[1] == 0 &&
+				lastModel.iHeadnodes[2] == 0 &&
+				lastModel.iHeadnodes[3] == 0 &&
 				lastModel.iFirstFace == 0 &&
+				abs(lastModel.vOrigin.z - 9999.0) < 0.01 &&
 				lastModel.nFaces == 0)
 			{
 				logf("Removing CRC Hacking Model *%i\n", modelCount - 1);
@@ -2016,6 +2021,7 @@ void Bsp::write(std::string path) {
 		}
 		else 
 			logf("HACKING CRC value. Original crc: %u. ", reverse_bits(originCrc32));
+
 		unsigned int crc32 = UINT32_C(0xFFFFFFFF);
 
 
@@ -2039,6 +2045,8 @@ void Bsp::write(std::string path) {
 			unsigned char* tmpNewModelds = new unsigned char[originsize + sizeof(BSPMODEL)];
 			memset(tmpNewModelds, 0, originsize + sizeof(BSPMODEL));
 			memcpy(tmpNewModelds, &lumps[LUMP_MODELS][0], header.lump[LUMP_MODELS].nLength);
+			BSPMODEL* lastmodel = (BSPMODEL*)&tmpNewModelds[originsize];
+			lastmodel->vOrigin.z = 9999.0f;
 			lumps[LUMP_MODELS] = tmpNewModelds;
 			header.lump[LUMP_MODELS].nLength += sizeof(BSPMODEL);
 
@@ -2061,6 +2069,7 @@ void Bsp::write(std::string path) {
 				if (i != LUMP_ENTITIES)
 					crc32 = GetCrc32InMemory(&lumps[i][0], header.lump[i].nLength, crc32);
 			}
+
 			logf("Hacked value: %u. ", reverse_bits(crc32));
 		}
 	}
