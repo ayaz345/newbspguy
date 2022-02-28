@@ -18,6 +18,16 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
   - clipnode generation is similar to `-cliptype legacy` in the CSG compiler (the _worst_ method)
 - Basic face editing
 
+Added new features in this fork:
+- WAD import(merge) and export
+- BSP model import(as func_breakable) and export
+  (Exported bsp model can be used as mdl)
+- BSP model render
+- ENT file import and export
+- OBJ export with textures
+- LIGHTMAP editor (full featured, with import and export)
+- ...
+
 ![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
 
 **The editor is full of bugs, unstable, and has no undo button yet. Save early and often! Make backups before experimenting with anything.**
