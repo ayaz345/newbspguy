@@ -30,3 +30,4 @@ vs-project/Release/bspguy.exe
 *.lock
 *.exe
 vs-project/Release/bspguy.cfg
+*.idb

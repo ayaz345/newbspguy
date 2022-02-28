@@ -579,12 +579,14 @@ void Renderer::renderLoop() {
 		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN && originSelected;
 		bool isTransformingValid = !modelUsesSharedStructures && (isTransformableSolid || isScalingObject) && transformTarget != TRANSFORM_ORIGIN;
 		bool isTransformingWorld = pickInfo.entIdx == 0 && transformTarget != TRANSFORM_OBJECT;
+
 		if (showDragAxes) {
 			if (!movingEnt && !isTransformingWorld && pickInfo.entIdx >= 0 && (isTransformingValid || isMovingOrigin))
 			{
 				drawTransformAxes();
 			}
 		}
+
 		if (pickInfo.entIdx == 0)
 		{
 			if (map && map->is_model)
@@ -967,6 +969,8 @@ void Renderer::controls() {
 	if (!io.WantTextInput)
 		globalShortcutControls();
 
+	vertexEditControls();
+
 	if (!io.WantCaptureMouse) {
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
@@ -979,8 +983,6 @@ void Renderer::controls() {
 		makeVectors(cameraAngles, cameraForward, cameraRight, cameraUp);
 
 		cameraObjectHovering();
-
-		vertexEditControls();
 
 		cameraPickingControls();
 
@@ -1474,10 +1476,12 @@ void Renderer::pickObject() {
 
 	if (pickMode == PICK_OBJECT) {
 		updateModelVerts();
-
-		isTransformableSolid = true;
 		if (pickInfo.modelIdx > 0) {
 			isTransformableSolid = getSelectedMap()->is_convex(pickInfo.modelIdx);
+		}
+		else
+		{
+			isTransformableSolid = true;
 		}
 	}
 	else if (pickMode == PICK_FACE) {
@@ -2907,8 +2911,10 @@ vec3 Renderer::snapToGrid(const vec3& pos) {
 
 void Renderer::grabEnt() {
 	if (pickInfo.entIdx <= 0)
+	{
+		movingEnt = false;
 		return;
-	movingEnt = true;
+	}
 	Bsp* map = g_app->getSelectedMap();
 	vec3 mapOffset = map->getBspRender()->mapOffset;
 	vec3 localCamOrigin = cameraOrigin - mapOffset;
@@ -3051,10 +3057,9 @@ void Renderer::ungrabEnt() {
 	if (!movingEnt) {
 		return;
 	}
+	pushEntityUndoState("Move Entity");
 
 	movingEnt = false;
-
-	pushEntityUndoState("Move Entity");
 }
 
 void Renderer::updateEntityState(Entity* ent) {
