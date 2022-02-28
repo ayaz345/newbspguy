@@ -26,6 +26,7 @@ Added new features in this fork:
 - ENT file import and export
 - OBJ export with textures
 - LIGHTMAP editor (full featured, with import and export)
+- CRC hack (can be used to modify any map without change CRC)
 - ...
 
 ![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
