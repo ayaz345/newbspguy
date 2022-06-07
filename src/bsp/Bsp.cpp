@@ -2070,7 +2070,7 @@ void Bsp::write(std::string path) {
 					crc32 = GetCrc32InMemory(&lumps[i][0], header.lump[i].nLength, crc32);
 			}
 
-			logf("Hacked value: %u. ", reverse_bits(crc32));
+			logf("Hacked value: %u. \n", reverse_bits(crc32));
 		}
 	}
 
