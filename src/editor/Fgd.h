@@ -98,6 +98,10 @@ public:
 	std::vector<FgdGroup> pointEntGroups;
 	std::vector<FgdGroup> solidEntGroups;
 
+	std::vector<std::string> existsFlagNames;
+	std::vector<int> existsFlagNamesBits;
+
+
 	Fgd(std::string path);
 	~Fgd();
 

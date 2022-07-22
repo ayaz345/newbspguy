@@ -520,9 +520,26 @@ void Fgd::setSpawnflagNames() {
 					}
 					else {
 						classes[i]->spawnFlagNames[bit] = choice.name;
+
+						bool flgnameexists = false;
+
+						for (auto & s : existsFlagNames)
+						{
+							if (s == choice.name)
+								flgnameexists = true;
+						}
+
+						if (!flgnameexists)
+						{
+							existsFlagNames.push_back(choice.name);
+							existsFlagNamesBits.push_back(bit);
+						}
 					}
 				}
 			}
 		}
 	}
 }
+
+std::vector<std::string> existsFlagNames;
+std::vector<int> existsFlagNamesBits;

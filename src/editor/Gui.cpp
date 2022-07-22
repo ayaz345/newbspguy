@@ -3460,6 +3460,7 @@ void Gui::drawEntityReport() {
 			static char valueFilter[MAX_FILTERS][MAX_VAL_LEN];
 			static int lastSelect = -1;
 			static std::string classFilter = "(none)";
+			static std::string flagsFilter = "(none)";
 			static bool partialMatches = true;
 			static std::vector<int> visibleEnts;
 			static std::vector<bool> selectedItems;
@@ -3471,15 +3472,33 @@ void Gui::drawEntityReport() {
 
 			if (filterNeeded) {
 				visibleEnts.clear();
+
 				for (int i = 1; i < map->ents.size(); i++) {
 					Entity* ent = map->ents[i];
 					std::string cname = ent->keyvalues["classname"];
 
 					bool visible = true;
 
-					if (!classFilter.empty() && classFilter != "(none)") {
-						if (toLowerCase(cname) != toLowerCase(classFilter)) {
+					if (!classFilter.empty() && classFilter != "(none)") 
+					{
+						if (toLowerCase(cname) != toLowerCase(classFilter)) 
+						{
 							visible = false;
+						}
+					}
+
+					if (!flagsFilter.empty() && flagsFilter != "(none)") {
+						visible = false;
+						FgdClass* fgdClass = app->fgd->getFgdClass(ent->keyvalues["classname"]);
+						if (fgdClass)
+						{
+							for (int k = 0; k < 32; k++)
+							{
+								if (fgdClass->spawnFlagNames[k] == flagsFilter)
+								{
+									visible = true;
+								}
+							}
 						}
 					}
 
@@ -3629,7 +3648,11 @@ void Gui::drawEntityReport() {
 
 			static bool comboWasOpen = false;
 
+			ImGui::SetNextItemWidth(280);
 			ImGui::Text("Classname Filter");
+			ImGui::SameLine(280);
+			ImGui::Text("Flags Filter");
+			ImGui::SetNextItemWidth(270);
 			if (ImGui::BeginCombo("##classfilter", classFilter.c_str()))
 			{
 				if (!comboWasOpen) {
@@ -3665,8 +3688,37 @@ void Gui::drawEntityReport() {
 				comboWasOpen = false;
 			}
 
+		
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth(270);
+			if (ImGui::BeginCombo("##flagsfilter", flagsFilter.c_str()))
+			{
+				if (app->fgd)
+				{
+					if (ImGui::Selectable("(none)", false))
+					{
+						flagsFilter = "(none)";
+						filterNeeded = true;
+					}
+					else
+					{
+						for (int i = 0; i < app->fgd->existsFlagNames.size(); i++)
+						{
+							bool selected = flagsFilter == app->fgd->existsFlagNames[i];
+							if (ImGui::Selectable((app->fgd->existsFlagNames[i] +
+								" ( bit " + std::to_string(app->fgd->existsFlagNamesBits[i]) + " )").c_str(), selected)) {
+								flagsFilter = app->fgd->existsFlagNames[i];
+								filterNeeded = true;
+							}
+						}
+					}
+				}
+				ImGui::EndCombo();
+			}
+
 			ImGui::Dummy(ImVec2(0, 8));
 			ImGui::Text("Keyvalue Filter");
+			ImGui::SameLine();
 
 			ImGuiStyle& style = ImGui::GetStyle();
 			float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
