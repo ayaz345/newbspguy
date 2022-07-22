@@ -97,9 +97,10 @@ Bsp::Bsp(std::string fpath)
 		this->init_empty_bsp();
 		return;
 	}
-
-	if (fpath.size() < 4 || fpath.rfind(".bsp") != fpath.size() - 4) {
-		fpath = fpath + ".bsp";
+	if (!fileExists(fpath)) {
+		if (fpath.size() < 4 || fpath.rfind(".bsp") != fpath.size() - 4) {
+			fpath = fpath + ".bsp";
+		}
 	}
 	this->path = fpath;
 	this->name = stripExt(basename(fpath));
