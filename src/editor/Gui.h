@@ -114,6 +114,7 @@ private:
 	void draw3dContextMenus();
 	void drawMenuBar();
 	void drawToolbar();
+	void FaceSelectePressed();
 	void drawFpsOverlay();
 	void drawStatusMessage();
 	void drawDebugWidget();
