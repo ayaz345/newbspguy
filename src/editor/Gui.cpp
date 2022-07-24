@@ -4250,6 +4250,7 @@ void Gui::drawLightMapTool() {
 	static float windowWidth = 570;
 	static float windowHeight = 600;
 	static int lightmaps = 0;
+	static bool needPickColor = false;
 	const char* light_names[] =
 	{
 		"OFF",
@@ -4263,19 +4264,14 @@ void Gui::drawLightMapTool() {
 	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(windowWidth, windowHeight), ImVec2(windowWidth, windowHeight));
 
-	if (ImGui::Begin("LightMap Editor (WIP)", &showLightmapEditorWidget)) {
-		ImGui::Dummy(ImVec2(windowWidth / 2.45f, 10.0f));
-		ImGui::SameLine();
-		ImGui::TextDisabled("(WIP)");
+	const char * lightToolTitle = "LightMap Editor";
 
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::BeginTooltip();
-			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted("Can break lightmaps if changed.");
-			ImGui::PopTextWrapPos();
-			ImGui::EndTooltip();
-		}
+	if (needPickColor)
+	{
+		lightToolTitle = "LightMap Editor (PICK COLOR)";
+	}
+
+	if (ImGui::Begin(lightToolTitle, &showLightmapEditorWidget)) {
 
 		Bsp* map = app->getSelectedMap();
 		if (map && app->selectedFaces.size())
@@ -4354,50 +4350,65 @@ void Gui::drawLightMapTool() {
 				}
 
 				if (ImGui::ImageButton((void*)(uint64_t)currentlightMap[i]->id, imgSize, ImVec2(0, 0), ImVec2(1, 1), 0)) {
-					ImVec2 picker_pos = ImGui::GetCursorScreenPos();
-					if (i == 1 || i == 3)
-					{
-						picker_pos.x += 208;
-					}
-					ImVec2 mouse_pos_in_canvas = ImVec2(ImGui::GetIO().MousePos.x - picker_pos.x, 205 + ImGui::GetIO().MousePos.y - picker_pos.y);
 
+					float itemwidth = ImGui::GetItemRectMax().x - ImGui::GetItemRectMin().x;
+					float itemheight = ImGui::GetItemRectMax().y - ImGui::GetItemRectMin().y;
 
-					float image_x = currentlightMap[i]->width / 200.0f * (ImGui::GetIO().MousePos.x - picker_pos.x);
-					float image_y = currentlightMap[i]->height / 200.0f * (205.f + ImGui::GetIO().MousePos.y - picker_pos.y);
-					if (image_x < 0)
+					float mousex = ImGui::GetItemRectMax().x - ImGui::GetMousePos().x;
+					float mousey = ImGui::GetItemRectMax().y - ImGui::GetMousePos().y;
+
+					int imagex = (int)round((currentlightMap[i]->width - ((currentlightMap[i]->width / itemwidth) * mousex)) - 0.5f);
+					int imagey = (int)round((currentlightMap[i]->height - ((currentlightMap[i]->height / itemheight) * mousey)) - 0.5f);
+					
+					if (imagex < 0)
 					{
-						image_x = 0;
+						imagex = 0;
 					}
-					if (image_y < 0)
+					if (imagey < 0)
 					{
-						image_y = 0;
+						imagey = 0;
 					}
-					if (image_x > (float)currentlightMap[i]->width)
+					if (imagex > currentlightMap[i]->width)
 					{
-						image_x = (float)currentlightMap[i]->width;
+						imagex = currentlightMap[i]->width;
 					}
-					if (image_y > (float)currentlightMap[i]->height)
+					if (imagey > currentlightMap[i]->height)
 					{
-						image_y = (float)currentlightMap[i]->height;
+						imagey = currentlightMap[i]->height;
 					}
 
-					int offset = (int)((currentlightMap[i]->width * sizeof(COLOR3) * image_y) + (image_x * sizeof(COLOR3)));
+					int offset = ArrayXYtoId(currentlightMap[i]->width, imagex, imagey);
 					if (offset >= currentlightMap[i]->width * currentlightMap[i]->height * sizeof(COLOR3))
 						offset = (currentlightMap[i]->width * currentlightMap[i]->height * sizeof(COLOR3)) - 1;
 					if (offset < 0)
 						offset = 0;
 
-					currentlightMap[i]->data[offset + 0] = (unsigned char)(colourPatch[0] * 255.f);
-					currentlightMap[i]->data[offset + 1] = (unsigned char)(colourPatch[1] * 255.f);
-					currentlightMap[i]->data[offset + 2] = (unsigned char)(colourPatch[2] * 255.f);
-					currentlightMap[i]->upload(GL_RGB, true);
-					//logf("%f %f %f %f %d %d = %d \n", picker_pos.x, picker_pos.y, mouse_pos_in_canvas.x, mouse_pos_in_canvas.y, image_x, image_y, i);
+					COLOR3* lighdata = (COLOR3*)&currentlightMap[i]->data[0];
+
+					if (needPickColor)
+					{
+						colourPatch[0] = lighdata[offset].r / 255.f;
+						colourPatch[1] = lighdata[offset].g / 255.f;
+						colourPatch[2] = lighdata[offset].b / 255.f;
+						needPickColor = false;
+					}
+					else
+					{
+						lighdata[offset] = COLOR3((unsigned char)(colourPatch[0] * 255.f), 
+							(unsigned char)(colourPatch[1] * 255.f), (unsigned char)(colourPatch[2] * 255.f));
+						currentlightMap[i]->upload(GL_RGB, true);
+					}
 				}
 			}
 			ImGui::Separator();
 			ImGui::Text("Lightmap width:%d height:%d", size[0], size[1]);
 			ImGui::Separator();
 			ColorPicker3(colourPatch);
+			ImGui::SetNextItemWidth(100.f);
+			if (ImGui::Button("Pick color", ImVec2(120, 0)))
+			{
+				needPickColor = true;
+			}
 			ImGui::Separator();
 			ImGui::SetNextItemWidth(100.f);
 			ImGui::Combo(" Disable light", &type, light_names, IM_ARRAYSIZE(light_names));
