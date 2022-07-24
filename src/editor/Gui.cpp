@@ -4006,11 +4006,6 @@ std::vector<int> faces_to_export;
 void ImportOneBigLightmapFile(Bsp* map)
 {
 	char fileNam[256];
-	colordata = std::vector<COLOR3>();
-
-	int current_x = 0;
-	int current_y = 0;
-	int max_y_found = 0;
 
 	if (!faces_to_export.size())
 	{
@@ -4019,12 +4014,14 @@ void ImportOneBigLightmapFile(Bsp* map)
 		{
 			faces_to_export.push_back(faceIdx);
 		}
-		return;
 	}
-
 
 	for (int lightId = 0; lightId < MAXLIGHTMAPS; lightId++)
 	{
+		colordata = std::vector<COLOR3>();
+		int current_x = 0;
+		int current_y = 0;
+		int max_y_found = 0;
 		//logf("\nImport %d ligtmap\n", lightId);
 		snprintf(fileNam, sizeof(fileNam), "%s%sFull%dStyle.png", GetWorkDir().c_str(), "lightmap", lightId);
 		unsigned char* image_bytes;
@@ -4092,8 +4089,6 @@ void ExportOneBigLightmap(Bsp* map)
 {
 	char fileNam[256];
 
-	colordata = std::vector<COLOR3>();
-
 
 	faces_to_export.clear();
 
@@ -4148,6 +4143,7 @@ void ExportOneBigLightmap(Bsp* map)
 
 	for (int lightId = 0; lightId < MAXLIGHTMAPS; lightId++)
 	{
+		colordata = std::vector<COLOR3>();
 		int current_x = 0;
 		int current_y = 0;
 		int max_y_found = 0;
@@ -4271,11 +4267,12 @@ void Gui::drawLightMapTool() {
 		ImGui::Dummy(ImVec2(windowWidth / 2.45f, 10.0f));
 		ImGui::SameLine();
 		ImGui::TextDisabled("(WIP)");
+
 		if (ImGui::IsItemHovered())
 		{
 			ImGui::BeginTooltip();
 			ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
-			ImGui::TextUnformatted("Almost always breaks lightmaps if changed.");
+			ImGui::TextUnformatted("Can break lightmaps if changed.");
 			ImGui::PopTextWrapPos();
 			ImGui::EndTooltip();
 		}
@@ -4439,32 +4436,32 @@ void Gui::drawLightMapTool() {
 				map->getBspRender()->reloadLightmaps();
 			}
 			ImGui::Separator();
-			ImGui::Text("WARNING! SAVE MAP\nBEFORE NEXT ACTION!");
-			ImGui::Separator();
-			if (ImGui::Button("Export ALL", ImVec2(125, 0)))
-			{
-				logf("Export lightmaps to png files...\n");
-				createDir(GetWorkDir());
-				//for (int z = 0; z < map->faceCount; z++)
-				//{
-				//	lightmaps = 0;
-				//	ExportLightmaps(map->faces[z], z, map);
-				//}
-				ExportOneBigLightmap(map);
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Import ALL", ImVec2(125, 0)))
-			{
-				logf("Import lightmaps from png files...\n");
-				//for (int z = 0; z < map->faceCount; z++)
-				//{
-				//	lightmaps = 0;
-				//	ImportLightmaps(map->faces[z], z, map);
-				//}
+		}
+		ImGui::Text("WARNING! SAVE MAP\nBEFORE NEXT ACTION!");
+		ImGui::Separator();
+		if (ImGui::Button("Export ALL", ImVec2(125, 0)))
+		{
+			logf("Export lightmaps to png files...\n");
+			createDir(GetWorkDir());
+			//for (int z = 0; z < map->faceCount; z++)
+			//{
+			//	lightmaps = 0;
+			//	ExportLightmaps(map->faces[z], z, map);
+			//}
+			ExportOneBigLightmap(map);
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("Import ALL", ImVec2(125, 0)))
+		{
+			logf("Import lightmaps from png files...\n");
+			//for (int z = 0; z < map->faceCount; z++)
+			//{
+			//	lightmaps = 0;
+			//	ImportLightmaps(map->faces[z], z, map);
+			//}
 
-				ImportOneBigLightmapFile(map);
-				map->getBspRender()->reloadLightmaps();
-			}
+			ImportOneBigLightmapFile(map);
+			map->getBspRender()->reloadLightmaps();
 		}
 		else
 		{
