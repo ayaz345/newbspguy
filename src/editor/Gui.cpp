@@ -832,6 +832,10 @@ void Gui::drawMenuBar() {
 						entFile.write(entities.c_str(), entities.size());
 					}
 				}
+				else
+				{
+					logf("Select map first\n");
+				}
 			}
 			if (ImGui::MenuItem("Embedded textures (.wad)", NULL)) {
 				if (map)
@@ -851,12 +855,20 @@ void Gui::drawMenuBar() {
 						}
 					}
 				}
+				else
+				{
+					logf("Select map first\n");
+				}
 			}
 
 			if (ImGui::MenuItem("Wavefront (.obj) [WIP]", NULL)) {
 				if (map)
 				{
 					map->ExportToObjWIP(GetWorkDir());
+				}
+				else
+				{
+					logf("Select map first\n");
 				}
 			}
 
