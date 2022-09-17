@@ -448,7 +448,7 @@ void Renderer::renderLoop() {
 			lastTitleTime = glfwGetTime();
 			if (map)
 			{
-				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + map->path).c_str());
+				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + map->bsp_path).c_str());
 			}
 		}
 		glfwPollEvents();
@@ -458,7 +458,7 @@ void Renderer::renderLoop() {
 		double fps = 1.0 / frameDelta;
 
 		//FIXME : frameTimeScale = 0.05f / frameDelta ???
-		frameTimeScale = 144.0f / fps;
+		frameTimeScale = 100.0 / fps;
 
 		lastFrameTime = glfwGetTime();
 
@@ -509,7 +509,7 @@ void Renderer::renderLoop() {
 								{
 									if (!modelidskip.count(s))
 									{
-										if (basename(tmpEnt->keyvalues["model"]) == basename(curMap->path))
+										if (basename(tmpEnt->keyvalues["model"]) == basename(curMap->bsp_path))
 										{
 											curMap->ents[0]->setOrAddKeyvalue("origin", (tmpEnt->getOrigin() + anotherMapOrigin).toKeyvalueString());
 											modelidskip.insert(s);
@@ -673,7 +673,7 @@ void Renderer::clearMaps() {
 void Renderer::reloadMaps() {
 	std::vector<std::string> reloadPaths;
 	for (int i = 0; i < mapRenderers.size(); i++) {
-		reloadPaths.push_back(mapRenderers[i]->map->path);
+		reloadPaths.push_back(mapRenderers[i]->map->bsp_path);
 		delete mapRenderers[i];
 	}
 	mapRenderers.clear();
@@ -1585,7 +1585,7 @@ bool Renderer::transformAxisControls() {
 
 		}
 		else {
-			if (ent->isBspModel() && delta.length() != 0) {
+			if (ent->isBspModel() && fabs(delta.length()) >= EPSILON) {
 
 				vec3 scaleDirs[6]{
 					vec3(1, 0, 0),
@@ -1660,9 +1660,9 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir) {
 	vec3 forward, right, up;
 	makeVectors(cameraAngles, forward, right, up);
 
-	vec3 view = forward.normalize(1.0f);
-	vec3 h = crossProduct(view, up).normalize(1.0f); // 3D float std::vector
-	vec3 v = crossProduct(h, view).normalize(1.0f); // 3D float std::vector
+	vec3 tview = forward.normalize(1.0f);
+	vec3 h = crossProduct(tview, up).normalize(1.0f); // 3D float std::vector
+	vec3 v = crossProduct(h, tview).normalize(1.0f); // 3D float std::vector
 
 	// convert fovy to radians 
 	float rad = fov * (PI / 180.0f);
@@ -1673,7 +1673,7 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir) {
 	h *= hLength;
 
 	// linear combination to compute intersection of picking ray with view port plane
-	start = cameraOrigin + view * zNear + h * mouseX + v * mouseY;
+	start = cameraOrigin + tview * zNear + h * mouseX + v * mouseY;
 
 	// compute direction of picking ray by subtracting intersection point with camera position
 	pickDir = (start - cameraOrigin).normalize(1.0f);
@@ -1816,7 +1816,7 @@ void Renderer::reloadBspModels()
 							if (fileExists(tryPath)) {
 								Bsp* tmpBsp = new Bsp(tryPath);
 								tmpBsp->is_model = true;
-								if (tmpBsp->valid)
+								if (tmpBsp->bsp_valid)
 								{
 									BspRenderer* mapRenderer = new BspRenderer(tmpBsp, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
 									mapRenderers.push_back(mapRenderer);
@@ -1945,8 +1945,8 @@ vec3 Renderer::getEntOrigin(Bsp* map, Entity* ent) {
 
 vec3 Renderer::getEntOffset(Bsp* map, Entity* ent) {
 	if (ent->isBspModel()) {
-		BSPMODEL& model = map->models[ent->getBspModelIdx()];
-		return model.nMins + (model.nMaxs - model.nMins) * 0.5f;
+		BSPMODEL& tmodel = map->models[ent->getBspModelIdx()];
+		return tmodel.nMins + (tmodel.nMaxs - tmodel.nMins) * 0.5f;
 	}
 	return vec3(0, 0, 0);
 }
@@ -2492,7 +2492,7 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir) {
 
 	Bsp* map = g_app->getSelectedMap();
 
-	bool scaleFromOrigin = fromDir.x == 0 && fromDir.y == 0 && fromDir.z == 0;
+	bool scaleFromOrigin = fabs(fromDir.x) < EPSILON && fabs(fromDir.y) < EPSILON && fabs(fromDir.z) < EPSILON;
 
 	vec3 minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	vec3 maxDist = vec3(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
@@ -2696,8 +2696,8 @@ void Renderer::splitFace() {
 	};
 
 	std::vector<int> modelPlanes;
-	BSPMODEL& model = map->models[pickInfo.ent->getBspModelIdx()];
-	map->getNodePlanes(model.iHeadnodes[0], modelPlanes);
+	BSPMODEL& tmodel = map->models[pickInfo.ent->getBspModelIdx()];
+	map->getNodePlanes(tmodel.iHeadnodes[0], modelPlanes);
 
 	// find the plane being split
 	int commonPlaneIdx = -1;

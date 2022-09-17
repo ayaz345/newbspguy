@@ -66,7 +66,9 @@ void PointEntRenderer::genPointEntCubes() {
 
 EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube) {
 	for (int i = 0; i < entCubes.size(); i++) {
-		if (memcmp(entCube, entCubes[i], sizeof(EntCube) - sizeof(VertexBuffer*) * 3) == 0) {
+		if (entCubes[i]->mins == entCube->mins
+			&& entCubes[i]->maxs == entCube->maxs
+			&& entCubes[i]->color == entCube->color) {
 			return entCubes[i];
 		}
 	}

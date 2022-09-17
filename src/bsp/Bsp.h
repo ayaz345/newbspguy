@@ -22,11 +22,11 @@ struct membuf : std::streambuf
 class Bsp
 {
 public:
-	std::string path;
-	std::string name;
-	BSPHEADER header = BSPHEADER();
+	std::string bsp_path;
+	std::string bsp_name;
+	BSPHEADER bsp_header = BSPHEADER();
 	unsigned char** lumps;
-	bool valid;
+	bool bsp_valid;
 	BSPPLANE* planes;
 	BSPTEXTUREINFO* texinfos;
 	unsigned char* textures;

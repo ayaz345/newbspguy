@@ -397,7 +397,7 @@ bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist) {
 
 	/* Calculate T distances to candidate planes */
 	for (i = 0; i < 3; i++) {
-		if (quadrant[i] != MIDDLE && dir[i] != 0.0f)
+		if (quadrant[i] != MIDDLE && fabs(dir[i]) >= EPSILON)
 			maxT[i] = (candidatePlane[i] - origin[i]) / dir[i];
 		else
 			maxT[i] = -1.0f;
@@ -440,7 +440,7 @@ bool rayPlaneIntersect(const vec3& start, const vec3& dir, const vec3& normal, f
 	float dot = dotProduct(dir, normal);
 
 	// don't select backfaces or parallel faces
-	if (dot == 0.f) {
+	if (fabs(dot) < EPSILON) {
 		return false;
 	}
 	intersectDist = dotProduct((normal * fdist) - start, normal) / dot;
@@ -603,7 +603,7 @@ bool vertsAllOnOneSide(std::vector<vec3>& verts, BSPPLANE& plane) {
 			}
 			planeSide = -1;
 		}
-		if (d > EPSILON) {
+		if (d >= EPSILON) {
 			if (planeSide == -1) {
 				return false;
 			}
@@ -641,7 +641,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts) {
 		if (verts[i] != verts[i0] && verts[i] != verts[i1]) {
 			vec3 ab = (verts[i1] - verts[i0]).normalize();
 			vec3 ac = (verts[i] - verts[i0]).normalize();
-			if (fabs(dotProduct(ab, ac)) == 1) {
+			if (fabs(dotProduct(ab, ac) - 1.0) < EPSILON) {
 				continue;
 			}
 
@@ -762,7 +762,7 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p) {
 		vec2& v1 = poly[i];
 		vec2& v2 = poly[(i + 1) % poly.size()];
 
-		if (v1.x == p.x && v1.y == p.y) {
+		if (fabs(v1.x - p.x) < EPSILON && fabs(v1.y - p.y) < EPSILON) {
 			break; // on edge = inside
 		}
 

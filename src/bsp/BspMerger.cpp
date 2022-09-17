@@ -5,7 +5,7 @@
 #include "vis.h"
 
 
-Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3 & gap, const std::string & output_name, bool noripent, bool noscript) {
+Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript) {
 	if (maps.size() < 1) {
 		logf("\nMore than 1 map is required for merging. Aborting merge.\n");
 		return NULL;
@@ -20,16 +20,16 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3 & gap, const std::strin
 			for (int x = 0; x < blocks[z][y].size(); x++) {
 				MAPBLOCK& block = blocks[z][y][x];
 
-				if (block.offset.x != 0 || block.offset.y != 0 || block.offset.z != 0) {
+				if (fabs(block.offset.x) >= EPSILON || fabs(block.offset.y) >= EPSILON || fabs(block.offset.z) >= EPSILON) {
 					logf("    Apply offset (%6.0f, %6.0f, %6.0f) to %s\n",
-						block.offset.x, block.offset.y, block.offset.z, block.map->name.c_str());
+						block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
 					block.map->move(block.offset);
 				}
 
 				if (!noripent) {
 					// tag ents with the map they belong to
 					for (int i = 0; i < block.map->ents.size(); i++) {
-						block.map->ents[i]->addKeyvalue("$s_bspguy_map_source", toLowerCase(block.map->name));
+						block.map->ents[i]->addKeyvalue("$s_bspguy_map_source", toLowerCase(block.map->bsp_name));
 					}
 				}
 			}
@@ -101,15 +101,15 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3 & gap, const std::strin
 					flattenedBlocks.push_back(blocks[z][y][x]);
 
 		logf("\nUpdating map series entity logic:\n");
-		update_map_series_entity_logic(output, flattenedBlocks, maps, output_name, maps[0]->name, noscript);
+		update_map_series_entity_logic(output, flattenedBlocks, maps, output_name, maps[0]->bsp_name, noscript);
 	}
 
 	return output;
 }
 
 void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType) {
-	std::string thisName = dst.merge_name.size() ? dst.merge_name : dst.map->name;
-	std::string otherName = src.merge_name.size() ? src.merge_name : src.map->name;
+	std::string thisName = dst.merge_name.size() ? dst.merge_name : dst.map->bsp_name;
+	std::string otherName = src.merge_name.size() ? src.merge_name : src.map->bsp_name;
 	dst.merge_name = std::move(resultType);
 	logf("    %-8s = %s + %s\n", dst.merge_name.c_str(), thisName.c_str(), otherName.c_str());
 
@@ -252,7 +252,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 		map_info->addKeyvalue("classname", "info_target");
 
 		for (int i = 0; i < mapOrder.size(); i++) {
-			map_info->addKeyvalue("$s_map" + std::to_string(i), toLowerCase(mapOrder[i]->name));
+			map_info->addKeyvalue("$s_map" + std::to_string(i), toLowerCase(mapOrder[i]->bsp_name));
 		}
 
 		mergedMap->ents.push_back(map_info);
@@ -260,7 +260,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 	}
 
 	for (int i = 0; i < sourceMaps.size(); i++) {
-		std::string sourceMapName = sourceMaps[i].map->name;
+		std::string sourceMapName = sourceMaps[i].map->bsp_name;
 		mapsByName[toLowerCase(sourceMapName)] = sourceMaps[i];
 
 		if (!noscript) {
@@ -320,7 +320,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 		if (skyname != lastSky || skyColorChanged) {
 			Entity* changesky = new Entity();
 			changesky->addKeyvalue("origin", changesky_origin.toKeyvalueString());
-			changesky->addKeyvalue("targetname", "bspguy_start_" + toLowerCase(mapOrder[i]->name));
+			changesky->addKeyvalue("targetname", "bspguy_start_" + toLowerCase(mapOrder[i]->bsp_name));
 			if (skyname != lastSky) {
 				changesky->addKeyvalue("skyname", skyname);
 			}
@@ -342,7 +342,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 	for (int i = 0; i < mapOrder.size(); i++) {
 		Entity* equip = new Entity();
 		Entity* relay = new Entity();
-		std::string mapname = toLowerCase(mapOrder[i]->name);
+		std::string mapname = toLowerCase(mapOrder[i]->bsp_name);
 		//std::string equip_name = "equip_" + mapname;
 
 		equip->addKeyvalue("origin", equip_origin.toKeyvalueString());
@@ -501,7 +501,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 			std::string map = toLowerCase(ent->keyvalues["map"]);
 			bool isMergedMap = false;
 			for (int n = 0; n < sourceMaps.size(); n++) {
-				if (map == toLowerCase(sourceMaps[n].map->name)) {
+				if (map == toLowerCase(sourceMaps[n].map->bsp_name)) {
 					isMergedMap = true;
 				}
 			}
@@ -761,7 +761,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 	if (!noscript) {
 		std::ofstream entFile(output_name + ".ent", std::ios::trunc);
-		entFile.write((const char*)mergedMap->lumps[LUMP_ENTITIES], mergedMap->header.lump[LUMP_ENTITIES].nLength - 1);
+		entFile.write((const char*)mergedMap->lumps[LUMP_ENTITIES], mergedMap->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 	}
 }
 
@@ -847,11 +847,11 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB) {
 		if (!mapA.lumps[i] && !mapB.lumps[i]) {
 			//logf << "Skipping " << g_lump_names[i] << " lump (missing from both maps)\n";
 		}
-		else if (!mapA.lumps[i]) {
+		else if (!mapA.lumps[i] && mapB.lumps[i]) {
 			logf("Replacing %s lump\n", g_lump_names[i]);
-			mapA.header.lump[i].nLength = mapB.header.lump[i].nLength;
-			mapA.lumps[i] = new unsigned char[mapB.header.lump[i].nLength];
-			memcpy(mapA.lumps[i], mapB.lumps[i], mapB.header.lump[i].nLength);
+			mapA.bsp_header.lump[i].nLength = mapB.bsp_header.lump[i].nLength;
+			mapA.lumps[i] = new unsigned char[mapB.bsp_header.lump[i].nLength];
+			memcpy(mapA.lumps[i], mapB.lumps[i], mapB.bsp_header.lump[i].nLength);
 
 			// process the lump here (TODO: faster to just copy wtv needs copying)
 			switch (i) {
@@ -965,10 +965,10 @@ BSPPLANE BspMerger::separate(Bsp& mapA, Bsp& mapB) {
 
 		logf("Bounding boxes for each map:\n");
 		logf("(%6.0f, %6.0f, %6.0f)", amin.x, amin.y, amin.z);
-		logf(" - (%6.0f, %6.0f, %6.0f) %s\n", amax.x, amax.y, amax.z, mapA.name.c_str());
+		logf(" - (%6.0f, %6.0f, %6.0f) %s\n", amax.x, amax.y, amax.z, mapA.bsp_name.c_str());
 
 		logf("(%6.0f, %6.0f, %6.0f)", bmin.x, bmin.y, bmin.z);
-		logf(" - (%6.0f, %6.0f, %6.0f) %s\n", bmax.x, bmax.y, bmax.z, mapB.name.c_str());
+		logf(" - (%6.0f, %6.0f, %6.0f) %s\n", bmax.x, bmax.y, bmax.z, mapB.bsp_name.c_str());
 	}
 
 	return separationPlane;
@@ -981,7 +981,7 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 	size_t oldEntCount = mapA.ents.size();
 
 	// update model indexes since this map's models will be appended after the other map's models
-	size_t otherModelCount = (mapB.header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL)) - 1;
+	size_t otherModelCount = (mapB.bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL)) - 1;
 	for (int i = 0; i < mapA.ents.size(); i++) {
 		if (!mapA.ents[i]->hasKey("model") || mapA.ents[i]->keyvalues["model"][0] != '*') {
 			continue;
@@ -1075,7 +1075,9 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB) {
 	for (unsigned int i = 0; i < mapB.planeCount; i++) {
 		bool isUnique = true;
 		for (unsigned int k = 0; k < mapA.planeCount; k++) {
-			if (memcmp(&mapB.planes[i], &mapA.planes[k], sizeof(BSPPLANE)) == 0) {
+			if (fabs(mapB.planes[i].fDist - mapA.planes[k].fDist) < EPSILON 
+				&& mapB.planes[i].nType == mapA.planes[k].nType 
+				&& mapB.planes[i].vNormal == mapA.planes[k].vNormal) {
 				isUnique = false;
 				planeRemap.push_back(k);
 				break;
@@ -1104,7 +1106,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB) {
 	unsigned int newTexCount = 0;
 
 	// temporary buffer for holding miptex + embedded textures (too big but doesn't matter)
-	unsigned int maxMipTexDataSize = mapA.header.lump[LUMP_TEXTURES].nLength + mapB.header.lump[LUMP_TEXTURES].nLength;
+	unsigned int maxMipTexDataSize = mapA.bsp_header.lump[LUMP_TEXTURES].nLength + mapB.bsp_header.lump[LUMP_TEXTURES].nLength;
 	unsigned char* newMipTexData = new unsigned char[maxMipTexDataSize];
 
 	unsigned char* mipTexWritePtr = newMipTexData;
@@ -1227,7 +1229,12 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB) {
 
 		bool isUnique = true;
 		for (unsigned int k = 0; k < mapA.texinfoCount; k++) {
-			if (memcmp(&info, &mapA.texinfos[k], sizeof(BSPTEXTUREINFO)) == 0) {
+			if (info.iMiptex == mapA.texinfos[k].iMiptex 
+				&& info.nFlags == mapA.texinfos[k].nFlags
+				&& fabs(info.shiftS - mapA.texinfos[k].shiftS) < EPSILON
+				&& fabs(info.shiftT - mapA.texinfos[k].shiftT) < EPSILON
+				&& info.vS == mapA.texinfos[k].vS
+				&& info.vT == mapA.texinfos[k].vT) {
 				texInfoRemap.push_back(k);
 				isUnique = false;
 				break;
@@ -1295,18 +1302,18 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB) {
 }
 
 void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB) {
-	thisLeafCount = mapA.header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
-	otherLeafCount = mapB.header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
+	thisLeafCount = mapA.bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
+	otherLeafCount = mapB.bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
 
-	int thisWorldLeafCount = ((BSPMODEL*)mapA.lumps[LUMP_MODELS])->nVisLeafs + 1; // include solid leaf
+	int tthisWorldLeafCount = ((BSPMODEL*)mapA.lumps[LUMP_MODELS])->nVisLeafs + 1; // include solid leaf
 
 	g_progress.update("Merging leaves", thisLeafCount + otherLeafCount);
 
 	std::vector<BSPLEAF> mergedLeaves;
-	mergedLeaves.reserve(thisWorldLeafCount + otherLeafCount);
-	modelLeafRemap.reserve(thisWorldLeafCount + otherLeafCount);
+	mergedLeaves.reserve(tthisWorldLeafCount + otherLeafCount);
+	modelLeafRemap.reserve(tthisWorldLeafCount + otherLeafCount);
 
-	for (int i = 0; i < thisWorldLeafCount; i++) {
+	for (int i = 0; i < tthisWorldLeafCount; i++) {
 		modelLeafRemap.push_back(i);
 		mergedLeaves.push_back(mapA.leaves[i]);
 		g_progress.tick();
@@ -1332,7 +1339,7 @@ void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB) {
 
 	// append A's submodel leaves after B's world leaves
 	// Order will be: A's world leaves -> B's world leaves -> B's submodel leaves -> A's submodel leaves
-	for (int i = thisWorldLeafCount; i < thisLeafCount; i++) {
+	for (int i = tthisWorldLeafCount; i < thisLeafCount; i++) {
 		modelLeafRemap.push_back((int)mergedLeaves.size());
 		mergedLeaves.push_back(mapA.leaves[i]);
 	}
@@ -1376,7 +1383,7 @@ void BspMerger::merge_marksurfs(Bsp& mapA, Bsp& mapB) {
 }
 
 void BspMerger::merge_edges(Bsp& mapA, Bsp& mapB) {
-	thisEdgeCount = mapA.header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE);
+	thisEdgeCount = mapA.bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE);
 	int totalEdgeCount = thisEdgeCount + mapB.edgeCount;
 
 	g_progress.update("Merging edges", mapB.edgeCount + 1);
@@ -1617,7 +1624,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB) {
 	unsigned char* compressedVis = new unsigned char[decompressedVisSize];
 	memset(compressedVis, 0, decompressedVisSize);
 	int64_t newVisLen = CompressAll(allLeaves, decompressedVis, compressedVis, totalVisLeaves, mergedWorldLeafCount, decompressedVisSize);
-	unsigned int oldLen = mapA.header.lump[LUMP_VISIBILITY].nLength;
+	unsigned int oldLen = mapA.bsp_header.lump[LUMP_VISIBILITY].nLength;
 
 	unsigned char* compressedVisResize = new unsigned char[newVisLen];
 	memcpy(compressedVisResize, compressedVis, newVisLen);
@@ -1633,10 +1640,10 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB) {
 	COLOR3* otherRad = (COLOR3*)mapB.lightdata;
 	bool freemem = false;
 
-	int thisColorCount = mapA.header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
-	int otherColorCount = mapB.header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
+	int thisColorCount = mapA.bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
+	int otherColorCount = mapB.bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
 	int totalColorCount = thisColorCount + otherColorCount;
-	int totalFaceCount = mapA.header.lump[LUMP_FACES].nLength / sizeof(BSPFACE);
+	int totalFaceCount = mapA.bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE);
 
 	g_progress.update("Merging lightmaps", 4 + totalFaceCount);
 
@@ -1646,7 +1653,7 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB) {
 		totalColorCount += thisColorCount;
 		int sz = thisColorCount * sizeof(COLOR3);
 		mapA.lumps[LUMP_LIGHTING] = new unsigned char[sz];
-		mapA.header.lump[LUMP_LIGHTING].nLength = sz;
+		mapA.bsp_header.lump[LUMP_LIGHTING].nLength = sz;
 		thisRad = (COLOR3*)mapA.lumps[LUMP_LIGHTING];
 
 		memset(thisRad, 255, sz);

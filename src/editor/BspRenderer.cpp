@@ -283,7 +283,7 @@ void BspRenderer::loadLightmaps() {
 		BSPFACE& face = map->faces[i];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 
-		if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->header.lump[LUMP_LIGHTING].nLength)
+		if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
 			continue;
 
 		int size[2];
@@ -726,7 +726,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes) {
 		refreshFace(model.iFirstFace + i);
 	}
 
-	if (refreshClipnodes && modelIdx >= 0)
+	if (refreshClipnodes)
 		generateClipnodeBuffer(modelIdx);
 
 	return renderModel->groupCount;
@@ -793,7 +793,7 @@ void BspRenderer::generateClipnodeBuffer(unsigned int modelIdx) {
 
 		std::vector<cVert> allVerts;
 		std::vector<cVert> wireframeVerts;
-		std::vector<FaceMath> faceMaths;
+		std::vector<FaceMath> tfaceMaths;
 
 		for (int m = 0; m < meshes.size(); m++) {
 			CMesh& mesh = meshes[m];
@@ -865,7 +865,7 @@ void BspRenderer::generateClipnodeBuffer(unsigned int modelIdx) {
 						faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xy();
 					}
 
-					faceMaths.push_back(faceMath);
+					tfaceMaths.push_back(faceMath);
 				}
 
 				// create the verts for rendering
@@ -923,7 +923,7 @@ void BspRenderer::generateClipnodeBuffer(unsigned int modelIdx) {
 		renderClip->wireframeClipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size());
 		renderClip->wireframeClipnodeBuffer[i]->ownData = true;
 
-		renderClip->faceMaths[i] = std::move(faceMaths);
+		renderClip->faceMaths[i] = std::move(tfaceMaths);
 	}
 }
 
@@ -1052,7 +1052,7 @@ void BspRenderer::refreshEnt(int entIdx) {
 			else if (ent->keyvalues["classname"] == "env_sprite")
 			{
 				// based at cs 1.6 gamedll
-				if (angles.y != 0.0 && angles.z == 0.0)
+				if (fabs(angles.y) >= EPSILON && fabs(angles.z) < EPSILON)
 				{
 					renderEnts[entIdx].modelMat.rotateZ(-(angles.y * (PI / 180.0f)));
 					renderEnts[entIdx].modelMat.rotateY(0);

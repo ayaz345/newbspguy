@@ -51,6 +51,7 @@ Winding::Winding(Bsp* bsp, const BSPFACE& face, vec_t epsilon)
 	int             v;
 
 	m_NumPoints = face.nEdges;
+	m_MaxPoints = (m_NumPoints + 3) & ~3;
 	m_Points = new vec3_t[m_NumPoints];
 
 	unsigned i;
@@ -193,9 +194,9 @@ bool Winding::Clip(const BSPPLANE& split, bool keepon, vec_t epsilon)
 		dot = dists[i] / (dists[i] - dists[i + 1]);
 		for (j = 0; j < 3; j++)
 		{                                                  // avoid round off error when possible
-			if (((vec_t*)&split.vNormal)[j] == 1)
+			if (fabs(((vec_t*)&split.vNormal)[j] - 1.0) < EPSILON)
 				mid[j] = split.fDist;
-			else if (((vec_t*)&split.vNormal)[j] == -1)
+			else if (fabs(((vec_t*)&split.vNormal)[j] - -1) < EPSILON)
 				mid[j] = -split.fDist;
 			else
 				mid[j] = p1[j] + dot * (p2[j] - p1[j]);

@@ -8,6 +8,8 @@ static int g_active_shader_program;
 ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSource)
 {
 	modelViewID = modelViewProjID = -1;
+	vposID = vcolorID = vtexID = 0; 
+	projMat = viewMat = modelMat = nullptr;
 	vShader = new Shader(vshaderSource, GL_VERTEX_SHADER);
 	fShader = new Shader(fshaderSource, GL_FRAGMENT_SHADER);
 	link();
@@ -83,19 +85,19 @@ void ShaderProgram::updateMatrixes()
 		glUniformMatrix4fv(modelViewProjID, 1, false, (float*)modelViewProjMat);
 }
 
-void ShaderProgram::setMatrixNames(const char* modelViewMat, const char* modelViewProjMat)
+void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _modelViewProjMat)
 {
-	if (modelViewMat)
+	if (_modelViewMat)
 	{
-		modelViewID = glGetUniformLocation(ID, modelViewMat);
+		modelViewID = glGetUniformLocation(ID, _modelViewMat);
 		if (modelViewID == -1)
-			logf("Could not find modelView uniform: %s\n", modelViewMat);
+			logf("Could not find modelView uniform: %s\n", _modelViewMat);
 	}
-	if (modelViewProjMat)
+	if (_modelViewProjMat)
 	{
-		modelViewProjID = glGetUniformLocation(ID, modelViewProjMat);
+		modelViewProjID = glGetUniformLocation(ID, _modelViewProjMat);
 		if (modelViewProjID == -1)
-			logf("Could not find modelViewProjection uniform: %s\n", modelViewProjMat);
+			logf("Could not find modelViewProjection uniform: %s\n", _modelViewProjMat);
 	}
 }
 

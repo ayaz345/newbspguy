@@ -181,13 +181,17 @@ WADTEX* Wad::readTexture(const std::string& texname)
 
 	return tex;
 }
-bool Wad::write(WADTEX** textures, size_t numTex)
+bool Wad::write(WADTEX** textures, size_t _numTex)
 {
-	return write(filename, textures, numTex);
+	this->numTex = (int)_numTex;
+	return write(filename, textures, _numTex);
 }
 
-bool Wad::write(const std::string& filename, WADTEX** textures, size_t numTex)
+bool Wad::write(const std::string& _filename, WADTEX** textures, size_t _numTex)
 {
+	this->filename = _filename;
+	this->numTex = (int)_numTex;
+
 	std::ofstream myFile(filename, std::ios::trunc | std::ios::binary);
 
 	header.szMagic[0] = 'W';
@@ -260,7 +264,6 @@ bool Wad::write(const std::string& filename, WADTEX** textures, size_t numTex)
 		myFile.write((char*)&entry, sizeof(WADDIRENTRY));
 	}
 
-	//myFile.write ((char*)textures[0]->data, szAll);
 	myFile.close();
 
 	return true;

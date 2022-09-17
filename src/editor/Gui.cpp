@@ -9,6 +9,8 @@
 #include "BspMerger.h"
 #include "filedialog/ImFileDialog.h"
 // embedded binary data
+
+#include "fonts/rusfont.h"
 #include "fonts/robotomono.h"
 #include "fonts/robotomedium.h"
 #include "icons/object.h"
@@ -27,6 +29,7 @@ static bool filterNeeded = true;
 std::string iniPath;
 
 Gui::Gui(Renderer* app) {
+	guiHoverAxis = 0;
 	iniPath = getConfigDir() + "imgui.ini";
 	this->app = app;
 	init();
@@ -262,8 +265,8 @@ void ExportModel(Bsp* map, unsigned int id, int ExportType)
 {
 	map->update_ent_lump();
 
-	Bsp tmpMap = Bsp(map->path);
-	tmpMap.is_model = true;
+	Bsp * tmpMap = new Bsp(map->bsp_path);
+	tmpMap->is_model = true;
 
 	BSPMODEL tmpModel = map->models[id];
 
@@ -282,86 +285,86 @@ void ExportModel(Bsp* map, unsigned int id, int ExportType)
 
 	vec3 modelOrigin = map->get_model_center(id);
 
-	tmpMap.modelCount = 1;
-	tmpMap.models[0] = tmpModel;
+	tmpMap->modelCount = 1;
+	tmpMap->models[0] = tmpModel;
 
 	// Move model to 0 0 0
-	tmpMap.move(-modelOrigin, 0, true);
+	tmpMap->move(-modelOrigin, 0, true);
 
-	for (int i = 1; i < tmpMap.ents.size(); i++)
+	for (int i = 1; i < tmpMap->ents.size(); i++)
 	{
-		delete tmpMap.ents[i];
+		delete tmpMap->ents[i];
 	}
 
-	tmpMap.ents.clear();
+	tmpMap->ents.clear();
 
 	tmpEnt->setOrAddKeyvalue("origin", vec3(0, 0, 0).toKeyvalueString());
 	tmpEnt->setOrAddKeyvalue("compiler", g_version_string);
 	tmpEnt->setOrAddKeyvalue("message", "bsp model");
-	tmpMap.ents.push_back(tmpEnt);
+	tmpMap->ents.push_back(tmpEnt);
 
-	tmpMap.update_ent_lump();
+	tmpMap->update_ent_lump();
 
-	tmpMap.lumps[LUMP_MODELS] = (unsigned char*)tmpMap.models;
-	tmpMap.header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL);
-	tmpMap.update_lump_pointers();
+	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
+	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL);
+	tmpMap->update_lump_pointers();
 
 
-	STRUCTCOUNT removed = tmpMap.remove_unused_model_structures(ExportType != 1);
+	STRUCTCOUNT removed = tmpMap->remove_unused_model_structures(ExportType != 1);
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
-	if (!tmpMap.validate())
+	if (!tmpMap->validate())
 	{
 		logf("Tried to fix model by adding emply missing data %d\n", id);
 		int markid = 0;
-		for (unsigned int i = 0; i < tmpMap.leafCount; i++)
+		for (unsigned int i = 0; i < tmpMap->leafCount; i++)
 		{
-			BSPLEAF& tmpLeaf = tmpMap.leaves[i];
+			BSPLEAF& tmpLeaf = tmpMap->leaves[i];
 			tmpLeaf.iFirstMarkSurface = markid;
 			markid += tmpLeaf.nMarkSurfaces;
 		}
 
-		while (tmpMap.models[0].nVisLeafs >= (int)tmpMap.leafCount)
-			tmpMap.create_leaf(ExportType == 2 ? CONTENTS_WATER : CONTENTS_EMPTY);
+		while (tmpMap->models[0].nVisLeafs >= (int)tmpMap->leafCount)
+			tmpMap->create_leaf(ExportType == 2 ? CONTENTS_WATER : CONTENTS_EMPTY);
 
 		//tmpMap.lumps[LUMP_LEAVES] = (unsigned char*)tmpMap.leaves;
-		tmpMap.update_lump_pointers();
+		tmpMap->update_lump_pointers();
 	}
 
-	if (!tmpMap.validate())
+	if (!tmpMap->validate())
 	{
 		logf("Failed to export model %d\n", id);
 		return;
 	}
 
 	BSPNODE* tmpNode = new BSPNODE[2];
-	tmpNode[0].firstFace = tmpMap.models[0].iFirstFace;
-	tmpNode[0].iPlane = tmpMap.faces[tmpNode[0].firstFace].iPlane;
-	tmpNode[0].nFaces = tmpMap.models[0].nFaces;
-	tmpNode[0].nMaxs[0] = (short)tmpMap.models[0].nMaxs[0];
-	tmpNode[0].nMaxs[1] = (short)tmpMap.models[0].nMaxs[1];
-	tmpNode[0].nMaxs[2] = (short)tmpMap.models[0].nMaxs[2];
-	tmpNode[0].nMins[0] = (short)tmpMap.models[0].nMins[0];
-	tmpNode[0].nMins[1] = (short)tmpMap.models[0].nMins[1];
-	tmpNode[0].nMins[2] = (short)tmpMap.models[0].nMins[2];
+	tmpNode[0].firstFace = tmpMap->models[0].iFirstFace;
+	tmpNode[0].iPlane = tmpMap->faces[tmpNode[0].firstFace].iPlane;
+	tmpNode[0].nFaces = tmpMap->models[0].nFaces;
+	tmpNode[0].nMaxs[0] = (short)tmpMap->models[0].nMaxs[0];
+	tmpNode[0].nMaxs[1] = (short)tmpMap->models[0].nMaxs[1];
+	tmpNode[0].nMaxs[2] = (short)tmpMap->models[0].nMaxs[2];
+	tmpNode[0].nMins[0] = (short)tmpMap->models[0].nMins[0];
+	tmpNode[0].nMins[1] = (short)tmpMap->models[0].nMins[1];
+	tmpNode[0].nMins[2] = (short)tmpMap->models[0].nMins[2];
 
-	tmpNode[1].firstFace = tmpMap.models[0].iFirstFace;
-	tmpNode[1].iPlane = tmpMap.faces[tmpNode[1].firstFace].iPlane;
-	tmpNode[1].nFaces = tmpMap.models[0].nFaces;
-	tmpNode[1].nMaxs[0] = (short)tmpMap.models[0].nMaxs[0];
-	tmpNode[1].nMaxs[1] = (short)tmpMap.models[0].nMaxs[1];
-	tmpNode[1].nMaxs[2] = (short)tmpMap.models[0].nMaxs[2];
-	tmpNode[1].nMins[0] = (short)tmpMap.models[0].nMins[0];
-	tmpNode[1].nMins[1] = (short)tmpMap.models[0].nMins[1];
-	tmpNode[1].nMins[2] = (short)tmpMap.models[0].nMins[2];
+	tmpNode[1].firstFace = tmpMap->models[0].iFirstFace;
+	tmpNode[1].iPlane = tmpMap->faces[tmpNode[1].firstFace].iPlane;
+	tmpNode[1].nFaces = tmpMap->models[0].nFaces;
+	tmpNode[1].nMaxs[0] = (short)tmpMap->models[0].nMaxs[0];
+	tmpNode[1].nMaxs[1] = (short)tmpMap->models[0].nMaxs[1];
+	tmpNode[1].nMaxs[2] = (short)tmpMap->models[0].nMaxs[2];
+	tmpNode[1].nMins[0] = (short)tmpMap->models[0].nMins[0];
+	tmpNode[1].nMins[1] = (short)tmpMap->models[0].nMins[1];
+	tmpNode[1].nMins[2] = (short)tmpMap->models[0].nMins[2];
 
 	short sharedSolidLeaf = 0;
 
 
 	short anyEmptyLeaf = -1;
-	for (unsigned int i = 0; i < tmpMap.leafCount; i++) {
-		if (tmpMap.leaves[i].nContents == CONTENTS_EMPTY) {
+	for (unsigned int i = 0; i < tmpMap->leafCount; i++) {
+		if (tmpMap->leaves[i].nContents == CONTENTS_EMPTY) {
 			anyEmptyLeaf = i;
 			break;
 		}
@@ -369,12 +372,12 @@ void ExportModel(Bsp* map, unsigned int id, int ExportType)
 
 	if (anyEmptyLeaf < 0)
 	{
-		anyEmptyLeaf = tmpMap.create_leaf(CONTENTS_EMPTY);
+		anyEmptyLeaf = tmpMap->create_leaf(CONTENTS_EMPTY);
 	}
 
 	if (ExportType == 2)
 	{
-		tmpMap.leaves[0].nContents = CONTENTS_WATER;
+		tmpMap->leaves[0].nContents = CONTENTS_WATER;
 	}
 
 	tmpNode[0].iChildren[0] = ~sharedSolidLeaf;
@@ -382,15 +385,17 @@ void ExportModel(Bsp* map, unsigned int id, int ExportType)
 	tmpNode[1].iChildren[0] = ~sharedSolidLeaf;
 	tmpNode[1].iChildren[1] = ~anyEmptyLeaf;
 
-	tmpMap.lumps[LUMP_NODES] = (unsigned char*)&tmpNode[0];
-	tmpMap.header.lump[LUMP_NODES].nLength = sizeof(BSPNODE) * 2;
-	tmpMap.update_lump_pointers();
+	tmpMap->lumps[LUMP_NODES] = (unsigned char*)&tmpNode[0];
+	tmpMap->bsp_header.lump[LUMP_NODES].nLength = sizeof(BSPNODE) * 2;
+	tmpMap->update_lump_pointers();
 
-	tmpMap.models[0].iHeadnodes[0] = 1;
+	tmpMap->models[0].iHeadnodes[0] = 1;
 
 	createDir(GetWorkDir());
 	logf("Export model %d to %s\n", id, (GetWorkDir() + "model" + std::to_string(id) + ".bsp").c_str());
-	tmpMap.write(GetWorkDir() + "model" + std::to_string(id) + ".bsp");
+	tmpMap->write(GetWorkDir() + "model" + std::to_string(id) + ".bsp");
+
+	delete tmpMap;
 }
 
 void Gui::draw3dContextMenus() {
@@ -462,7 +467,7 @@ void Gui::draw3dContextMenus() {
 				app->deleteEnt();
 			}
 			ImGui::Separator();
-			if (app->pickInfo.modelIdx > 0) {
+			if (map && app->pickInfo.modelIdx > 0) {
 				BSPMODEL& model = map->models[app->pickInfo.modelIdx];
 
 				if (ImGui::BeginMenu("Create Hull", !app->invalidSolid && app->isTransformableSolid)) {
@@ -672,7 +677,7 @@ bool ExportWad(Bsp* map)
 	bool retval = true;
 	if (map->textureCount > 0)
 	{
-		Wad* tmpWad = new Wad(map->path);
+		Wad* tmpWad = new Wad(map->bsp_path);
 		std::vector<WADTEX*> tmpWadTex;
 		for (unsigned int i = 0; i < map->textureCount; i++) {
 			int oldOffset = ((int*)map->textures)[i + 1];
@@ -685,7 +690,7 @@ bool ExportWad(Bsp* map)
 		if (tmpWadTex.size() > 0)
 		{
 			createDir(GetWorkDir());
-			tmpWad->write(GetWorkDir() + map->name + ".wad", &tmpWadTex[0], tmpWadTex.size());
+			tmpWad->write(GetWorkDir() + map->bsp_name + ".wad", &tmpWadTex[0], tmpWadTex.size());
 		}
 		else
 		{
@@ -709,17 +714,17 @@ bool ExportWad(Bsp* map)
 
 void ImportWad(Bsp* map, Renderer* app, std::string path)
 {
-	Wad tmpWad = Wad(path);
+	Wad * tmpWad = new Wad(path);
 
-	if (!tmpWad.readInfo())
+	if (!tmpWad->readInfo())
 	{
 		logf("Parsing wad file failed!\n");
 	}
 	else
 	{
-		for (int i = 0; i < tmpWad.numTex; i++)
+		for (int i = 0; i < tmpWad->numTex; i++)
 		{
-			WADTEX* wadTex = tmpWad.readTexture(i);
+			WADTEX* wadTex = tmpWad->readTexture(i);
 			int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 
 			COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
@@ -740,6 +745,8 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 			app->mapRenderers[i]->reloadTextures();
 		}
 	}
+
+	delete tmpWad;
 }
 
 
@@ -792,7 +799,7 @@ void Gui::drawMenuBar() {
 			{
 				map->update_ent_lump();
 				map->update_lump_pointers();
-				map->write(map->path);
+				map->write(map->bsp_path);
 			}
 		}
 
@@ -822,13 +829,13 @@ void Gui::drawMenuBar() {
 			if (ImGui::MenuItem("Entity file", NULL)) {
 				if (map)
 				{
-					logf("Export entities: %s%s\n", GetWorkDir().c_str(), (map->name + ".ent").c_str());
+					logf("Export entities: %s%s\n", GetWorkDir().c_str(), (map->bsp_name + ".ent").c_str());
 					createDir(GetWorkDir());
-					std::ofstream entFile(GetWorkDir() + (map->name + ".ent"), std::ios::trunc);
+					std::ofstream entFile(GetWorkDir() + (map->bsp_name + ".ent"), std::ios::trunc);
 					map->update_ent_lump();
-					if (map->header.lump[LUMP_ENTITIES].nLength > 0)
+					if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
 					{
-						std::string entities = std::string(map->lumps[LUMP_ENTITIES], map->lumps[LUMP_ENTITIES] + map->header.lump[LUMP_ENTITIES].nLength - 1);
+						std::string entities = std::string(map->lumps[LUMP_ENTITIES], map->lumps[LUMP_ENTITIES] + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 						entFile.write(entities.c_str(), entities.size());
 					}
 				}
@@ -840,7 +847,7 @@ void Gui::drawMenuBar() {
 			if (ImGui::MenuItem("Embedded textures (.wad)", NULL)) {
 				if (map)
 				{
-					logf("Export wad: %s%s\n", GetWorkDir().c_str(), (map->name + ".wad").c_str());
+					logf("Export wad: %s%s\n", GetWorkDir().c_str(), (map->bsp_name + ".wad").c_str());
 					if (ExportWad(map))
 					{
 						logf("Remove all embedded textures\n");
@@ -848,9 +855,9 @@ void Gui::drawMenuBar() {
 						if (map->ents.size())
 						{
 							std::string wadstr = map->ents[0]->keyvalues["wad"];
-							if (wadstr.find(map->name + ".wad" + ";") == std::string::npos)
+							if (wadstr.find(map->bsp_name + ".wad" + ";") == std::string::npos)
 							{
-								map->ents[0]->keyvalues["wad"] += map->name + ".wad" + ";";
+								map->ents[0]->keyvalues["wad"] += map->bsp_name + ".wad" + ";";
 							}
 						}
 					}
@@ -881,7 +888,7 @@ void Gui::drawMenuBar() {
 			if (ImGui::BeginMenu(".bsp MODEL with true collision")) {
 				if (map)
 				{
-					if (ImGui::BeginMenu((std::string("Map ") + map->name + ".bsp").c_str())) {
+					if (ImGui::BeginMenu((std::string("Map ") + map->bsp_name + ".bsp").c_str())) {
 						for (unsigned int i = 0; i < map->modelCount; i++)
 						{
 							if (ImGui::MenuItem(("Export Model" + std::to_string(i) + ".bsp").c_str(), NULL, app->pickInfo.modelIdx == i))
@@ -907,11 +914,11 @@ void Gui::drawMenuBar() {
 			if (ImGui::MenuItem("Entity file", NULL)) {
 				if (map)
 				{
-					logf("Import entities from: %s%s\n", GetWorkDir().c_str(), (map->name + ".ent").c_str());
-					if (fileExists(GetWorkDir() + (map->name + ".ent")))
+					logf("Import entities from: %s%s\n", GetWorkDir().c_str(), (map->bsp_name + ".ent").c_str());
+					if (fileExists(GetWorkDir() + (map->bsp_name + ".ent")))
 					{
 						int len;
-						char* newlump = loadFile(GetWorkDir() + (map->name + ".ent"), len);
+						char* newlump = loadFile(GetWorkDir() + (map->bsp_name + ".ent"), len);
 						map->replace_lump(LUMP_ENTITIES, newlump, len);
 						map->load_ents();
 						for (int i = 0; i < app->mapRenderers.size(); i++) {
@@ -937,7 +944,7 @@ void Gui::drawMenuBar() {
 				if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 					ImGui::BeginTooltip();
 					char embtextooltip[256];
-					snprintf(embtextooltip, sizeof(embtextooltip), "Embeds textures from %s%s", GetWorkDir().c_str(), (map->name + ".wad").c_str());
+					snprintf(embtextooltip, sizeof(embtextooltip), "Embeds textures from %s%s", GetWorkDir().c_str(), (map->bsp_name + ".wad").c_str());
 					ImGui::TextUnformatted(embtextooltip);
 					ImGui::EndTooltip();
 				}
@@ -953,8 +960,8 @@ void Gui::drawMenuBar() {
 			}
 			else
 			{
-				std::string mapPath = g_settings.gamedir + "/svencoop_addon/maps/" + map->name + ".bsp";
-				std::string entPath = g_settings.gamedir + "/svencoop_addon/scripts/maps/bspguy/maps/" + map->name + ".ent";
+				std::string mapPath = g_settings.gamedir + "/svencoop_addon/maps/" + map->bsp_name + ".bsp";
+				std::string entPath = g_settings.gamedir + "/svencoop_addon/scripts/maps/bspguy/maps/" + map->bsp_name + ".ent";
 
 				map->update_ent_lump(true); // strip nodes before writing (to skip slow node graph generation)
 				map->write(mapPath);
@@ -963,7 +970,7 @@ void Gui::drawMenuBar() {
 				std::ofstream entFile(entPath, std::ios::trunc);
 				if (entFile.is_open()) {
 					logf("Writing %s\n", entPath.c_str());
-					entFile.write((const char*)map->lumps[LUMP_ENTITIES], map->header.lump[LUMP_ENTITIES].nLength - 1);
+					entFile.write((const char*)map->lumps[LUMP_ENTITIES], map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 				}
 				else {
 					logf("Failed to open ent file for writing:\n%s\n", entPath.c_str());
@@ -984,7 +991,7 @@ void Gui::drawMenuBar() {
 		if (ImGui::MenuItem("Validate")) {
 			if (map)
 			{
-				logf("Validating %s\n", map->name.c_str());
+				logf("Validating %s\n", map->bsp_name.c_str());
 				map->validate();
 			}
 		}
@@ -1081,14 +1088,14 @@ void Gui::drawMenuBar() {
 
 
 		if (ImGui::MenuItem("Clean", 0, false, !app->isLoading && map)) {
-			CleanMapCommand* command = new CleanMapCommand("Clean " + map->name, app->getSelectedMapId(), app->undoLumpState);
+			CleanMapCommand* command = new CleanMapCommand("Clean " + map->bsp_name, app->getSelectedMapId(), app->undoLumpState);
 			g_app->saveLumpState(map, 0xffffffff, false);
 			command->execute();
 			app->pushUndoCommand(command);
 		}
 
 		if (ImGui::MenuItem("Optimize", 0, false, !app->isLoading && map)) {
-			OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->name, app->getSelectedMapId(), app->undoLumpState);
+			OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->bsp_name, app->getSelectedMapId(), app->undoLumpState);
 			g_app->saveLumpState(map, 0xffffffff, false);
 			command->execute();
 			app->pushUndoCommand(command);
@@ -1106,7 +1113,7 @@ void Gui::drawMenuBar() {
 					map->delete_hull(i, -1);
 					map->getBspRender()->reloadClipnodes();
 					//	app->mapRenderers[k]->reloadClipnodes();
-					logf("Deleted hull %d in map %s\n", i, map->name.c_str());
+					logf("Deleted hull %d in map %s\n", i, map->bsp_name.c_str());
 					//}
 					checkValidHulls();
 				}
@@ -1126,7 +1133,7 @@ void Gui::drawMenuBar() {
 							map->delete_hull(i, k);
 							map->getBspRender()->reloadClipnodes();
 							//	app->mapRenderers[j]->reloadClipnodes();
-							logf("Redirected hull %d to hull %d in map %s\n", i, k, map->name.c_str());
+							logf("Redirected hull %d to hull %d in map %s\n", i, k, map->bsp_name.c_str());
 							//}
 							checkValidHulls();
 						}
@@ -1424,7 +1431,7 @@ void Gui::drawStatusMessage() {
 			case 4: ImGui::Text("Loading |"); break;
 			case 5: ImGui::Text("Loading /"); break;
 			case 6: ImGui::Text("Loading -"); break;
-			case 7: ImGui::Text("Loading \\"); break;
+			case 7: ImGui::Text("Loading |"); break;
 			default:  break;
 			}
 			ImGui::PopFont();
@@ -1459,7 +1466,7 @@ void Gui::drawDebugWidget() {
 		{
 			if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
 			{
-				ImGui::Text("Name: %s", map->name.c_str());
+				ImGui::Text("Name: %s", map->bsp_name.c_str());
 			}
 
 			if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
@@ -2590,12 +2597,30 @@ void Gui::loadFonts() {
 	memcpy(largeFontData, robotomedium, sizeof(robotomedium));
 	memcpy(consoleFontData, robotomono, sizeof(robotomono));
 	memcpy(consoleFontLargeData, robotomono, sizeof(robotomono));
+	
+	ImFontConfig config;
+
+	config.SizePixels = fontSize * 2.0f;
+	config.OversampleH = 3;
+	config.OversampleV = 1;
+	config.RasterizerMultiply = 1.5f;
+	config.PixelSnapH = true;
 
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	smallFont = io.Fonts->AddFontFromMemoryTTF((void*)smallFontData, sizeof(robotomedium), fontSize);
-	largeFont = io.Fonts->AddFontFromMemoryTTF((void*)largeFontData, sizeof(robotomedium), fontSize * 1.1f);
-	consoleFont = io.Fonts->AddFontFromMemoryTTF((void*)consoleFontData, sizeof(robotomono), fontSize);
-	consoleFontLarge = io.Fonts->AddFontFromMemoryTTF((void*)consoleFontLargeData, sizeof(robotomono), fontSize * 1.1f);
+	
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config);
+
+	config.MergeMode = true;
+
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, io.Fonts->GetGlyphRangesCyrillic());
+
+	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, io.Fonts->GetGlyphRangesDefault());
+
+
+	smallFont = io.Fonts->AddFontFromMemoryTTF((void*)smallFontData, sizeof(robotomedium), fontSize, &config);
+	largeFont = io.Fonts->AddFontFromMemoryTTF((void*)largeFontData, sizeof(robotomedium), fontSize * 1.1f, &config);
+	consoleFont = io.Fonts->AddFontFromMemoryTTF((void*)consoleFontData, sizeof(robotomono), fontSize, &config);
+	consoleFontLarge = io.Fonts->AddFontFromMemoryTTF((void*)consoleFontLargeData, sizeof(robotomono), fontSize * 1.1f, &config);
 }
 
 void Gui::drawLog() {
@@ -3112,7 +3137,7 @@ void Gui::drawMergeWindow() {
 			else
 			{
 				for (int i = 0; i < maps.size(); i++) {
-					logf("Preprocessing %s:\n", maps[i]->name.c_str());
+					logf("Preprocessing %s:\n", maps[i]->bsp_name.c_str());
 					if (DeleteUnusedInfo)
 					{
 						logf("    Deleting unused data...\n");
@@ -3239,7 +3264,7 @@ void Gui::drawLimits() {
 	ImGui::SetNextWindowSize(ImVec2(550.f, 630.f), ImGuiCond_FirstUseEver);
 
 	Bsp* map = app->getSelectedMap();
-	std::string title = map ? "Limits - " + map->name : "Limits";
+	std::string title = map ? "Limits - " + map->bsp_name : "Limits";
 
 	if (ImGui::Begin((title + "###limits").c_str(), &showLimitsWidget)) {
 
@@ -3459,7 +3484,7 @@ void Gui::drawEntityReport() {
 
 	Bsp* map = app->getSelectedMap();
 
-	std::string title = map ? "Entity Report - " + map->name : "Entity Report";
+	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
 
 	if (ImGui::Begin((title + "###entreport").c_str(), &showEntityReport)) {
 		if (!map) {
@@ -4022,7 +4047,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 	if (!faces_to_export.size())
 	{
 		logf("Import all %u faces...", map->faceCount);
-		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
+		for (unsigned int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
 		{
 			faces_to_export.push_back(faceIdx);
 		}
@@ -4112,7 +4137,7 @@ void ExportOneBigLightmap(Bsp* map)
 	else
 	{
 		logf("Export ALL %u faces.\n", map->faceCount);
-		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
+		for (unsigned int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
 		{
 			faces_to_export.push_back(faceIdx);
 		}

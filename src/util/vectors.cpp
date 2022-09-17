@@ -178,14 +178,14 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up) {
 
 vec3 vec3::normalize(float length)
 {
-	if (x == 0 && y == 0 && z == 0)
+	if (fabs(x) < EPSILON && fabs(y) < EPSILON && fabs(z) < EPSILON)
 		return vec3(0, 0, 0);
 	float d = length / sqrt((x * x) + (y * y) + (z * z));
 	return vec3(x * d, y * d, z * d);
 }
 
 vec3 vec3::invert() {
-	return vec3(x != 0 ? -x : x, y != 0 ? -y : y, z != 0 ? -z : z);
+	return vec3(fabs(x) >= EPSILON ? -x : x, fabs(y) >= EPSILON ? -y : y, fabs(z) >= EPSILON ? -z : z);
 }
 
 float vec3::length()
@@ -193,7 +193,7 @@ float vec3::length()
 	return sqrt((x * x) + (y * y) + (z * z));
 }
 
-std::string vec3::toKeyvalueString(bool truncate, const std::string & suffix_x, const std::string& suffix_y, const std::string& suffix_z) {
+std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z) {
 	std::string parts[3] = { std::to_string(x) ,std::to_string(y), std::to_string(z) };
 
 	// remove trailing zeros to save some space
@@ -230,7 +230,7 @@ bool operator==(vec2 v1, vec2 v2)
 
 bool operator!=(vec2 v1, vec2 v2)
 {
-	return v1.x != v2.x || v1.y != v2.y;
+	return fabs(v1.x - v2.x) >= EPSILON || fabs(v1.y - v2.y) >= EPSILON;
 }
 
 vec2 operator-(vec2 v1, vec2 v2)
@@ -343,7 +343,7 @@ float vec2::length()
 }
 
 vec2 vec2::normalize(float length) {
-	if (x == 0 && y == 0)
+	if (fabs(x) < EPSILON && fabs(y) < EPSILON)
 		return vec2(0, 0);
 	float d = length / sqrt((x * x) + (y * y));
 	return vec2(x * d, y * d);
@@ -368,7 +368,7 @@ bool operator==(const vec4& v1, const vec4& v2)
 
 bool operator!=(const vec4& v1, const vec4& v2)
 {
-	return v1.x != v2.x || v1.y != v2.y || v1.z != v2.z || v1.w != v2.w;
+	return fabs(v1.x != v2.x) >= EPSILON || fabs(v1.y != v2.y) >= EPSILON || fabs(v1.z != v2.z) >= EPSILON || fabs(v1.w != v2.w) >= EPSILON;
 }
 
 

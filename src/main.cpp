@@ -110,7 +110,7 @@ void hideConsoleWindow() {
 #endif
 }
 
-void start_viewer(const std::string & map) {
+void start_viewer(const std::string& map) {
 	if (map.size() > 0 && !fileExists(map)) {
 		logf("ERROR: File not found: %s", map.c_str());
 		return;
@@ -144,13 +144,13 @@ int test() {
 
 	g_verbose = true;
 	for (int i = 0; i < maps.size(); i++) {
-		if (!maps[i]->valid) {
+		if (!maps[i]->bsp_valid) {
 			return 1;
 		}
 		if (!maps[i]->validate()) {
 			logf("");
 		}
-		logf("Preprocess %s\n", maps[i]->name.c_str());
+		logf("Preprocess %s\n", maps[i]->bsp_name.c_str());
 		maps[i]->delete_hull(2, 1);
 		//removed.add(maps[i]->delete_unused_hulls());
 		removed.add(maps[i]->remove_unused_model_structures());
@@ -187,7 +187,7 @@ int merge_maps(CommandLine& cli) {
 
 	for (int i = 0; i < input_maps.size(); i++) {
 		Bsp* map = new Bsp(input_maps[i]);
-		if (!map->valid)
+		if (!map->bsp_valid)
 		{
 			delete map;
 			return 1;
@@ -196,7 +196,7 @@ int merge_maps(CommandLine& cli) {
 	}
 
 	for (int i = 0; i < maps.size(); i++) {
-		logf("Preprocessing %s:\n", maps[i]->name.c_str());
+		logf("Preprocessing %s:\n", maps[i]->bsp_name.c_str());
 
 		logf("    Deleting unused data...\n");
 		STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
@@ -237,304 +237,297 @@ int merge_maps(CommandLine& cli) {
 }
 
 int print_info(CommandLine& cli) {
-	Bsp map = Bsp(cli.bspfile);
-	if (!map.valid)
+	Bsp* map = new Bsp(cli.bspfile);
+	if (map->bsp_valid)
 	{
-		return 1;
+		bool limitMode = false;
+		int listLength = 10;
+		int sortMode = SORT_CLIPNODES;
+
+		if (cli.hasOption("-limit")) {
+			std::string limitName = cli.getOption("-limit");
+
+			limitMode = true;
+			if (limitName == "clipnodes") {
+				sortMode = SORT_CLIPNODES;
+			}
+			else if (limitName == "nodes") {
+				sortMode = SORT_NODES;
+			}
+			else if (limitName == "faces") {
+				sortMode = SORT_FACES;
+			}
+			else if (limitName == "vertexes") {
+				sortMode = SORT_VERTS;
+			}
+			else {
+				logf("ERROR: invalid limit name: %s\n", limitName.c_str());
+				return 0;
+			}
+		}
+		if (cli.hasOption("-all")) {
+			listLength = 32768; // should be more than enough
+		}
+
+		map->print_info(limitMode, listLength, sortMode);
+		return 0;
 	}
-
-	bool limitMode = false;
-	int listLength = 10;
-	int sortMode = SORT_CLIPNODES;
-
-	if (cli.hasOption("-limit")) {
-		std::string limitName = cli.getOption("-limit");
-
-		limitMode = true;
-		if (limitName == "clipnodes") {
-			sortMode = SORT_CLIPNODES;
-		}
-		else if (limitName == "nodes") {
-			sortMode = SORT_NODES;
-		}
-		else if (limitName == "faces") {
-			sortMode = SORT_FACES;
-		}
-		else if (limitName == "vertexes") {
-			sortMode = SORT_VERTS;
-		}
-		else {
-			logf("ERROR: invalid limit name: %s\n", limitName.c_str());
-			return 0;
-		}
-	}
-	if (cli.hasOption("-all")) {
-		listLength = 32768; // should be more than enough
-	}
-
-	map.print_info(limitMode, listLength, sortMode);
-	return 0;
+	return 1;
 }
 
 int noclip(CommandLine& cli) {
-	Bsp map = Bsp(cli.bspfile);
-	if (!map.valid)
+	Bsp* map = new Bsp(cli.bspfile);
+	if (map->bsp_valid)
 	{
-		return 1;
-	}
+		int model = -1;
+		int hull = -1;
+		int redirect = 0;
 
-	int model = -1;
-	int hull = -1;
-	int redirect = 0;
+		if (cli.hasOption("-hull")) {
+			hull = cli.getOptionInt("-hull");
 
-	if (cli.hasOption("-hull")) {
-		hull = cli.getOptionInt("-hull");
-
-		if (hull < 0 || hull >= MAX_MAP_HULLS) {
-			logf("ERROR: hull number must be 0-3\n");
-			return 1;
-		}
-	}
-
-	if (cli.hasOption("-redirect")) {
-		if (!cli.hasOption("-hull")) {
-			logf("ERROR: -redirect must be used with -hull\n");
-			return 1;
-		}
-		redirect = cli.getOptionInt("-redirect");
-
-		if (redirect < 1 || redirect >= MAX_MAP_HULLS) {
-			logf("ERROR: redirect hull number must be 1-3\n");
-			return 1;
-		}
-		if (redirect == hull) {
-			logf("ERROR: Can't redirect hull to itself\n");
-			return 1;
-		}
-	}
-
-	STRUCTCOUNT removed = map.remove_unused_model_structures();
-
-	if (!removed.allZero()) {
-		logf("Deleting unused data:\n");
-		removed.print_delete_stats(1);
-		g_progress.clear();
-		logf("\n");
-	}
-
-	if (cli.hasOption("-model")) {
-		model = cli.getOptionInt("-model");
-
-		if (model < 0 || (unsigned int)model >= map.modelCount) {
-			logf("ERROR: model number must be 0 - %d\n", map.modelCount);
-			return 1;
-		}
-
-		if (hull != -1) {
-			if (redirect)
-				logf("Redirecting HULL %d to HULL %d in model %d:\n", hull, redirect, model);
-			else
-				logf("Deleting HULL %d from model %d:\n", hull, model);
-
-			map.delete_hull(hull, model, redirect);
-		}
-		else {
-			logf("Deleting HULL 1, 2, and 3 from model %d:\n", model);
-			for (int i = 1; i < MAX_MAP_HULLS; i++) {
-				map.delete_hull(i, model, redirect);
+			if (hull < 0 || hull >= MAX_MAP_HULLS) {
+				logf("ERROR: hull number must be 0-3\n");
+				return 1;
 			}
 		}
-	}
-	else {
-		if (hull == 0) {
-			logf("HULL 0 can't be stripped globally. The entire map would be invisible!\n");
-			return 0;
-		}
 
-		if (hull != -1) {
-			if (redirect)
-				logf("Redirecting HULL %d to HULL %d:\n", hull, redirect);
-			else
-				logf("Deleting HULL %d:\n", hull);
-			map.delete_hull(hull, redirect);
-		}
-		else {
-			logf("Deleting HULL 1, 2, and 3:\n", hull);
-			for (int i = 1; i < MAX_MAP_HULLS; i++) {
-				map.delete_hull(i, redirect);
+		if (cli.hasOption("-redirect")) {
+			if (!cli.hasOption("-hull")) {
+				logf("ERROR: -redirect must be used with -hull\n");
+				return 1;
+			}
+			redirect = cli.getOptionInt("-redirect");
+
+			if (redirect < 1 || redirect >= MAX_MAP_HULLS) {
+				logf("ERROR: redirect hull number must be 1-3\n");
+				return 1;
+			}
+			if (redirect == hull) {
+				logf("ERROR: Can't redirect hull to itself\n");
+				return 1;
 			}
 		}
-	}
 
-	removed = map.remove_unused_model_structures();
+		STRUCTCOUNT removed = map->remove_unused_model_structures();
 
-	if (!removed.allZero())
-		removed.print_delete_stats(1);
-	else if (redirect == 0)
-		logf("    Model hull(s) was previously deleted or redirected.");
-	logf("\n");
-
-	if (map.isValid()) map.write(cli.hasOption("-o") ? cli.getOption("-o") : map.path);
-	logf("\n");
-
-	map.print_info(false, 0, 0);
-
-	return 0;
-}
-
-int simplify(CommandLine& cli) {
-	Bsp map = Bsp(cli.bspfile);
-	if (!map.valid)
-	{
-		return 1;
-	}
-
-	int hull = 0;
-
-	if (!cli.hasOption("-model")) {
-		logf("ERROR: -model is required\n");
-		return 1;
-	}
-
-	if (cli.hasOption("-hull")) {
-		hull = cli.getOptionInt("-hull");
-
-		if (hull < 1 || hull >= MAX_MAP_HULLS) {
-			logf("ERROR: hull number must be 1-3\n");
-			return 1;
+		if (!removed.allZero()) {
+			logf("Deleting unused data:\n");
+			removed.print_delete_stats(1);
+			g_progress.clear();
+			logf("\n");
 		}
-	}
 
-	int modelIdx = cli.getOptionInt("-model");
+		if (cli.hasOption("-model")) {
+			model = cli.getOptionInt("-model");
 
-	STRUCTCOUNT removed = map.remove_unused_model_structures();
+			if (model < 0 || (unsigned int)model >= map->modelCount) {
+				logf("ERROR: model number must be 0 - %d\n", map->modelCount);
+				return 1;
+			}
 
-	if (!removed.allZero()) {
-		logf("Deleting unused data:\n");
-		removed.print_delete_stats(1);
-		g_progress.clear();
-		logf("\n");
-	}
+			if (hull != -1) {
+				if (redirect)
+					logf("Redirecting HULL %d to HULL %d in model %d:\n", hull, redirect, model);
+				else
+					logf("Deleting HULL %d from model %d:\n", hull, model);
 
-	STRUCTCOUNT oldCounts(&map);
+				map->delete_hull(hull, model, redirect);
+			}
+			else {
+				logf("Deleting HULL 1, 2, and 3 from model %d:\n", model);
+				for (int i = 1; i < MAX_MAP_HULLS; i++) {
+					map->delete_hull(i, model, redirect);
+				}
+			}
+		}
+		else {
+			if (hull == 0) {
+				logf("HULL 0 can't be stripped globally. The entire map would be invisible!\n");
+				return 0;
+			}
 
-	if (modelIdx < 0 || (unsigned int)modelIdx >= map.modelCount) {
-		logf("ERROR: model number must be 0 - %d\n", map.modelCount);
-		return 1;
-	}
+			if (hull != -1) {
+				if (redirect)
+					logf("Redirecting HULL %d to HULL %d:\n", hull, redirect);
+				else
+					logf("Deleting HULL %d:\n", hull);
+				map->delete_hull(hull, redirect);
+			}
+			else {
+				logf("Deleting HULL 1, 2, and 3:\n", hull);
+				for (int i = 1; i < MAX_MAP_HULLS; i++) {
+					map->delete_hull(i, redirect);
+				}
+			}
+		}
 
-	if (hull != 0) {
-		logf("Simplifying HULL %d in model %d:\n", hull, modelIdx);
-	}
-	else {
-		logf("Simplifying collision hulls in model %d:\n", modelIdx);
-	}
-
-	map.simplify_model_collision(modelIdx, hull);
-
-	map.remove_unused_model_structures();
-
-	STRUCTCOUNT newCounts(&map);
-
-	STRUCTCOUNT change = oldCounts;
-	change.sub(newCounts);
-
-	if (!change.allZero())
-		change.print_delete_stats(1);
-
-	logf("\n");
-
-	if (map.isValid()) map.write(cli.hasOption("-o") ? cli.getOption("-o") : map.path);
-	logf("\n");
-
-	map.print_info(false, 0, 0);
-
-	return 0;
-}
-
-int deleteCmd(CommandLine& cli) {
-	Bsp map = Bsp(cli.bspfile);
-	if (!map.valid)
-	{
-		return 1;
-	}
-
-	STRUCTCOUNT removed = map.remove_unused_model_structures();
-
-	if (!removed.allZero()) {
-		logf("Deleting unused data:\n");
-		removed.print_delete_stats(1);
-		g_progress.clear();
-		logf("\n");
-	}
-
-	if (cli.hasOption("-model")) {
-		int modelIdx = cli.getOptionInt("-model");
-
-		logf("Deleting model %d:\n", modelIdx);
-		map.delete_model(modelIdx);
-		map.update_ent_lump();
-		removed = map.remove_unused_model_structures();
+		removed = map->remove_unused_model_structures();
 
 		if (!removed.allZero())
 			removed.print_delete_stats(1);
+		else if (redirect == 0)
+			logf("    Model hull(s) was previously deleted or redirected.");
 		logf("\n");
+
+		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		logf("\n");
+
+		map->print_info(false, 0, 0);
+		return 0;
 	}
+	return 1;
+}
 
-	if (map.isValid()) map.write(cli.hasOption("-o") ? cli.getOption("-o") : map.path);
-	logf("\n");
+int simplify(CommandLine& cli) {
+	Bsp* map = new Bsp(cli.bspfile);
+	if (map->bsp_valid)
+	{
+		int hull = 0;
 
-	map.print_info(false, 0, 0);
-	return 0;
+		if (!cli.hasOption("-model")) {
+			logf("ERROR: -model is required\n");
+			return 1;
+		}
+
+		if (cli.hasOption("-hull")) {
+			hull = cli.getOptionInt("-hull");
+
+			if (hull < 1 || hull >= MAX_MAP_HULLS) {
+				logf("ERROR: hull number must be 1-3\n");
+				return 1;
+			}
+		}
+
+		int modelIdx = cli.getOptionInt("-model");
+
+		STRUCTCOUNT removed = map->remove_unused_model_structures();
+
+		if (!removed.allZero()) {
+			logf("Deleting unused data:\n");
+			removed.print_delete_stats(1);
+			g_progress.clear();
+			logf("\n");
+		}
+
+		STRUCTCOUNT oldCounts(map);
+
+		if (modelIdx < 0 || (unsigned int)modelIdx >= map->modelCount) {
+			logf("ERROR: model number must be 0 - %d\n", map->modelCount);
+			return 1;
+		}
+
+		if (hull != 0) {
+			logf("Simplifying HULL %d in model %d:\n", hull, modelIdx);
+		}
+		else {
+			logf("Simplifying collision hulls in model %d:\n", modelIdx);
+		}
+
+		map->simplify_model_collision(modelIdx, hull);
+
+		map->remove_unused_model_structures();
+
+		STRUCTCOUNT newCounts(map);
+
+		STRUCTCOUNT change = oldCounts;
+		change.sub(newCounts);
+
+		if (!change.allZero())
+			change.print_delete_stats(1);
+
+		logf("\n");
+
+		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		logf("\n");
+
+		map->print_info(false, 0, 0);
+
+		return 0;
+	}
+	return 1;
+}
+
+int deleteCmd(CommandLine& cli) {
+	Bsp* map = new Bsp(cli.bspfile);
+	if (map->bsp_valid)
+	{
+		STRUCTCOUNT removed = map->remove_unused_model_structures();
+
+		if (!removed.allZero()) {
+			logf("Deleting unused data:\n");
+			removed.print_delete_stats(1);
+			g_progress.clear();
+			logf("\n");
+		}
+
+		if (cli.hasOption("-model")) {
+			int modelIdx = cli.getOptionInt("-model");
+
+			logf("Deleting model %d:\n", modelIdx);
+			map->delete_model(modelIdx);
+			map->update_ent_lump();
+			removed = map->remove_unused_model_structures();
+
+			if (!removed.allZero())
+				removed.print_delete_stats(1);
+			logf("\n");
+		}
+
+		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		logf("\n");
+
+		map->print_info(false, 0, 0);
+		return 0;
+	}
+	return 1;
 }
 
 int transform(CommandLine& cli) {
-	Bsp map = Bsp(cli.bspfile);
-	if (!map.valid)
+	Bsp* map = new Bsp(cli.bspfile);
+	if (map->bsp_valid)
 	{
-		return 1;
+		vec3 move;
+
+		if (cli.hasOptionVector("-move")) {
+			move = cli.getOptionVector("-move");
+
+			logf("Applying offset (%.2f, %.2f, %.2f)\n",
+				move.x, move.y, move.z);
+
+			map->move(move);
+		}
+		else {
+			logf("ERROR: at least one transformation option is required\n");
+			return 1;
+		}
+
+		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		logf("\n");
+
+		map->print_info(false, 0, 0);
+
+		return 0;
 	}
-
-	vec3 move;
-
-	if (cli.hasOptionVector("-move")) {
-		move = cli.getOptionVector("-move");
-
-		logf("Applying offset (%.2f, %.2f, %.2f)\n",
-			move.x, move.y, move.z);
-
-		map.move(move);
-	}
-	else {
-		logf("ERROR: at least one transformation option is required\n");
-		return 1;
-	}
-
-	if (map.isValid()) map.write(cli.hasOption("-o") ? cli.getOption("-o") : map.path);
-	logf("\n");
-
-	map.print_info(false, 0, 0);
-
-	return 0;
+	return 1;
 }
 
 int unembed(CommandLine& cli) {
-	Bsp map = Bsp(cli.bspfile);
-	if (!map.valid)
+	Bsp* map = new Bsp(cli.bspfile);
+	if (map->bsp_valid)
 	{
-		return 1;
+		int deleted = map->delete_embedded_textures();
+		logf("Deleted %d embedded textures\n", deleted);
+
+		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
+		logf("\n");
+
+		return 0;
 	}
-
-	int deleted = map.delete_embedded_textures();
-	logf("Deleted %d embedded textures\n", deleted);
-
-	if (map.isValid()) map.write(cli.hasOption("-o") ? cli.getOption("-o") : map.path);
-	logf("\n");
-
-	return 0;
+	return 1;
 }
 
-void print_help(const std::string & command) {
+void print_help(const std::string& command) {
 	if (command == "merge") {
 		logf(
 			"merge - Merges two or more maps together\n\n"

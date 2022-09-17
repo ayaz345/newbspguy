@@ -58,6 +58,8 @@ struct WADTEX
 	{
 		szName[0] = '\0';
 		data = NULL;
+		nWidth = nHeight = 0;
+		nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
 	}
 	WADTEX(BSPMIPTEX* tex)
 	{

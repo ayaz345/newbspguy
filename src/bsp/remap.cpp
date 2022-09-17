@@ -5,20 +5,20 @@
 STRUCTCOUNT::STRUCTCOUNT() = default;
 
 STRUCTCOUNT::STRUCTCOUNT(Bsp * map) {
-	planes = map->header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
-	texInfos = map->header.lump[LUMP_TEXINFO].nLength / sizeof(BSPTEXTUREINFO);
-	leaves = map->header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
-	nodes = map->header.lump[LUMP_NODES].nLength / sizeof(BSPNODE);
-	clipnodes = map->header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE);
-	verts = map->header.lump[LUMP_VERTICES].nLength / sizeof(vec3);
-	faces = map->header.lump[LUMP_FACES].nLength / sizeof(BSPFACE);
+	planes = map->bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
+	texInfos = map->bsp_header.lump[LUMP_TEXINFO].nLength / sizeof(BSPTEXTUREINFO);
+	leaves = map->bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
+	nodes = map->bsp_header.lump[LUMP_NODES].nLength / sizeof(BSPNODE);
+	clipnodes = map->bsp_header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE);
+	verts = map->bsp_header.lump[LUMP_VERTICES].nLength / sizeof(vec3);
+	faces = map->bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE);
 	textures = *((int*)(map->lumps[LUMP_TEXTURES]));
-	markSurfs = map->header.lump[LUMP_MARKSURFACES].nLength / sizeof(unsigned short);
-	surfEdges = map->header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
-	edges = map->header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE);
-	models = map->header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL);
-	lightdata = map->header.lump[LUMP_LIGHTING].nLength;
-	visdata = map->header.lump[LUMP_VISIBILITY].nLength;
+	markSurfs = map->bsp_header.lump[LUMP_MARKSURFACES].nLength / sizeof(unsigned short);
+	surfEdges = map->bsp_header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
+	edges = map->bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE);
+	models = map->bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL);
+	lightdata = map->bsp_header.lump[LUMP_LIGHTING].nLength;
+	visdata = map->bsp_header.lump[LUMP_VISIBILITY].nLength;
 }
 
 void STRUCTCOUNT::add(const STRUCTCOUNT & other) {
@@ -100,6 +100,8 @@ void STRUCTCOUNT::print_delete_stats(int indent) {
 }
 
 STRUCTUSAGE::STRUCTUSAGE(Bsp * map) : count(map) {
+	modelIdx = 0;
+
 	nodes = new bool[count.nodes];
 	clipnodes = new bool[count.clipnodes];
 	leaves = new bool[count.leaves];

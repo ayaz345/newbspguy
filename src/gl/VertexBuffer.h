@@ -41,7 +41,7 @@ struct VertexAttr
 	int normalized; // GL_TRUE/GL_FALSE Ex: unsigned char color values are normalized (0-255 = 0.0-1.0)
 	const char* varName;
 
-	VertexAttr() : handle(-1) {}
+	VertexAttr() : handle(-1) { numValues = valueType = handle = size = normalized = 0; varName = ""; }
 
 	VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName);
 };
