@@ -2100,14 +2100,14 @@ bool Bsp::load_lumps(std::string fpath)
 
 	fin.read((char*)&bsp_header.nVersion, sizeof(int));
 #ifndef NDEBUG
-	logf("Bsp version: %d\n", header.nVersion);
+	logf("Bsp version: %d\n", bsp_header.nVersion);
 #endif
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		fin.read((char*)&bsp_header.lump[i], sizeof(BSPLUMP));
 #ifndef NDEBUG
-		logf("Read lump id: %d. Len: %d. Offset %d.\n", i, header.lump[i].nLength, header.lump[i].nOffset);
+		logf("Read lump id: %d. Len: %d. Offset %d.\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
 #endif
 	}
 

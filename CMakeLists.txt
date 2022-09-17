@@ -94,6 +94,7 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} glfw ${CMAKE_DL_LIBS})
 
 add_definitions(-DGLEW_STATIC)
+add_definitions(-DNDEBUG)
 
 if(MSVC)
 	add_subdirectory(glfw)
