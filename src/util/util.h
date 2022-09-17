@@ -35,7 +35,7 @@ namespace fs = std::experimental::filesystem;
 
 #define PI 3.141592f
 
-#define EPSILON	(0.03125f) // 1/32 (to keep floating point happy -Carmack)
+const float EPSILON = (1.0f / 64.0f); // 1/64
 
 //#define __WINDOWS__
 
