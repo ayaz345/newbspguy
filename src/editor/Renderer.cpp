@@ -2915,6 +2915,7 @@ void Renderer::grabEnt() {
 		movingEnt = false;
 		return;
 	}
+	movingEnt = true;
 	Bsp* map = g_app->getSelectedMap();
 	vec3 mapOffset = map->getBspRender()->mapOffset;
 	vec3 localCamOrigin = cameraOrigin - mapOffset;
