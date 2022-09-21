@@ -1052,7 +1052,7 @@ void BspRenderer::refreshEnt(int entIdx) {
 			else if (ent->keyvalues["classname"] == "env_sprite")
 			{
 				// based at cs 1.6 gamedll
-				if (fabs(angles.y) >= EPSILON && fabs(angles.z) < EPSILON)
+				if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
 				{
 					renderEnts[entIdx].modelMat.rotateZ(-(angles.y * (PI / 180.0f)));
 					renderEnts[entIdx].modelMat.rotateY(0);

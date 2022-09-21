@@ -20,7 +20,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 			for (int x = 0; x < blocks[z][y].size(); x++) {
 				MAPBLOCK& block = blocks[z][y][x];
 
-				if (fabs(block.offset.x) >= EPSILON || fabs(block.offset.y) >= EPSILON || fabs(block.offset.z) >= EPSILON) {
+				if (abs(block.offset.x) >= EPSILON || abs(block.offset.y) >= EPSILON || abs(block.offset.z) >= EPSILON) {
 					logf("    Apply offset (%6.0f, %6.0f, %6.0f) to %s\n",
 						block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
 					block.map->move(block.offset);
@@ -1075,7 +1075,7 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB) {
 	for (unsigned int i = 0; i < mapB.planeCount; i++) {
 		bool isUnique = true;
 		for (unsigned int k = 0; k < mapA.planeCount; k++) {
-			if (fabs(mapB.planes[i].fDist - mapA.planes[k].fDist) < EPSILON 
+			if (abs(mapB.planes[i].fDist - mapA.planes[k].fDist) < EPSILON 
 				&& mapB.planes[i].nType == mapA.planes[k].nType 
 				&& mapB.planes[i].vNormal == mapA.planes[k].vNormal) {
 				isUnique = false;
@@ -1094,7 +1094,7 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB) {
 	size_t newLen = mergedPlanes.size() * sizeof(BSPPLANE);
 	size_t duplicates = (mapA.planeCount + mapB.planeCount) - mergedPlanes.size();
 
-	//logf("\nRemoved %d duplicate planes\n", duplicates);
+	logf("\nRemoved %u duplicate planes\n", duplicates);
 
 	unsigned char* newPlanes = new unsigned char[newLen];
 	memcpy(newPlanes, &mergedPlanes[0], newLen);
@@ -1177,7 +1177,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB) {
 		g_progress.tick();
 	}
 
-	int duplicates = newTexCount - (mapA.textureCount + mapB.textureCount);
+	size_t duplicates = newTexCount - (mapA.textureCount + mapB.textureCount);
 
 	unsigned int texHeaderSize = (unsigned int)((newTexCount + 1) * sizeof(int));
 	unsigned int newLen = (unsigned int)((mipTexWritePtr - newMipTexData) + texHeaderSize);
@@ -1193,6 +1193,10 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB) {
 	memcpy(newTextureData + texHeaderSize, newMipTexData, mipTexWritePtr - newMipTexData);
 
 	delete[] mipTexOffsets;
+
+
+	logf("\nRemoved %u duplicate textures\n", duplicates);
+
 	mapA.replace_lump(LUMP_TEXTURES, newTextureData, newLen);
 }
 
@@ -1231,8 +1235,8 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB) {
 		for (unsigned int k = 0; k < mapA.texinfoCount; k++) {
 			if (info.iMiptex == mapA.texinfos[k].iMiptex 
 				&& info.nFlags == mapA.texinfos[k].nFlags
-				&& fabs(info.shiftS - mapA.texinfos[k].shiftS) < EPSILON
-				&& fabs(info.shiftT - mapA.texinfos[k].shiftT) < EPSILON
+				&& abs(info.shiftS - mapA.texinfos[k].shiftS) < EPSILON
+				&& abs(info.shiftT - mapA.texinfos[k].shiftT) < EPSILON
 				&& info.vS == mapA.texinfos[k].vS
 				&& info.vT == mapA.texinfos[k].vT) {
 				texInfoRemap.push_back(k);
@@ -1253,6 +1257,8 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB) {
 
 	unsigned char* newTexinfoData = new unsigned char[newLen];
 	memcpy(newTexinfoData, &mergedInfo[0], newLen);
+
+	logf("\nRemoved %u duplicate tex infos\n", duplicates);
 
 	mapA.replace_lump(LUMP_TEXINFO, newTexinfoData, newLen);
 }

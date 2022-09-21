@@ -18,6 +18,7 @@
 // Read online: https://github.com/ocornut/imgui/tree/master/docs
 
 // CHANGELOG
+//  2021-12-21: Update SDL_RenderGeometryRaw() format to work with SDL 2.0.19.
 //  2021-12-03: Added support for large mesh (64K+ vertices), enable ImGuiBackendFlags_RendererHasVtxOffset flag.
 //  2021-10-06: Backup and restore modified ClipRect/Viewport.
 //  2021-09-21: Initial version.
@@ -41,7 +42,7 @@ struct ImGui_ImplSDLRenderer_Data
 {
     SDL_Renderer*   SDLRenderer;
     SDL_Texture*    FontTexture;
-    ImGui_ImplSDLRenderer_Data() { memset(this, 0, sizeof(*this)); }
+    ImGui_ImplSDLRenderer_Data() { memset((void*)this, 0, sizeof(*this)); }
 };
 
 // Backend data stored in io.BackendRendererUserData to allow support for multiple Dear ImGui contexts
@@ -174,7 +175,11 @@ void ImGui_ImplSDLRenderer_RenderDrawData(ImDrawData* draw_data)
 
                 const float* xy = (const float*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, pos));
                 const float* uv = (const float*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, uv));
-                const int* color = (const int*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, col));
+#if SDL_VERSION_ATLEAST(2,0,19)
+                const SDL_Color* color = (const SDL_Color*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, col)); // SDL 2.0.19+
+#else
+                const int* color = (const int*)((const char*)(vtx_buffer + pcmd->VtxOffset) + IM_OFFSETOF(ImDrawVert, col)); // SDL 2.0.17 and 2.0.18
+#endif
 
                 // Bind texture, Draw
 				SDL_Texture* tex = (SDL_Texture*)pcmd->GetTexID();
@@ -205,7 +210,8 @@ bool ImGui_ImplSDLRenderer_CreateFontsTexture()
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);   // Load as RGBA 32-bit (75% of the memory is wasted, but default font is so small) because it is more likely to be compatible with user's existing shaders. If your ImTextureId represent a higher-level concept than just a GL texture id, consider calling GetTexDataAsAlpha8() instead to save on GPU memory.
 
     // Upload texture to graphics system
-    bd->FontTexture = SDL_CreateTexture(bd->SDLRenderer, SDL_PIXELFORMAT_RGBA32, SDL_TEXTUREACCESS_STATIC, width, height);
+    // (Bilinear sampling is required by default. Set 'io.Fonts->Flags |= ImFontAtlasFlags_NoBakedLines' or 'style.AntiAliasedLinesUseTex = false' to allow point/nearest sampling)
+    bd->FontTexture = SDL_CreateTexture(bd->SDLRenderer, SDL_PIXELFORMAT_ABGR8888, SDL_TEXTUREACCESS_STATIC, width, height);
     if (bd->FontTexture == NULL)
     {
         SDL_Log("error creating texture");
@@ -213,6 +219,7 @@ bool ImGui_ImplSDLRenderer_CreateFontsTexture()
     }
     SDL_UpdateTexture(bd->FontTexture, NULL, pixels, 4 * width);
     SDL_SetTextureBlendMode(bd->FontTexture, SDL_BLENDMODE_BLEND);
+    SDL_SetTextureScaleMode(bd->FontTexture, SDL_ScaleModeLinear);
 
     // Store our identifier
     io.Fonts->SetTexID((ImTextureID)(intptr_t)bd->FontTexture);

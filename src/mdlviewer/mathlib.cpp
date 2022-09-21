@@ -15,6 +15,7 @@
 #pragma warning( disable : 4305 )
 
 #include "mathlib.h"
+#include <cmath>
 
 vec3_t vec3_origin = { 0,0,0 };
 
@@ -38,7 +39,7 @@ int VectorCompare(vec3_t v1, vec3_t v2)
 	int		i;
 
 	for (i = 0; i < 3; i++)
-		if (fabs(v1[i] - v2[i]) > mEQUAL_EPSILON)
+		if (abs(v1[i] - v2[i]) > mEQUAL_EPSILON)
 			return false;
 
 	return true;
@@ -101,7 +102,7 @@ vec_t VectorNormalize(vec3_t v)
 	int		i;
 	double	length;
 
-	if (fabs(v[1] - 0.000215956) < 0.0001)
+	if (abs(v[1] - 0.000215956) < 0.0001)
 		i = 1;
 
 	length = 0;

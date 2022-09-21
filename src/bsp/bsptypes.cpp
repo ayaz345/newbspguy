@@ -10,9 +10,9 @@ BSPEDGE::BSPEDGE(unsigned short v1, unsigned short v2) {
 }
 
 bool BSPPLANE::update(vec3 newNormal, float fdist) {
-	double fx = fabs(newNormal.x);
-	double fy = fabs(newNormal.y);
-	double fz = fabs(newNormal.z);
+	double fx = abs(newNormal.x);
+	double fy = abs(newNormal.y);
+	double fz = abs(newNormal.z);
 	int planeType = PLANE_ANYZ;
 	bool shouldFlip = false;
 	if (fx > 0.9999) {

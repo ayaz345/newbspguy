@@ -106,7 +106,6 @@ Bsp::Bsp(std::string fpath)
 	this->bsp_name = stripExt(basename(fpath));
 	bsp_valid = false;
 
-	bool exists = true;
 	if (!fileExists(fpath)) {
 		logf("ERROR: %s not found\n", fpath.c_str());
 		return;
@@ -354,7 +353,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 
 		for (int i = 0; i < nodePlanes.size(); i++) {
 			BSPPLANE& p = nodePlanes[i];
-			if (fabs(dotProduct(v, p.vNormal) - p.fDist) < EPSILON) {
+			if (abs(dotProduct(v, p.vNormal) - p.fDist) < EPSILON) {
 				hullVert.iPlanes.push_back(nodePlaneIndexes[i]);
 			}
 		}
@@ -388,6 +387,17 @@ void Bsp::getNodePlanes(int iNode, std::vector<int>& nodePlanes) {
 	for (int i = 0; i < 2; i++) {
 		if (node.iChildren[i] >= 0) {
 			getNodePlanes(node.iChildren[i], nodePlanes);
+		}
+	}
+}
+
+void Bsp::getClipNodePlanes(int iClipNode, std::vector<int>& nodePlanes) {
+	BSPCLIPNODE& node = clipnodes[iClipNode];
+	nodePlanes.push_back(node.iPlane);
+
+	for (int i = 0; i < 2; i++) {
+		if (node.iChildren[i] >= 0) {
+			getClipNodePlanes(node.iChildren[i], nodePlanes);
 		}
 	}
 }
@@ -596,8 +606,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		BSPPLANE testPlane;
 		bool expectedFlip = testPlane.update(planes[iPlane].vNormal, planes[iPlane].fDist);
 		bool flipped = newPlane.update(newPlane.vNormal, newPlane.fDist);
-		int frontChild = flipped ? 0 : 1;
-
+		
 		testPlane = newPlane;
 
 		// check that all verts are on one side of the plane.
@@ -683,8 +692,6 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 		memset(newLightmaps, 0, sizeof(LIGHTMAP) * faceCount);
 
 		for (int i = 0; i < (int)faceCount; i++) {
-			BSPFACE& face = faces[i];
-
 			int size[2];
 			GetFaceLightmapSize(this, i, size);
 
@@ -725,7 +732,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 				vec3 spawnori = parseVector(ents[i]->keyvalues["spawnorigin"]);
 
 				// entity not moved if destination is 0,0,0
-				if (fabs(spawnori.x) >= EPSILON || fabs(spawnori.y) >= EPSILON || fabs(spawnori.z) >= EPSILON) {
+				if (abs(spawnori.x) >= EPSILON || abs(spawnori.y) >= EPSILON || abs(spawnori.z) >= EPSILON) {
 					ents[i]->setOrAddKeyvalue("spawnorigin", (spawnori + offset).toKeyvalueString());
 				}
 			}
@@ -736,12 +743,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 
 	target.nMins += offset;
 	target.nMaxs += offset;
-	if (fabs(target.nMins.x) > MAX_MAP_COORD ||
-		fabs(target.nMins.y) > MAX_MAP_COORD ||
-		fabs(target.nMins.z) > MAX_MAP_COORD ||
-		fabs(target.nMaxs.x) > MAX_MAP_COORD ||
-		fabs(target.nMaxs.y) > MAX_MAP_COORD ||
-		fabs(target.nMaxs.z) > MAX_MAP_COORD) {
+	if (abs(target.nMins.x) > MAX_MAP_COORD ||
+		abs(target.nMins.y) > MAX_MAP_COORD ||
+		abs(target.nMins.z) > MAX_MAP_COORD ||
+		abs(target.nMaxs.x) > MAX_MAP_COORD ||
+		abs(target.nMaxs.y) > MAX_MAP_COORD ||
+		abs(target.nMaxs.z) > MAX_MAP_COORD) {
 		logf("\nWARNING: Model moved past safe world boundary!\n");
 	}
 
@@ -756,12 +763,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 
 		BSPNODE& node = nodes[i];
 
-		if (fabs((float)node.nMins[0] + offset.x) > MAX_MAP_COORD ||
-			fabs((float)node.nMaxs[0] + offset.x) > MAX_MAP_COORD ||
-			fabs((float)node.nMins[1] + offset.y) > MAX_MAP_COORD ||
-			fabs((float)node.nMaxs[1] + offset.y) > MAX_MAP_COORD ||
-			fabs((float)node.nMins[2] + offset.z) > MAX_MAP_COORD ||
-			fabs((float)node.nMaxs[2] + offset.z) > MAX_MAP_COORD) {
+		if (abs((float)node.nMins[0] + offset.x) > MAX_MAP_COORD ||
+			abs((float)node.nMaxs[0] + offset.x) > MAX_MAP_COORD ||
+			abs((float)node.nMins[1] + offset.y) > MAX_MAP_COORD ||
+			abs((float)node.nMaxs[1] + offset.y) > MAX_MAP_COORD ||
+			abs((float)node.nMins[2] + offset.z) > MAX_MAP_COORD ||
+			abs((float)node.nMaxs[2] + offset.z) > MAX_MAP_COORD) {
 			logf("\nWARNING: Bounding box for node moved past safe world boundary!\n");
 		}
 		node.nMins[0] += (short)offset.x;
@@ -779,12 +786,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 
 		BSPLEAF& leaf = leaves[i];
 
-		if (fabs((float)leaf.nMins[0] + offset.x) > MAX_MAP_COORD ||
-			fabs((float)leaf.nMaxs[0] + offset.x) > MAX_MAP_COORD ||
-			fabs((float)leaf.nMins[1] + offset.y) > MAX_MAP_COORD ||
-			fabs((float)leaf.nMaxs[1] + offset.y) > MAX_MAP_COORD ||
-			fabs((float)leaf.nMins[2] + offset.z) > MAX_MAP_COORD ||
-			fabs((float)leaf.nMaxs[2] + offset.z) > MAX_MAP_COORD) {
+		if (abs((float)leaf.nMins[0] + offset.x) > MAX_MAP_COORD ||
+			abs((float)leaf.nMaxs[0] + offset.x) > MAX_MAP_COORD ||
+			abs((float)leaf.nMins[1] + offset.y) > MAX_MAP_COORD ||
+			abs((float)leaf.nMaxs[1] + offset.y) > MAX_MAP_COORD ||
+			abs((float)leaf.nMins[2] + offset.z) > MAX_MAP_COORD ||
+			abs((float)leaf.nMaxs[2] + offset.z) > MAX_MAP_COORD) {
 			logf("\nWARNING: Bounding box for leaf moved past safe world boundary!\n");
 		}
 		leaf.nMins[0] += (short)offset.x;
@@ -804,9 +811,9 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 
 		vert += offset;
 
-		if (fabs(vert.x) > MAX_MAP_COORD ||
-			fabs(vert.y) > MAX_MAP_COORD ||
-			fabs(vert.z) > MAX_MAP_COORD) {
+		if (abs(vert.x) > MAX_MAP_COORD ||
+			abs(vert.y) > MAX_MAP_COORD ||
+			abs(vert.z) > MAX_MAP_COORD) {
 			logf("\nWARNING: Vertex moved past safe world boundary!\n");
 		}
 	}
@@ -819,8 +826,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = offset + (plane.vNormal * plane.fDist);
 
-		if (fabs(newPlaneOri.x) > MAX_MAP_COORD || fabs(newPlaneOri.y) > MAX_MAP_COORD ||
-			fabs(newPlaneOri.z) > MAX_MAP_COORD) {
+		if (abs(newPlaneOri.x) > MAX_MAP_COORD || abs(newPlaneOri.y) > MAX_MAP_COORD ||
+			abs(newPlaneOri.z) > MAX_MAP_COORD) {
 			logf("\nWARNING: Plane origin moved past safe world boundary!\n");
 		}
 
@@ -883,10 +890,10 @@ void Bsp::move_texinfo(int idx, vec3 offset) {
 	info.shiftT -= shiftAmountT;
 
 	// minimize shift values (just to be safe. floats can be p wacky and zany)
-	while (fabs(info.shiftS) > tex.nWidth) {
+	while (abs(info.shiftS) > tex.nWidth) {
 		info.shiftS += (info.shiftS < 0) ? (int)tex.nWidth : -(int)(tex.nWidth);
 	}
-	while (fabs(info.shiftT) > tex.nHeight) {
+	while (abs(info.shiftT) > tex.nHeight) {
 		info.shiftT += (info.shiftT < 0) ? (int)tex.nHeight : -(int)(tex.nHeight);
 	}
 }
@@ -908,7 +915,6 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps) {
 
 		BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
 		int texOffset = ((int*)textures)[info.iMiptex + 1];
-		BSPMIPTEX& tex = *((BSPMIPTEX*)(textures + texOffset));
 
 		int size[2];
 		GetFaceLightmapSize(this, i, size);
@@ -964,9 +970,6 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps) {
 			else {
 				newLight.luxelFlags = new unsigned char[newLight.width * newLight.height];
 				qrad_get_lightmap_flags(this, i, newLight.luxelFlags);
-
-				int maxWidth = std::min(newLight.width, oldLight.width);
-				int maxHeight = std::min(newLight.height, oldLight.height);
 
 				int srcOffsetX, srcOffsetY;
 				get_lightmap_shift(oldLight, newLight, srcOffsetX, srcOffsetY);
@@ -2478,10 +2481,21 @@ bool Bsp::validate() {
 		if (models[i].nMins.x > models[i].nMaxs.x ||
 			models[i].nMins.y > models[i].nMaxs.y ||
 			models[i].nMins.z > models[i].nMaxs.z) {
-			logf("Backwards mins/maxs in model %d. Mins: (%f, %f, %f) Maxs: (%f %f %f)\n", i,
-				models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
-				models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
-			isValid = false;
+			std::swap(models[i].nMins, models[i].nMaxs);
+			if (models[i].nMins.x > models[i].nMaxs.x ||
+				models[i].nMins.y > models[i].nMaxs.y ||
+				models[i].nMins.z > models[i].nMaxs.z) {
+				logf("Backwards mins/maxs in model %d. Mins: (%f, %f, %f) Maxs: (%f %f %f)\n", i,
+					models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
+					models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
+				isValid = false;
+			}
+			else
+			{
+				logf("SWAPPED mins/maxs in model %d. Mins: (%f, %f, %f) Maxs: (%f %f %f)\n", i,
+					models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
+					models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
+			}
 		}
 	}
 	if (totalVisLeaves != leafCount) {
@@ -3112,7 +3126,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 			logf("Warning! Texture size different. Need rename old texture.\n");
 			oldtex = NULL;
 		}
-		else if (oldtex->nOffsets[0] <= 0)
+		else if (oldtex->nOffsets[0] == 0)
 		{
 			snprintf(oldtex->szName, sizeof(oldtex->szName), "%s", "-unused_texture");
 			logf("Warning! Texture pointer found. Need replace by new texture.\n");

@@ -397,7 +397,7 @@ bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist) {
 
 	/* Calculate T distances to candidate planes */
 	for (i = 0; i < 3; i++) {
-		if (quadrant[i] != MIDDLE && fabs(dir[i]) >= EPSILON)
+		if (quadrant[i] != MIDDLE && abs(dir[i]) >= EPSILON)
 			maxT[i] = (candidatePlane[i] - origin[i]) / dir[i];
 		else
 			maxT[i] = -1.0f;
@@ -440,7 +440,7 @@ bool rayPlaneIntersect(const vec3& start, const vec3& dir, const vec3& normal, f
 	float dot = dotProduct(dir, normal);
 
 	// don't select backfaces or parallel faces
-	if (fabs(dot) < EPSILON) {
+	if (abs(dot) < EPSILON) {
 		return false;
 	}
 	intersectDist = dotProduct((normal * fdist) - start, normal) / dot;
@@ -476,7 +476,7 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 		}
 		else {
 			float dot = dotProduct(outNormal, normal);
-			if (fabs(dot) < 1.0f - tolerance) {
+			if (abs(dot) < 1.0f - tolerance) {
 				//logf("DOT %f", dot);
 				return false; // non-planar face
 			}
@@ -560,7 +560,7 @@ std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes) {
 					n0.y * (n1.z * n2.x - n1.x * n2.z) +
 					n0.z * (n1.x * n2.y - n1.y * n2.x);
 
-				if (fabs(t) < EPSILON) {
+				if (abs(t) < EPSILON) {
 					continue;
 				}
 
@@ -641,7 +641,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts) {
 		if (verts[i] != verts[i0] && verts[i] != verts[i1]) {
 			vec3 ab = (verts[i1] - verts[i0]).normalize();
 			vec3 ac = (verts[i] - verts[i0]).normalize();
-			if (fabs(dotProduct(ab, ac) - 1.0) < EPSILON) {
+			if (abs(dotProduct(ab, ac) - 1.0) < EPSILON) {
 				continue;
 			}
 
@@ -762,7 +762,7 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p) {
 		vec2& v1 = poly[i];
 		vec2& v2 = poly[(i + 1) % poly.size()];
 
-		if (fabs(v1.x - p.x) < EPSILON && fabs(v1.y - p.y) < EPSILON) {
+		if (abs(v1.x - p.x) < EPSILON && abs(v1.y - p.y) < EPSILON) {
 			break; // on edge = inside
 		}
 

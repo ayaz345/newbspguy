@@ -109,6 +109,7 @@ public:
 	bool getModelPlaneIntersectVerts(int modelIdx, std::vector<TransformVert>& outVerts);
 	bool getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& planes, std::vector<TransformVert>& outVerts);
 	void getNodePlanes(int iNode, std::vector<int>& nodePlanes);
+	void getClipNodePlanes(int iClipNode, std::vector<int>& nodePlanes);
 	bool is_convex(int modelIdx);
 	bool is_node_hull_convex(int iNode);
 

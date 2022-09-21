@@ -1212,7 +1212,7 @@ void Renderer::cameraRotationControls(vec2 mousePos) {
 			cameraAngles.z += drag.x * rotationSpeed * 0.1f;
 			cameraAngles.x += drag.y * rotationSpeed * 0.1f;
 
-			totalMouseDrag += vec2(fabs(drag.x), fabs(drag.y));
+			totalMouseDrag += vec2(abs(drag.x), abs(drag.y));
 
 			cameraAngles.x = clamp(cameraAngles.x, -90.0f, 90.0f);
 			if (cameraAngles.z > 180.0f) {
@@ -1585,7 +1585,7 @@ bool Renderer::transformAxisControls() {
 
 		}
 		else {
-			if (ent->isBspModel() && fabs(delta.length()) >= EPSILON) {
+			if (ent->isBspModel() && abs(delta.length()) >= EPSILON) {
 
 				vec3 scaleDirs[6]{
 					vec3(1, 0, 0),
@@ -1680,6 +1680,12 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir) {
 }
 
 Bsp* Renderer::getSelectedMap() {
+	// auto select if one map
+	if (!pickInfo.map && mapRenderers.size() == 1)
+	{
+		pickInfo.map = mapRenderers[0]->map;
+	}
+
 	return pickInfo.map;
 }
 
@@ -1885,7 +1891,7 @@ void Renderer::drawLine(const vec3 & start, const vec3& end, COLOR4 color) {
 void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color) {
 
 	vec3 ori = plane.vNormal * plane.fDist;
-	vec3 crossDir = fabs(plane.vNormal.z) > 0.9f ? vec3(1, 0, 0) : vec3(0, 0, 1);
+	vec3 crossDir = abs(plane.vNormal.z) > 0.9f ? vec3(1, 0, 0) : vec3(0, 0, 1);
 	vec3 right = crossProduct(plane.vNormal, crossDir);
 	vec3 up = crossProduct(right, plane.vNormal);
 
@@ -2141,7 +2147,7 @@ vec3 Renderer::getAxisDragPoint(vec3 origin) {
 	// get intersection points between the pick ray and each each movement direction plane
 	float dots[3];
 	for (int i = 0; i < 3; i++) {
-		dots[i] = fabs(dotProduct(cameraForward, axisNormals[i]));
+		dots[i] = abs(dotProduct(cameraForward, axisNormals[i]));
 	}
 
 	// best movement planee is most perpindicular to the camera direction
@@ -2444,7 +2450,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 				int iPlane2 = it2->first;
 				BSPPLANE& p = map->planes[iPlane2];
 				float dist = dotProduct(midPoint, p.vNormal) - p.fDist;
-				if (fabs(dist) < EPSILON) {
+				if (abs(dist) < EPSILON) {
 					edge.planes[planeCount % 2] = iPlane2;
 					planeCount++;
 				}
@@ -2492,7 +2498,7 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir) {
 
 	Bsp* map = g_app->getSelectedMap();
 
-	bool scaleFromOrigin = fabs(fromDir.x) < EPSILON && fabs(fromDir.y) < EPSILON && fabs(fromDir.z) < EPSILON;
+	bool scaleFromOrigin = abs(fromDir.x) < EPSILON && abs(fromDir.y) < EPSILON && abs(fromDir.z) < EPSILON;
 
 	vec3 minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	vec3 maxDist = vec3(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
@@ -2624,8 +2630,8 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir) {
 			float vsdiff = info.vS.length() - oldinfo.oldS.length();
 			float vtdiff = info.vT.length() - oldinfo.oldT.length();
 
-			shiftS += (refDist * vsdiff * fabs(dotS)) * dotSm;
-			shiftT += (refDist * vtdiff * fabs(dotT)) * dotTm;
+			shiftS += (refDist * vsdiff * abs(dotS)) * dotSm;
+			shiftT += (refDist * vtdiff * abs(dotT)) * dotTm;
 		}
 
 		info.shiftS = shiftS;

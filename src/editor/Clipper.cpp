@@ -40,7 +40,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip) {
 		if (vert.visible) {
 			vert.distance = dotProduct(clip.vNormal, vert.pos) - clip.fDist;
 
-			if (vert.distance >= EPSILON) {
+			if (vert.distance > EPSILON) {
 				positive++;
 			}
 			else if (vert.distance < EPSILON) {

@@ -265,7 +265,7 @@ void ExportModel(Bsp* map, unsigned int id, int ExportType)
 {
 	map->update_ent_lump();
 
-	Bsp * tmpMap = new Bsp(map->bsp_path);
+	Bsp* tmpMap = new Bsp(map->bsp_path);
 	tmpMap->is_model = true;
 
 	BSPMODEL tmpModel = map->models[id];
@@ -482,7 +482,7 @@ void Gui::draw3dContextMenus() {
 					for (int i = 1; i < MAX_MAP_HULLS; i++) {
 						bool isHullValid = model.iHeadnodes[i] >= 0;
 
-						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str())) {
+						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()/*, 0, false, isHullValid*/)) {
 							map->regenerate_clipnodes(app->pickInfo.modelIdx, i);
 							checkValidHulls();
 							logf("Regenerated hull %d on model %d\n", i, app->pickInfo.modelIdx);
@@ -714,7 +714,7 @@ bool ExportWad(Bsp* map)
 
 void ImportWad(Bsp* map, Renderer* app, std::string path)
 {
-	Wad * tmpWad = new Wad(path);
+	Wad* tmpWad = new Wad(path);
 
 	if (!tmpWad->readInfo())
 	{
@@ -2123,7 +2123,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 		}
 		{
 			if (value.size() >= MAX_VAL_LEN)
-				value = value.substr(0,MAX_VAL_LEN - 1);
+				value = value.substr(0, MAX_VAL_LEN - 1);
 
 			memcpy(keyValues[i], value.c_str(), value.size() + 1);
 
@@ -2597,7 +2597,7 @@ void Gui::loadFonts() {
 	memcpy(largeFontData, robotomedium, sizeof(robotomedium));
 	memcpy(consoleFontData, robotomono, sizeof(robotomono));
 	memcpy(consoleFontLargeData, robotomono, sizeof(robotomono));
-	
+
 	ImFontConfig config;
 
 	config.SizePixels = fontSize * 2.0f;
@@ -2607,7 +2607,7 @@ void Gui::loadFonts() {
 	config.PixelSnapH = true;
 
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	
+
 	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config);
 
 	config.MergeMode = true;
@@ -3292,7 +3292,7 @@ void Gui::drawLimits() {
 						stats.push_back(calcStat("textures", map->textureCount, MAX_MAP_TEXTURES, false));
 						stats.push_back(calcStat("lightdata", map->lightDataLength, MAX_MAP_LIGHTDATA, true));
 						stats.push_back(calcStat("visdata", map->visDataLength, MAX_MAP_VISDATA, true));
-						stats.push_back(calcStat("entities", (unsigned int) map->ents.size(), MAX_MAP_ENTS, false));
+						stats.push_back(calcStat("entities", (unsigned int)map->ents.size(), MAX_MAP_ENTS, false));
 						loadedStats = true;
 					}
 
@@ -3502,7 +3502,7 @@ void Gui::drawEntityReport() {
 			static std::vector<int> visibleEnts;
 			static std::vector<bool> selectedItems;
 
-			const ImGuiKeyModFlags expected_key_mod_flags = ImGui::GetMergedKeyModFlags();
+			const ImGuiModFlags expected_key_mod_flags = ImGui::GetMergedModFlags();
 
 			float footerHeight = ImGui::GetFrameHeightWithSpacing() * 5.f + 16.f;
 			ImGui::BeginChild("entlist", ImVec2(0.f, -footerHeight));
@@ -3516,9 +3516,9 @@ void Gui::drawEntityReport() {
 
 					bool visible = true;
 
-					if (!classFilter.empty() && classFilter != "(none)") 
+					if (!classFilter.empty() && classFilter != "(none)")
 					{
-						if (toLowerCase(cname) != toLowerCase(classFilter)) 
+						if (toLowerCase(cname) != toLowerCase(classFilter))
 						{
 							visible = false;
 						}
@@ -3725,7 +3725,7 @@ void Gui::drawEntityReport() {
 				comboWasOpen = false;
 			}
 
-		
+
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(270);
 			if (ImGui::BeginCombo("##flagsfilter", flagsFilter.c_str()))
@@ -4173,9 +4173,9 @@ void ExportOneBigLightmap(Bsp* map)
 
 		/*vector->x *= static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
 		vector->y *= static_cast <float> (rand()) / static_cast <float> (RAND_MAX);*/
-	/* }
+		/* }
 
-	map->update_lump_pointers();*/
+		map->update_lump_pointers();*/
 
 
 	for (int lightId = 0; lightId < MAXLIGHTMAPS; lightId++)
@@ -4186,7 +4186,7 @@ void ExportOneBigLightmap(Bsp* map)
 		int max_y_found = 0;
 
 		bool found_any_lightmap = false;
-		
+
 		//logf("\nExport %d ligtmap\n", lightId);
 		for (int faceIdx : faces_to_export)
 		{
@@ -4301,7 +4301,7 @@ void Gui::drawLightMapTool() {
 	ImGui::SetNextWindowSize(ImVec2(windowWidth, windowHeight), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(windowWidth, windowHeight), ImVec2(windowWidth, windowHeight));
 
-	const char * lightToolTitle = "LightMap Editor";
+	const char* lightToolTitle = "LightMap Editor";
 
 	if (needPickColor)
 	{
@@ -4396,7 +4396,7 @@ void Gui::drawLightMapTool() {
 
 					int imagex = (int)round((currentlightMap[i]->width - ((currentlightMap[i]->width / itemwidth) * mousex)) - 0.5f);
 					int imagey = (int)round((currentlightMap[i]->height - ((currentlightMap[i]->height / itemheight) * mousey)) - 0.5f);
-					
+
 					if (imagex < 0)
 					{
 						imagex = 0;
@@ -4431,7 +4431,7 @@ void Gui::drawLightMapTool() {
 					}
 					else
 					{
-						lighdata[offset] = COLOR3((unsigned char)(colourPatch[0] * 255.f), 
+						lighdata[offset] = COLOR3((unsigned char)(colourPatch[0] * 255.f),
 							(unsigned char)(colourPatch[1] * 255.f), (unsigned char)(colourPatch[2] * 255.f));
 						currentlightMap[i]->upload(GL_RGB, true);
 					}
@@ -4524,6 +4524,7 @@ void Gui::drawTextureTool() {
 	//ImGui::SetNextWindowSize(ImVec2(400, 600));
 	if (ImGui::Begin("Face Editor", &showTextureWidget)) {
 		static float scaleX, scaleY, shiftX, shiftY;
+		static vec3 texvecS, texvecT;
 		static bool isSpecial;
 		static float width, height;
 		static ImTextureID textureId = NULL; // OpenGL ID
@@ -4567,10 +4568,15 @@ void Gui::drawTextureTool() {
 
 					int miptex = texinfo.iMiptex;
 
+					texvecS = texinfo.vS;
+					texvecT = texinfo.vT;
+
 					scaleX = 1.0f / texinfo.vS.length();
 					scaleY = 1.0f / texinfo.vT.length();
+
 					shiftX = texinfo.shiftS;
 					shiftY = texinfo.shiftT;
+
 					isSpecial = texinfo.nFlags & TEX_SPECIAL;
 
 					textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId(faceIdx);
@@ -4584,8 +4590,10 @@ void Gui::drawTextureTool() {
 
 						if (scaleX != 1.0f / texinfo2.vS.length()) scaleX = 1.0f;
 						if (scaleY != 1.0f / texinfo2.vT.length()) scaleY = 1.0f;
+
 						if (shiftX != texinfo2.shiftS) shiftX = 0;
 						if (shiftY != texinfo2.shiftT) shiftY = 0;
+
 						if (isSpecial != (texinfo2.nFlags & TEX_SPECIAL)) isSpecial = false;
 						if (texinfo2.iMiptex != miptex) {
 							validTexture = false;
@@ -4617,6 +4625,8 @@ void Gui::drawTextureTool() {
 		static bool shiftedY = false;
 		static bool textureChanged = false;
 		static bool toggledFlags = false;
+		static bool updatedTexVec = false;
+		static bool updatedFaceVec = false;
 
 		ImGui::PushItemWidth(inputWidth);
 		ImGui::Text("Scale");
@@ -4662,7 +4672,84 @@ void Gui::drawTextureTool() {
 		if (ImGui::DragFloat("##shifty", &shiftY, 0.1f, 0, 0, "Y: %.3f")) {
 			shiftedY = true;
 		}
+
 		ImGui::PopItemWidth();
+
+		inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.3f;
+		ImGui::PushItemWidth(inputWidth);
+
+		ImGui::Text("Advanced settings");
+
+		ImGui::SameLine();
+		ImGui::TextDisabled("(WIP)");
+
+		if (ImGui::DragFloat("##u1", &texvecS.x, 0.01f, 0, 0, "S1: %.3f")) {
+			updatedTexVec = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::DragFloat("##u2", &texvecS.y, 0.01f, 0, 0, "S2: %.3f")) {
+			updatedTexVec = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::DragFloat("##u3", &texvecS.z, 0.01f, 0, 0, "S3: %.3f")) {
+			updatedTexVec = true;
+		}
+
+		if (ImGui::DragFloat("##v1", &texvecT.x, 0.01f, 0, 0, "T1: %.3f")) {
+			updatedTexVec = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::DragFloat("##v2", &texvecT.y, 0.01f, 0, 0, "T2: %.3f")) {
+			updatedTexVec = true;
+		}
+		ImGui::SameLine();
+		if (ImGui::DragFloat("##v3", &texvecT.z, 0.01f, 0, 0, "T3: %.3f")) {
+			updatedTexVec = true;
+		}
+
+		if (app->selectedFaces.size() == 1)
+		{
+			ImGui::Text("Expert settings");
+			ImGui::SameLine();
+			ImGui::TextDisabled("[VERTS] (WIP)");
+			
+			char tmplabel[64];
+
+			BSPFACE face = map->faces[app->selectedFaces[0]];
+
+			int edgetmpid = 1;
+
+			for (unsigned int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++) {
+				edgetmpid++;
+				int edgeIdx = map->surfedges[e];
+				BSPEDGE edge = map->edges[abs(edgeIdx)];
+				vec3& v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+
+				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d1", e, edgeIdx);
+				if (ImGui::DragFloat(tmplabel, &v.x, 0.1f, 0, 0, "T1: %.3f")) {
+					updatedFaceVec = true;
+
+					//map->nodes.
+
+				}
+				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d2", e, edgeIdx);
+				ImGui::SameLine();
+				if (ImGui::DragFloat(tmplabel, &v.y, 0.1f, 0, 0, "T2: %.3f")) {
+					updatedFaceVec = true;
+				}
+				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d3", e, edgeIdx);
+				ImGui::SameLine();
+				if (ImGui::DragFloat(tmplabel, &v.z, 0.1f, 0, 0, "T3: %.3f")) {
+					updatedFaceVec = true;
+				}
+
+			}
+
+			//map->edges[0].iVertex
+		}
+
+		ImGui::PopItemWidth();
+
 
 		ImGui::Text("Flags");
 		if (ImGui::Checkbox("Special", &isSpecial)) {
@@ -4699,8 +4786,8 @@ void Gui::drawTextureTool() {
 		}
 		ImGui::SameLine();
 		ImGui::Text("%.0fx%.0f", width, height);
-
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) && (scaledX || scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags)) {
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) && 
+			(scaledX || scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags || updatedTexVec)) {
 			unsigned int newMiptex = 0;
 
 			app->saveLumpState(map, 0xffffffff, false);
@@ -4725,7 +4812,6 @@ void Gui::drawTextureTool() {
 					{
 						if (s->hasTexture(textureName))
 						{
-
 							WADTEX* wadTex = s->readTexture(textureName);
 							int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 
@@ -4753,6 +4839,9 @@ void Gui::drawTextureTool() {
 			std::set<int> modelRefreshes;
 			for (int i = 0; i < app->selectedFaces.size(); i++) {
 				int faceIdx = app->selectedFaces[i];
+
+				
+
 				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
 
 				if (scaledX) {
@@ -4761,15 +4850,24 @@ void Gui::drawTextureTool() {
 				if (scaledY) {
 					texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
 				}
+
 				if (shiftedX) {
 					texinfo->shiftS = shiftX;
 				}
 				if (shiftedY) {
 					texinfo->shiftT = shiftY;
 				}
+
+				if (updatedTexVec)
+				{
+					texinfo->vS = texvecS;
+					texinfo->vT = texvecT;
+				}
+
 				if (toggledFlags) {
 					texinfo->nFlags = isSpecial ? TEX_SPECIAL : 0;
 				}
+
 				if ((textureChanged || toggledFlags) && validTexture) {
 					if (textureChanged)
 						texinfo->iMiptex = newMiptex;
@@ -4788,12 +4886,8 @@ void Gui::drawTextureTool() {
 				}
 			}
 			checkFaceErrors();
-			scaledX = false;
-			scaledY = false;
-			shiftedX = false;
-			shiftedY = false;
-			textureChanged = false;
-			toggledFlags = false;
+			scaledX = scaledY = shiftedX = shiftedY = 
+				textureChanged = toggledFlags = updatedTexVec = false;
 
 			app->pushModelUndoState("Edit Face", EDIT_MODEL_LUMPS);
 
@@ -4815,7 +4909,6 @@ void Gui::drawTextureTool() {
 
 		if (ImGui::BeginPopupModal("Not Implemented", NULL, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-
 			ImGui::Text("TODO: Texture browser\n\n");
 			ImGui::Separator();
 
