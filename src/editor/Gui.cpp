@@ -687,7 +687,7 @@ bool ExportWad(Bsp* map)
 			WADTEX* oldTex = new WADTEX(bspTex);
 			tmpWadTex.push_back(oldTex);
 		}
-		if (tmpWadTex.size() > 0)
+		if (!tmpWadTex.empty())
 		{
 			createDir(GetWorkDir());
 			tmpWad->write(GetWorkDir() + map->bsp_name + ".wad", &tmpWadTex[0], tmpWadTex.size());
@@ -1785,7 +1785,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent) {
 
 			ImGui::SetNextItemWidth(inputWidth);
 
-			if (keyvalue.iType == FGD_KEY_CHOICES && keyvalue.choices.size() > 0) {
+			if (keyvalue.iType == FGD_KEY_CHOICES && !keyvalue.choices.empty()) {
 				std::string selectedValue = keyvalue.choices[0].name;
 				int ikey = atoi(value.c_str());
 
@@ -4533,7 +4533,7 @@ void Gui::drawTextureTool() {
 		static bool validTexture = true;
 
 		Bsp* map = app->getSelectedMap();
-		if (!map || app->pickMode != PICK_FACE || app->selectedFaces.size() == 0)
+		if (!map || app->pickMode != PICK_FACE || app->selectedFaces.empty())
 		{
 			ImGui::Text("No face selected");
 			ImGui::End();

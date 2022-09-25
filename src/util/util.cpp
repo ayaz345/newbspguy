@@ -130,7 +130,7 @@ std::streampos fileSize(const std::string& filePath) {
 
 std::vector<std::string> splitString(std::string s, const std::string& delimitter) {
 	std::vector<std::string> split;
-	if (s.size() == 0 || delimitter.size() == 0)
+	if (s.empty() || delimitter.empty())
 		return split;
 
 	size_t delimitLen = delimitter.length();
@@ -157,7 +157,7 @@ std::vector<std::string> splitString(std::string s, const std::string& delimitte
 
 std::vector<std::string> splitStringIgnoringQuotes(std::string s, const std::string& delimitter) {
 	std::vector<std::string> split;
-	if (s.size() == 0 || delimitter.size() == 0)
+	if (s.empty() || delimitter.empty())
 		return split;
 
 	size_t delimitLen = delimitter.length();
@@ -742,11 +742,12 @@ std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts) {
 }
 
 std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts) {
-	std::vector<vec3> outVerts(verts.size());
+	std::vector<vec3> outVerts;
 	std::vector<int> vertOrder = getSortedPlanarVertOrder(verts);
 	if (vertOrder.empty()) {
-		return std::vector<vec3>();
+		return outVerts;
 	}
+	outVerts.resize(vertOrder.size());
 	for (int i = 0; i < vertOrder.size(); i++) {
 		outVerts[i] = verts[vertOrder[i]];
 	}

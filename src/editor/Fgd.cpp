@@ -109,7 +109,7 @@ bool Fgd::parse() {
 		}
 
 		if (bracketNestLevel == 2) {
-			if (fgdClass->keyvalues.size() == 0) {
+			if (fgdClass->keyvalues.empty()) {
 				logf("ERROR: Choice values begin before any keyvalue are defined (line %d)\n", lineNum);
 				continue;
 			}
@@ -127,7 +127,7 @@ bool Fgd::parse() {
 void Fgd::parseClassHeader(FgdClass& fgdClass) {
 	std::vector<std::string> headerParts = splitString(line, "=");
 
-	if (headerParts.size() == 0) {
+	if (headerParts.empty()) {
 		logf("ERROR: Unexpected end of class header (line %d)\n", lineNum);
 		return;
 	}
@@ -359,7 +359,7 @@ void Fgd::processClassInheritance() {
 		std::vector<FgdClass*> allBaseClasses;
 		classes[i]->getBaseClasses(this, allBaseClasses);
 
-		if (allBaseClasses.size() != 0)
+		if (!allBaseClasses.empty())
 		{
 			std::vector<KeyvalueDef> newKeyvalues;
 			std::vector<KeyvalueChoice> newSpawnflags;
@@ -427,7 +427,7 @@ void Fgd::processClassInheritance() {
 }
 
 void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList) {
-	if (baseClasses.size() > 0)
+	if (!baseClasses.empty())
 	{
 		for (int i = (int)baseClasses.size() - 1; i >= 0; i--) {
 			if (fgd->classMap.find(baseClasses[i]) == fgd->classMap.end()) {

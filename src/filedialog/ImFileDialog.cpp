@@ -590,7 +590,7 @@ namespace ifd {
 
 		if (m_selections.size() == 1) {
 			std::string filename = m_selections[0].filename().string();
-			if (filename.size() == 0)
+			if (filename.empty())
 				filename = m_selections[0].string(); // drive
 
 			strncpy(m_inputTextbox, filename.c_str(), sizeof(m_inputTextbox));
@@ -599,7 +599,7 @@ namespace ifd {
 			std::string textboxVal = "";
 			for (const auto& sel : m_selections) {
 				std::string filename = sel.filename().string();
-				if (filename.size() == 0)
+				if (filename.empty())
 					filename = sel.string();
 
 				textboxVal += "\"" + filename + "\", ";
@@ -1068,7 +1068,7 @@ namespace ifd {
 		ImGui::PushID(node);
 		bool isClicked = false;
 		std::string displayName = node->Path.stem().string();
-		if (displayName.size() == 0)
+		if (displayName.empty())
 			displayName = node->Path.string();
 		if (FolderNode(displayName.c_str(), (ImTextureID)m_getIcon(node->Path), isClicked)) {
 			if (!node->Read) {
@@ -1118,7 +1118,7 @@ namespace ifd {
 				int fileId = 0;
 				for (auto& entry : m_content) {
 					std::string filename = entry.Path.filename().string();
-					if (filename.size() == 0)
+					if (filename.empty())
 						filename = entry.Path.string(); // drive
 
 					bool isSelected = std::count(m_selections.begin(), m_selections.end(), entry.Path);
@@ -1177,7 +1177,7 @@ namespace ifd {
 				}
 
 				std::string filename = entry.Path.filename().string();
-				if (filename.size() == 0)
+				if (filename.empty())
 					filename = entry.Path.string(); // drive
 
 				bool isSelected = std::count(m_selections.begin(), m_selections.end(), entry.Path);
@@ -1224,7 +1224,7 @@ namespace ifd {
 		if (openNewDirectoryDlg)
 			ImGui::OpenPopup("Enter directory name##newdir");
 		if (ImGui::BeginPopupModal("Are you sure?##delete")) {
-			if (m_selectedFileItem >= static_cast<int>(m_content.size()) || m_content.size() == 0)
+			if (m_selectedFileItem >= static_cast<int>(m_content.size()) || m_content.empty())
 				ImGui::CloseCurrentPopup();
 			else {
 				const FileData& data = m_content[m_selectedFileItem];

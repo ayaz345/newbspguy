@@ -192,11 +192,11 @@ void AppSettings::load() {
 		windowWidth = 800;
 	}
 
-	if (fgdPaths.size() == 0) {
+	if (fgdPaths.empty()) {
 		fgdPaths.push_back("/svencoop/sven-coop.fgd");
 	}
 
-	if (resPaths.size() == 0) {
+	if (resPaths.empty()) {
 		resPaths.push_back("/svencoop/");
 		resPaths.push_back("/svencoop_addon/");
 		resPaths.push_back("/svencoop_downloads/");
@@ -768,7 +768,7 @@ void Renderer::loadFgds() {
 
 void Renderer::drawModelVerts() {
 	Bsp* map = g_app->getSelectedMap();
-	if (!modelVertBuff || modelVerts.size() == 0 || !map)
+	if (!modelVertBuff || modelVerts.empty() || !map)
 		return;
 	glClear(GL_DEPTH_BUFFER_BIT);
 

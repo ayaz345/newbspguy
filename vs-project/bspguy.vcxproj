@@ -41,7 +41,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.20506.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\..\vs-project\Debug\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.\..\vs-project\Release\</OutDir>
     <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bspguy.dir\Debug\</IntDir>
     <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">bspguy</TargetName>
     <TargetExt Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">.exe</TargetExt>
@@ -72,7 +72,7 @@
       <WarningLevel>TurnOffAllWarnings</WarningLevel>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;GLEW_STATIC;USE_FILESYSTEM;NOMINMAX;</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <CompileAsWinRT>
       </CompileAsWinRT>

@@ -31,7 +31,7 @@ Keyvalues::Keyvalues(std::string & line)
 		}
 	}
 	line.clear();
-	if (allstrings.size() > 0)
+	if (!allstrings.empty())
 		line = allstrings[allstrings.size() - 1];
 }
 

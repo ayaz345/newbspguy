@@ -907,7 +907,7 @@ void BspRenderer::generateClipnodeBuffer(unsigned int modelIdx) {
 			wireOutput[c] = wireframeVerts[c];
 		}
 
-		if (allVerts.size() == 0 || wireframeVerts.size() == 0) {
+		if (allVerts.empty() || wireframeVerts.empty()) {
 			if (renderClip->clipnodeBuffer[i])
 				delete renderClip->clipnodeBuffer[i];
 			if (renderClip->wireframeClipnodeBuffer[i])
@@ -1627,7 +1627,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3 & dir, int hullIdx, PickInfo& 
 
 	start -= mapOffset;
 
-	if (!map || map->ents.size() == 0)
+	if (!map || map->ents.empty())
 	{
 		return false;
 	}

@@ -39,6 +39,7 @@ struct mat4x4
 		return m[idx];
 	}
 	mat4x4() = default;
+
 	mat4x4(const float newm[16])
 	{
 		memcpy(m, newm, 16 * sizeof(float));

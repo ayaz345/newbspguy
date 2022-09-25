@@ -124,7 +124,7 @@ void mat4x4::rotateZ(float r)
 	mult(rmat);
 }
 
-mat4x4 worldToLocalTransform(const vec3 & local_x, const vec3& local_y, const vec3& local_z) {
+mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z) {
 	const vec3 world_x(1, 0, 0);
 	const vec3 world_y(0, 1, 0);
 	const vec3 world_z(0, 0, 1);
@@ -132,6 +132,7 @@ mat4x4 worldToLocalTransform(const vec3 & local_x, const vec3& local_y, const ve
 	mat4x4 worldToLocal;
 
 	worldToLocal.loadIdentity();
+
 	worldToLocal.m[0 * 4 + 0] = dotProduct(local_x, world_x);
 	worldToLocal.m[1 * 4 + 0] = dotProduct(local_x, world_y);
 	worldToLocal.m[2 * 4 + 0] = dotProduct(local_x, world_z);
@@ -148,16 +149,30 @@ mat4x4 worldToLocalTransform(const vec3 & local_x, const vec3& local_y, const ve
 mat4x4 mat4x4::transpose()
 {
 	mat4x4 result;
-	for (int y = 0; y < 4; y++)
-		for (int x = 0; x < 4; x++)
-			result.m[y + x * 4] = m[y * 4 + x];
+	result.m[0 + 0 * 4] = m[0 * 4 + 0];
+	result.m[0 + 1 * 4] = m[0 * 4 + 1];
+	result.m[0 + 2 * 4] = m[0 * 4 + 2];
+	result.m[0 + 3 * 4] = m[0 * 4 + 3];
+	result.m[1 + 0 * 4] = m[1 * 4 + 0];
+	result.m[1 + 1 * 4] = m[1 * 4 + 1];
+	result.m[1 + 2 * 4] = m[1 * 4 + 2];
+	result.m[1 + 3 * 4] = m[1 * 4 + 3];
+	result.m[2 + 0 * 4] = m[2 * 4 + 0];
+	result.m[2 + 1 * 4] = m[2 * 4 + 1];
+	result.m[2 + 2 * 4] = m[2 * 4 + 2];
+	result.m[2 + 3 * 4] = m[2 * 4 + 3];
+	result.m[3 + 0 * 4] = m[3 * 4 + 0];
+	result.m[3 + 1 * 4] = m[3 * 4 + 1];
+	result.m[3 + 2 * 4] = m[3 * 4 + 2];
+	result.m[3 + 3 * 4] = m[3 * 4 + 3];
 	return result;
 }
 
 // http://stackoverflow.com/questions/1148309/inverting-a-4x4-matrix
 mat4x4 mat4x4::invert()
 {
-	mat4x4 out = mat4x4();
+	mat4x4 out;
+
 	float inv[16];
 
 	inv[0] = m[5] * m[10] * m[15] -
@@ -282,8 +297,23 @@ mat4x4 mat4x4::invert()
 
 	det = 1.0f / det;
 
-	for (int i = 0; i < 16; i++)
-		out.m[i] = inv[i] * det;
+	out.m[0] = inv[0] * det;
+	out.m[1] = inv[1] * det;
+	out.m[2] = inv[2] * det;
+	out.m[3] = inv[3] * det;
+	out.m[4] = inv[4] * det;
+	out.m[5] = inv[5] * det;
+	out.m[6] = inv[6] * det;
+	out.m[7] = inv[7] * det;
+	out.m[8] = inv[8] * det;
+	out.m[9] = inv[9] * det;
+	out.m[10] = inv[10] * det;
+	out.m[11] = inv[11] * det;
+	out.m[12] = inv[12] * det;
+	out.m[13] = inv[13] * det;
+	out.m[14] = inv[14] * det;
+	out.m[15] = inv[15] * det;
+
 
 	return out;
 }
@@ -298,11 +328,70 @@ mat4x4 operator*(const mat4x4& m1, const mat4x4& m2)
 {
 	mat4x4 result;
 	memset(result.m, 0, sizeof(result.m));
-
-	for (int i = 0; i < 4; i++)
-		for (int j = 0; j < 4; j++)
-			for (int k = 0; k < 4; k++)
-				result.m[i * 4 + j] += m1.m[i * 4 + k] * m2.m[k * 4 + j];
+	result.m[0 * 4 + 0] += m1.m[0 * 4 + 0] * m2.m[0 * 4 + 0];
+	result.m[0 * 4 + 0] += m1.m[0 * 4 + 1] * m2.m[1 * 4 + 0];
+	result.m[0 * 4 + 0] += m1.m[0 * 4 + 2] * m2.m[2 * 4 + 0];
+	result.m[0 * 4 + 0] += m1.m[0 * 4 + 3] * m2.m[3 * 4 + 0];
+	result.m[0 * 4 + 1] += m1.m[0 * 4 + 0] * m2.m[0 * 4 + 1];
+	result.m[0 * 4 + 1] += m1.m[0 * 4 + 1] * m2.m[1 * 4 + 1];
+	result.m[0 * 4 + 1] += m1.m[0 * 4 + 2] * m2.m[2 * 4 + 1];
+	result.m[0 * 4 + 1] += m1.m[0 * 4 + 3] * m2.m[3 * 4 + 1];
+	result.m[0 * 4 + 2] += m1.m[0 * 4 + 0] * m2.m[0 * 4 + 2];
+	result.m[0 * 4 + 2] += m1.m[0 * 4 + 1] * m2.m[1 * 4 + 2];
+	result.m[0 * 4 + 2] += m1.m[0 * 4 + 2] * m2.m[2 * 4 + 2];
+	result.m[0 * 4 + 2] += m1.m[0 * 4 + 3] * m2.m[3 * 4 + 2];
+	result.m[0 * 4 + 3] += m1.m[0 * 4 + 0] * m2.m[0 * 4 + 3];
+	result.m[0 * 4 + 3] += m1.m[0 * 4 + 1] * m2.m[1 * 4 + 3];
+	result.m[0 * 4 + 3] += m1.m[0 * 4 + 2] * m2.m[2 * 4 + 3];
+	result.m[0 * 4 + 3] += m1.m[0 * 4 + 3] * m2.m[3 * 4 + 3];
+	result.m[1 * 4 + 0] += m1.m[1 * 4 + 0] * m2.m[0 * 4 + 0];
+	result.m[1 * 4 + 0] += m1.m[1 * 4 + 1] * m2.m[1 * 4 + 0];
+	result.m[1 * 4 + 0] += m1.m[1 * 4 + 2] * m2.m[2 * 4 + 0];
+	result.m[1 * 4 + 0] += m1.m[1 * 4 + 3] * m2.m[3 * 4 + 0];
+	result.m[1 * 4 + 1] += m1.m[1 * 4 + 0] * m2.m[0 * 4 + 1];
+	result.m[1 * 4 + 1] += m1.m[1 * 4 + 1] * m2.m[1 * 4 + 1];
+	result.m[1 * 4 + 1] += m1.m[1 * 4 + 2] * m2.m[2 * 4 + 1];
+	result.m[1 * 4 + 1] += m1.m[1 * 4 + 3] * m2.m[3 * 4 + 1];
+	result.m[1 * 4 + 2] += m1.m[1 * 4 + 0] * m2.m[0 * 4 + 2];
+	result.m[1 * 4 + 2] += m1.m[1 * 4 + 1] * m2.m[1 * 4 + 2];
+	result.m[1 * 4 + 2] += m1.m[1 * 4 + 2] * m2.m[2 * 4 + 2];
+	result.m[1 * 4 + 2] += m1.m[1 * 4 + 3] * m2.m[3 * 4 + 2];
+	result.m[1 * 4 + 3] += m1.m[1 * 4 + 0] * m2.m[0 * 4 + 3];
+	result.m[1 * 4 + 3] += m1.m[1 * 4 + 1] * m2.m[1 * 4 + 3];
+	result.m[1 * 4 + 3] += m1.m[1 * 4 + 2] * m2.m[2 * 4 + 3];
+	result.m[1 * 4 + 3] += m1.m[1 * 4 + 3] * m2.m[3 * 4 + 3];
+	result.m[2 * 4 + 0] += m1.m[2 * 4 + 0] * m2.m[0 * 4 + 0];
+	result.m[2 * 4 + 0] += m1.m[2 * 4 + 1] * m2.m[1 * 4 + 0];
+	result.m[2 * 4 + 0] += m1.m[2 * 4 + 2] * m2.m[2 * 4 + 0];
+	result.m[2 * 4 + 0] += m1.m[2 * 4 + 3] * m2.m[3 * 4 + 0];
+	result.m[2 * 4 + 1] += m1.m[2 * 4 + 0] * m2.m[0 * 4 + 1];
+	result.m[2 * 4 + 1] += m1.m[2 * 4 + 1] * m2.m[1 * 4 + 1];
+	result.m[2 * 4 + 1] += m1.m[2 * 4 + 2] * m2.m[2 * 4 + 1];
+	result.m[2 * 4 + 1] += m1.m[2 * 4 + 3] * m2.m[3 * 4 + 1];
+	result.m[2 * 4 + 2] += m1.m[2 * 4 + 0] * m2.m[0 * 4 + 2];
+	result.m[2 * 4 + 2] += m1.m[2 * 4 + 1] * m2.m[1 * 4 + 2];
+	result.m[2 * 4 + 2] += m1.m[2 * 4 + 2] * m2.m[2 * 4 + 2];
+	result.m[2 * 4 + 2] += m1.m[2 * 4 + 3] * m2.m[3 * 4 + 2];
+	result.m[2 * 4 + 3] += m1.m[2 * 4 + 0] * m2.m[0 * 4 + 3];
+	result.m[2 * 4 + 3] += m1.m[2 * 4 + 1] * m2.m[1 * 4 + 3];
+	result.m[2 * 4 + 3] += m1.m[2 * 4 + 2] * m2.m[2 * 4 + 3];
+	result.m[2 * 4 + 3] += m1.m[2 * 4 + 3] * m2.m[3 * 4 + 3];
+	result.m[3 * 4 + 0] += m1.m[3 * 4 + 0] * m2.m[0 * 4 + 0];
+	result.m[3 * 4 + 0] += m1.m[3 * 4 + 1] * m2.m[1 * 4 + 0];
+	result.m[3 * 4 + 0] += m1.m[3 * 4 + 2] * m2.m[2 * 4 + 0];
+	result.m[3 * 4 + 0] += m1.m[3 * 4 + 3] * m2.m[3 * 4 + 0];
+	result.m[3 * 4 + 1] += m1.m[3 * 4 + 0] * m2.m[0 * 4 + 1];
+	result.m[3 * 4 + 1] += m1.m[3 * 4 + 1] * m2.m[1 * 4 + 1];
+	result.m[3 * 4 + 1] += m1.m[3 * 4 + 2] * m2.m[2 * 4 + 1];
+	result.m[3 * 4 + 1] += m1.m[3 * 4 + 3] * m2.m[3 * 4 + 1];
+	result.m[3 * 4 + 2] += m1.m[3 * 4 + 0] * m2.m[0 * 4 + 2];
+	result.m[3 * 4 + 2] += m1.m[3 * 4 + 1] * m2.m[1 * 4 + 2];
+	result.m[3 * 4 + 2] += m1.m[3 * 4 + 2] * m2.m[2 * 4 + 2];
+	result.m[3 * 4 + 2] += m1.m[3 * 4 + 3] * m2.m[3 * 4 + 2];
+	result.m[3 * 4 + 3] += m1.m[3 * 4 + 0] * m2.m[0 * 4 + 3];
+	result.m[3 * 4 + 3] += m1.m[3 * 4 + 1] * m2.m[1 * 4 + 3];
+	result.m[3 * 4 + 3] += m1.m[3 * 4 + 2] * m2.m[2 * 4 + 3];
+	result.m[3 * 4 + 3] += m1.m[3 * 4 + 3] * m2.m[3 * 4 + 3];
 
 	return result;
 }

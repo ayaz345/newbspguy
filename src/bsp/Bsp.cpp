@@ -92,7 +92,7 @@ Bsp::Bsp() {
 
 Bsp::Bsp(std::string fpath)
 {
-	if (fpath.size() == 0)
+	if (fpath.empty())
 	{
 		this->init_empty_bsp();
 		return;
@@ -1601,7 +1601,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress) {
 
 		std::vector<Entity*> usageEnts = get_model_ents(i);
 
-		if (usageEnts.size() == 0) {
+		if (usageEnts.empty()) {
 			debugf("Deleting unused model %d\n", i);
 
 			for (int k = 0; k < MAX_MAP_HULLS; k++)
@@ -4448,7 +4448,7 @@ void Bsp::ExportToObjWIP(std::string path)
 			int mdlid = get_model_from_face(i);
 			std::vector<int> entIds = get_model_ents_ids(mdlid);
 
-			if (entIds.size() == 0)
+			if (entIds.empty())
 			{
 				entIds.push_back(0);
 			}
