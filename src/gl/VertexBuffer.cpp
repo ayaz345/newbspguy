@@ -1,6 +1,7 @@
 #include "VertexBuffer.h"
 #include "util.h"
 #include <string.h>
+#include "Renderer.h"
 
 VertexAttr commonAttr[VBUF_FLAGBITS] =
 {
@@ -192,8 +193,112 @@ void VertexBuffer::deleteBuffer() {
 	vboId = -1;
 }
 
+bool VertexBuffer::isNeedDraw(int primitive, GLint start, GLsizei end)
+{
+	GLint isAvailable = 0;
+	/*shaderProgram->bind();
+	bindAttributes();
+
+	char* offsetPtr = (char*)data;
+	if (vboId != -1) {
+		glBindBuffer(GL_ARRAY_BUFFER, vboId);
+		offsetPtr = NULL;
+	}
+	{
+		int offset = 0;
+		for (int i = 0; i < attribs.size(); i++)
+		{
+			VertexAttr& a = attribs[i];
+			void* ptr = offsetPtr + offset;
+			offset += a.size;
+			if (a.handle == -1)
+				continue;
+			glEnableVertexAttribArray(a.handle);
+			glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
+		}
+	}
+
+	if (start < 0 || start > numVerts)
+		logf("Invalid start index: %d\n", start);
+	else if (end > numVerts || end < 0)
+		logf("Invalid end index: %d\n", end);
+	else if (end - start <= 0)
+		logf("Invalid draw range: %d -> %d\n", start, end);
+	else
+	{
+		if (drawQuery == 0xFFFFFFFF || !glIsQuery(drawQuery))
+		{
+			glGenQueries(1, &drawQuery);
+		}
+		glColorMask(false, false, false, false);
+		glDepthMask(GL_FALSE);
+		glBeginQuery(GL_ANY_SAMPLES_PASSED, drawQuery);
+		glDrawArrays(primitive, start, end - start);
+		glEndQuery(GL_ANY_SAMPLES_PASSED);
+		glGetQueryObjectiv(drawQuery, GL_QUERY_RESULT, &isAvailable);
+		glColorMask(true, true, true, true);
+		glDepthMask(GL_TRUE);
+		if (drawQuery != 0xFFFFFFFF)
+			glDeleteQueries(1, &drawQuery);
+		drawQuery = 0xFFFFFFFF;
+	}
+
+	if (vboId != -1) {
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	for (int i = 0; i < attribs.size(); i++)
+	{
+		VertexAttr& a = attribs[i];
+		if (a.handle == -1)
+			continue;
+		glDisableVertexAttribArray(a.handle);
+	}
+	*/
+	return isAvailable > 0;
+}
+
 void VertexBuffer::drawRange(int primitive, GLint start, GLsizei end)
 {
+	/*if (needDrawChecked == 0 || needDrawChecked == 2)
+	{
+		if (needDrawChecked == 0)
+		{
+			needDrawChecked = 1;
+			needDraw = isNeedDraw(primitive, start, end);
+		}
+		else
+		{
+			needDrawChecked = 3;
+			needDraw = isNeedDraw(primitive, start, end);
+		}
+	}
+
+	if (!needDraw && g_frame_counter - frameCheck > 1000)
+	{
+		if (camAngles != cameraAngles || camOrigin != cameraOrigin)
+		{
+			needDrawChecked = 0;
+			camAngles = cameraAngles;
+			camOrigin = cameraOrigin;
+		}
+		frameCheck = g_frame_counter;
+	}
+	else if (needDraw && needDrawChecked != 3)
+	{
+		if (g_frame_counter - frameCheck > 2000)
+		{
+			if (camAngles == cameraAngles && camOrigin == cameraOrigin)
+			{
+				needDrawChecked = 2;
+			}
+		}
+		frameCheck = g_frame_counter;
+	}
+
+	if (!needDraw)
+		return;
+		*/
 	shaderProgram->bind();
 	bindAttributes();
 
@@ -223,7 +328,9 @@ void VertexBuffer::drawRange(int primitive, GLint start, GLsizei end)
 	else if (end - start <= 0)
 		logf("Invalid draw range: %d -> %d\n", start, end);
 	else
+	{
 		glDrawArrays(primitive, start, end - start);
+	}
 
 	if (vboId != -1) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -240,5 +347,5 @@ void VertexBuffer::drawRange(int primitive, GLint start, GLsizei end)
 
 void VertexBuffer::draw(int primitive)
 {
-	drawRange(primitive, 0, numVerts);
+	return drawRange(primitive, 0, numVerts);
 }

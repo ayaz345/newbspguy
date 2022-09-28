@@ -39,6 +39,8 @@ namespace fs = std::experimental::filesystem;
 
 //#define __WINDOWS__
 
+extern unsigned int g_frame_counter;
+extern bool DebugKeyPressed;
 extern bool g_verbose;
 extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;

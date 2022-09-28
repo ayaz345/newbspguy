@@ -20,7 +20,7 @@ public:
 	void upload(int format, bool lightmap = false);
 
 	// use this texture for rendering
-	void bind();
+	void bind(GLuint texnum);
 
 	unsigned char* data; // RGB(A) data
 

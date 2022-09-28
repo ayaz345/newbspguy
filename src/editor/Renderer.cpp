@@ -15,6 +15,11 @@ std::string g_config_dir = "";
 
 Renderer* g_app = NULL;
 
+
+vec3 cameraOrigin;
+vec3 cameraAngles;
+
+
 // everything except VIS, ENTITIES, MARKSURFS
 
 std::future<void> Renderer::fgdFuture;
@@ -392,6 +397,16 @@ void Renderer::renderLoop() {
 	glCullFace(GL_FRONT);
 
 	{
+		line_verts = new cVert[2];
+		lineBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, line_verts, 2);
+	}
+
+	{
+		plane_verts = new cQuad(cVert(), cVert(), cVert(), cVert());
+		planeBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, plane_verts, 6);
+	}
+
+	{
 		moveAxes.dimColor[0] = { 110, 0, 160, 255 };
 		moveAxes.dimColor[1] = { 0, 0, 220, 255 };
 		moveAxes.dimColor[2] = { 0, 160, 0, 255 };
@@ -442,6 +457,8 @@ void Renderer::renderLoop() {
 
 	while (!glfwWindowShouldClose(window))
 	{
+		g_frame_counter++;
+
 		Bsp* map = getSelectedMap();
 		if (glfwGetTime() - lastTitleTime > 0.5)
 		{
@@ -918,6 +935,8 @@ void Renderer::controls() {
 		pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
 		released[i] = glfwGetKey(window, i) == GLFW_RELEASE;
 	}
+
+	DebugKeyPressed = pressed[GLFW_KEY_F1];
 
 	anyCtrlPressed = pressed[GLFW_KEY_LEFT_CONTROL] || pressed[GLFW_KEY_RIGHT_CONTROL];
 	anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
@@ -1871,21 +1890,19 @@ void Renderer::addMap(Bsp* map) {
 	}
 }
 
-void Renderer::drawLine(const vec3 & start, const vec3& end, COLOR4 color) {
-	cVert verts[2];
+void Renderer::drawLine(const vec3& start, const vec3& end, COLOR4 color) 
+{
+	line_verts[0].x = start.x;
+	line_verts[0].y = start.z;
+	line_verts[0].z = -start.y;
+	line_verts[0].c = color;
 
-	verts[0].x = start.x;
-	verts[0].y = start.z;
-	verts[0].z = -start.y;
-	verts[0].c = color;
+	line_verts[1].x = end.x;
+	line_verts[1].y = end.z;
+	line_verts[1].z = -end.y;
+	line_verts[1].c = color;
 
-	verts[1].x = end.x;
-	verts[1].y = end.z;
-	verts[1].z = -end.y;
-	verts[1].c = color;
-
-	VertexBuffer buffer(colorShader, COLOR_4B | POS_3F, &verts[0], 2);
-	buffer.draw(GL_LINES);
+	lineBuf->draw(GL_LINES);
 }
 
 void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color) {
@@ -1906,10 +1923,13 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color) {
 	cVert topRightVert(topRight, color);
 	cVert bottomLeftVert(bottomLeft, color);
 	cVert bottomRightVert(bottomRight, color);
-	cQuad quad(bottomRightVert, bottomLeftVert, topLeftVert, topRightVert);
 
-	VertexBuffer buffer(colorShader, COLOR_4B | POS_3F, &quad, 6);
-	buffer.draw(GL_TRIANGLES);
+	plane_verts->v1 = bottomRightVert;
+	plane_verts->v2 = bottomLeftVert;
+	plane_verts->v3 = topLeftVert;
+	plane_verts->v4 = topRightVert;
+
+	planeBuf->draw(GL_TRIANGLES);
 }
 
 void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane) {
@@ -3088,7 +3108,7 @@ void Renderer::saveLumpState(Bsp* map, int targetLumps, bool deleteOldState) {
 	undoLumpState = map->duplicate_lumps(targetLumps);
 }
 
-void Renderer::pushEntityUndoState(const std::string & actionDesc) {
+void Renderer::pushEntityUndoState(const std::string& actionDesc) {
 	if (!pickInfo.ent) {
 		logf("Invalid entity undo state push\n");
 		return;
@@ -3123,13 +3143,13 @@ void Renderer::pushEntityUndoState(const std::string & actionDesc) {
 	updateEntityState(pickInfo.ent);
 }
 
-void Renderer::pushModelUndoState(const std::string & actionDesc, int targetLumps) {
+void Renderer::pushModelUndoState(const std::string& actionDesc, int targetLumps) {
 	Bsp* map = getSelectedMap();
 
 	if (pickInfo.modelIdx <= 0)
 		pickInfo.modelIdx = 0;
-// 	if (pickInfo.ent <= 0)
-// 		pickInfo.ent = 0;
+	// 	if (pickInfo.ent <= 0)
+	// 		pickInfo.ent = 0;
 	if (!map) {
 		logf("Impossible, no map, ent or model idx\n");
 		return;

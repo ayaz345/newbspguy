@@ -122,7 +122,7 @@
       <Filter>Source Files\mdlviewer</Filter>
     </ClCompile>
     <ClCompile Include=".\..\src\filedialog\ImFileDialog.cpp">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\filedialog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -298,6 +298,9 @@
     </Filter>
     <Filter Include="Source Files\util\lib">
       <UniqueIdentifier>{D1CF10C9-0D97-3B0E-9AAE-15E260C5D95A}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\filedialog">
+      <UniqueIdentifier>{2b9a5fbb-9952-479d-8ae7-1c306192ad68}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

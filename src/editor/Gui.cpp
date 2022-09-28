@@ -68,7 +68,7 @@ void Gui::init() {
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
-		glGenerateMipmap(GL_TEXTURE_2D);
+		//glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
 
 		return (void*)(uint64_t)tex;
@@ -1153,7 +1153,7 @@ void Gui::drawMenuBar() {
 
 		if (ImGui::MenuItem("Entity", 0, false, map)) {
 			Entity* newEnt = new Entity();
-			vec3 origin = (app->cameraOrigin + app->cameraForward * 100);
+			vec3 origin = (cameraOrigin + app->cameraForward * 100);
 			if (app->gridSnappingEnabled)
 				origin = app->snapToGrid(origin);
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
@@ -1166,7 +1166,7 @@ void Gui::drawMenuBar() {
 		}
 
 		if (ImGui::MenuItem("BSP Model", 0, false, !app->isLoading && map)) {
-			vec3 origin = app->cameraOrigin + app->cameraForward * 100;
+			vec3 origin = cameraOrigin + app->cameraForward * 100;
 			if (app->gridSnappingEnabled)
 				origin = app->snapToGrid(origin);
 
@@ -1229,6 +1229,14 @@ void Gui::drawMenuBar() {
 			showAboutWidget = true;
 		}
 		ImGui::EndMenu();
+	}
+
+	if (DebugKeyPressed)
+	{
+		if (ImGui::BeginMenu("(DEBUG)"))
+		{
+			ImGui::EndMenu();
+		}
 	}
 
 	ImGui::EndMainMenuBar();
@@ -1452,8 +1460,8 @@ void Gui::drawDebugWidget() {
 
 		if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Text("Origin: %d %d %d", (int)app->cameraOrigin.x, (int)app->cameraOrigin.y, (int)app->cameraOrigin.z);
-			ImGui::Text("Angles: %d %d %d", (int)app->cameraAngles.x, (int)app->cameraAngles.y, (int)app->cameraAngles.z);
+			ImGui::Text("Origin: %d %d %d", (int)cameraOrigin.x, (int)cameraOrigin.y, (int)cameraOrigin.z);
+			ImGui::Text("Angles: %d %d %d", (int)cameraAngles.x, (int)cameraAngles.y, (int)cameraAngles.z);
 		}
 
 		Bsp* map = app->getSelectedMap();
@@ -1516,7 +1524,7 @@ void Gui::drawDebugWidget() {
 				}
 				else
 				{
-					vec3 localCamera = app->cameraOrigin - map->getBspRender()->mapOffset;
+					vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
 
 					static ImVec4 hullColors[] = {
 						ImVec4(1, 1, 1, 1),
@@ -2226,8 +2234,8 @@ void Gui::drawGOTOWidget() {
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.33f;
 		if (showGOTOWidget_update)
 		{
-			coordinates = app->cameraOrigin;
-			angles = app->cameraAngles;
+			coordinates = cameraOrigin;
+			angles = cameraAngles;
 			showGOTOWidget_update = false;
 		}
 		ImGui::Text("Coordinates");
@@ -2252,8 +2260,8 @@ void Gui::drawGOTOWidget() {
 		ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 		if (ImGui::Button("Go to"))
 		{
-			app->cameraOrigin = coordinates;
-			app->cameraAngles = angles;
+			cameraOrigin = coordinates;
+			cameraAngles = angles;
 			makeVectors(angles, app->cameraForward, app->cameraRight, app->cameraUp);
 		}
 		ImGui::PopStyleColor(3);
@@ -3240,7 +3248,7 @@ void Gui::drawImportMapWidget() {
 							tmpEnt->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(Path));
 							tmpEnt->setOrAddKeyvalue("model", std::string("models/") + basename(Path));
 							tmpEnt->setOrAddKeyvalue("spawnflags", "1");
-							tmpEnt->setOrAddKeyvalue("origin", g_app->cameraOrigin.toKeyvalueString());
+							tmpEnt->setOrAddKeyvalue("origin", cameraOrigin.toKeyvalueString());
 							map->ents.push_back(tmpEnt);
 							map->update_ent_lump();
 							logf("Success! Now you needs to copy model to path: %s\n", (std::string("models/") + basename(Path)).c_str());

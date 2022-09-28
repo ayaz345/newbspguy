@@ -68,7 +68,7 @@ public:
 	void upload();
 	void deleteBuffer();
 	void setShader(ShaderProgram* program, bool hideErrors = false);
-
+	bool isNeedDraw(int primitive, GLint start, GLsizei end);
 	void drawRange(int primitive, GLint start, GLsizei end);
 	void draw(int primitive);
 
@@ -77,10 +77,14 @@ public:
 	void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
 
 private:
+	int needDrawChecked = 0;
+	bool needDraw = true;
+	vec3 camOrigin, camAngles;
+	unsigned int frameCheck;
 	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
 	unsigned int vboId = -1;
 	bool attributesBound = false;
-
+	GLuint drawQuery = 0xFFFFFFFF;
 	// add attributes according to the attribute flags
 	void addAttributes(int attFlags);
 };

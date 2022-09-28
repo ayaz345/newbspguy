@@ -1444,13 +1444,12 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 		for (int i = 0; i < renderModels[modelIdx].groupCount; i++) {
 			RenderGroup& rgroup = renderModels[modelIdx].renderGroups[i];
 
-			glActiveTexture(GL_TEXTURE0);
 			if (highlight)
-				yellowTex->bind();
+				yellowTex->bind(0);
 			else
-				greyTex->bind();
-			glActiveTexture(GL_TEXTURE1);
-			whiteTex->bind();
+				greyTex->bind(0);
+
+			whiteTex->bind(1);
 
 			rgroup.wireframeBuffer->draw(GL_LINES);
 		}
@@ -1480,63 +1479,55 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 			*activeShader->modelMat = ent->modelMatOrigin;
 			activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			activeShader->updateMatrixes();
-			glActiveTexture(GL_TEXTURE0);
-			yellowTex->bind();
-			glActiveTexture(GL_TEXTURE1);
-			greyTex->bind();
+			yellowTex->bind(0);
+			greyTex->bind(1);
 
 			rgroup.wireframeBuffer->draw(GL_LINES);
 			activeShader->popMatrix(MAT_MODEL);
 		}
 		if (highlight || (g_render_flags & RENDER_WIREFRAME)) {
-			glActiveTexture(GL_TEXTURE0);
 			if (highlight)
-				yellowTex->bind();
+				yellowTex->bind(0);
 			else {
 				if (modelIdx > 0)
-					blueTex->bind();
+					blueTex->bind(0);
 				else
-					greyTex->bind();
+					greyTex->bind(0);
 			}
-			glActiveTexture(GL_TEXTURE1);
-			whiteTex->bind();
+			whiteTex->bind(1);
 
 			rgroup.wireframeBuffer->draw(GL_LINES);
 		}
 
 
-		glActiveTexture(GL_TEXTURE0);
 		if (texturesLoaded && g_render_flags & RENDER_TEXTURES) {
-			rgroup.texture->bind();
+			rgroup.texture->bind(0);
 		}
 		else {
-			whiteTex->bind();
+			whiteTex->bind(0);
 		}
 		if (g_render_flags & RENDER_LIGHTMAPS) {
 			for (int s = 0; s < MAXLIGHTMAPS; s++) {
-				glActiveTexture(GL_TEXTURE1 + s);
-
-
 				if (highlight) {
-					redTex->bind();
+					redTex->bind(s + 1);
 				}
 				else if (lightmapsUploaded) {
 					if (showLightFlag != -1)
 					{
 						if (showLightFlag == s)
 						{
-							blackTex->bind();
+							blackTex->bind(s + 1);
 							continue;
 						}
 					}
-					rgroup.lightmapAtlas[s]->bind();
+					rgroup.lightmapAtlas[s]->bind(s + 1);
 				}
 				else {
 					if (s == 0) {
-						greyTex->bind();
+						greyTex->bind(s + 1);
 					}
 					else {
-						blackTex->bind();
+						blackTex->bind(s + 1);
 					}
 				}
 			}
@@ -1545,8 +1536,7 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 		rgroup.buffer->draw(GL_TRIANGLES);
 
 		for (int s = 0; s < MAXLIGHTMAPS; s++) {
-			glActiveTexture(GL_TEXTURE1 + s);
-			whiteTex->bind();
+			whiteTex->bind(s + 1);
 		}
 
 		glPushAttrib(GL_ALL_ATTRIB_BITS);

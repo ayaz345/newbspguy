@@ -172,6 +172,7 @@ mat4x4 mat4x4::transpose()
 mat4x4 mat4x4::invert()
 {
 	mat4x4 out;
+	memset(out.m, 0, sizeof(out.m));
 
 	float inv[16];
 

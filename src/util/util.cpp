@@ -25,6 +25,9 @@
 #define GetCurrentDir getcwd
 #endif
 
+bool DebugKeyPressed = false;
+unsigned int g_frame_counter = 0;
+
 ProgressMeter g_progress;
 int g_render_flags;
 std::vector<std::string> g_log_buffer;
@@ -696,6 +699,7 @@ std::vector<vec2> localizeVerts(std::vector<vec3>& verts) {
 }
 
 std::vector<int> getSortedPlanarVertOrder(std::vector<vec3>& verts) {
+	
 	std::vector<vec2> localVerts = localizeVerts(verts);
 	if (localVerts.empty()) {
 		return std::vector<int>();

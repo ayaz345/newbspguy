@@ -97,6 +97,9 @@ class Renderer;
 extern AppSettings g_settings;
 extern Renderer* g_app;
 
+extern vec3 cameraOrigin;
+extern vec3 cameraAngles;
+
 class Renderer {
 	friend class Gui;
 	friend class EditEntityCommand;
@@ -163,8 +166,6 @@ private:
 
 	Fgd* fgd = NULL;
 
-	vec3 cameraOrigin;
-	vec3 cameraAngles;
 	vec3 cameraForward;
 	vec3 cameraUp;
 	vec3 cameraRight;
@@ -225,6 +226,12 @@ private:
 	float vertExtentFactor = 0.01f;
 	bool modelUsesSharedStructures = false;
 	vec3 selectionSize;
+
+	cVert* line_verts = NULL;
+	VertexBuffer* lineBuf = NULL;
+
+	cQuad* plane_verts = NULL;
+	VertexBuffer* planeBuf = NULL;
 
 	VertexBuffer* entConnections = NULL;
 	VertexBuffer* entConnectionPoints = NULL;
