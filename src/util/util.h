@@ -40,6 +40,7 @@ namespace fs = std::experimental::filesystem;
 //#define __WINDOWS__
 
 extern unsigned int g_frame_counter;
+extern double g_time;
 extern bool DebugKeyPressed;
 extern bool g_verbose;
 extern ProgressMeter g_progress;

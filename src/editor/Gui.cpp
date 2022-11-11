@@ -51,8 +51,7 @@ void Gui::init() {
 
 	// Setup Platform/Renderer bindings
 	ImGui_ImplGlfw_InitForOpenGL(app->window, true);
-	const char* glsl_version = "#version 130";
-	ImGui_ImplOpenGL3_Init(glsl_version);
+	ImGui_ImplOpenGL3_Init(NULL);
 
 	//ImGui::StyleColorsLight();
 
@@ -872,6 +871,17 @@ void Gui::drawMenuBar() {
 				if (map)
 				{
 					map->ExportToObjWIP(GetWorkDir());
+				}
+				else
+				{
+					logf("Select map first\n");
+				}
+			}
+
+			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL)) {
+				if (map)
+				{
+					map->ExportToMapWIP(GetWorkDir());
 				}
 				else
 				{

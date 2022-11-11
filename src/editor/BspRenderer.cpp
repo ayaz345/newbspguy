@@ -345,7 +345,7 @@ void BspRenderer::loadLightmaps() {
 	}
 
 	glLightmapTextures = new Texture * [atlasTextures.size()];
-	for (int i = 0; i < atlasTextures.size(); i++) {
+	for (unsigned int i = 0; i < atlasTextures.size(); i++) {
 		delete atlases[i];
 		glLightmapTextures[i] = atlasTextures[i];
 	}
@@ -690,7 +690,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes) {
 	renderModel->renderGroups = new RenderGroup[renderGroups.size()];
 	renderModel->groupCount = (int)renderGroups.size();
 
-	for (int i = 0; i < renderGroups.size(); i++) {
+	for (int i = 0; i < renderModel->groupCount; i++) {
 		renderGroups[i].verts = new lightmapVert[renderGroupVerts[i].size()];
 		renderGroups[i].vertCount = (int)renderGroupVerts[i].size();
 		memcpy(renderGroups[i].verts, &renderGroupVerts[i][0], renderGroups[i].vertCount * sizeof(lightmapVert));
@@ -699,7 +699,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes) {
 		renderGroups[i].wireframeVertCount = (int)renderGroupWireframeVerts[i].size();
 		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(lightmapVert));
 
-		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(activeShader, 0);
+		auto tmpBuf = renderGroups[i].buffer = new VertexBuffer(activeShader, 0, GL_TRIANGLES);
 		tmpBuf->addAttribute(TEX_2F, "vTex");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 		tmpBuf->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
@@ -709,7 +709,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes) {
 		tmpBuf->addAttribute(POS_3F, "vPosition");
 		tmpBuf->setData(renderGroups[i].verts, renderGroups[i].vertCount);
 
-		auto tmpWireBuff = renderGroups[i].wireframeBuffer = new VertexBuffer(activeShader, 0);
+		auto tmpWireBuff = renderGroups[i].wireframeBuffer = new VertexBuffer(activeShader, 0, GL_LINES);
 		tmpWireBuff->addAttribute(TEX_2F, "vTex");
 		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 		tmpWireBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
@@ -917,10 +917,10 @@ void BspRenderer::generateClipnodeBuffer(unsigned int modelIdx) {
 			continue;
 		}
 
-		renderClip->clipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size());
+		renderClip->clipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
 		renderClip->clipnodeBuffer[i]->ownData = true;
 
-		renderClip->wireframeClipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size());
+		renderClip->wireframeClipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
 		renderClip->wireframeClipnodeBuffer[i]->ownData = true;
 
 		renderClip->faceMaths[i] = std::move(tfaceMaths);
@@ -961,7 +961,7 @@ void BspRenderer::preRenderEnts() {
 		refreshEnt(i);
 
 		if (i != 0 && !map->ents[i]->isBspModel()) {
-			memcpy(entCubes + pointEntIdx, renderEnts[i].pointEntCube->buffer->data, sizeof(cCube));
+			memcpy(&entCubes[pointEntIdx], renderEnts[i].pointEntCube->buffer->data, sizeof(cCube));
 			cVert* verts = (cVert*)(entCubes + pointEntIdx);
 			vec3 offset = renderEnts[i].offset.flip();
 			for (int k = 0; k < 6 * 6; k++) {
@@ -973,7 +973,7 @@ void BspRenderer::preRenderEnts() {
 		}
 	}
 
-	pointEnts = new VertexBuffer(colorShader, COLOR_4B | POS_3F, entCubes, numPointEnts * 6 * 6);
+	pointEnts = new VertexBuffer(colorShader, COLOR_4B | POS_3F, entCubes, numPointEnts * 6 * 6, GL_TRIANGLES);
 	pointEnts->ownData = true;
 	pointEnts->upload();
 }
@@ -1451,7 +1451,7 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 
 			whiteTex->bind(1);
 
-			rgroup.wireframeBuffer->draw(GL_LINES);
+			rgroup.wireframeBuffer->drawFull();
 		}
 		return;
 	}
@@ -1482,7 +1482,7 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 			yellowTex->bind(0);
 			greyTex->bind(1);
 
-			rgroup.wireframeBuffer->draw(GL_LINES);
+			rgroup.wireframeBuffer->drawFull();
 			activeShader->popMatrix(MAT_MODEL);
 		}
 		if (highlight || (g_render_flags & RENDER_WIREFRAME)) {
@@ -1496,7 +1496,7 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 			}
 			whiteTex->bind(1);
 
-			rgroup.wireframeBuffer->draw(GL_LINES);
+			rgroup.wireframeBuffer->drawFull();
 		}
 
 
@@ -1533,7 +1533,7 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 			}
 		}
 
-		rgroup.buffer->draw(GL_TRIANGLES);
+		rgroup.buffer->drawFull();
 
 		for (int s = 0; s < MAXLIGHTMAPS; s++) {
 			whiteTex->bind(s + 1);
@@ -1547,7 +1547,7 @@ void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, b
 			*activeShader->modelMat = ent->modelMatOrigin;
 			activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			activeShader->updateMatrixes();
-			rgroup.buffer->draw(GL_TRIANGLES);
+			rgroup.buffer->drawFull();
 			activeShader->popMatrix(MAT_MODEL);
 		}
 		glPopAttrib();
@@ -1565,8 +1565,8 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx) 
 	}
 
 	if (clip.clipnodeBuffer[hullIdx]) {
-		clip.clipnodeBuffer[hullIdx]->draw(GL_TRIANGLES);
-		clip.wireframeClipnodeBuffer[hullIdx]->draw(GL_LINES);
+		clip.clipnodeBuffer[hullIdx]->drawFull();
+		clip.wireframeClipnodeBuffer[hullIdx]->drawFull();
 	}
 }
 
@@ -1577,7 +1577,7 @@ void BspRenderer::drawPointEntities(int highlightEnt) {
 
 	if (highlightEnt <= 0 || highlightEnt >= map->ents.size()) {
 		if (pointEnts->numVerts > 0)
-			pointEnts->draw(GL_TRIANGLES);
+			pointEnts->drawFull();
 		return;
 	}
 
@@ -1594,8 +1594,8 @@ void BspRenderer::drawPointEntities(int highlightEnt) {
 			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			colorShader->updateMatrixes();
 
-			renderEnts[i].pointEntCube->selectBuffer->draw(GL_TRIANGLES);
-			renderEnts[i].pointEntCube->wireframeBuffer->draw(GL_LINES);
+			renderEnts[i].pointEntCube->selectBuffer->drawFull();
+			renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 
 			colorShader->popMatrix(MAT_MODEL);
 
@@ -1607,9 +1607,9 @@ void BspRenderer::drawPointEntities(int highlightEnt) {
 
 	const int cubeVerts = 6 * 6;
 	if (skipIdx > 0)
-		pointEnts->drawRange(GL_TRIANGLES, 0, cubeVerts * skipIdx);
+		pointEnts->drawRange(0, cubeVerts * skipIdx);
 	if (skipIdx + 1 < numPointEnts)
-		pointEnts->drawRange(GL_TRIANGLES, cubeVerts * (skipIdx + 1), cubeVerts * numPointEnts);
+		pointEnts->drawRange(cubeVerts * (skipIdx + 1), cubeVerts * numPointEnts);
 }
 
 bool BspRenderer::pickPoly(vec3 start, const vec3 & dir, int hullIdx, PickInfo& pickInfo) {

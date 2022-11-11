@@ -27,7 +27,7 @@ int g_sort_mode = SORT_CLIPNODES;
 
 void Bsp::init_empty_bsp()
 {
-	lumps = new unsigned char * [HEADER_LUMPS];
+	lumps = new unsigned char* [HEADER_LUMPS];
 
 	bsp_header.nVersion = 30;
 
@@ -175,7 +175,7 @@ Bsp::Bsp(std::string fpath)
 	if (ents.size() && !ents[0]->hasKey("CRC"))
 	{
 		logf("Saving CRC key to Worldspawn\n");
-		ents[0]->addKeyvalue("CRC",std::to_string(reverse_bits(originCrc32)));
+		ents[0]->addKeyvalue("CRC", std::to_string(reverse_bits(originCrc32)));
 		update_ent_lump();
 	}
 
@@ -411,10 +411,10 @@ std::vector<NodeVolumeCuts> Bsp::get_model_leaf_volume_cuts(int modelIdx, int hu
 		bool is_valid_node = false;
 
 		if (hullIdx == 0) {
-			is_valid_node = nodeIdx >= 0 && nodeIdx < (int) nodeCount;
+			is_valid_node = nodeIdx >= 0 && nodeIdx < (int)nodeCount;
 		}
 		else {
-			is_valid_node = nodeIdx >= 0 && nodeIdx < (int) clipnodeCount;
+			is_valid_node = nodeIdx >= 0 && nodeIdx < (int)clipnodeCount;
 		}
 
 		if (nodeIdx >= 0 && is_valid_node) {
@@ -456,7 +456,7 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, st
 			{
 				// reverse order of branched planes = order of cuts to the world which define this node's volume
 				// https://qph.fs.quoracdn.net/main-qimg-2a8faad60cc9d437b58a6e215e6e874d
-				for (int k = (int) clipOrder.size() - 1; k >= 0; k--) {
+				for (int k = (int)clipOrder.size() - 1; k >= 0; k--) {
 					nodeVolumeCuts.cuts.push_back(clipOrder[k]);
 				}
 			}
@@ -606,7 +606,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		BSPPLANE testPlane;
 		bool expectedFlip = testPlane.update(planes[iPlane].vNormal, planes[iPlane].fDist);
 		bool flipped = newPlane.update(newPlane.vNormal, newPlane.fDist);
-		
+
 		testPlane = newPlane;
 
 		// check that all verts are on one side of the plane.
@@ -2021,10 +2021,10 @@ void Bsp::write(std::string path) {
 		if (ents.size() && ents[0]->hasKey("CRC"))
 		{
 			originCrc32 = reverse_bits(std::stoul(ents[0]->keyvalues["CRC"]));
-			logf("HACKING CRC value. Loading original CRC key from WORLDSPAWN: %u. ", 
+			logf("HACKING CRC value. Loading original CRC key from WORLDSPAWN: %u. ",
 				reverse_bits(originCrc32));
 		}
-		else 
+		else
 			logf("HACKING CRC value. Original crc: %u. ", reverse_bits(originCrc32));
 
 		unsigned int crc32 = UINT32_C(0xFFFFFFFF);
@@ -2114,7 +2114,7 @@ bool Bsp::load_lumps(std::string fpath)
 #endif
 	}
 
-	lumps = new unsigned char * [HEADER_LUMPS];
+	lumps = new unsigned char* [HEADER_LUMPS];
 	memset(lumps, 0, sizeof(unsigned char*) * HEADER_LUMPS);
 
 	unsigned int crc32 = UINT32_C(0xFFFFFFFF);
@@ -2141,7 +2141,7 @@ bool Bsp::load_lumps(std::string fpath)
 	}
 
 	originCrc32 = crc32;
-	
+
 	fin.close();
 
 	return valid;
@@ -2225,7 +2225,7 @@ void Bsp::load_ents()
 			Keyvalues k(line);
 			for (int i = 0; i < k.keys.size(); i++)
 			{
-				ent->addKeyvalue(k.keys[i],k.values[i],true);
+				ent->addKeyvalue(k.keys[i], k.values[i], true);
 			}
 
 			if (line.find('}') != std::string::npos)
@@ -2429,11 +2429,11 @@ bool Bsp::validate() {
 			isValid = false;
 		}
 		for (unsigned int k = 0; k < 2; k++) {
-			if (nodes[i].iChildren[k] != (unsigned int) -1 && nodes[i].iChildren[k] > 0 && (unsigned int)nodes[i].iChildren[k] >= nodeCount) {
+			if (nodes[i].iChildren[k] != (unsigned int)-1 && nodes[i].iChildren[k] > 0 && (unsigned int)nodes[i].iChildren[k] >= nodeCount) {
 				logf("Bad node reference in node %d child %d: %d / %d\n", i, k, nodes[i].iChildren[k], nodeCount);
 				isValid = false;
 			}
-			else if (~nodes[i].iChildren[k] != (unsigned int) -1 && nodes[i].iChildren[k] < 0 && (unsigned int)~nodes[i].iChildren[k] >= leafCount) {
+			else if (~nodes[i].iChildren[k] != (unsigned int)-1 && nodes[i].iChildren[k] < 0 && (unsigned int)~nodes[i].iChildren[k] >= leafCount) {
 				logf("Bad leaf reference in ~node %d child %d: %d / %d\n", i, k, ~nodes[i].iChildren[k], leafCount);
 				isValid = false;
 			}
@@ -2593,7 +2593,7 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode) {
 		logf("       Classname                  Targetname          Model  %-10s  Usage\n", countName);
 		logf("-------------------------  -------------------------  -----  ----------  --------\n");
 
-		for (unsigned int i = 0; i < modelCount && i < (unsigned int) perModelLimit; i++) {
+		for (unsigned int i = 0; i < modelCount && i < (unsigned int)perModelLimit; i++) {
 
 			int val = 0;
 			switch (g_sort_mode) {
@@ -2727,7 +2727,7 @@ void Bsp::recurse_node(short nodeIdx, int depth) {
 	recurse_node(nodes[nodeIdx].iChildren[1], depth + 1);
 }
 
-void Bsp::print_node(const BSPNODE & node) {
+void Bsp::print_node(const BSPNODE& node) {
 	BSPPLANE& plane = planes[node.iPlane];
 
 	logf("Plane (%f %f %f) d: %f, Faces: %d, Min(%d, %d, %d), Max(%d, %d, %d)",
@@ -3058,7 +3058,7 @@ void Bsp::delete_model(int modelIdx) {
 	}
 }
 
-int Bsp::create_solid(const vec3 & mins, const vec3& maxs, int textureIdx) {
+int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx) {
 	int newModelIdx = create_model();
 	BSPMODEL& newModel = models[newModelIdx];
 
@@ -3677,7 +3677,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel) {
 	}
 }
 
-int Bsp::create_clipnode_box(const vec3 & mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull, bool skipEmpty) {
+int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull, bool skipEmpty) {
 	std::vector<BSPPLANE> addPlanes;
 	std::vector<BSPCLIPNODE> addNodes;
 	int solidNodeIdx = 0;
@@ -4110,7 +4110,7 @@ void Bsp::regenerate_clipnodes(int modelIdx, int hullIdx) {
 	}
 }
 
-void Bsp::dump_lightmap(int faceIdx, const std::string & outputPath) {
+void Bsp::dump_lightmap(int faceIdx, const std::string& outputPath) {
 	BSPFACE& face = faces[faceIdx];
 
 	int mins[2];
@@ -4122,7 +4122,7 @@ void Bsp::dump_lightmap(int faceIdx, const std::string & outputPath) {
 	lodepng_encode24_file(outputPath.c_str(), (unsigned char*)lightdata + face.nLightmapOffset, extents[0], extents[1]);
 }
 
-void Bsp::dump_lightmap_atlas(const std::string & outputPath) {
+void Bsp::dump_lightmap_atlas(const std::string& outputPath) {
 	int lightmapWidth = MAX_SURFACE_EXTENT;
 
 	int lightmapsPerDim = (int)ceil(sqrt(faceCount));
@@ -4209,7 +4209,7 @@ void Bsp::write_csg_outputs(std::string path) {
 	for (int i = 0; i < 4; i++) {
 
 		FILE* polyfile = NULL;
-		fopen_s(&polyfile,(path + bsp_name + ".p" + std::to_string(i)).c_str(), "wb");
+		fopen_s(&polyfile, (path + bsp_name + ".p" + std::to_string(i)).c_str(), "wb");
 		if (polyfile)
 		{
 			write_csg_polys(world.iHeadnodes[i], polyfile, numPlanes / 2, i == 0);
@@ -4218,7 +4218,7 @@ void Bsp::write_csg_outputs(std::string path) {
 		}
 
 		FILE* detailfile = NULL;
-		fopen_s(&detailfile,(path + bsp_name + ".b" + std::to_string(i)).c_str(), "wb");
+		fopen_s(&detailfile, (path + bsp_name + ".b" + std::to_string(i)).c_str(), "wb");
 		if (detailfile)
 		{
 			fprintf(detailfile, "-1\n");
@@ -4318,7 +4318,7 @@ void Bsp::write_csg_polys(short nodeIdx, FILE* polyfile, int flipPlaneSkip, bool
 	}
 }
 
-void Bsp::print_leaf(const BSPLEAF & leaf) {
+void Bsp::print_leaf(const BSPLEAF& leaf) {
 	logf(getLeafContentsName(leaf.nContents));
 	logf(" %d surfs, Min(%d, %d, %d), Max(%d %d %d)", leaf.nMarkSurfaces,
 		leaf.nMins[0], leaf.nMins[1], leaf.nMins[2],
@@ -4408,7 +4408,7 @@ void Bsp::ExportToObjWIP(std::string path)
 	}
 	FILE* f = NULL;
 	logf("Export %s to %s\n", (bsp_name + ".obj").c_str(), path.c_str());
-	fopen_s(&f,(path + bsp_name + ".obj").c_str(), "wb");
+	fopen_s(&f, (path + bsp_name + ".obj").c_str(), "wb");
 	if (f)
 	{
 		fprintf(f, "# Exported using bspguy!\n");
@@ -4416,7 +4416,7 @@ void Bsp::ExportToObjWIP(std::string path)
 		fprintf(f, "s off\n");
 
 		fprintf(f, "mtllib materials.mtl\n");
-		
+
 		std::string groupname = std::string();
 
 		//std::set<BSPMIPTEX*> texture_list;
@@ -4452,7 +4452,7 @@ void Bsp::ExportToObjWIP(std::string path)
 			{
 				entIds.push_back(0);
 			}
-			
+
 			materialid = -1;
 			for (int m = 0; m < matnames.size(); m++)
 			{
@@ -4536,10 +4536,10 @@ void Bsp::ExportToObjWIP(std::string path)
 			}
 
 
-			for (int e = 0; e < entIds.size();e++)
+			for (int e = 0; e < entIds.size(); e++)
 			{
 				int entid = entIds[e];
-				Entity * ent = ents[entid];
+				Entity* ent = ents[entid];
 				vec3 origin_offset = ent->getOrigin();
 
 				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(entid) != groupname)
@@ -4560,7 +4560,7 @@ void Bsp::ExportToObjWIP(std::string path)
 				for (int n = 0; n < rface->vertCount; n++)
 				{
 					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
-					vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y) ;
+					vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
 					BSPPLANE& plane = planes[face.iPlane];
 
 					fprintf(f, "v %f %f %f\n", org_pos.x, org_pos.y, org_pos.z);
@@ -4578,7 +4578,7 @@ void Bsp::ExportToObjWIP(std::string path)
 
 					BSPPLANE& plane = planes[face.iPlane];
 
-					fprintf(f, "vt %f %f\n", fU* tw, fV* th);
+					fprintf(f, "vt %f %f\n", fU * tw, fV * th);
 				}
 				for (int n = 0; n < rface->vertCount; n++)
 				{
@@ -4603,7 +4603,7 @@ void Bsp::ExportToObjWIP(std::string path)
 		}
 
 		FILE* fmat = NULL;
-		fopen_s(&fmat,(path + "materials.mtl").c_str(), "wt");
+		fopen_s(&fmat, (path + "materials.mtl").c_str(), "wt");
 
 		if (fmat)
 		{
@@ -4622,6 +4622,33 @@ void Bsp::ExportToObjWIP(std::string path)
 	}
 }
 
+struct ENTDATA
+{
+	int entid;
+	std::vector<std::string> vecdata;
+};
+
+void Bsp::ExportToMapWIP(std::string path)
+{
+	if (!createDir(path))
+	{
+		logf("Error output path directory can't be created!\n");
+		return;
+	}
+	FILE* f = NULL;
+	logf("Export %s to %s\n", (bsp_name + ".map").c_str(), path.c_str());
+	fopen_s(&f, (path + bsp_name + ".map").c_str(), "wb");
+	if (f)
+	{
+		fprintf(f, "// Exported using bspguy!\n");
+
+		fclose(f);
+	}
+	else
+	{
+		logf("Error file access!'n");
+	}
+}
 
 BspRenderer* Bsp::getBspRender()
 {

@@ -221,6 +221,8 @@ public:
 
 	void ExportToObjWIP(std::string path);
 
+	void ExportToMapWIP(std::string path);
+
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 
 private:

@@ -16,7 +16,7 @@
 class StudioModel
 {
 public:
-	void					Init(char* modelname);
+	void					Init(const char* modelname);
 	void					DrawModel(void);
 	void					AdvanceFrame(float dt);
 
@@ -53,7 +53,7 @@ private:
 
 	vec4_t					m_adj;				// FIX: non persistant, make static
 
-	studiohdr_t* LoadModel(char* modelname);
+	studiohdr_t* LoadModel(const char* modelname);
 	studioseqhdr_t* LoadDemandSequences(char* modelname);
 
 	void					CalcBoneAdj(void);

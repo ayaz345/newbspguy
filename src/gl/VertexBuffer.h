@@ -53,36 +53,40 @@ public:
 	std::vector<VertexAttr> attribs;
 	int elementSize;
 	GLsizei numVerts;
+	int primitive;
 	bool ownData = false; // set to true if buffer should delete data on destruction
 
 	// Specify which common attributes to use. They will be located in the
 	// shader program. If passing data, note that data is not copied, but referenced
-	VertexBuffer(ShaderProgram* shaderProgram, int attFlags);
-	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, GLsizei numVerts);
+	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive);
+	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, GLsizei numVerts, int primitive);
 	~VertexBuffer();
 
 	// Note: Data is not copied into the class - don't delete your data.
 	//       Data will be deleted when the buffer is destroyed.
+	void setData(const void* data, GLsizei numVerts, int primitive);
 	void setData(const void* data, GLsizei numVerts);
 
 	void upload();
 	void deleteBuffer();
 	void setShader(ShaderProgram* program, bool hideErrors = false);
-	bool isNeedDraw(int primitive, GLint start, GLsizei end);
-	void drawRange(int primitive, GLint start, GLsizei end);
-	void draw(int primitive);
+	bool isNeedDraw(GLint start, GLsizei end);
+	void drawRange(GLint start, GLsizei end);
+	void drawFull();
 
 	void addAttribute(int numValues, int valueType, int normalized, const char* varName);
 	void addAttribute(int type, const char* varName);
 	void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
 
 private:
-	int needDrawChecked = 0;
+	bool needDrawChecked = true;
 	bool needDraw = true;
 	vec3 camOrigin, camAngles;
-	unsigned int frameCheck;
+	double drawTime = 0.0;
 	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
 	unsigned int vboId = -1;
+	unsigned int vboId2 = -1;
+
 	bool attributesBound = false;
 	GLuint drawQuery = 0xFFFFFFFF;
 	// add attributes according to the attribute flags

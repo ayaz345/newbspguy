@@ -384,7 +384,7 @@ Renderer::~Renderer() {
 }
 void Renderer::renderLoop() {
 	/*StudioModel* tempmodel = new StudioModel();
-	tempmodel->Init("d:\\SteamLibrary\\steamapps\\common\\Half-Life\\cstrike\\models\\player.mdl");
+	tempmodel->Init("c:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life\\cstrike\\models\\player\\arctic\\arctic.mdl");
 	tempmodel->SetSequence(0);
 
 	tempmodel->SetController(0, 0.0);
@@ -392,18 +392,20 @@ void Renderer::renderLoop() {
 	tempmodel->SetController(2, 0.0);
 	tempmodel->SetController(3, 0.0);
 	tempmodel->SetMouth(0);*/
+
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
 
 	{
 		line_verts = new cVert[2];
-		lineBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, line_verts, 2);
+		lineBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, line_verts, 2, GL_LINES);
 	}
 
 	{
 		plane_verts = new cQuad(cVert(), cVert(), cVert(), cVert());
-		planeBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, plane_verts, 6);
+		planeBuf = new VertexBuffer(colorShader, COLOR_4B | POS_3F, plane_verts, 6, GL_TRIANGLES);
 	}
 
 	{
@@ -419,7 +421,7 @@ void Renderer::renderLoop() {
 
 		// flipped for HL coords
 		moveAxes.model = new cCube[4];
-		moveAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, moveAxes.model, 6 * 6 * 4);
+		moveAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, moveAxes.model, 6 * 6 * 4, GL_TRIANGLES);
 		moveAxes.numAxes = 4;
 	}
 
@@ -442,27 +444,27 @@ void Renderer::renderLoop() {
 
 		// flipped for HL coords
 		scaleAxes.model = new cCube[6];
-		scaleAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, scaleAxes.model, 6 * 6 * 6);
+		scaleAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES);
 		scaleAxes.numAxes = 6;
 	}
 
 	updateDragAxes();
 
-	cCube vertCube(vec3(-1.0, -1.0, -1.0), vec3(1.0, 1.0, 1.0), { 0, 128, 255, 255 });
-	VertexBuffer vertCubeBuffer(colorShader, COLOR_4B | POS_3F, &vertCube, 6 * 6);
+	g_time = glfwGetTime();
 
-	double lastFrameTime = glfwGetTime();
-	double lastTitleTime = glfwGetTime();
+	double lastFrameTime = g_time;
+	double lastTitleTime = g_time;
 
 
 	while (!glfwWindowShouldClose(window))
 	{
+		g_time = glfwGetTime();
 		g_frame_counter++;
 
 		Bsp* map = getSelectedMap();
-		if (glfwGetTime() - lastTitleTime > 0.5)
+		if (g_time - lastTitleTime > 0.5)
 		{
-			lastTitleTime = glfwGetTime();
+			lastTitleTime = g_time;
 			if (map)
 			{
 				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + map->bsp_path).c_str());
@@ -470,16 +472,17 @@ void Renderer::renderLoop() {
 		}
 		glfwPollEvents();
 
-		double frameDelta = glfwGetTime() - lastFrameTime;
+		double frameDelta = g_time - lastFrameTime;
 		frameTimeScale = 0.05 / frameDelta;
 		double fps = 1.0 / frameDelta;
 
 		//FIXME : frameTimeScale = 0.05f / frameDelta ???
 		frameTimeScale = 100.0 / fps;
 
-		lastFrameTime = glfwGetTime();
+		lastFrameTime = g_time;
 
-		double spin = glfwGetTime() * 2;
+		double spin = g_time * 2;
+
 		model.loadIdentity();
 		model.rotateZ((float)spin);
 		model.rotateX((float)spin);
@@ -588,7 +591,7 @@ void Renderer::renderLoop() {
 			model.loadIdentity();
 			colorShader->updateMatrixes();
 			glDisable(GL_DEPTH_TEST);
-			entConnectionPoints->draw(GL_TRIANGLES);
+			entConnectionPoints->drawFull();
 			glEnable(GL_DEPTH_TEST);
 		}
 
@@ -853,7 +856,7 @@ void Renderer::drawModelVerts() {
 	model.loadIdentity();
 	model.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	colorShader->updateMatrixes();
-	modelVertBuff->draw(GL_TRIANGLES);
+	modelVertBuff->drawFull();
 }
 
 void Renderer::drawModelOrigin() {
@@ -892,7 +895,7 @@ void Renderer::drawModelOrigin() {
 
 	model.loadIdentity();
 	colorShader->updateMatrixes();
-	modelOriginBuff->draw(GL_TRIANGLES);
+	modelOriginBuff->drawFull();
 }
 
 void Renderer::drawTransformAxes() {
@@ -910,13 +913,13 @@ void Renderer::drawTransformAxes() {
 		vec3 ori = scaleAxes.origin;
 		model.translate(ori.x, ori.z, -ori.y);
 		colorShader->updateMatrixes();
-		scaleAxes.buffer->draw(GL_TRIANGLES);
+		scaleAxes.buffer->drawFull();
 	}
 	if (transformMode == TRANSFORM_MOVE) {
 		vec3 ori = moveAxes.origin;
 		model.translate(ori.x, ori.z, -ori.y);
 		colorShader->updateMatrixes();
-		moveAxes.buffer->draw(GL_TRIANGLES);
+		moveAxes.buffer->drawFull();
 	}
 }
 
@@ -924,7 +927,7 @@ void Renderer::drawEntConnections() {
 	if (entConnections && (g_render_flags & RENDER_ENT_CONNECTIONS)) {
 		model.loadIdentity();
 		colorShader->updateMatrixes();
-		entConnections->draw(GL_LINES);
+		entConnections->drawFull();
 	}
 }
 
@@ -1902,7 +1905,7 @@ void Renderer::drawLine(const vec3& start, const vec3& end, COLOR4 color)
 	line_verts[1].z = -end.y;
 	line_verts[1].c = color;
 
-	lineBuf->draw(GL_LINES);
+	lineBuf->drawFull();
 }
 
 void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color) {
@@ -1929,7 +1932,7 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color) {
 	plane_verts->v3 = topLeftVert;
 	plane_verts->v4 = topRightVert;
 
-	planeBuf->draw(GL_TRIANGLES);
+	planeBuf->drawFull();
 }
 
 void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane) {
@@ -2223,7 +2226,7 @@ void Renderer::updateModelVerts() {
 		transformedOrigin = oldOrigin = pickInfo.ent->getOrigin();
 	}
 
-	modelOriginBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &modelOriginCube, 6 * 6);
+	modelOriginBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &modelOriginCube, 6 * 6, GL_TRIANGLES);
 
 	updateSelectionSize();
 
@@ -2248,7 +2251,7 @@ void Renderer::updateModelVerts() {
 
 	size_t numCubes = modelVerts.size() + modelEdges.size();
 	modelVertCubes = new cCube[numCubes];
-	modelVertBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, modelVertCubes, (int)(6 * 6 * numCubes));
+	modelVertBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
 	//logf("%d intersection points\n", modelVerts.size());
 }
 
@@ -2374,8 +2377,8 @@ void Renderer::updateEntConnections() {
 			lines[idx++] = cVert(ori, bothColor);
 		}
 
-		entConnections = new VertexBuffer(colorShader, COLOR_4B | POS_3F, lines, (int)numVerts);
-		entConnectionPoints = new VertexBuffer(colorShader, COLOR_4B | POS_3F, points, (int)(numPoints * 6 * 6));
+		entConnections = new VertexBuffer(colorShader, COLOR_4B | POS_3F, lines, (int)numVerts, GL_LINES);
+		entConnectionPoints = new VertexBuffer(colorShader, COLOR_4B | POS_3F, points, (int)(numPoints * 6 * 6), GL_TRIANGLES);
 		entConnections->ownData = true;
 		entConnectionPoints->ownData = true;
 	}

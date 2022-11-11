@@ -27,6 +27,7 @@
 
 bool DebugKeyPressed = false;
 unsigned int g_frame_counter = 0;
+double g_time = 0.0;
 
 ProgressMeter g_progress;
 int g_render_flags;

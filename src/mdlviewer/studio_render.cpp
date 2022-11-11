@@ -556,20 +556,7 @@ void StudioModel::DrawModel()
 	g_pxformverts = &g_xformverts[0];
 	g_pvlightvalues = &g_lightvalues[0];
 
-
-	glPushMatrix();
-
-	glTranslatef(m_origin[0], m_origin[1], m_origin[2]);
-
-	glRotatef(m_angles[1], 0, 0, 1);
-	glRotatef(m_angles[0], 0, 1, 0);
-	glRotatef(m_angles[2], 1, 0, 0);
-
 	// glShadeModel (GL_SMOOTH);
-
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
-	// glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_FASTEST);
 
 	SetUpBones();
 
@@ -580,14 +567,6 @@ void StudioModel::DrawModel()
 		SetupModel(i);
 		DrawPoints();
 	}
-
-	glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-
-	// glShadeModel (GL_FLAT);
-
-	// glHint (GL_PERSPECTIVE_CORRECTION_HINT, GL_NICEST);
-
-	glPopMatrix();
 }
 
 /*
@@ -876,7 +855,7 @@ void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data,
 
 
 
-studiohdr_t* StudioModel::LoadModel(char* modelname)
+studiohdr_t* StudioModel::LoadModel(const char* modelname)
 {
 	FILE* fp;
 	long size;
@@ -949,7 +928,7 @@ studioseqhdr_t* StudioModel::LoadDemandSequences(char* modelname)
 }
 
 
-void StudioModel::Init(char* modelname)
+void StudioModel::Init(const char* modelname)
 {
 	m_pstudiohdr = LoadModel(modelname);
 

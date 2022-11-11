@@ -92,7 +92,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube) {
 	cube->back.setColor(entCube->color * 0.53f);
 
 	COLOR4 selectColor = { 220, 0, 0, 255 };
-	entCube->buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, cube, 6 * 6);
+	entCube->buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, cube, 6 * 6, GL_TRIANGLES);
 
 	cCube* selectCube = new cCube(min, max, selectColor);
 
@@ -102,7 +102,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube) {
 	selectCube->top.setColor(selectColor * 0.40f);
 	selectCube->back.setColor(selectColor * 0.53f);
 
-	entCube->selectBuffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, selectCube, 6 * 6);
+	entCube->selectBuffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, selectCube, 6 * 6, GL_TRIANGLES);
 
 	vec3 vcube[8] = {
 		vec3(min.x, min.y, min.z), // front-left-bottom
@@ -139,7 +139,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube) {
 	cVert* selectWireframeBuf = new cVert[12 * 2];
 	memcpy(selectWireframeBuf, selectWireframe, sizeof(cVert) * 12 * 2);
 
-	entCube->wireframeBuffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, selectWireframeBuf, 2 * 12);
+	entCube->wireframeBuffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, selectWireframeBuf, 2 * 12, GL_LINES);
 
 	entCube->buffer->ownData = true;
 	entCube->selectBuffer->ownData = true;
