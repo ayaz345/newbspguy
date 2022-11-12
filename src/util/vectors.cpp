@@ -193,6 +193,11 @@ float vec3::length()
 	return sqrt((x * x) + (y * y) + (z * z));
 }
 
+std::string vec3::toString()
+{
+	return std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z);
+}
+
 std::string vec3::toKeyvalueString(bool truncate, const std::string& suffix_x, const std::string& suffix_y, const std::string& suffix_z) {
 	std::string parts[3] = { std::to_string(x) ,std::to_string(y), std::to_string(z) };
 

@@ -11,6 +11,7 @@ struct vec3
 	float length();
 	vec3 invert();
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
+	std::string toString();
 	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
 
 	void operator-=(const vec3& v);

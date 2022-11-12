@@ -23,6 +23,7 @@ EntCube* PointEntRenderer::getEntCube(Entity* ent) {
 	if (cubeMap.find(cname) != cubeMap.end()) {
 		return cubeMap[cname];
 	}
+
 	return entCubes[0]; // default purple cube from hammer
 }
 

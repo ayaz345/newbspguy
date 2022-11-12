@@ -123,6 +123,7 @@ public:
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 
+	void setRenderAngles(int entIdx, vec3 angles);
 	void refreshEnt(int entIdx);
 	int refreshModel(int modelIdx, bool refreshClipnodes = true);
 	bool refreshModelClipnodes(int modelIdx);
@@ -165,7 +166,6 @@ public:
 	RenderModel* renderModels = NULL;
 	RenderClipnodes* renderClipnodes = NULL;
 	FaceMath* faceMaths = NULL;
-	VertexBuffer* pointEnts = NULL;
 
 	// textures loaded in a separate thread
 	Texture** glTexturesSwap;

@@ -22,7 +22,7 @@ BspRenderer::BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* full
 	renderModels = NULL;
 	faceMaths = NULL;
 
-	whiteTex = new Texture(1, 1,"white");
+	whiteTex = new Texture(1, 1, "white");
 	greyTex = new Texture(1, 1, "grey");
 	redTex = new Texture(1, 1, "red");
 	yellowTex = new Texture(1, 1, "yellow");
@@ -309,7 +309,7 @@ void BspRenderer::loadLightmaps() {
 			// TODO: Try fitting in earlier atlases before using the latest one
 			if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s])) {
 				atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-				atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE,"LIGHTMAP"));
+				atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
 				atlasId++;
 				memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
@@ -945,7 +945,6 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue) {
 void BspRenderer::preRenderEnts() {
 	if (renderEnts) {
 		delete[] renderEnts;
-		delete pointEnts;
 	}
 	renderEnts = new RenderEnt[map->ents.size()];
 
@@ -959,23 +958,7 @@ void BspRenderer::preRenderEnts() {
 
 	for (int i = 0; i < map->ents.size(); i++) {
 		refreshEnt(i);
-
-		if (i != 0 && !map->ents[i]->isBspModel()) {
-			memcpy(&entCubes[pointEntIdx], renderEnts[i].pointEntCube->buffer->data, sizeof(cCube));
-			cVert* verts = (cVert*)(entCubes + pointEntIdx);
-			vec3 offset = renderEnts[i].offset.flip();
-			for (int k = 0; k < 6 * 6; k++) {
-				verts[k].x += offset.x;
-				verts[k].y += offset.y;
-				verts[k].z += offset.z;
-			}
-			pointEntIdx++;
-		}
 	}
-
-	pointEnts = new VertexBuffer(colorShader, COLOR_4B | POS_3F, entCubes, numPointEnts * 6 * 6, GL_TRIANGLES);
-	pointEnts->ownData = true;
-	pointEnts->upload();
 }
 
 void BspRenderer::refreshPointEnt(int entIdx) {
@@ -1000,70 +983,31 @@ void BspRenderer::refreshPointEnt(int entIdx) {
 		logf("Failed to update point ent\n");
 		return;
 	}
-
-	cCube* entCubes = (cCube*)pointEnts->data;
-
-	memcpy(entCubes + skipIdx, renderEnts[entIdx].pointEntCube->buffer->data, sizeof(cCube));
-	cVert* verts = (cVert*)(entCubes + skipIdx);
-	vec3 offset = renderEnts[entIdx].offset.flip();
-	for (int k = 0; k < 6 * 6; k++) {
-		verts[k].x += offset.x;
-		verts[k].y += offset.y;
-		verts[k].z += offset.z;
-	}
-
-	pointEnts->deleteBuffer();
-	pointEnts->upload();
 }
 
-void BspRenderer::refreshEnt(int entIdx) {
-	Entity* ent = map->ents[entIdx];
-	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
-	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
-	renderEnts[entIdx].modelMat.loadIdentity();
-	renderEnts[entIdx].modelMatOrigin.loadIdentity();
-	renderEnts[entIdx].offset = vec3(0, 0, 0);
-	renderEnts[entIdx].angles = vec3(0, 0, 0);
-	renderEnts[entIdx].pointEntCube = pointEntRenderer->getEntCube(ent);
-
-	if (ent->hasKey("origin")) {
-		vec3 origin = parseVector(ent->keyvalues["origin"]);
-		renderEnts[entIdx].modelMat.translate(origin.x, origin.z, -origin.y);
-		renderEnts[entIdx].modelMatOrigin.translate(origin.x, origin.z, -origin.y);
-		renderEnts[entIdx].offset = origin;
-	}
-
-	if (ent->hasKey("angles")) {
-		//mat4x4print(renderEnts[entIdx].modelMat);
-		vec3 angles = parseVector(ent->keyvalues["angles"]);
-		if (ent->hasKey("classname"))
+void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
+{
+	if (map->ents[entIdx]->hasKey("classname"))
+	{
+		if (map->ents[entIdx]->keyvalues["classname"] == "func_breakable")
 		{
-			if (ent->keyvalues["classname"] == "func_breakable")
+			// based at cs 1.6 gamedll
+			renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
+			renderEnts[entIdx].modelMat.rotateY(0);
+			renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
+		}
+		else if (IsEntNotSupportAngles(map->ents[entIdx]->keyvalues["classname"]))
+		{
+			// based at cs 1.6 gamedll
+		}
+		else if (map->ents[entIdx]->keyvalues["classname"] == "env_sprite")
+		{
+			// based at cs 1.6 gamedll
+			if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
 			{
-				// based at cs 1.6 gamedll
-				renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat.rotateZ(-(angles.y * (PI / 180.0f)));
 				renderEnts[entIdx].modelMat.rotateY(0);
 				renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-			}
-			else if (IsEntNotSupportAngles(ent->keyvalues["classname"]))
-			{
-				// based at cs 1.6 gamedll
-			}
-			else if (ent->keyvalues["classname"] == "env_sprite")
-			{
-				// based at cs 1.6 gamedll
-				if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
-				{
-					renderEnts[entIdx].modelMat.rotateZ(-(angles.y * (PI / 180.0f)));
-					renderEnts[entIdx].modelMat.rotateY(0);
-					renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-				}
-				else
-				{
-					renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
-					renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
-					renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-				}
 			}
 			else
 			{
@@ -1078,9 +1022,66 @@ void BspRenderer::refreshEnt(int entIdx) {
 			renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 			renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
 		}
-		renderEnts[entIdx].angles = angles;
+	}
+	else
+	{
+		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
+		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
+	}
+	renderEnts[entIdx].angles = angles;
+}
+
+void BspRenderer::refreshEnt(int entIdx) {
+	Entity* ent = map->ents[entIdx];
+	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
+	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
+	renderEnts[entIdx].modelMat.loadIdentity();
+	renderEnts[entIdx].modelMatOrigin.loadIdentity();
+	renderEnts[entIdx].offset = vec3(0, 0, 0);
+	renderEnts[entIdx].angles = vec3(0, 0, 0);
+	renderEnts[entIdx].pointEntCube = pointEntRenderer->getEntCube(ent);
+
+	if (ent->hasKey("origin"))
+	{
+		vec3 origin = parseVector(ent->keyvalues["origin"]);
+		renderEnts[entIdx].modelMat.translate(origin.x, origin.z, -origin.y);
+		renderEnts[entIdx].modelMatOrigin.translate(origin.x, origin.z, -origin.y);
+		renderEnts[entIdx].offset = origin;
 	}
 
+	if (ent->hasKey("angle") && (!ent->hasKey("angles") || ent->keyvalues["angles"].size() == 0))
+	{
+		float y = atof(ent->keyvalues["angle"].c_str());
+
+		vec3 angles;
+
+		if (y >= 0.0f)
+		{
+			angles.x = 0.0f;
+			angles.y = y;
+		}
+		else if ((int)y == -1)
+		{
+			angles.x = -90.0f;
+			angles.y = 0.0f;
+		}
+		else
+		{
+			angles.x = 90.0f;
+			angles.y = 0.0f;
+		}
+
+		angles.z = 0.0f;
+		setRenderAngles(entIdx, angles);
+	}
+
+	if (ent->hasKey("angles"))
+	{
+		//mat4x4print(renderEnts[entIdx].modelMat);
+		vec3 angles = parseVector(ent->keyvalues["angles"]);
+		setRenderAngles(entIdx,angles);
+	}
 }
 
 void BspRenderer::calcFaceMaths() {
@@ -1155,9 +1156,6 @@ BspRenderer::~BspRenderer() {
 	}
 	if (renderEnts) {
 		delete[] renderEnts;
-	}
-	if (pointEnts) {
-		delete pointEnts;
 	}
 
 	deleteTextures();
@@ -1433,7 +1431,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 	delayLoadData();
 }
 
-void BspRenderer::drawModel(RenderEnt * ent, bool transparent, bool highlight, bool edgesOnly) {
+void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly) {
 	int modelIdx = ent ? ent->modelIdx : 0;
 	if (modelIdx < 0 || (unsigned int)modelIdx >= numRenderModels)
 	{
@@ -1575,44 +1573,39 @@ void BspRenderer::drawPointEntities(int highlightEnt) {
 
 	colorShader->bind();
 
-	if (highlightEnt <= 0 || highlightEnt >= map->ents.size()) {
-		if (pointEnts->numVerts > 0)
-			pointEnts->drawFull();
-		return;
-	}
-
-	unsigned int skipIdx = 0;
-
 	// skip worldspawn
+	colorShader->pushMatrix(MAT_MODEL);
+
 	for (size_t i = 1, sz = map->ents.size(); i < sz; i++) {
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
 
 		if (highlightEnt == i) {
-			colorShader->pushMatrix(MAT_MODEL);
+
 			*colorShader->modelMat = renderEnts[i].modelMat;
 			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
 			colorShader->updateMatrixes();
 
 			renderEnts[i].pointEntCube->selectBuffer->drawFull();
 			renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
-
-			colorShader->popMatrix(MAT_MODEL);
-
-			break;
 		}
+		else
+		{
+			*colorShader->modelMat = renderEnts[i].modelMat;
+			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
-		skipIdx++;
+			colorShader->updateMatrixes();
+
+			renderEnts[i].pointEntCube->buffer->drawFull();
+			//renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+		}
 	}
 
-	const int cubeVerts = 6 * 6;
-	if (skipIdx > 0)
-		pointEnts->drawRange(0, cubeVerts * skipIdx);
-	if (skipIdx + 1 < numPointEnts)
-		pointEnts->drawRange(cubeVerts * (skipIdx + 1), cubeVerts * numPointEnts);
+	colorShader->popMatrix(MAT_MODEL);
 }
 
-bool BspRenderer::pickPoly(vec3 start, const vec3 & dir, int hullIdx, PickInfo& pickInfo) {
+bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo) {
 	bool foundBetterPick = false;
 
 	start -= mapOffset;

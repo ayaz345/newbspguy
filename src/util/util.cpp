@@ -47,6 +47,11 @@ void logf(const char* format, ...) {
 	printf("%s", log_line);
 	g_log_buffer.push_back(log_line);
 
+#ifdef _DEBUG
+	std::ofstream outfile("log.txt", std::ios_base::app);
+	outfile << log_line;
+#endif
+
 	g_log_mutex.unlock();
 }
 

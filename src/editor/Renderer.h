@@ -37,7 +37,7 @@ enum pick_modes {
 };
 
 struct TransformAxes {
-	cCube* model;
+	cCube model[6];
 	VertexBuffer* buffer;
 	vec3 origin;
 	vec3 mins[6];

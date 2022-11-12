@@ -51,9 +51,10 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const voi
 {
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
-	glGenBuffers(1, &vboId);
 	addAttributes(attFlags);
 	setData(dat, numVerts, primitive);
+	vboId = -1;
+
 	//glGenQueries(1, &drawQuery);
 }
 
@@ -61,9 +62,9 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primi
 {
 	numVerts = 0;
 	data = NULL;
+	vboId = -1;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
-	glGenBuffers(1, &vboId);
 	addAttributes(attFlags);
 //	glGenQueries(1, &drawQuery);
 }
@@ -74,7 +75,7 @@ VertexBuffer::~VertexBuffer() {
 		delete[] data;
 	}
 	//glDeleteQueries(1, &drawQuery);
-	drawQuery = -1;
+	//drawQuery = -1;
 }
 
 void VertexBuffer::addAttributes(int attFlags)
@@ -138,8 +139,11 @@ void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 	}
 
 	bindAttributes(hideErrors);
-	deleteBuffer();
-	upload();
+	if (vboId != -1)
+	{
+		deleteBuffer();
+		upload();
+	}
 }
 
 void VertexBuffer::bindAttributes(bool hideErrors) {
@@ -177,6 +181,7 @@ void VertexBuffer::upload() {
 	shaderProgram->bind();
 	bindAttributes();
 
+	glGenBuffers(1, &vboId);
 	glBindBuffer(GL_ARRAY_BUFFER, vboId);
 	glBufferData(GL_ARRAY_BUFFER, elementSize * numVerts, data, GL_STATIC_DRAW);
 
@@ -189,13 +194,18 @@ void VertexBuffer::upload() {
 		if (a.handle == -1) {
 			continue;
 		}
+		glBindBuffer(GL_ARRAY_BUFFER, vboId);
 		glEnableVertexAttribArray(a.handle);
 		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
 	}
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 void VertexBuffer::deleteBuffer() {
-	glDeleteBuffers(1, &vboId);
+	if (vboId != -1)
+		glDeleteBuffers(1, &vboId);
+	vboId = -1;
 }
 
 bool VertexBuffer::isNeedDraw(GLint start, GLsizei end)
@@ -302,10 +312,15 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 			return;
 		*/
 		char* offsetPtr = (char*)data;
+
 		shaderProgram->bind();
 		bindAttributes();
-		glBindBuffer(GL_ARRAY_BUFFER, vboId);
-		offsetPtr = NULL;
+
+		if (vboId != -1) {
+			glBindBuffer(GL_ARRAY_BUFFER, vboId);
+			offsetPtr = NULL;
+		}
+
 		int offset = 0;
 
 		// Drop FPS below: FIXME
@@ -331,7 +346,10 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 			glDisableVertexAttribArray(a.handle);
 		}
 
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
+		if (vboId != -1) {
+			glBindBuffer(GL_ARRAY_BUFFER, 0);
+		}
+
 	}
 }
 

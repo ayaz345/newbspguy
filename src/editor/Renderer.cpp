@@ -235,6 +235,7 @@ void AppSettings::save(std::string path)
 		return;
 
 	std::ostringstream file;
+
 	file << "window_width=" << g_settings.windowWidth << std::endl;
 	file << "window_height=" << g_settings.windowHeight << std::endl;
 	file << "window_x=" << g_settings.windowX << std::endl;
@@ -275,7 +276,7 @@ void AppSettings::save(std::string path)
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
 	
-	writeFile(g_settings_path, file.str().c_str(), file.str().size());
+	writeFile(g_settings_path, file.str().c_str(), (int) file.str().size());
 }
 
 void AppSettings::save() {
@@ -366,7 +367,6 @@ Renderer::Renderer() {
 	colorShader->setMatrixNames(NULL, "modelViewProjection");
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL);
 
-	colorShader->bind();
 	unsigned int colorMultId = glGetUniformLocation(colorShader->ID, "colorMult");
 	glUniform4f(colorMultId, 1, 1, 1, 1);
 
@@ -435,8 +435,7 @@ void Renderer::renderLoop() {
 		moveAxes.hoverColor[3] = { 255, 255, 255, 255 };
 
 		// flipped for HL coords
-		moveAxes.model = new cCube[4];
-		moveAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, moveAxes.model, 6 * 6 * 4, GL_TRIANGLES);
+		moveAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &moveAxes.model, 6 * 6 * 4, GL_TRIANGLES);
 		moveAxes.numAxes = 4;
 	}
 
@@ -458,8 +457,7 @@ void Renderer::renderLoop() {
 		scaleAxes.hoverColor[5] = { 64, 255, 64, 255 };
 
 		// flipped for HL coords
-		scaleAxes.model = new cCube[6];
-		scaleAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES);
+		scaleAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES);
 		scaleAxes.numAxes = 6;
 	}
 

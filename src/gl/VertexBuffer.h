@@ -85,7 +85,6 @@ private:
 	double drawTime = 0.0;
 	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
 	unsigned int vboId = -1;
-	unsigned int vboId2 = -1;
 
 	bool attributesBound = false;
 	GLuint drawQuery = 0xFFFFFFFF;
