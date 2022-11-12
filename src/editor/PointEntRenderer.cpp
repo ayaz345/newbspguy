@@ -84,26 +84,26 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube) {
 	min = vec3(min.x, min.z, -min.y);
 	max = vec3(max.x, max.z, -max.y);
 
-	cCube* cube = new cCube(min, max, entCube->color);
+	cCubeAxes* cube = new cCubeAxes(min, max, entCube->color);
 
 	// colors not where expected due to HL coordinate system
-	cube->left.setColor(entCube->color * 0.66f);
-	cube->right.setColor(entCube->color * 0.93f);
-	cube->top.setColor(entCube->color * 0.40f);
-	cube->back.setColor(entCube->color * 0.53f);
+	cube->model.left.setColor(entCube->color * 0.66f);
+	cube->model.right.setColor(entCube->color * 0.93f);
+	cube->model.top.setColor(entCube->color * 0.40f);
+	cube->model.back.setColor(entCube->color * 0.53f);
 
 	COLOR4 selectColor = { 220, 0, 0, 255 };
-	entCube->buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, cube, 6 * 6, GL_TRIANGLES);
+	entCube->buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, cube, (6 * 6) * 2, GL_TRIANGLES);
 
-	cCube* selectCube = new cCube(min, max, selectColor);
+	cCubeAxes* selectCube = new cCubeAxes(min, max, selectColor);
 
 	// colors not where expected due to HL coordinate system
-	selectCube->left.setColor(selectColor * 0.66f);
-	selectCube->right.setColor(selectColor * 0.93f);
-	selectCube->top.setColor(selectColor * 0.40f);
-	selectCube->back.setColor(selectColor * 0.53f);
+	selectCube->model.left.setColor(selectColor * 0.66f);
+	selectCube->model.right.setColor(selectColor * 0.93f);
+	selectCube->model.top.setColor(selectColor * 0.40f);
+	selectCube->model.back.setColor(selectColor * 0.53f);
 
-	entCube->selectBuffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, selectCube, 6 * 6, GL_TRIANGLES);
+	entCube->selectBuffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, selectCube, (6 * 6) * 2, GL_TRIANGLES);
 
 	vec3 vcube[8] = {
 		vec3(min.x, min.y, min.z), // front-left-bottom

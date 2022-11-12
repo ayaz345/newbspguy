@@ -157,3 +157,21 @@ void cCube::setColor(COLOR4 lf, COLOR4 rt, COLOR4 tp, COLOR4 bt, COLOR4 ft, COLO
 	back.setColor(bk);
 }
 
+cCubeAxes::cCubeAxes(vec3 mins, vec3 maxs, COLOR4 c)
+{
+	model = cCube(mins, maxs, c);
+
+	vec3 size = maxs - mins;
+
+	vec3 center = mins + size * 0.5f;
+
+	mins.x = maxs.x;
+	mins.y = center.y + 2.5;
+	mins.z = center.z - 2.5;
+	
+	maxs.x += size.x;
+	maxs.y = center.y - 2.5;
+	maxs.z = center.z + 2.5;
+
+	axes = cCube(mins, maxs, COLOR4(0, 255, 255, 125));
+}

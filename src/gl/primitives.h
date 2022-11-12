@@ -5,6 +5,7 @@
 #include "bsplimits.h"
 
 #pragma pack(push, 1)
+
 struct tVert
 {
 	float u, v;
@@ -105,5 +106,16 @@ struct cCube
 	void setColor(COLOR4 c); // set color for the entire cube
 	void setColor(COLOR4 left, COLOR4 right, COLOR4 top, COLOR4 bottom, COLOR4 front, COLOR4 back);
 };
+
+// Colored 3D Cube with axes
+struct cCubeAxes
+{
+	cCube model;
+	cCube axes;
+
+	cCubeAxes() = default;
+	cCubeAxes(vec3 mins, vec3 maxs, COLOR4 c);
+};
+
 
 #pragma pack(pop)
