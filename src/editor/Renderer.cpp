@@ -367,6 +367,7 @@ Renderer::Renderer() {
 	colorShader->setMatrixNames(NULL, "modelViewProjection");
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL);
 
+	colorShader->bind();
 	unsigned int colorMultId = glGetUniformLocation(colorShader->ID, "colorMult");
 	glUniform4f(colorMultId, 1, 1, 1, 1);
 
