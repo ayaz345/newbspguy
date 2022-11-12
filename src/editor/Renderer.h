@@ -120,6 +120,8 @@ public:
 	vec3 debugVec2;
 	vec3 debugVec3;
 
+	Gui* gui;
+
 	bool hideGui = false;
 	bool isModelsReloading = false;
 
@@ -134,7 +136,7 @@ public:
 	void postLoadFgds();
 	void reloadMaps();
 	void clearMaps();
-	void saveSettings();
+	bool saveSettings();
 	void loadSettings();
 
 
@@ -157,7 +159,6 @@ private:
 	ShaderProgram* colorShader;
 	PointEntRenderer* pointEntRenderer;
 	PointEntRenderer* swapPointEntRenderer = NULL;
-	Gui* gui;
 
 	static std::future<void> fgdFuture;
 	bool reloading = false;

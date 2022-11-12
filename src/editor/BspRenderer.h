@@ -154,7 +154,7 @@ public:
 	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);
 
 	void ReuploadTextures();
-private:
+
 	ShaderProgram* bspShader;
 	ShaderProgram* fullBrightBspShader;
 	ShaderProgram* colorShader;

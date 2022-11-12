@@ -11,9 +11,10 @@ public:
 	int farFilter;
 	unsigned int format; // format of the data
 	unsigned int iformat; // format of the data when uploaded to GL
+	char texName[64];
 
-	Texture(GLsizei width, GLsizei height);
-	Texture(GLsizei width, GLsizei height, unsigned char* data);
+	Texture(GLsizei width, GLsizei height, const char * name);
+	Texture(GLsizei width, GLsizei height, unsigned char* data, const char* name);
 	~Texture();
 
 	// upload the texture with the specified settings

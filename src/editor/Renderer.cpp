@@ -121,7 +121,7 @@ void AppSettings::loadDefault()
 void AppSettings::load() {
 	std::ifstream file(g_settings_path);
 	if (file.is_open()) {
-
+		int lines_readed = 0;
 		std::string line;
 		while (getline(file, line)) {
 			if (line.empty())
@@ -131,6 +131,7 @@ void AppSettings::load() {
 			if (eq == std::string::npos) {
 				continue;
 			}
+			lines_readed++;
 
 			std::string key = trimSpaces(line.substr(0, eq));
 			std::string val = trimSpaces(line.substr(eq + 1));
@@ -167,53 +168,71 @@ void AppSettings::load() {
 			else if (key == "save_crc") { g_settings.preserveCrc32 = atoi(val.c_str()) != 0; }
 		}
 
-
-	}
-	else {
-		logf("Failed to open user config: %s\n", g_settings_path.c_str());
-	}
-
-	if (g_settings.windowY == -32000 &&
-		g_settings.windowX == -32000)
-	{
-		g_settings.windowY = 0;
-		g_settings.windowX = 0;
-	}
+		if (g_settings.windowY == -32000 &&
+			g_settings.windowX == -32000)
+		{
+			g_settings.windowY = 0;
+			g_settings.windowX = 0;
+		}
 
 
 #ifdef WIN32
-	// Fix invisibled window header for primary screen.
-	if (g_settings.windowY >= 0 && g_settings.windowY < 30)
-	{
-		g_settings.windowY = 30;
-	}
+		// Fix invisibled window header for primary screen.
+		if (g_settings.windowY >= 0 && g_settings.windowY < 30)
+		{
+			g_settings.windowY = 30;
+		}
 #endif
 
 
-	// Restore default window height if invalid.
-	if (windowHeight <= 0 || windowWidth <= 0)
-	{
+		// Restore default window height if invalid.
+		if (windowHeight <= 0 || windowWidth <= 0)
+		{
+			windowHeight = 600;
+			windowWidth = 800;
+		}
+
+		if (fgdPaths.empty()) {
+			fgdPaths.push_back("/svencoop/sven-coop.fgd");
+		}
+
+		if (resPaths.empty()) {
+			resPaths.push_back("/svencoop/");
+			resPaths.push_back("/svencoop_addon/");
+			resPaths.push_back("/svencoop_downloads/");
+			resPaths.push_back("/svencoop_hd/");
+		}
+		if (lines_readed > 0)
+			g_settings.settingLoaded = true;
+	}
+	else {
+		g_settings.windowY = 0;
+		g_settings.windowX = 0;
+#ifdef WIN32
+		// Fix invisibled window header for primary screen.
+		if (g_settings.windowY >= 0 && g_settings.windowY < 30)
+		{
+			g_settings.windowY = 30;
+		}
+#endif
 		windowHeight = 600;
 		windowWidth = 800;
-	}
-
-	if (fgdPaths.empty()) {
 		fgdPaths.push_back("/svencoop/sven-coop.fgd");
-	}
 
-	if (resPaths.empty()) {
 		resPaths.push_back("/svencoop/");
 		resPaths.push_back("/svencoop_addon/");
 		resPaths.push_back("/svencoop_downloads/");
 		resPaths.push_back("/svencoop_hd/");
+		logf("Failed to open user config: %s\n", g_settings_path.c_str());
 	}
-
-	g_settings.settingLoaded = true;
 }
 
 void AppSettings::save(std::string path)
 {
-	std::ofstream file(g_settings_path, std::ios::trunc);
+	if (!g_settings.settingLoaded || !g_app->gui->settingLoaded)
+		return;
+
+	std::ostringstream file;
 	file << "window_width=" << g_settings.windowWidth << std::endl;
 	file << "window_height=" << g_settings.windowHeight << std::endl;
 	file << "window_x=" << g_settings.windowX << std::endl;
@@ -253,6 +272,8 @@ void AppSettings::save(std::string path)
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
+	
+	writeFile(g_settings_path, file.str().c_str(), file.str().size());
 }
 
 void AppSettings::save() {
@@ -261,21 +282,13 @@ void AppSettings::save() {
 		createDir(g_config_dir);
 	}
 
-	if (!settingLoaded) // Settings not loaded. If save it can be broken!
-		return;
-
-	g_app->saveSettings();
-
-	save(g_settings_path);
-
-	std::ifstream file(g_settings_path);
-	if (!file.is_open())
+	if (g_app->saveSettings())
 	{
-		logf("Error: No access to config file %s. Using WorkingDir instead\n", g_settings_path.c_str());
-		g_settings_path = GetCurrentWorkingDir() + "bspguy.cfg";
-		logf("New config path:%s\n", g_settings_path.c_str());
-		g_config_dir = GetCurrentWorkingDir();
 		save(g_settings_path);
+	}
+	else
+	{
+		logf("Settings can not be saved because not loaded\n");
 	}
 }
 
@@ -708,9 +721,7 @@ void Renderer::reloadMaps() {
 	logf("Reloaded maps\n");
 }
 
-void Renderer::saveSettings() {
-	if (!gui->settingLoaded)
-		return;
+bool Renderer::saveSettings() {
 	g_settings.debug_open = gui->showDebugWidget;
 	g_settings.keyvalue_open = gui->showKeyvalueWidget;
 	g_settings.transform_open = gui->showTransformWidget;
@@ -729,6 +740,7 @@ void Renderer::saveSettings() {
 	g_settings.undoLevels = undoLevels;
 	g_settings.moveSpeed = moveSpeed;
 	g_settings.rotSpeed = rotationSpeed;
+	return true;
 }
 
 void Renderer::loadSettings() {
@@ -1893,7 +1905,7 @@ void Renderer::addMap(Bsp* map) {
 	}
 }
 
-void Renderer::drawLine(const vec3& start, const vec3& end, COLOR4 color) 
+void Renderer::drawLine(const vec3& start, const vec3& end, COLOR4 color)
 {
 	line_verts[0].x = start.x;
 	line_verts[0].y = start.z;

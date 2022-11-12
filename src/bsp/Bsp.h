@@ -19,6 +19,12 @@ struct membuf : std::streambuf
 	}
 };
 
+enum ExportObjOrder
+{
+	EXPORT_XYZ,
+	EXPORT_XZY
+};
+
 class Bsp
 {
 public:
@@ -219,7 +225,7 @@ public:
 
 	BspRenderer* getBspRender();
 
-	void ExportToObjWIP(std::string path);
+	void ExportToObjWIP(std::string path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1);
 
 	void ExportToMapWIP(std::string path);
 

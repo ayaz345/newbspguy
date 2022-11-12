@@ -22,12 +22,12 @@ BspRenderer::BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* full
 	renderModels = NULL;
 	faceMaths = NULL;
 
-	whiteTex = new Texture(1, 1);
-	greyTex = new Texture(1, 1);
-	redTex = new Texture(1, 1);
-	yellowTex = new Texture(1, 1);
-	blackTex = new Texture(1, 1);
-	blueTex = new Texture(1, 1);
+	whiteTex = new Texture(1, 1,"white");
+	greyTex = new Texture(1, 1, "grey");
+	redTex = new Texture(1, 1, "red");
+	yellowTex = new Texture(1, 1, "yellow");
+	blackTex = new Texture(1, 1, "black");
+	blueTex = new Texture(1, 1, "blue");
 
 	*((COLOR3*)(whiteTex->data)) = { 255, 255, 255 };
 	*((COLOR3*)(redTex->data)) = { 110, 0, 0 };
@@ -46,7 +46,7 @@ BspRenderer::BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* full
 	unsigned char* img_dat = NULL;
 	unsigned int w, h;
 	lodepng_decode24(&img_dat, &w, &h, missing_dat, sizeof(missing_dat));
-	missingTex = new Texture(w, h, img_dat);
+	missingTex = new Texture(w, h, img_dat, "missing");
 	missingTex->upload(GL_RGB);
 
 	//loadTextures();
@@ -196,7 +196,7 @@ void BspRenderer::loadTextures() {
 
 		// map->textures + texOffset + tex.nOffsets[0]
 
-		glTexturesSwap[i] = new Texture(tex.nWidth, tex.nHeight, (unsigned char*)imageData);
+		glTexturesSwap[i] = new Texture(tex.nWidth, tex.nHeight, (unsigned char*)imageData, tex.szName);
 	}
 	if (wadTexCount)
 		debugf("Loaded %d wad textures\n", wadTexCount);
@@ -268,7 +268,7 @@ void BspRenderer::loadLightmaps() {
 	std::vector<LightmapNode*> atlases;
 	std::vector<Texture*> atlasTextures;
 	atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
+	atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
 	memset(atlasTextures[0]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
@@ -309,7 +309,7 @@ void BspRenderer::loadLightmaps() {
 			// TODO: Try fitting in earlier atlases before using the latest one
 			if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s])) {
 				atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-				atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
+				atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE,"LIGHTMAP"));
 				atlasId++;
 				memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 

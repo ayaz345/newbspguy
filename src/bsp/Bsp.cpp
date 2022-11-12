@@ -3564,7 +3564,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel) {
 
 		unsigned int idx = 0;
 		for (unsigned int i = 0; i < solid.faces.size(); i++) {
-			auto tmpFace = solid.faces[i];
+			auto& tmpFace = solid.faces[i];
 			for (unsigned int k = 0; k < tmpFace.verts.size(); k++) {
 				newSurfedges[startSurfedge + idx++] = vertToSurfedge[tmpFace.verts[k]];
 			}
@@ -4399,15 +4399,24 @@ bool Bsp::isModelHasFaceIdx(const BSPMODEL& mdl, int faceid)
 	return true;
 }
 
-void Bsp::ExportToObjWIP(std::string path)
+void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 {
 	if (!createDir(path))
 	{
-		logf("Error output path directory can't be created!\n");
+		logf("Error output path directory \"%s\" can't be created!\n", path.c_str());
 		return;
 	}
+
+	float scale = iscale < 0 ? 1.0f / iscale : 1.0f * iscale;
+
+	if (iscale == 1)
+		scale = 1.0f;
+
+	scale = abs(scale);
+
 	FILE* f = NULL;
 	logf("Export %s to %s\n", (bsp_name + ".obj").c_str(), path.c_str());
+	logf("With %s x%i", iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale", abs(iscale));
 	fopen_s(&f, (path + bsp_name + ".obj").c_str(), "wb");
 	if (f)
 	{
@@ -4421,6 +4430,8 @@ void Bsp::ExportToObjWIP(std::string path)
 
 		//std::set<BSPMIPTEX*> texture_list;
 		BspRenderer* bsprend = getBspRender();
+
+		bsprend->reload();
 
 		createDir(path + "textures");
 		std::vector<std::string> materials;
@@ -4502,6 +4513,7 @@ void Bsp::ExportToObjWIP(std::string path)
 
 					for (int k = 0; k < sz; k++) {
 						imageData[k] = palette[src[k]];
+						std::swap(imageData[k].b, imageData[k].r);
 					}
 					//tga_write((path + tex->szName + std::string(".obj")).c_str(), tex->nWidth, tex->nWidth, (unsigned char*)tex + tex->nOffsets[0], 3, 3);
 					WriteBMP(path + std::string("textures/") + tex->szName + std::string(".bmp"), (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight, 3);
@@ -4526,8 +4538,13 @@ void Bsp::ExportToObjWIP(std::string path)
 
 								for (int m = 0; m < sz; m++) {
 									imageData[m] = palette[src[m]];
+									std::swap(imageData[m].b, imageData[m].r);
 								}
+
 								WriteBMP(path + std::string("textures/") + tex->szName + std::string(".bmp"), (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight, 3);
+
+								delete[] imageData;
+								delete wadTex;
 								break;
 							}
 						}
@@ -4555,15 +4572,16 @@ void Bsp::ExportToObjWIP(std::string path)
 
 				if (lastmaterialid != materialid)
 					fprintf(f, "usemtl textures%i\n", materialid);
+
 				lastmaterialid = materialid;
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
+					BSPPLANE& plane = planes[face.iPlane];
 					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
 					vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
-					BSPPLANE& plane = planes[face.iPlane];
 
-					fprintf(f, "v %f %f %f\n", org_pos.x, org_pos.y, org_pos.z);
+					fprintf(f, "v %f %f %f\n", org_pos.x * scale, org_pos.y * scale, org_pos.z * scale);
 				}
 				for (int n = 0; n < rface->vertCount; n++)
 				{
@@ -4632,7 +4650,7 @@ void Bsp::ExportToMapWIP(std::string path)
 {
 	if (!createDir(path))
 	{
-		logf("Error output path directory can't be created!\n");
+		logf("Error output path directory \"%s\" can't be created!\n", path.c_str());
 		return;
 	}
 	FILE* f = NULL;
@@ -4642,6 +4660,25 @@ void Bsp::ExportToMapWIP(std::string path)
 	{
 		fprintf(f, "// Exported using bspguy!\n");
 
+		BspRenderer* bsprend = getBspRender();
+
+		bsprend->reload();
+
+		createDir(path + "textures");
+
+		for (unsigned int entIdx = 0; entIdx < ents.size(); entIdx++)
+		{
+			int modelIdx = entIdx == 0 ? 0 : bsprend->renderEnts[entIdx].modelIdx;
+			if (modelIdx < 0 || modelIdx > bsprend->numRenderModels)
+				continue;
+
+			for (int i = 0; i < bsprend->renderModels[modelIdx].groupCount; i++)
+			{
+				logf("Export ent %u model %u group %d\n", entIdx, modelIdx, i);
+				//RenderGroup& rgroup = bsprend->renderModels[modelIdx].renderGroups[i];
+
+			}
+		}
 		fclose(f);
 	}
 	else

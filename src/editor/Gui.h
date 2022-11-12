@@ -40,6 +40,8 @@ class Gui {
 public:
 	Renderer* app;
 
+	bool settingLoaded = false;
+
 	Gui(Renderer* app);
 
 	void init();
@@ -83,7 +85,6 @@ private:
 	float fontSize = 22.f;
 	bool shouldReloadFonts = false;
 	bool shouldReloadTextureInfo = false;
-	bool settingLoaded = false;
 
 	Texture* objectIconTexture;
 	Texture* faceIconTexture;

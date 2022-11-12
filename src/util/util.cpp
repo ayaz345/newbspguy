@@ -934,7 +934,10 @@ bool createDir(const std::string& dirName)
 	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 	if (dirExists(dirName))
 		return true;
-	return fs::create_directories(dirName);
+	fs::create_directories(dirName);
+	if (dirExists(dirName))
+		return true;
+	return false;
 #else
 #ifdef WIN32
 	std::string fixDirName = dirName;

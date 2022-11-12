@@ -89,11 +89,11 @@ void Gui::init() {
 	unsigned int w, h;
 
 	lodepng_decode32(&icon_data, &w, &h, object_icon, sizeof(object_icon));
-	objectIconTexture = new Texture(w, h, icon_data);
+	objectIconTexture = new Texture(w, h, icon_data,"objIcon");
 	objectIconTexture->upload(GL_RGBA);
 
 	lodepng_decode32(&icon_data, &w, &h, face_icon, sizeof(face_icon));
-	faceIconTexture = new Texture(w, h, icon_data);
+	faceIconTexture = new Texture(w, h, icon_data, "faceIcon");
 	faceIconTexture->upload(GL_RGBA);
 }
 
@@ -866,19 +866,54 @@ void Gui::drawMenuBar() {
 					logf("Select map first\n");
 				}
 			}
+			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]"))
+			{
+				if (ImGui::MenuItem("Scale 1x", NULL)) {
+					if (map)
+					{
+						map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, 1);
+					}
+					else
+					{
+						logf("Select map first\n");
+					}
+				}
 
-			if (ImGui::MenuItem("Wavefront (.obj) [WIP]", NULL)) {
-				if (map)
+				for (int scale = 2; scale < 10; scale++, scale++)
 				{
-					map->ExportToObjWIP(GetWorkDir());
+					std::string scaleitem = "UpScale x" + std::to_string(scale);
+					if (ImGui::MenuItem(scaleitem.c_str(), NULL)) {
+						if (map)
+						{
+							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, scale);
+						}
+						else
+						{
+							logf("Select map first\n");
+						}
+					}
 				}
-				else
+
+				for (int scale = 16; scale > 0; scale--, scale--)
 				{
-					logf("Select map first\n");
+					std::string scaleitem = "DownScale x" + std::to_string(scale);
+					if (ImGui::MenuItem(scaleitem.c_str(), NULL)) {
+						if (map)
+						{
+							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, -scale);
+						}
+						else
+						{
+							logf("Select map first\n");
+						}
+					}
 				}
+
+				ImGui::EndMenu();
 			}
 
-			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL)) {
+			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL)) 
+			{
 				if (map)
 				{
 					map->ExportToMapWIP(GetWorkDir());
@@ -895,7 +930,7 @@ void Gui::drawMenuBar() {
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::BeginMenu(".bsp MODEL with true collision")) {
+			if (ImGui::BeginMenu(".bsp MODEL with collision")) {
 				if (map)
 				{
 					if (ImGui::BeginMenu((std::string("Map ") + map->bsp_name + ".bsp").c_str())) {
@@ -4349,7 +4384,7 @@ void Gui::drawLightMapTool() {
 					for (int i = 0; i < MAXLIGHTMAPS; i++) {
 						if (face.nStyles[i] == 255)
 							continue;
-						currentlightMap[i] = new Texture(size[0], size[1]);
+						currentlightMap[i] = new Texture(size[0], size[1], "LIGHTMAP");
 						int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 						int offset = face.nLightmapOffset + i * lightmapSz;
 						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
