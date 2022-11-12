@@ -5,7 +5,7 @@ on: [push, pull_request]
 jobs:
   windows:
     name: 'Windows'
-    runs-on: windows-2022
+    runs-on: windows-latest
     
     env:
      solution: 'vs-project/bspguy.sln'
@@ -23,7 +23,7 @@ jobs:
             vs-prerelease: true
 
      - name: Build app for release
-       run: msbuild ${{ env.solution }} -t:rebuild -verbosity:diag -property:Configuration=Release
+       run: msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=Release
 
      - name: Artifact1
        uses: actions/upload-artifact@v2
