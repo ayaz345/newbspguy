@@ -6,8 +6,10 @@
 #include "Gui.h"
 #include <algorithm>
 #include <map>
+#include <sstream>
 #include "mdlviewer/studio_render.h"
 #include "filedialog/ImFileDialog.h"
+
 
 AppSettings g_settings;
 std::string g_settings_path = "";

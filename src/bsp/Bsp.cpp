@@ -4672,7 +4672,7 @@ void Bsp::ExportToMapWIP(std::string path)
 			if (modelIdx < 0 || modelIdx > bsprend->numRenderModels)
 				continue;
 
-			for (int i = 0; i < bsprend->renderModels[modelIdx].groupCount; i++)
+			for (unsigned int i = 0; i < bsprend->renderModels[modelIdx].groupCount; i++)
 			{
 				logf("Export ent %u model %u group %d\n", entIdx, modelIdx, i);
 				//RenderGroup& rgroup = bsprend->renderModels[modelIdx].renderGroups[i];
