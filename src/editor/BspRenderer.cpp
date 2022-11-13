@@ -54,7 +54,6 @@ BspRenderer::BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* full
 	calcFaceMaths();
 	preRenderFaces();
 	preRenderEnts();
-
 	bspShader->bind();
 
 	unsigned int sTexId = glGetUniformLocation(bspShader->ID, "sTex");
@@ -1080,7 +1079,7 @@ void BspRenderer::refreshEnt(int entIdx) {
 	{
 		//mat4x4print(renderEnts[entIdx].modelMat);
 		vec3 angles = parseVector(ent->keyvalues["angles"]);
-		setRenderAngles(entIdx,angles);
+		setRenderAngles(entIdx, angles);
 	}
 }
 
@@ -1667,6 +1666,9 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& p
 }
 
 bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo) {
+	if (map->modelCount <= 0)
+		return false;
+
 	BSPMODEL& model = map->models[modelIdx];
 
 	start -= offset;

@@ -48,6 +48,9 @@ public:
 	unsigned short* marksurfs;
 	unsigned char* visdata;
 
+	bool replacedLump[32];
+
+
 	bool is_model = false;
 	void selectModelEnt();
 
@@ -271,6 +274,7 @@ private:
 	void remap_node_structures(int iNode, STRUCTREMAP* remap);
 	void remap_clipnode_structures(int iNode, STRUCTREMAP* remap);
 
+	
 	BspRenderer* renderer;
 	unsigned int originCrc32 = 0;
 };

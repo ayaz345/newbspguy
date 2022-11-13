@@ -274,8 +274,8 @@ void AppSettings::save(std::string path)
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
-	
-	writeFile(g_settings_path, file.str().c_str(), (int) file.str().size());
+
+	writeFile(g_settings_path, file.str().c_str(), (int)file.str().size());
 }
 
 void AppSettings::save() {
@@ -1025,10 +1025,12 @@ void Renderer::controls() {
 
 void Renderer::vertexEditControls() {
 	canTransform = true;
+
 	if (transformTarget == TRANSFORM_VERTEX) {
 		canTransform = false;
 		anyEdgeSelected = false;
 		anyVertSelected = false;
+
 		for (int i = 0; i < modelVerts.size(); i++) {
 			if (modelVerts[i].selected) {
 				canTransform = true;
@@ -1036,12 +1038,14 @@ void Renderer::vertexEditControls() {
 				break;
 			}
 		}
+
 		for (int i = 0; i < modelEdges.size(); i++) {
 			if (modelEdges[i].selected) {
 				canTransform = true;
 				anyEdgeSelected = true;
 			}
 		}
+
 	}
 
 	if (!isTransformableSolid) {
@@ -1863,11 +1867,19 @@ void Renderer::reloadBspModels()
 }
 
 void Renderer::addMap(Bsp* map) {
+
+	if (!map->bsp_valid)
+	{
+		logf("Invalid map!\n");
+		return;
+	}
+
 	if (!map->is_model)
 	{
 		clearSelection();
 		selectMap(map);
 	}
+
 	BspRenderer* mapRenderer = new BspRenderer(map, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
 
 	mapRenderers.push_back(mapRenderer);

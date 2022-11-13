@@ -32,30 +32,27 @@ void Bsp::init_empty_bsp()
 	bsp_header.nVersion = 30;
 
 	for (int i = 0; i < HEADER_LUMPS; i++) {
+		replacedLump[i] = true;
+		lumps[i] = new unsigned char[4];
+		memset(lumps[i], 0, 4);
 		bsp_header.lump[i].nOffset = 0;
-		if (i == LUMP_TEXTURES)
-		{
-			lumps[i] = new unsigned char[4];
-			bsp_header.lump[i].nLength = 4;
-			memset(lumps[i], 0, bsp_header.lump[i].nLength);
-		}
-		else if (i == LUMP_LIGHTING)
-		{
-			lumps[i] = new unsigned char[4096];
-			bsp_header.lump[i].nLength = 4096;
-			memset(lumps[i], 255, bsp_header.lump[i].nLength);
-		}
-		else
-		{
-			lumps[i] = new unsigned char[0]; // fix crash at replace_lump delete[]
-			bsp_header.lump[i].nLength = 0;
-		}
+		bsp_header.lump[i].nLength = 4;
 	}
 
-	update_lump_pointers();
 	bsp_name = "merged";
 	bsp_valid = true;
 	renderer = NULL;
+
+	logf("Loaded empty map.\n");
+
+	load_ents();
+	update_lump_pointers();
+
+
+	renderer = NULL;
+	bsp_valid = true;
+
+
 }
 
 void Bsp::selectModelEnt()
@@ -94,6 +91,7 @@ Bsp::Bsp(std::string fpath)
 {
 	if (fpath.empty())
 	{
+		fpath = "newmap.bsp";
 		this->init_empty_bsp();
 		return;
 	}
@@ -104,6 +102,7 @@ Bsp::Bsp(std::string fpath)
 	}
 	this->bsp_path = fpath;
 	this->bsp_name = stripExt(basename(fpath));
+
 	bsp_valid = false;
 
 	if (!fileExists(fpath)) {
@@ -179,12 +178,16 @@ Bsp::Bsp(std::string fpath)
 		update_ent_lump();
 	}
 
+	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
+		replacedLump[i] = false;
+	}
 }
 
 Bsp::~Bsp()
 {
 	for (int i = 0; i < HEADER_LUMPS; i++)
-		if (lumps[i])
+		if (lumps[i] && replacedLump[i])
 			delete[] lumps[i];
 	delete[] lumps;
 
@@ -2893,7 +2896,7 @@ void Bsp::mark_model_structures(int modelIdx, STRUCTUSAGE* usage, bool skipLeave
 	for (int i = 0; i < model.nFaces; i++) {
 		mark_face_structures(model.iFirstFace + i, usage);
 	}
-	if (model.iHeadnodes[0] >= 0)
+	if (model.iHeadnodes[0] >= 0 && (model.iHeadnodes[0] < clipnodeCount || model.iHeadnodes[0] < nodeCount))
 		mark_node_structures(model.iHeadnodes[0], usage, skipLeaves);
 	for (int k = 1; k < MAX_MAP_HULLS; k++) {
 		if (model.iHeadnodes[k] >= 0 && model.iHeadnodes[k] < (int)clipnodeCount)
@@ -3177,7 +3180,8 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 		mip[i] = new unsigned char[mipWidth * mipHeight];
 
 		src = (COLOR3*)data;
-		for (int y = 0; y < mipHeight; y++) {
+		for (int y = 0; y < mipHeight; y++) 
+		{
 			for (int x = 0; x < mipWidth; x++) {
 
 				int paletteIdx = -1;
@@ -3201,7 +3205,8 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 		memcpy((unsigned char*)oldtex + oldtex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 		memcpy((unsigned char*)oldtex + oldtex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 		memcpy((unsigned char*)oldtex + (oldtex->nOffsets[3] + (width >> 3) * (height >> 3) + 2), palette, sizeof(COLOR3) * 256);
-		for (int i = 0; i < MIPLEVELS; i++) {
+		for (int i = 0; i < MIPLEVELS; i++) 
+		{
 			delete[] mip[i];
 		}
 		return 0;
@@ -3229,7 +3234,8 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 	int* oldLumpHeader = (int*)lumps[LUMP_TEXTURES];
 	*newLumpHeader = textureCount + 1;
 
-	for (unsigned int i = 0; i < textureCount; i++) {
+	for (unsigned int i = 0; i < textureCount; i++) 
+	{
 		*(newLumpHeader + i + 1) = *(oldLumpHeader + i + 1) + sizeof(int); // make room for the new offset
 	}
 
@@ -3259,7 +3265,8 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 	memcpy(newTexData + newTexOffset + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 	memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
 
-	for (int i = 0; i < MIPLEVELS; i++) {
+	for (int i = 0; i < MIPLEVELS; i++) 
+	{
 		delete[] mip[i];
 	}
 
@@ -4374,9 +4381,11 @@ void Bsp::update_lump_pointers() {
 }
 
 void Bsp::replace_lump(int lumpIdx, void* newData, size_t newLength) {
-	delete[] lumps[lumpIdx];
+	if (replacedLump[lumpIdx])
+		delete[] lumps[lumpIdx];
 	lumps[lumpIdx] = (unsigned char*)newData;
 	bsp_header.lump[lumpIdx].nLength = (int)newLength;
+	replacedLump[lumpIdx] = true;
 	update_lump_pointers();
 }
 

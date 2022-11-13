@@ -89,7 +89,7 @@ void Gui::init() {
 	unsigned int w, h;
 
 	lodepng_decode32(&icon_data, &w, &h, object_icon, sizeof(object_icon));
-	objectIconTexture = new Texture(w, h, icon_data,"objIcon");
+	objectIconTexture = new Texture(w, h, icon_data, "objIcon");
 	objectIconTexture->upload(GL_RGBA);
 
 	lodepng_decode32(&icon_data, &w, &h, face_icon, sizeof(face_icon));
@@ -528,7 +528,8 @@ void Gui::draw3dContextMenus() {
 					ImGui::EndMenu();
 				}
 
-				if (ImGui::BeginMenu("Simplify Hull", !app->isLoading)) {
+				if (ImGui::BeginMenu("Simplify Hull", !app->isLoading))
+				{
 					if (ImGui::MenuItem("Clipnodes")) {
 						map->simplify_model_collision(app->pickInfo.modelIdx, 1);
 						map->simplify_model_collision(app->pickInfo.modelIdx, 2);
@@ -912,7 +913,7 @@ void Gui::drawMenuBar() {
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL)) 
+			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL))
 			{
 				if (map)
 				{
@@ -4577,6 +4578,7 @@ void Gui::drawTextureTool() {
 	//ImGui::SetNextWindowSize(ImVec2(400, 600));
 	if (ImGui::Begin("Face Editor", &showTextureWidget)) {
 		static float scaleX, scaleY, shiftX, shiftY;
+		static int lmSize[2];
 		static vec3 texvecS, texvecT;
 		static bool isSpecial;
 		static float width, height;
@@ -4599,6 +4601,7 @@ void Gui::drawTextureTool() {
 			ImGui::End();
 			return;
 		}
+
 		if (lastPickCount != app->pickCount && app->pickMode == PICK_FACE) {
 			if (app->selectedFaces.size()) {
 				int faceIdx = app->selectedFaces[0];
@@ -4656,6 +4659,8 @@ void Gui::drawTextureTool() {
 							textureName[0] = '\0';
 						}
 					}
+
+					GetFaceLightmapSize(map, faceIdx, lmSize);
 				}
 			}
 			else {
@@ -4681,7 +4686,13 @@ void Gui::drawTextureTool() {
 		static bool updatedTexVec = false;
 		static bool updatedFaceVec = false;
 
+
 		ImGui::PushItemWidth(inputWidth);
+
+		if (app->selectedFaces.size() == 1)
+			ImGui::Text("Lightmap size %d / %d ( %d )", lmSize[0], lmSize[1], lmSize[0] * lmSize[1]);
+
+
 		ImGui::Text("Scale");
 
 		ImGui::SameLine();
@@ -4765,7 +4776,7 @@ void Gui::drawTextureTool() {
 			ImGui::Text("Expert settings");
 			ImGui::SameLine();
 			ImGui::TextDisabled("[VERTS] (WIP)");
-			
+
 			char tmplabel[64];
 
 			BSPFACE face = map->faces[app->selectedFaces[0]];
@@ -4839,10 +4850,10 @@ void Gui::drawTextureTool() {
 		}
 		ImGui::SameLine();
 		ImGui::Text("%.0fx%.0f", width, height);
-		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) && 
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) &&
 			(scaledX || scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags || updatedTexVec)) {
 			unsigned int newMiptex = 0;
-
+			app->pickCount++;
 			app->saveLumpState(map, 0xffffffff, false);
 			if (textureChanged) {
 				validTexture = false;
@@ -4893,7 +4904,7 @@ void Gui::drawTextureTool() {
 			for (int i = 0; i < app->selectedFaces.size(); i++) {
 				int faceIdx = app->selectedFaces[i];
 
-				
+
 
 				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
 
@@ -4939,7 +4950,7 @@ void Gui::drawTextureTool() {
 				}
 			}
 			checkFaceErrors();
-			scaledX = scaledY = shiftedX = shiftedY = 
+			scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = false;
 
 			app->pushModelUndoState("Edit Face", EDIT_MODEL_LUMPS);

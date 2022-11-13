@@ -110,14 +110,17 @@ void hideConsoleWindow() {
 #endif
 }
 
-void start_viewer(const std::string& map) {
-	if (map.size() > 0 && !fileExists(map)) {
-		logf("ERROR: File not found: %s", map.c_str());
+void start_viewer(const char * map) {
+	if (map && map[0] != '\0' && !fileExists(map)) {
+		logf("ERROR: File not found: %s", map);
 		return;
 	}
+	if (!map)
+	{
+		map = "";
+	}
 	Renderer renderer;
-	if (map.size())
-		renderer.addMap(new Bsp(map));
+	renderer.addMap(new Bsp(map));
 	renderer.reloadBspModels();
 	hideConsoleWindow();
 	renderer.renderLoop();
@@ -747,7 +750,7 @@ int main(int argc, char* argv[])
 	else {
 		logf("%s\n", ("Start bspguy editor with map: " + cli.bspfile).c_str());
 		logf("Load settings from : %s\n", g_settings_path.c_str());
-		start_viewer(cli.bspfile);
+		start_viewer(cli.bspfile.c_str());
 	}
 	return 0;
 }
