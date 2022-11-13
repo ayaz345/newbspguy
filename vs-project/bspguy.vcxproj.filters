@@ -115,12 +115,6 @@
     <ClCompile Include=".\..\src\util\lodepng.cpp">
       <Filter>Source Files\util\lib</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\mdlviewer\mathlib.cpp">
-      <Filter>Source Files\mdlviewer</Filter>
-    </ClCompile>
-    <ClCompile Include=".\..\src\mdlviewer\studio_render.cpp">
-      <Filter>Source Files\mdlviewer</Filter>
-    </ClCompile>
     <ClCompile Include=".\..\src\filedialog\ImFileDialog.cpp">
       <Filter>Source Files\filedialog</Filter>
     </ClCompile>
@@ -222,18 +216,6 @@
     <ClInclude Include=".\..\src\util\lodepng.h">
       <Filter>Header Files\util\lib</Filter>
     </ClInclude>
-    <ClInclude Include=".\..\src\mdlviewer\mathlib.h">
-      <Filter>Header Files\mdlviewer</Filter>
-    </ClInclude>
-    <ClInclude Include=".\..\src\mdlviewer\studio_event.h">
-      <Filter>Header Files\mdlviewer</Filter>
-    </ClInclude>
-    <ClInclude Include=".\..\src\mdlviewer\studio.h">
-      <Filter>Header Files\mdlviewer</Filter>
-    </ClInclude>
-    <ClInclude Include=".\..\src\mdlviewer\studio_render.h">
-      <Filter>Header Files\mdlviewer</Filter>
-    </ClInclude>
     <ClInclude Include=".\..\src\filedialog\stb_image.h">
       <Filter>Header Files\filedialog</Filter>
     </ClInclude>
@@ -260,9 +242,6 @@
     <Filter Include="Header Files\gl">
       <UniqueIdentifier>{7AA05D34-9834-3301-95A9-7F5C1B939675}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Header Files\mdlviewer">
-      <UniqueIdentifier>{9C3E22B5-E39E-3489-8928-20EB7E65D4BB}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Header Files\qtools">
       <UniqueIdentifier>{79B8287D-E473-3511-A799-C596BAD5A298}</UniqueIdentifier>
     </Filter>
@@ -286,9 +265,6 @@
     </Filter>
     <Filter Include="Source Files\gl">
       <UniqueIdentifier>{61AAB120-9236-37F5-A89F-FB8942B20514}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\mdlviewer">
-      <UniqueIdentifier>{CFF41CC4-CB8D-359A-BAC8-0E6D2005B1E4}</UniqueIdentifier>
     </Filter>
     <Filter Include="Source Files\qtools">
       <UniqueIdentifier>{BE2331F8-D6D2-3BC8-A728-0B3B7F7E154C}</UniqueIdentifier>

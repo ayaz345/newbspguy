@@ -37,6 +37,8 @@ namespace fs = std::experimental::filesystem;
 
 #define EPSILON 0.0001f // NORMAL_EPSILON from rad.h / 10
 
+
+#define mDotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
 //#define __WINDOWS__
 
 extern unsigned int g_frame_counter;
@@ -148,3 +150,15 @@ void replaceAll(std::string& str, const std::string& from, const std::string& to
 void WriteBMP(const std::string & fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
 
 std::string GetCurrentWorkingDir();
+
+bool VectorCompare(vec3 v1, vec3 v2);
+
+void QuaternionSlerp(const vec4 p, vec4 q, float t, vec4 & qt);
+void AngleQuaternion(const vec3 angles, vec4 quaternion);
+void QuaternionMatrix(const vec4 quaternion, float(*matrix)[4]);
+void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4]);
+void VectorScale(vec3 v, float scale, vec3 & out);
+float VectorNormalize(vec3 v);
+void mCrossProduct(vec3 v1, vec3 v2, vec3& cross);
+void VectorIRotate(const vec3 in1, const float in2[3][4], vec3& out);
+void VectorTransform(const vec3 in1, const float in2[3][4], vec3& out);

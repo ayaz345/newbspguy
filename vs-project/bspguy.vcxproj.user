@@ -5,7 +5,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>c:\Users\Admin\Downloads\upsddwn_hl_c00.bsp</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"c:\Program Files (x86)\Steam\steamapps\common\Half-Life\cstrike\maps\cs_assault.bsp"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

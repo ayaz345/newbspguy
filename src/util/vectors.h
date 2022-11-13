@@ -31,7 +31,7 @@ struct vec3
 		return *this;
 	}
 
-	float operator [] (int i) const {
+	float operator [] (const int i) const {
 		switch (i)
 		{
 		case 0:
@@ -41,7 +41,20 @@ struct vec3
 		case 2:
 			return z;
 		}
-		return 0.0f;
+		return z;
+	}
+
+	float& operator [] (const int i) {
+		switch (i)
+		{
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		}
+		return z;
 	}
 
 };
@@ -105,6 +118,33 @@ struct vec4
 	vec4(vec3 v, float a) : x(v.x), y(v.y), z(v.z), w(a) {}
 	vec3 xyz();
 	vec2 xy();
+
+	float operator [] (const int i) const {
+		switch (i)
+		{
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		}
+		return w;
+	}
+
+	float& operator [] (const int i) {
+		switch (i)
+		{
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
+		}
+		return w;
+	}
+
 };
 
 vec4 operator-(vec4 v1, const vec4& v2);

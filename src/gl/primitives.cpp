@@ -166,12 +166,12 @@ cCubeAxes::cCubeAxes(vec3 mins, vec3 maxs, COLOR4 c)
 	vec3 center = mins + size * 0.5f;
 
 	mins.x = maxs.x;
-	mins.y = center.y + 2.5;
-	mins.z = center.z - 2.5;
+	mins.y = center.y + 2.5f;
+	mins.z = center.z - 2.5f;
 	
 	maxs.x += size.x;
-	maxs.y = center.y - 2.5;
-	maxs.z = center.z + 2.5;
+	maxs.y = center.y - 2.5f;
+	maxs.z = center.z + 2.5f;
 
 	axes = cCube(mins, maxs, COLOR4(0, 255, 255, 125));
 }

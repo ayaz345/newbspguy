@@ -7,7 +7,6 @@
 #include <algorithm>
 #include <map>
 #include <sstream>
-#include "mdlviewer/studio_render.h"
 #include "filedialog/ImFileDialog.h"
 
 
@@ -399,17 +398,6 @@ Renderer::~Renderer() {
 	glfwTerminate();
 }
 void Renderer::renderLoop() {
-	/*StudioModel* tempmodel = new StudioModel();
-	tempmodel->Init("c:\\Program Files (x86)\\Steam\\steamapps\\common\\Half-Life\\cstrike\\models\\player\\arctic\\arctic.mdl");
-	tempmodel->SetSequence(0);
-
-	tempmodel->SetController(0, 0.0);
-	tempmodel->SetController(1, 0.0);
-	tempmodel->SetController(2, 0.0);
-	tempmodel->SetController(3, 0.0);
-	tempmodel->SetMouth(0);*/
-
-
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);

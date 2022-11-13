@@ -63,12 +63,6 @@ set(SOURCE_FILES
 	src/util/lodepng.h
 	src/util/lodepng.cpp
 	
-	# 3D model viewer
-	src/mdlviewer/mathlib.h			src/mdlviewer/mathlib.cpp
-	src/mdlviewer/studio_event.h
-	src/mdlviewer/studio.h
-	src/mdlviewer/studio_render.h	src/mdlviewer/studio_render.cpp
-	
 	# OPENFILEDIALOG
 	src/filedialog/stb_image.h
 	src/filedialog/ImFileDialog.h	src/filedialog/ImFileDialog.cpp
@@ -84,7 +78,6 @@ include_directories(src/filedialog)
 include_directories(src/gl)
 include_directories(src/qtools)
 include_directories(src/util)
-include_directories(src/mdlviewer)
 include_directories(imgui)
 include_directories(imgui/examples)
 include_directories(imgui/backends)
@@ -190,18 +183,6 @@ if(MSVC)
 													imgui/backends/imgui_impl_glfw.cpp
 													imgui/backends/imgui_impl_opengl3.cpp
 													src/util/lodepng.cpp)
-													
-	source_group("Header Files\\mdlviewer" FILES	
-													#src/mdlviewer/steamtypes.h
-													src/mdlviewer/mathlib.h
-													src/mdlviewer/cmdlib.h
-													src/mdlviewer/studio_event.h
-													src/mdlviewer/studio.h
-													src/mdlviewer/studio_render.h)
-	
-	source_group("Source Files\\mdlviewer" FILES	src/mdlviewer/mathlib.c
-													src/mdlviewer/cmdlib.c
-													src/mdlviewer/studio_render.cpp)
 													
 	source_group("Header Files\\filedialog" FILES	
 													src/filedialog/stb_image.h
