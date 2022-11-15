@@ -4594,15 +4594,25 @@ void Gui::drawTextureTool() {
 	if (ImGui::Begin("Face Editor", &showTextureWidget)) {
 		static float scaleX, scaleY, shiftX, shiftY;
 		static int lmSize[2];
-		static float rotateX,rotateY;
+		static float rotateX, rotateY;
 		static bool lockRotate = true;
 		static int bestplane;
 		static bool isSpecial;
 		static float width, height;
+		static std::vector<vec3> edgeVerts;
 		static ImTextureID textureId = NULL; // OpenGL ID
 		static char textureName[16];
 		static int lastPickCount = -1;
 		static bool validTexture = true;
+		static bool scaledX = false;
+		static bool scaledY = false;
+		static bool shiftedX = false;
+		static bool shiftedY = false;
+		static bool textureChanged = false;
+		static bool toggledFlags = false;
+		static bool updatedTexVec = false;
+		static bool updatedFaceVec = false;
+
 
 		Bsp* map = app->getSelectedMap();
 		if (!map || app->pickMode != PICK_FACE || app->selectedFaces.empty())
@@ -4620,6 +4630,7 @@ void Gui::drawTextureTool() {
 		}
 
 		if (lastPickCount != app->pickCount && app->pickMode == PICK_FACE) {
+			edgeVerts.clear();
 			if (app->selectedFaces.size()) {
 				int faceIdx = app->selectedFaces[0];
 				if (faceIdx >= 0)
@@ -4682,6 +4693,14 @@ void Gui::drawTextureTool() {
 					}
 
 					GetFaceLightmapSize(map, faceIdx, lmSize);
+
+					for (unsigned int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++) {
+						int edgeIdx = map->surfedges[e];
+						BSPEDGE edge = map->edges[abs(edgeIdx)];
+						vec3 v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+						edgeVerts.push_back(v);
+					}
+
 				}
 			}
 			else {
@@ -4697,15 +4716,6 @@ void Gui::drawTextureTool() {
 		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.5f;
-
-		static bool scaledX = false;
-		static bool scaledY = false;
-		static bool shiftedX = false;
-		static bool shiftedY = false;
-		static bool textureChanged = false;
-		static bool toggledFlags = false;
-		static bool updatedTexVec = false;
-		static bool updatedFaceVec = false;
 
 
 		ImGui::PushItemWidth(inputWidth);
@@ -4764,11 +4774,10 @@ void Gui::drawTextureTool() {
 		ImGui::PushItemWidth(inputWidth);
 
 		ImGui::Text("Advanced settings");
-
 		ImGui::SameLine();
-		ImGui::TextDisabled("(WIP)");
+		ImGui::TextDisabled("[ANGLES] (WIP)");
 
-		if (ImGui::DragFloat("##rotateX", &rotateX, 0.01f, 0, 0, "Angle: %.3f")) {
+		if (ImGui::DragFloat("##rotateX", &rotateX, 0.01f, 0, 0, "X: %.3f")) {
 			updatedTexVec = true;
 			if (rotateX > 360.0f)
 				rotateX = 360.0f;
@@ -4780,7 +4789,7 @@ void Gui::drawTextureTool() {
 
 		ImGui::SameLine();
 
-		if (ImGui::DragFloat("##rotateY", &rotateY, 0.01f, 0, 0, "Angle: %.3f")) {
+		if (ImGui::DragFloat("##rotateY", &rotateY, 0.01f, 0, 0, "Y: %.3f")) {
 			updatedTexVec = true;
 			if (rotateY > 360.0f)
 				rotateY = 360.0f;
@@ -4803,27 +4812,22 @@ void Gui::drawTextureTool() {
 			char tmplabel[64];
 
 			BSPFACE face = map->faces[app->selectedFaces[0]];
-
-			int edgetmpid = 1;
-
-			for (unsigned int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++) {
-				edgetmpid++;
-				int edgeIdx = map->surfedges[e];
-				BSPEDGE edge = map->edges[abs(edgeIdx)];
-				vec3& v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
-
-				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d1", e, edgeIdx);
+			int edgeIdx = 0;
+			for (auto &v : edgeVerts)
+			{
+				edgeIdx++;
+				snprintf(tmplabel, sizeof(tmplabel), "##edge%d1", edgeIdx);
 				if (ImGui::DragFloat(tmplabel, &v.x, 0.1f, 0, 0, "T1: %.3f")) {
 					updatedFaceVec = true;
 				}
 
-				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d2", e, edgeIdx);
+				snprintf(tmplabel, sizeof(tmplabel), "##edge%d2", edgeIdx);
 				ImGui::SameLine();
 				if (ImGui::DragFloat(tmplabel, &v.y, 0.1f, 0, 0, "T2: %.3f")) {
 					updatedFaceVec = true;
 				}
 
-				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d3", e, edgeIdx);
+				snprintf(tmplabel, sizeof(tmplabel), "##edge%d3", edgeIdx);
 				ImGui::SameLine();
 				if (ImGui::DragFloat(tmplabel, &v.z, 0.1f, 0, 0, "T3: %.3f")) {
 					updatedFaceVec = true;
@@ -4873,7 +4877,7 @@ void Gui::drawTextureTool() {
 		ImGui::SameLine();
 		ImGui::Text("%.0fx%.0f", width, height);
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) &&
-			(scaledX || scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags || updatedTexVec)) {
+			(updatedFaceVec || scaledX ||scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags || updatedTexVec)) {
 			unsigned int newMiptex = 0;
 			app->pickCount++;
 			app->saveLumpState(map, 0xffffffff, false);
@@ -4956,7 +4960,7 @@ void Gui::drawTextureTool() {
 					texinfo->nFlags = isSpecial ? TEX_SPECIAL : 0;
 				}
 
-				if ((textureChanged || toggledFlags) && validTexture) {
+				if ((textureChanged || toggledFlags || updatedFaceVec) && validTexture) {
 					if (textureChanged)
 						texinfo->iMiptex = newMiptex;
 					modelRefreshes.insert(map->get_model_from_face(faceIdx));
@@ -4965,7 +4969,19 @@ void Gui::drawTextureTool() {
 				mapRenderer->updateFaceUVs(faceIdx);
 			}
 
-			if ((textureChanged || toggledFlags) && app->selectedFaces.size() && app->selectedFaces[0] >= 0) {
+			if (updatedFaceVec && app->selectedFaces.size() == 1)
+			{
+				int faceIdx = app->selectedFaces[0];
+				int vecId = 0;
+				for (unsigned int e = map->faces[faceIdx].iFirstEdge; e < map->faces[faceIdx].iFirstEdge + map->faces[faceIdx].nEdges; e++,vecId++) {
+					int edgeIdx = map->surfedges[e];
+					BSPEDGE edge = map->edges[abs(edgeIdx)];
+					vec3& v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+					v = edgeVerts[vecId];
+				}
+			}
+
+			if ((textureChanged || toggledFlags || updatedFaceVec) && app->selectedFaces.size() && app->selectedFaces[0] >= 0) {
 				textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId(app->selectedFaces[0]);
 				for (auto it = modelRefreshes.begin(); it != modelRefreshes.end(); it++) {
 					mapRenderer->refreshModel(*it);
@@ -4976,7 +4992,7 @@ void Gui::drawTextureTool() {
 			}
 
 			checkFaceErrors();
-			scaledX = scaledY = shiftedX = shiftedY =
+			updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = false;
 
 			app->pushModelUndoState("Edit Face", EDIT_MODEL_LUMPS);
