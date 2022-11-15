@@ -205,6 +205,8 @@ public:
 	// if the face's texinfo is not unique, a new one is created and returned. Otherwise, it's current texinfo is returned
 	BSPTEXTUREINFO* get_unique_texinfo(int faceIdx);
 
+	bool is_unique_texinfo(int faceIdx);
+
 	int get_model_from_face(int faceIdx);
 
 	std::vector<STRUCTUSAGE*> get_sorted_model_infos(int sortMode);

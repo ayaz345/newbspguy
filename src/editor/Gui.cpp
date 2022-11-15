@@ -1502,7 +1502,7 @@ void Gui::drawDebugWidget() {
 	ImGui::SetNextWindowBgAlpha(0.75f);
 
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight * 1.0f));
-	if (ImGui::Begin("Debug info", &showDebugWidget, ImGuiWindowFlags_AlwaysAutoResize)) {
+	if (ImGui::Begin("Debug info", &showDebugWidget)) {
 
 		if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -1552,6 +1552,21 @@ void Gui::drawDebugWidget() {
 						ImGui::Text("Texinfo ID: %d", face.iTextureInfo);
 						ImGui::Text("Texture ID: %d", info.iMiptex);
 						ImGui::Text("Texture: %s (%dx%d)", tex.szName, tex.nWidth, tex.nHeight);
+						BSPPLANE& plane = map->planes[face.iPlane];
+						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+						float anglex, angley;
+						vec3 xv, yv;
+						int val = TextureAxisFromPlane(plane, xv, yv);
+						ImGui::Text("Plane type %d : axis (%fx%f)", val, anglex = AngleFromTextureAxis(texinfo.vS,true,val), angley = AngleFromTextureAxis(texinfo.vT, false, val));
+						ImGui::Text("Texinfo: %f/%f/%f + %f / %f/%f/%f + %f ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS, 
+							texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT);
+
+						xv = AxisFromTextureAngle(anglex, true, val);
+						yv = AxisFromTextureAngle(angley, false, val);
+
+						ImGui::Text("AxisBack: %f/%f/%f + %f / %f/%f/%f + %f ", xv.x, xv.y, xv.z, texinfo.shiftS,
+							yv.x, yv.y, yv.z, texinfo.shiftT);
+
 					}
 					ImGui::Text("Lightmap Offset: %d", face.nLightmapOffset);
 				}
@@ -4579,7 +4594,9 @@ void Gui::drawTextureTool() {
 	if (ImGui::Begin("Face Editor", &showTextureWidget)) {
 		static float scaleX, scaleY, shiftX, shiftY;
 		static int lmSize[2];
-		static vec3 texvecS, texvecT;
+		static float rotateX,rotateY;
+		static bool lockRotate = true;
+		static int bestplane;
 		static bool isSpecial;
 		static float width, height;
 		static ImTextureID textureId = NULL; // OpenGL ID
@@ -4608,6 +4625,7 @@ void Gui::drawTextureTool() {
 				if (faceIdx >= 0)
 				{
 					BSPFACE& face = map->faces[faceIdx];
+					BSPPLANE& plane = map->planes[face.iPlane];
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 
@@ -4624,8 +4642,11 @@ void Gui::drawTextureTool() {
 
 					int miptex = texinfo.iMiptex;
 
-					texvecS = texinfo.vS;
-					texvecT = texinfo.vT;
+					vec3 xv, yv;
+					bestplane = TextureAxisFromPlane(plane, xv, yv);
+
+					rotateX = AngleFromTextureAxis(texinfo.vS, true, bestplane);
+					rotateY = AngleFromTextureAxis(texinfo.vT, false, bestplane);
 
 					scaleX = 1.0f / texinfo.vS.length();
 					scaleY = 1.0f / texinfo.vT.length();
@@ -4747,29 +4768,31 @@ void Gui::drawTextureTool() {
 		ImGui::SameLine();
 		ImGui::TextDisabled("(WIP)");
 
-		if (ImGui::DragFloat("##u1", &texvecS.x, 0.01f, 0, 0, "S1: %.3f")) {
+		if (ImGui::DragFloat("##rotateX", &rotateX, 0.01f, 0, 0, "Angle: %.3f")) {
 			updatedTexVec = true;
-		}
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##u2", &texvecS.y, 0.01f, 0, 0, "S2: %.3f")) {
-			updatedTexVec = true;
-		}
-		ImGui::SameLine();
-		if (ImGui::DragFloat("##u3", &texvecS.z, 0.01f, 0, 0, "S3: %.3f")) {
-			updatedTexVec = true;
+			if (rotateX > 360.0f)
+				rotateX = 360.0f;
+			if (rotateX < -360.0f)
+				rotateX = -360.0f;
+			if (lockRotate)
+				rotateY = rotateX - 180.0f;
 		}
 
-		if (ImGui::DragFloat("##v1", &texvecT.x, 0.01f, 0, 0, "T1: %.3f")) {
-			updatedTexVec = true;
-		}
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##v2", &texvecT.y, 0.01f, 0, 0, "T2: %.3f")) {
+
+		if (ImGui::DragFloat("##rotateY", &rotateY, 0.01f, 0, 0, "Angle: %.3f")) {
 			updatedTexVec = true;
+			if (rotateY > 360.0f)
+				rotateY = 360.0f;
+			if (rotateY < -360.0f)
+				rotateY = -360.0f;
+			if (lockRotate)
+				rotateX = rotateY + 180.0f;
 		}
+
 		ImGui::SameLine();
-		if (ImGui::DragFloat("##v3", &texvecT.z, 0.01f, 0, 0, "T3: %.3f")) {
-			updatedTexVec = true;
-		}
+
+		ImGui::Checkbox("Lock Rotate Angles", &lockRotate);
 
 		if (app->selectedFaces.size() == 1)
 		{
@@ -4792,15 +4815,14 @@ void Gui::drawTextureTool() {
 				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d1", e, edgeIdx);
 				if (ImGui::DragFloat(tmplabel, &v.x, 0.1f, 0, 0, "T1: %.3f")) {
 					updatedFaceVec = true;
-
-					//map->nodes.
-
 				}
+
 				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d2", e, edgeIdx);
 				ImGui::SameLine();
 				if (ImGui::DragFloat(tmplabel, &v.y, 0.1f, 0, 0, "T2: %.3f")) {
 					updatedFaceVec = true;
 				}
+
 				snprintf(tmplabel, sizeof(tmplabel), "##edge%d%d3", e, edgeIdx);
 				ImGui::SameLine();
 				if (ImGui::DragFloat(tmplabel, &v.z, 0.1f, 0, 0, "T3: %.3f")) {
@@ -4858,9 +4880,7 @@ void Gui::drawTextureTool() {
 			if (textureChanged) {
 				validTexture = false;
 
-				unsigned int totalTextures = ((unsigned int*)map->textures)[0];
-
-				for (unsigned int i = 0; i < totalTextures; i++) {
+				for (unsigned int i = 0; i < map->textureCount; i++) {
 					int texOffset = ((int*)map->textures)[i + 1];
 					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 					if (strcmp(tex.szName, textureName) == 0) {
@@ -4889,24 +4909,28 @@ void Gui::drawTextureTool() {
 							for (int k = 0; k < sz; k++) {
 								imageData[k] = palette[src[k]];
 							}
+
 							map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+
 							BspRenderer* mapRenderer = map->getBspRender();
 							mapRenderer->ReuploadTextures();
+
 							delete[] imageData;
 							delete wadTex;
+
 							ImGui::End();
 							return;
 						}
 					}
 				}
 			}
+
 			std::set<int> modelRefreshes;
 			for (int i = 0; i < app->selectedFaces.size(); i++) {
 				int faceIdx = app->selectedFaces[i];
 
-
-
 				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
+
 
 				if (scaledX) {
 					texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
@@ -4924,8 +4948,8 @@ void Gui::drawTextureTool() {
 
 				if (updatedTexVec)
 				{
-					texinfo->vS = texvecS;
-					texinfo->vT = texvecT;
+					texinfo->vS = AxisFromTextureAngle(rotateX, true, bestplane);
+					texinfo->vT = AxisFromTextureAngle(rotateY, false, bestplane);
 				}
 
 				if (toggledFlags) {
@@ -4940,6 +4964,7 @@ void Gui::drawTextureTool() {
 
 				mapRenderer->updateFaceUVs(faceIdx);
 			}
+
 			if ((textureChanged || toggledFlags) && app->selectedFaces.size() && app->selectedFaces[0] >= 0) {
 				textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId(app->selectedFaces[0]);
 				for (auto it = modelRefreshes.begin(); it != modelRefreshes.end(); it++) {
@@ -4949,6 +4974,7 @@ void Gui::drawTextureTool() {
 					mapRenderer->highlightFace(app->selectedFaces[i], true);
 				}
 			}
+
 			checkFaceErrors();
 			scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = false;

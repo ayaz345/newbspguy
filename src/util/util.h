@@ -39,7 +39,17 @@ namespace fs = std::experimental::filesystem;
 
 
 #define mDotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
-//#define __WINDOWS__
+
+
+static const vec3  s_baseaxis[18] = {
+	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},                      // floor
+	{0, 0, -1}, {1, 0, 0}, {0, -1, 0},                     // ceiling
+	{1, 0, 0}, {0, 1, 0}, {0, 0, -1},                      // west wall
+	{-1, 0, 0}, {0, 1, 0}, {0, 0, -1},                     // east wall
+	{0, 1, 0}, {1, 0, 0}, {0, 0, -1},                      // south wall
+	{0, -1, 0}, {1, 0, 0}, {0, 0, -1},                     // north wall
+};
+
 
 extern unsigned int g_frame_counter;
 extern double g_time;
@@ -162,3 +172,8 @@ float VectorNormalize(vec3 v);
 void mCrossProduct(vec3 v1, vec3 v2, vec3& cross);
 void VectorIRotate(const vec3 in1, const float in2[3][4], vec3& out);
 void VectorTransform(const vec3 in1, const float in2[3][4], vec3& out);
+
+
+int TextureAxisFromPlane(BSPPLANE pln, vec3& xv, vec3& yv);
+float AngleFromTextureAxis(vec3 axis, bool x, int type);
+vec3 AxisFromTextureAngle(float angle, bool x, int type);

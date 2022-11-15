@@ -3180,7 +3180,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 		mip[i] = new unsigned char[mipWidth * mipHeight];
 
 		src = (COLOR3*)data;
-		for (int y = 0; y < mipHeight; y++) 
+		for (int y = 0; y < mipHeight; y++)
 		{
 			for (int x = 0; x < mipWidth; x++) {
 
@@ -3205,7 +3205,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 		memcpy((unsigned char*)oldtex + oldtex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 		memcpy((unsigned char*)oldtex + oldtex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 		memcpy((unsigned char*)oldtex + (oldtex->nOffsets[3] + (width >> 3) * (height >> 3) + 2), palette, sizeof(COLOR3) * 256);
-		for (int i = 0; i < MIPLEVELS; i++) 
+		for (int i = 0; i < MIPLEVELS; i++)
 		{
 			delete[] mip[i];
 		}
@@ -3234,7 +3234,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 	int* oldLumpHeader = (int*)lumps[LUMP_TEXTURES];
 	*newLumpHeader = textureCount + 1;
 
-	for (unsigned int i = 0; i < textureCount; i++) 
+	for (unsigned int i = 0; i < textureCount; i++)
 	{
 		*(newLumpHeader + i + 1) = *(oldLumpHeader + i + 1) + sizeof(int); // make room for the new offset
 	}
@@ -3265,7 +3265,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 	memcpy(newTexData + newTexOffset + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 	memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
 
-	for (int i = 0; i < MIPLEVELS; i++) 
+	for (int i = 0; i < MIPLEVELS; i++)
 	{
 		delete[] mip[i];
 	}
@@ -3415,6 +3415,7 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 			info.vT = faceUp[i];
 			info.vS = crossProduct(faceUp[i], faceNormals[i]);
 			// TODO: fit texture to face
+			
 		}
 
 		replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 6) * sizeof(BSPTEXTUREINFO));
@@ -4006,6 +4007,20 @@ BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx) {
 	}
 
 	return &texinfos[targetInfo];
+}
+
+bool Bsp::is_unique_texinfo(int faceIdx) {
+	BSPFACE& targetFace = faces[faceIdx];
+
+	for (unsigned int i = 0; i < faceCount; i++)
+	{
+		if (i != faceIdx && faces[i].iTextureInfo == targetFace.iTextureInfo)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 int Bsp::get_model_from_face(int faceIdx) {
@@ -4602,7 +4617,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 					float th = 1.0f / (float)tex->nHeight;
 					float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
 					float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
-
+					
 					BSPPLANE& plane = planes[face.iPlane];
 
 					fprintf(f, "vt %f %f\n", fU * tw, fV * th);

@@ -1301,3 +1301,129 @@ void VectorTransform(const vec3 in1, const float in2[3][4], vec3 & out)
 	out[1] = mDotProduct(in1, in2[1]) + in2[1][3];
 	out[2] = mDotProduct(in1, in2[2]) + in2[2][3];
 }
+
+int TextureAxisFromPlane(BSPPLANE pln, vec3& xv, vec3& yv)
+{
+	int             bestaxis;
+	float           dot, best;
+	int             i;
+
+	best = 0;
+	bestaxis = 0;
+
+	for (i = 0; i < 6; i++)
+	{
+		dot = dotProduct(pln.vNormal, s_baseaxis[i * 3]);
+		if (dot > best)
+		{
+			best = dot;
+			bestaxis = i;
+		}
+	}
+
+	xv = s_baseaxis[bestaxis * 3 + 1];
+	yv = s_baseaxis[bestaxis * 3 + 2];
+
+	return bestaxis;
+}
+
+float AngleFromTextureAxis(vec3 axis, bool x, int type)
+{
+	float retval = 0.0f;
+
+	if (type < 2)
+	{
+		if (x)
+		{
+			return -1.f * atan2(axis.y, axis.x) * (180.f / PI);
+		}
+		else
+		{
+			return atan2(axis.x, axis.y) * (180.f / PI);
+		}
+	}
+
+
+	if (type < 4)
+	{
+		if (x)
+		{
+			return -1.f * atan2(axis.z, axis.y) * (180.f / PI);
+		}
+		else
+		{
+			return atan2(axis.y, axis.z) * (180.f / PI);
+		}
+	}
+
+	if (type < 6)
+	{
+		if (x)
+		{
+			return -1.f * atan2(axis.z, axis.x) * (180.f / PI);
+		}
+		else
+		{
+			return atan2(axis.x, axis.z) * (180.f / PI);
+		}
+	}
+
+
+	return retval;
+}
+
+
+vec3 AxisFromTextureAngle(float angle, bool x, int type)
+{
+	vec3 retval = vec3();
+
+
+	if (type < 2)
+	{
+		if (x)
+		{
+			retval.y = -1.f * sin(angle / 180.f * PI);
+			retval.x = cos(angle / 180.f * PI);
+		}
+		else
+		{
+			retval.x = -1.f * sin((angle + 180.f) / 180.f * PI);
+			retval.y = -1.f * cos((angle + 180.f) / 180.f * PI);
+		}
+		return retval;
+	}
+
+	if (type < 4)
+	{
+		if (x)
+		{
+			retval.z = -1.f * sin(angle / 180.f * PI);
+			retval.y = cos(angle / 180.f * PI);
+		}
+		else
+		{
+			retval.y = -1.f * sin((angle + 180.f) / 180.f * PI);
+			retval.z = -1.f * cos((angle + 180.f) / 180.f * PI);
+		}
+		return retval;
+	}
+
+
+	if (type < 6)
+	{
+		if (x)
+		{
+			retval.z = -1.f * sin(angle / 180.f * PI);
+			retval.x = cos(angle / 180.f * PI);
+		}
+		else
+		{
+			retval.x = -1.f * sin((angle + 180.f) / 180.f * PI);
+			retval.z = -1.f * cos((angle + 180.f) / 180.f * PI);
+		}
+		return retval;
+	}
+
+
+	return retval;
+}
