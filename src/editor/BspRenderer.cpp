@@ -1607,12 +1607,12 @@ void BspRenderer::drawPointEntities(int highlightEnt) {
 bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo) {
 	bool foundBetterPick = false;
 
-	start -= mapOffset;
-
 	if (!map || map->ents.empty())
 	{
-		return false;
+		return foundBetterPick;
 	}
+	start -= mapOffset;
+
 
 	if (pickModelPoly(start, dir, vec3(0, 0, 0), 0, hullIdx, pickInfo)) {
 		pickInfo.entIdx = 0;

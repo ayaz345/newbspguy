@@ -306,7 +306,7 @@ private:
 	void updateEntConnectionPositions(); // only updates positions in the buffer
 	bool getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, Solid& outSolid); // calculate face vertices from plane intersections
 	void moveSelectedVerts(const vec3& delta);
-	void splitFace();
+	bool splitModelFace();
 
 	vec3 snapToGrid(const vec3& pos);
 

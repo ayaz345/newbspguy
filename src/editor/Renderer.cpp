@@ -599,10 +599,10 @@ void Renderer::renderLoop() {
 
 		bool isScalingObject = transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT;
 		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN && originSelected;
-		bool isTransformingValid = !modelUsesSharedStructures && (isTransformableSolid || isScalingObject) && transformTarget != TRANSFORM_ORIGIN;
+		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
 		bool isTransformingWorld = pickInfo.entIdx == 0 && transformTarget != TRANSFORM_OBJECT;
-
-		if (showDragAxes) {
+		
+		if (showDragAxes && pickMode == pick_modes::PICK_OBJECT) {
 			if (!movingEnt && !isTransformingWorld && pickInfo.entIdx >= 0 && (isTransformingValid || isMovingOrigin))
 			{
 				drawTransformAxes();
@@ -1053,7 +1053,12 @@ void Renderer::vertexEditControls() {
 	}
 
 	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F]) {
-		splitFace();
+		splitModelFace();
+	}
+
+	if (canTransform)
+	{
+		canTransform = pickMode == pick_modes::PICK_OBJECT;
 	}
 }
 
@@ -1146,7 +1151,7 @@ void Renderer::cameraPickingControls() {
 void Renderer::applyTransform(bool forceUpdate) {
 	Bsp* map = getSelectedMap();
 
-	if (!isTransformableSolid || modelUsesSharedStructures) {
+	if (!isTransformableSolid || (modelUsesSharedStructures && (transformMode != TRANSFORM_MOVE || transformTarget == TRANSFORM_VERTEX))) {
 		return;
 	}
 
@@ -1473,13 +1478,12 @@ void Renderer::pickObject() {
 	getPickRay(pickStart, pickDir);
 	clearSelection();
 	int oldEntIdx = pickInfo.entIdx;
+
 	pickInfo.bestDist = FLT_MAX_COORD;
 
 	for (int i = 0; i < mapRenderers.size(); i++) {
 		mapRenderers[i]->preRenderEnts();
-		if (mapRenderers[i]->map && mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo)) {
-
-		}
+		mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo);
 	}
 
 	Bsp* map = pickInfo.map;
@@ -1488,7 +1492,7 @@ void Renderer::pickObject() {
 		ungrabEnt();
 	}
 
-	if (pickInfo.modelIdx >= 0) {
+	if (isTransformableSolid || pickInfo.modelIdx > 0) {
 		//getSelectedMap()->print_model_hull(pickInfo.modelIdx, 0);
 	}
 	else {
@@ -1497,19 +1501,15 @@ void Renderer::pickObject() {
 		transformTarget = TRANSFORM_OBJECT;
 	}
 
+	isTransformableSolid = pickInfo.modelIdx > 0 && pickInfo.entIdx > 0;
+
+
 	if ((pickMode == PICK_OBJECT || !anyCtrlPressed)) {
 		deselectFaces();
 	}
 
 	if (pickMode == PICK_OBJECT) {
 		updateModelVerts();
-		if (pickInfo.modelIdx > 0) {
-			isTransformableSolid = getSelectedMap()->is_convex(pickInfo.modelIdx);
-		}
-		else
-		{
-			isTransformableSolid = true;
-		}
 	}
 	else if (pickMode == PICK_FACE) {
 		gui->showLightmapEditorUpdate = true;
@@ -1548,11 +1548,10 @@ void Renderer::pickObject() {
 }
 
 bool Renderer::transformAxisControls() {
-
 	TransformAxes& activeAxes = *(transformMode == TRANSFORM_SCALE ? &scaleAxes : &moveAxes);
 	Bsp* map = g_app->getSelectedMap();
 
-	if (!canTransform || pickClickHeld || pickInfo.entIdx < 0 || !map) {
+	if (!isTransformableSolid || !canTransform || pickClickHeld || pickInfo.entIdx < 0 || !map) {
 		return false;
 	}
 
@@ -2243,11 +2242,11 @@ void Renderer::updateModelVerts() {
 
 	updateSelectionSize();
 
+	modelUsesSharedStructures = map->does_model_use_shared_structures(modelIdx);
+
 	if (!map->is_convex(modelIdx)) {
 		return;
 	}
-
-	modelUsesSharedStructures = map->does_model_use_shared_structures(modelIdx);
 
 	scaleTexinfos = map->getScalableTexinfos(modelIdx);
 	map->getModelPlaneIntersectVerts(pickInfo.modelIdx, modelVerts); // for vertex manipulation + scaling
@@ -2694,10 +2693,10 @@ void Renderer::moveSelectedVerts(const vec3& delta) {
 	}
 }
 
-void Renderer::splitFace() {
+bool Renderer::splitModelFace() {
 	Bsp* map = getSelectedMap();
 	if (!map)
-		return;
+		return false;
 	BspRenderer* mapRenderer = map->getBspRender();
 	// find the pseudo-edge to split with
 	std::vector<int> selectedEdges;
@@ -2709,7 +2708,7 @@ void Renderer::splitFace() {
 
 	if (selectedEdges.size() != 2) {
 		logf("Exactly 2 edges must be selected before splitting a face\n");
-		return;
+		return false;
 	}
 
 	HullEdge& edge1 = modelEdges[selectedEdges[0]];
@@ -2728,7 +2727,7 @@ void Renderer::splitFace() {
 
 	if (commonPlane == -1) {
 		logf("Can't split edges that don't share a plane\n");
-		return;
+		return false;
 	}
 
 	BSPPLANE& splitPlane = map->planes[commonPlane];
@@ -2751,7 +2750,7 @@ void Renderer::splitFace() {
 	}
 	if (commonPlaneIdx == -1) {
 		logf("Failed to find splitting plane");
-		return;
+		return false;
 	}
 
 	// extrude split points so that the new planes aren't coplanar
@@ -2812,13 +2811,13 @@ void Renderer::splitFace() {
 	std::vector<TransformVert> newHullVerts;
 	if (!map->getModelPlaneIntersectVerts(pickInfo.ent->getBspModelIdx(), modelPlanes, newHullVerts)) {
 		logf("Can't split here because the model would not be convex\n");
-		return;
+		return false;
 	}
 
 	Solid newSolid;
 	if (!getModelSolid(newHullVerts, map, newSolid)) {
 		logf("Splitting here would invalidate the solid\n");
-		return;
+		return false;
 	}
 
 	// test that all planes have at least 3 verts
@@ -2835,7 +2834,7 @@ void Renderer::splitFace() {
 
 			if (verts.size() < 3) {
 				logf("Can't split here because a face with less than 3 verts would be created\n");
-				return;
+				return false;
 			}
 		}
 	}
@@ -2881,6 +2880,7 @@ void Renderer::splitFace() {
 	updateModelVerts();
 
 	gui->reloadLimits();
+	return true;
 }
 
 void Renderer::scaleSelectedVerts(float x, float y, float z) {

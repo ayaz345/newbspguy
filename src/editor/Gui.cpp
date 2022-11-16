@@ -1399,11 +1399,14 @@ void Gui::drawStatusMessage() {
 		if (ImGui::Begin("status", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 		{
 			if (app->modelUsesSharedStructures) {
-				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA");
+				if (app->transformMode == TRANSFORM_MOVE)
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA (EDIT ONLY VISUAL DATA WITHOUT COLLISION)");
+				else 
+					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA");
 				if (ImGui::IsItemHovered())
 				{
 					const char* info =
-						"Model shares planes/clipnodes with other models.\n\nDuplicate the model to enable model editing.";
+						"Model shares planes/clipnodes with other models.\n\nNeed duplicate the model to enable model editing.";
 					ImGui::BeginTooltip();
 					ImGui::TextUnformatted(info);
 					ImGui::EndTooltip();
@@ -1640,13 +1643,16 @@ void Gui::drawDebugWidget() {
 
 			bool isScalingObject = g_app->transformMode == TRANSFORM_SCALE && g_app->transformTarget == TRANSFORM_OBJECT;
 			bool isMovingOrigin = g_app->transformMode == TRANSFORM_MOVE && g_app->transformTarget == TRANSFORM_ORIGIN && g_app->originSelected;
-			bool isTransformingValid = ((g_app->isTransformableSolid && !g_app->modelUsesSharedStructures) || !isScalingObject) && g_app->transformTarget != TRANSFORM_ORIGIN;
+			bool isTransformingValid = !(g_app->modelUsesSharedStructures && (g_app->transformMode != TRANSFORM_MOVE || g_app->transformTarget == TRANSFORM_VERTEX)) && (g_app->isTransformableSolid || isScalingObject);
 			bool isTransformingWorld = g_app->pickInfo.entIdx == 0 && g_app->transformTarget != TRANSFORM_OBJECT;
 
 			ImGui::Text("isScalingObject %d", isScalingObject);
 			ImGui::Text("isMovingOrigin %d", isMovingOrigin);
 			ImGui::Text("isTransformingValid %d", isTransformingValid);
 			ImGui::Text("isTransformingWorld %d", isTransformingWorld);
+			ImGui::Text("transformMode %d", g_app->transformMode);
+			ImGui::Text("transformTarget %d", g_app->transformTarget);
+			ImGui::Text("modelUsesSharedStructures %d", g_app->modelUsesSharedStructures);
 
 			ImGui::Text("showDragAxes %d\nmovingEnt %d\ncanTransform %d",
 				g_app->showDragAxes, g_app->movingEnt, g_app->canTransform);
