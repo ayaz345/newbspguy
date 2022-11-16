@@ -1135,7 +1135,7 @@ bool VectorCompare(vec3 v1, vec3 v2)
 
 
 
-void AngleQuaternion(const vec3 angles, vec4 quaternion)
+void AngleQuaternion(const vec3 &angles, vec4 & quaternion)
 {
 	float		angle;
 	float		sr, sp, sy, cr, cp, cy;
@@ -1157,7 +1157,7 @@ void AngleQuaternion(const vec3 angles, vec4 quaternion)
 	quaternion[3] = cr * cp * cy + sr * sp * sy; // W
 }
 
-void QuaternionSlerp(const vec4 p, vec4 q, float t, vec4 & qt)
+void QuaternionSlerp(const vec4 & p, vec4 q, float t, vec4 & qt)
 {
 	int i;
 	float omega, cosom, sinom, sclp, sclq;
@@ -1207,7 +1207,7 @@ void QuaternionSlerp(const vec4 p, vec4 q, float t, vec4 & qt)
 
 
 
-void QuaternionMatrix(const vec4 quaternion, float(*matrix)[4])
+void QuaternionMatrix(const vec4 &quaternion, float(*matrix)[4])
 {
 	matrix[0][0] = 1.0f - 2.0f * quaternion[1] * quaternion[1] - 2.0f * quaternion[2] * quaternion[2];
 	matrix[1][0] = 2.0f * quaternion[0] * quaternion[1] + 2.0f * quaternion[3] * quaternion[2];
@@ -1288,21 +1288,21 @@ void mCrossProduct(vec3 v1, vec3 v2, vec3& cross)
 	cross[2] = v1[0] * v2[1] - v1[1] * v2[0];
 }
 
-void VectorIRotate(const vec3 in1, const float in2[3][4], vec3 & out)
+void VectorIRotate(const vec3 &in1, const float in2[3][4], vec3 &out)
 {
 	out[0] = in1[0] * in2[0][0] + in1[1] * in2[1][0] + in1[2] * in2[2][0];
 	out[1] = in1[0] * in2[0][1] + in1[1] * in2[1][1] + in1[2] * in2[2][1];
 	out[2] = in1[0] * in2[0][2] + in1[1] * in2[1][2] + in1[2] * in2[2][2];
 }
 
-void VectorTransform(const vec3 in1, const float in2[3][4], vec3 & out)
+void VectorTransform(const vec3 &in1, const float in2[3][4], vec3 &out)
 {
 	out[0] = mDotProduct(in1, in2[0]) + in2[0][3];
 	out[1] = mDotProduct(in1, in2[1]) + in2[1][3];
 	out[2] = mDotProduct(in1, in2[2]) + in2[2][3];
 }
 
-int TextureAxisFromPlane(BSPPLANE pln, vec3& xv, vec3& yv)
+int TextureAxisFromPlane(const BSPPLANE &pln, vec3& xv, vec3& yv)
 {
 	int             bestaxis;
 	float           dot, best;

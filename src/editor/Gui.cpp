@@ -334,6 +334,7 @@ void ExportModel(Bsp* map, unsigned int id, int ExportType)
 	if (!tmpMap->validate())
 	{
 		logf("Failed to export model %d\n", id);
+		delete tmpMap;
 		return;
 	}
 

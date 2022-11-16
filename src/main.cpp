@@ -265,6 +265,7 @@ int print_info(CommandLine& cli) {
 			}
 			else {
 				logf("ERROR: invalid limit name: %s\n", limitName.c_str());
+				delete map;
 				return 0;
 			}
 		}
@@ -291,6 +292,7 @@ int noclip(CommandLine& cli) {
 
 			if (hull < 0 || hull >= MAX_MAP_HULLS) {
 				logf("ERROR: hull number must be 0-3\n");
+				delete map;
 				return 1;
 			}
 		}
@@ -390,6 +392,7 @@ int simplify(CommandLine& cli) {
 
 		if (!cli.hasOption("-model")) {
 			logf("ERROR: -model is required\n");
+			delete map;
 			return 1;
 		}
 
@@ -398,6 +401,7 @@ int simplify(CommandLine& cli) {
 
 			if (hull < 1 || hull >= MAX_MAP_HULLS) {
 				logf("ERROR: hull number must be 1-3\n");
+				delete map;
 				return 1;
 			}
 		}
@@ -417,6 +421,7 @@ int simplify(CommandLine& cli) {
 
 		if (modelIdx < 0 || (unsigned int)modelIdx >= map->modelCount) {
 			logf("ERROR: model number must be 0 - %d\n", map->modelCount);
+			delete map;
 			return 1;
 		}
 
@@ -481,6 +486,7 @@ int deleteCmd(CommandLine& cli) {
 		logf("\n");
 
 		map->print_info(false, 0, 0);
+		delete map;
 		return 0;
 	}
 	return 1;
@@ -501,7 +507,7 @@ int transform(CommandLine& cli) {
 			map->move(move);
 		}
 		else {
-			logf("ERROR: at least one transformation option is required\n");
+			logf("ERROR: at least one transformation option is required\n"); delete map;
 			return 1;
 		}
 
@@ -509,9 +515,10 @@ int transform(CommandLine& cli) {
 		logf("\n");
 
 		map->print_info(false, 0, 0);
-
+		delete map;
 		return 0;
 	}
+
 	return 1;
 }
 
@@ -524,7 +531,7 @@ int unembed(CommandLine& cli) {
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
 		logf("\n");
-
+		delete map;
 		return 0;
 	}
 	return 1;

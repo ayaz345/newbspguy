@@ -383,7 +383,7 @@ std::vector<std::string> Entity::getTargets() {
 		// multi_manager is a special case where the targets are in the key names
 		for (int i = 0; i < keyOrder.size(); i++) {
 			std::string tname = keyOrder[i];
-			size_t hashPos = tname.find("#");
+			size_t hashPos = tname.find('#');
 			// std::string suffix;
 
 			// duplicate targetnames have a #X suffix to differentiate them
@@ -427,7 +427,7 @@ void Entity::renameTargetnameValues(const std::string& oldTargetname, const std:
 		// multi_manager is a special case where the targets are in the key names
 		for (int i = 0; i < keyOrder.size(); i++) {
 			std::string tname = keyOrder[i];
-			size_t hashPos = tname.find("#");
+			size_t hashPos = tname.find('#');
 			std::string suffix;
 
 			// duplicate targetnames have a #X suffix to differentiate them

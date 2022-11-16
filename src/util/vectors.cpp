@@ -359,21 +359,13 @@ vec2 vec2::normalize(float length) {
 bool operator==(const vec4& v1, const vec4& v2)
 {
 	vec4 v = v1 - v2;
-	if (abs(v.x) >= EPSILON)
-		return false;
-	if (abs(v.y) >= EPSILON)
-		return false;
-	if (abs(v.z) >= EPSILON)
-		return false;
-	if (abs(v.w) >= EPSILON)
-		return false;
-	return true;
+	return abs(v.x) < EPSILON && abs(v.y) < EPSILON && abs(v.z) < EPSILON && abs(v.w) < EPSILON;
 }
 
 
 bool operator!=(const vec4& v1, const vec4& v2)
 {
-	return abs(v1.x != v2.x) >= EPSILON || abs(v1.y != v2.y) >= EPSILON || abs(v1.z != v2.z) >= EPSILON || abs(v1.w != v2.w) >= EPSILON;
+	return !(v1 == v2);
 }
 
 

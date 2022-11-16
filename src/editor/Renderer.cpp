@@ -210,11 +210,7 @@ void AppSettings::load() {
 		g_settings.windowY = 0;
 		g_settings.windowX = 0;
 #ifdef WIN32
-		// Fix invisibled window header for primary screen.
-		if (g_settings.windowY >= 0 && g_settings.windowY < 30)
-		{
-			g_settings.windowY = 30;
-		}
+		g_settings.windowY = 30;
 #endif
 		windowHeight = 600;
 		windowWidth = 800;
@@ -598,7 +594,7 @@ void Renderer::renderLoop() {
 		}
 
 		bool isScalingObject = transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT;
-		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN && originSelected;
+		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN ;
 		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
 		bool isTransformingWorld = pickInfo.entIdx == 0 && transformTarget != TRANSFORM_OBJECT;
 		
@@ -1268,7 +1264,7 @@ void Renderer::cameraRotationControls(vec2 mousePos) {
 void Renderer::cameraObjectHovering() {
 	originHovered = false;
 	Bsp* map = getSelectedMap();
-	if (!map || (modelUsesSharedStructures && (transformTarget != TRANSFORM_OBJECT || transformMode != TRANSFORM_MOVE)))
+	if (!map || (modelUsesSharedStructures && (transformMode != TRANSFORM_MOVE || transformTarget == TRANSFORM_VERTEX)))
 		return;
 
 	vec3 mapOffset;
@@ -1605,8 +1601,8 @@ bool Renderer::transformAxisControls() {
 			else if (transformTarget == TRANSFORM_ORIGIN) {
 				transformedOrigin = (oldOrigin + delta);
 				transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
-
-				//map->getBspRender()->refreshEnt(pickInfo.entIdx);
+				map->getBspRender()->refreshEnt(pickInfo.entIdx);
+				updateEntConnectionPositions();
 			}
 
 		}
@@ -2240,9 +2236,10 @@ void Renderer::updateModelVerts() {
 
 	modelOriginBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &modelOriginCube, 6 * 6, GL_TRIANGLES);
 
-	updateSelectionSize();
 
-	modelUsesSharedStructures = map->does_model_use_shared_structures(modelIdx);
+	modelUsesSharedStructures = modelIdx >= 0 && map->does_model_use_shared_structures(modelIdx);
+
+	updateSelectionSize();
 
 	if (!map->is_convex(modelIdx)) {
 		return;

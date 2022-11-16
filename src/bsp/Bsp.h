@@ -102,7 +102,7 @@ public:
 	void dump_lightmap(int faceIdx, const std::string& outputPath);
 	void dump_lightmap_atlas(const std::string& outputPath);
 
-	void write_csg_outputs(std::string path);
+	void write_csg_outputs(const std::string &path);
 
 	// get the bounding box for the world
 	void get_bounding_box(vec3& mins, vec3& maxs);

@@ -11,7 +11,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char * name) {
 	this->farFilter = GL_LINEAR;
 	this->data = new unsigned char[(unsigned int)(width * height) * sizeof(COLOR3)];
 	this->id = this->format = this->iformat = 0;
-	snprintf(texName, 64, name);
+	snprintf(texName, 64, "%s", name);
 }
 
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char * name)
@@ -22,7 +22,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->farFilter = GL_LINEAR;
 	this->data = data;
 	this->id = this->format = this->iformat = 0;
-	snprintf(texName, 64, name);
+	snprintf(texName, 64, "%s", name);
 }
 
 Texture::~Texture()

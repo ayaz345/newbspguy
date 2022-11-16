@@ -243,8 +243,11 @@ void BspRenderer::addClipnodeModel(int modelIdx) {
 	if (modelIdx < 0)
 		return;
 	RenderClipnodes* newRenderClipnodes = new RenderClipnodes[numRenderClipnodes + 1];
-	memcpy(newRenderClipnodes, renderClipnodes, numRenderClipnodes * sizeof(RenderClipnodes));
-	memset(&newRenderClipnodes[numRenderClipnodes], 0, sizeof(RenderClipnodes));
+	for (unsigned int i = 0; i < numRenderClipnodes; i++)
+	{
+		newRenderClipnodes[i] = renderClipnodes[i];
+	}
+	newRenderClipnodes[numRenderClipnodes] = RenderClipnodes();
 	numRenderClipnodes++;
 	renderClipnodes = newRenderClipnodes;
 
@@ -748,7 +751,9 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx) {
 void BspRenderer::loadClipnodes() {
 	numRenderClipnodes = map->modelCount;
 	renderClipnodes = new RenderClipnodes[numRenderClipnodes];
-	memset(renderClipnodes, 0, numRenderClipnodes * sizeof(RenderClipnodes));
+	
+	for (unsigned int i = 0; i < numRenderClipnodes; i++)
+		renderClipnodes[i] = RenderClipnodes();
 
 	for (unsigned int i = 0; i < numRenderClipnodes; i++) {
 		generateClipnodeBuffer(i);
@@ -778,7 +783,7 @@ void BspRenderer::generateClipnodeBuffer(unsigned int modelIdx) {
 
 		std::vector<CMesh> meshes;
 		for (int k = 0; k < solidNodes.size(); k++) {
-			meshes.push_back(clipper.clip(solidNodes[k].cuts));
+			meshes.emplace_back(clipper.clip(solidNodes[k].cuts));
 			clipnodeLeafCount++;
 		}
 
@@ -941,21 +946,23 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue) {
 	}
 }
 
-void BspRenderer::preRenderEnts() {
-	if (renderEnts) {
+void BspRenderer::preRenderEnts() 
+{
+	if (renderEnts) 
+	{
 		delete[] renderEnts;
 	}
 	renderEnts = new RenderEnt[map->ents.size()];
 
 	numPointEnts = 0;
-	for (int i = 1; i < map->ents.size(); i++) {
+
+	for (int i = 1; i < map->ents.size(); i++) 
+	{
 		numPointEnts += !map->ents[i]->isBspModel();
 	}
 
-	cCube* entCubes = new cCube[numPointEnts];
-	int pointEntIdx = 0;
-
-	for (int i = 0; i < map->ents.size(); i++) {
+	for (int i = 0; i < map->ents.size(); i++) 
+	{
 		refreshEnt(i);
 	}
 }

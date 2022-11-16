@@ -3815,7 +3815,7 @@ int Bsp::create_model() {
 	memcpy(newModels, models, modelCount * sizeof(BSPMODEL));
 
 	BSPMODEL& newModel = newModels[modelCount];
-	memset(&newModel, 0, sizeof(BSPMODEL));
+	newModel = BSPMODEL();
 
 	int newModelIdx = modelCount;
 	replace_lump(LUMP_MODELS, newModels, (modelCount + 1) * sizeof(BSPMODEL));
@@ -4188,7 +4188,7 @@ void Bsp::dump_lightmap_atlas(const std::string& outputPath) {
 	lodepng_encode24_file(outputPath.c_str(), (unsigned char*)pngData, atlasDim, atlasDim);
 }
 
-void Bsp::write_csg_outputs(std::string path) {
+void Bsp::write_csg_outputs(const std::string &path) {
 	BSPPLANE* thisPlanes = (BSPPLANE*)lumps[LUMP_PLANES];
 	int numPlanes = bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
 

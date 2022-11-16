@@ -163,17 +163,17 @@ std::string GetCurrentWorkingDir();
 
 bool VectorCompare(vec3 v1, vec3 v2);
 
-void QuaternionSlerp(const vec4 p, vec4 q, float t, vec4 & qt);
-void AngleQuaternion(const vec3 angles, vec4 quaternion);
-void QuaternionMatrix(const vec4 quaternion, float(*matrix)[4]);
+void QuaternionSlerp(const vec4 &p, vec4 q, float t, vec4 & qt);
+void AngleQuaternion(const vec3 &angles, vec4 &quaternion);
+void QuaternionMatrix(const vec4 &quaternion, float(*matrix)[4]);
 void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4]);
-void VectorScale(vec3 v, float scale, vec3 & out);
+void VectorScale(vec3 v, float scale, vec3 &out);
 float VectorNormalize(vec3 v);
-void mCrossProduct(vec3 v1, vec3 v2, vec3& cross);
-void VectorIRotate(const vec3 in1, const float in2[3][4], vec3& out);
-void VectorTransform(const vec3 in1, const float in2[3][4], vec3& out);
+void mCrossProduct(vec3 v1, vec3 v2, vec3 &cross);
+void VectorIRotate(const vec3 &in1, const float in2[3][4], vec3 &out);
+void VectorTransform(const vec3 &in1, const float in2[3][4], vec3 &out);
 
 
-int TextureAxisFromPlane(BSPPLANE pln, vec3& xv, vec3& yv);
+int TextureAxisFromPlane(const BSPPLANE &pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
 vec3 AxisFromTextureAngle(float angle, bool x, int type);
