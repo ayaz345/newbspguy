@@ -11,7 +11,8 @@ jobs:
     env:
      solution: 'vs-project/bspguy.sln'
      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
+    outputs:
+      release_tag: ${{ steps.tag.outputs.release_tag }}
     steps:
      - name: Generate nightly release tag
        id: tag
@@ -75,5 +76,5 @@ jobs:
     - name: Publish nightly binaries for linux
       uses: softprops/action-gh-release@v1
       with:
-        tag_name: ${{ needs.window_build.steps.tag.outputs.release_tag }}
+        tag_name: ${{ needs.window_build.outputs.release_tag }}
         files: build/bspguy
