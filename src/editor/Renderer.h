@@ -249,9 +249,12 @@ private:
 	bool released[GLFW_KEY_LAST];
 	char oldPressed[GLFW_KEY_LAST];
 	char oldReleased[GLFW_KEY_LAST];
+
 	bool anyCtrlPressed;
 	bool anyAltPressed;
 	bool anyShiftPressed;
+
+	bool canControl;
 
 	int pickCount = 0; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
 	int vertPickCount = 0;

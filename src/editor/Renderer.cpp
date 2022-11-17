@@ -595,10 +595,10 @@ void Renderer::renderLoop() {
 		}
 
 		bool isScalingObject = transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT;
-		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN ;
+		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN;
 		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
 		bool isTransformingWorld = pickInfo.entIdx == 0 && transformTarget != TRANSFORM_OBJECT;
-		
+
 		if (showDragAxes && pickMode == pick_modes::PICK_OBJECT) {
 			if (!movingEnt && !isTransformingWorld && pickInfo.entIdx >= 0 && (isTransformingValid || isMovingOrigin))
 			{
@@ -926,6 +926,8 @@ void Renderer::drawEntConnections() {
 void Renderer::controls() {
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
+	canControl = !io.WantCaptureKeyboard && !io.WantTextInput;
+
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++) {
 		pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
 		released[i] = glfwGetKey(window, i) == GLFW_RELEASE;
@@ -937,58 +939,39 @@ void Renderer::controls() {
 	anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
 	anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
 
-	if (anyCtrlPressed && (oldPressed[GLFW_KEY_A] || pressed[GLFW_KEY_A]))
+
+	if (canControl)
 	{
-		if (released[GLFW_KEY_A])
+		if (anyCtrlPressed && (oldPressed[GLFW_KEY_A] || pressed[GLFW_KEY_A]) && released[GLFW_KEY_A]
+			&& pickMode == PICK_FACE && selectedFaces.size())
 		{
 			Bsp* map;
 			if (map = getSelectedMap())
 			{
-				if (pickMode == PICK_FACE)
-				{
-					if (selectedFaces.size())
+				BSPFACE& selface = map->faces[selectedFaces[0]];
+				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
+				deselectFaces();
+				for (unsigned int i = 0; i < map->faceCount; i++) {
+					BSPFACE& face = map->faces[i];
+					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+					if (texinfo.iMiptex == seltexinfo.iMiptex)
 					{
-						BSPFACE& selface = map->faces[selectedFaces[0]];
-						BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
-						deselectFaces();
-						for (unsigned int i = 0; i < map->faceCount; i++) {
-							BSPFACE& face = map->faces[i];
-							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-							if (texinfo.iMiptex == seltexinfo.iMiptex)
-							{
-								if (map->getBspRender())
-									map->getBspRender()->highlightFace(i, true);
-								selectedFaces.push_back(i);
-							}
-						}
+						if (map->getBspRender())
+							map->getBspRender()->highlightFace(i, true);
+						selectedFaces.push_back(i);
 					}
 				}
 			}
 		}
-	}
-	else
-	{
-		if (!io.WantCaptureKeyboard)
-			cameraOrigin += getMoveDir() * (float)frameTimeScale;
-		moveGrabbedEnt();
-	}
-	static bool oldWantTextInput = false;
 
-	if (!io.WantTextInput && oldWantTextInput) {
-		pushEntityUndoState("Edit Keyvalues");
-	}
-
-	oldWantTextInput = io.WantTextInput;
-
-	if (!io.WantTextInput)
-		globalShortcutControls();
-
-	vertexEditControls();
-
-	if (!io.WantCaptureMouse) {
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 		vec2 mousePos((float)xpos, (float)ypos);
+		cameraOrigin += getMoveDir() * (float)frameTimeScale;
+		moveGrabbedEnt();
+		globalShortcutControls();
+
+		vertexEditControls();
 
 		cameraContextMenus();
 
@@ -1604,7 +1587,7 @@ bool Renderer::transformAxisControls() {
 						pushEntityUndoState("Move Entity");
 					}
 				}
-				else 
+				else
 				{
 					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
