@@ -26,11 +26,22 @@ jobs:
      - name: Build app for release
        run: msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=Release
 
-     - name: Artifact1
+     - name: Upload windows artifacts
        uses: actions/upload-artifact@v3
        with:
          name: Windows
          path: ./vs-project/Release/bspguy.exe
+    
+     - name: Generate nightly release tag
+       id: tag
+       run: |
+         echo "::set-output name=release_tag::NightBuild_$(date +"%Y.%m.%d_%H-%M")"    
+        
+     - name: Publish nightly binaries for windows
+       uses: softprops/action-gh-release@v1
+       with:
+         tag_name: ${{ steps.tag.outputs.release_tag }}
+         files: ./vs-project/Release/** 
 
   build-linux:
     runs-on: ubuntu-latest
@@ -52,12 +63,17 @@ jobs:
         cmake .. -DCMAKE_BUILD_TYPE=RELEASE
         make
 
-    - name: Upload artifact
+    - name: Upload linux artifacts
       uses: actions/upload-artifact@v3
       with:
         name: bspguy-linux
         path: build/bspguy
-    - name: Release with Notes
+    - name: Generate nightly release tag
+      id: tag
+      run: |
+        echo "::set-output name=release_tag::NightBuild_$(date +"%Y.%m.%d_%H-%M")"    
+    - name: Publish nightly binaries for linux
       uses: softprops/action-gh-release@v1
       with:
-        files: build/bspguy
+        tag_name: ${{ steps.tag.outputs.release_tag }}
+        files: build/**
