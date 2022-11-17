@@ -9,6 +9,7 @@ jobs:
     
     env:
      solution: 'vs-project/bspguy.sln'
+     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
      - name: Checkout
@@ -33,7 +34,10 @@ jobs:
 
   build-linux:
     runs-on: ubuntu-latest
-
+    
+    env:
+     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+     
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
@@ -57,5 +61,3 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: build/bspguy
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
