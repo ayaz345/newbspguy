@@ -2349,8 +2349,8 @@ void Gui::drawTransformWidget() {
 		transformingEnt = app->pickInfo.entIdx > 0;
 	}
 
-	ImGui::SetNextWindowSize(ImVec2(430.f, 380.f), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
+	ImGui::SetNextWindowSize(ImVec2(440.f, 380.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(430, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 
 
 	static float x, y, z;
@@ -2577,6 +2577,23 @@ void Gui::drawTransformWidget() {
 				ImGui::BeginTooltip();
 				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
 				ImGui::TextUnformatted("Doesn't work for angled faces yet. Applies to scaling only.");
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
+
+			ImGui::SameLine();
+			if (app->transformMode != TRANSFORM_MOVE || app->transformTarget != TRANSFORM_OBJECT)
+				ImGui::BeginDisabled();
+			ImGui::Checkbox("Move entity", &app->moveOrigin);
+			if (app->transformMode != TRANSFORM_MOVE || app->transformTarget != TRANSFORM_OBJECT)
+				ImGui::EndDisabled();
+			ImGui::SameLine();
+			ImGui::TextDisabled("(origin)");
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted("Move 'origin' keyvalue instead of model data.");
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}

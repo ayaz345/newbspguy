@@ -204,6 +204,7 @@ private:
 	vec3 axisDragEntOriginStart;
 	std::vector<ScalableTexinfo> scaleTexinfos; // texture coordinates to scale
 	bool textureLock = false;
+	bool moveOrigin = true;
 	bool invalidSolid = false;
 	bool isTransformableSolid = true;
 	bool canTransform = false;
@@ -240,6 +241,7 @@ private:
 	Entity* copiedEnt = NULL;
 
 	int oldLeftMouse;
+	int curLeftMouse;
 	int oldRightMouse;
 	int oldScroll;
 	bool pressed[GLFW_KEY_LAST];

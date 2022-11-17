@@ -370,7 +370,8 @@ Renderer::Renderer() {
 	clearSelection();
 
 
-	oldLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+	oldLeftMouse = curLeftMouse;
+	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 	oldRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
 
 	g_app = this;
@@ -1008,7 +1009,8 @@ void Renderer::controls() {
 		shortcutControls();
 	}
 
-	oldLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+	oldLeftMouse = curLeftMouse;
+	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
 	oldRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
 
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++) {
@@ -1059,7 +1061,7 @@ void Renderer::vertexEditControls() {
 }
 
 void Renderer::cameraPickingControls() {
-	if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS) {
+	if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS) {
 		bool transforming = transformAxisControls();
 
 		bool anyHover = hoverVert != -1 || hoverEdge != -1;
@@ -1590,13 +1592,26 @@ bool Renderer::transformAxisControls() {
 				moveSelectedVerts(delta);
 			}
 			else if (transformTarget == TRANSFORM_OBJECT) {
-				vec3 offset = getEntOffset(map, ent);
-				vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
-				vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
+				if (moveOrigin || ent->getBspModelIdx() < 0)
+				{
+					vec3 offset = getEntOffset(map, ent);
+					vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
+					vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
-				ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
-				map->getBspRender()->refreshEnt(pickInfo.entIdx);
-				updateEntConnectionPositions();
+					ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
+					map->getBspRender()->refreshEnt(pickInfo.entIdx);
+					updateEntConnectionPositions();
+				}
+				else 
+				{
+					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+					{
+						map->move(delta, ent->getBspModelIdx(), true);
+						map->getBspRender()->refreshEnt(pickInfo.entIdx);
+						map->getBspRender()->refreshModel(ent->getBspModelIdx());
+						updateEntConnectionPositions();
+					}
+				}
 			}
 			else if (transformTarget == TRANSFORM_ORIGIN) {
 				transformedOrigin = (oldOrigin + delta);
