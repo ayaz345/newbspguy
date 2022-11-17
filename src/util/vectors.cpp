@@ -193,6 +193,11 @@ float vec3::length()
 	return sqrt((x * x) + (y * y) + (z * z));
 }
 
+bool vec3::IsZero()
+{
+	return (abs(x) + abs(y) + abs(z)) < EPSILON;
+}
+
 std::string vec3::toString()
 {
 	return std::to_string(x) + " " + std::to_string(y) + " " + std::to_string(z);

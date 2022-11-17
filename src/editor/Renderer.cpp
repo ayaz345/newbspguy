@@ -897,16 +897,9 @@ void Renderer::drawModelOrigin() {
 }
 
 void Renderer::drawTransformAxes() {
-	if (!canTransform) {
-		return;
-	}
-
 	glClear(GL_DEPTH_BUFFER_BIT);
-
-	updateDragAxes();
-
+	updateDragAxes(dragDelta);
 	glDisable(GL_CULL_FACE);
-
 	if (transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT) {
 		vec3 ori = scaleAxes.origin;
 		model.translate(ori.x, ori.z, -ori.y);
@@ -919,6 +912,7 @@ void Renderer::drawTransformAxes() {
 		colorShader->updateMatrixes();
 		moveAxes.buffer->drawFull();
 	}
+	dragDelta = vec3();
 }
 
 void Renderer::drawEntConnections() {
@@ -1573,6 +1567,8 @@ bool Renderer::transformAxisControls() {
 			dragPoint = snapToGrid(dragPoint);
 		}
 		vec3 delta = dragPoint - axisDragStart;
+		if (delta.IsZero())
+			return false;
 
 
 		float moveScale = pressed[GLFW_KEY_LEFT_SHIFT] ? 2.0f : 1.0f;
@@ -1587,6 +1583,8 @@ bool Renderer::transformAxisControls() {
 				((float*)&delta)[i] = clamp(((float*)&delta)[i] * moveScale, -maxDragDist, maxDragDist);
 		}
 
+		dragDelta = delta;
+
 		if (transformMode == TRANSFORM_MOVE) {
 			if (transformTarget == TRANSFORM_VERTEX) {
 				moveSelectedVerts(delta);
@@ -1594,18 +1592,23 @@ bool Renderer::transformAxisControls() {
 			else if (transformTarget == TRANSFORM_OBJECT) {
 				if (moveOrigin || ent->getBspModelIdx() < 0)
 				{
-					vec3 offset = getEntOffset(map, ent);
-					vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
-					vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
+					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+					{
+						pushEntityUndoState("Move Entity");
+						vec3 offset = getEntOffset(map, ent);
+						vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
+						vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
-					ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
-					map->getBspRender()->refreshEnt(pickInfo.entIdx);
-					updateEntConnectionPositions();
+						ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
+						map->getBspRender()->refreshEnt(pickInfo.entIdx);
+						updateEntConnectionPositions();
+					}
 				}
 				else 
 				{
 					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
+						pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
 						map->move(delta, ent->getBspModelIdx(), true);
 						map->getBspRender()->refreshEnt(pickInfo.entIdx);
 						map->getBspRender()->refreshModel(ent->getBspModelIdx());
@@ -1614,27 +1617,34 @@ bool Renderer::transformAxisControls() {
 				}
 			}
 			else if (transformTarget == TRANSFORM_ORIGIN) {
-				transformedOrigin = (oldOrigin + delta);
-				transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
-				map->getBspRender()->refreshEnt(pickInfo.entIdx);
-				updateEntConnectionPositions();
+				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+				{
+					pushEntityUndoState("Move Origin");
+					transformedOrigin = (oldOrigin + delta);
+					transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
+					map->getBspRender()->refreshEnt(pickInfo.entIdx);
+					updateEntConnectionPositions();
+				}
 			}
 
 		}
 		else {
 			if (ent->isBspModel() && abs(delta.length()) >= EPSILON) {
+				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+				{
+					pushModelUndoState("Move Model", EDIT_MODEL_LUMPS);
+					vec3 scaleDirs[6]{
+						vec3(1, 0, 0),
+						vec3(0, 1, 0),
+						vec3(0, 0, 1),
+						vec3(-1, 0, 0),
+						vec3(0, -1, 0),
+						vec3(0, 0, -1),
+					};
 
-				vec3 scaleDirs[6]{
-					vec3(1, 0, 0),
-					vec3(0, 1, 0),
-					vec3(0, 0, 1),
-					vec3(-1, 0, 0),
-					vec3(0, -1, 0),
-					vec3(0, 0, -1),
-				};
-
-				scaleSelectedObject(delta, scaleDirs[draggingAxis]);
-				map->getBspRender()->refreshModel(ent->getBspModelIdx());
+					scaleSelectedObject(delta, scaleDirs[draggingAxis]);
+					map->getBspRender()->refreshModel(ent->getBspModelIdx());
+				}
 			}
 		}
 
@@ -2003,7 +2013,7 @@ vec3 Renderer::getEntOffset(Bsp* map, Entity* ent) {
 	return vec3(0, 0, 0);
 }
 
-void Renderer::updateDragAxes() {
+void Renderer::updateDragAxes(vec3 delta) {
 	Bsp* map = g_app->getSelectedMap();
 	Entity* ent = NULL;
 	vec3 mapOffset;
@@ -2036,19 +2046,23 @@ void Renderer::updateDragAxes() {
 			if (ent->hasKey("origin")) {
 				scaleAxes.origin += parseVector(ent->keyvalues["origin"]);
 			}
+			scaleAxes.origin += delta;
 		}
 	}
 	else {
 		if (ent) {
 			if (transformTarget == TRANSFORM_ORIGIN) {
 				moveAxes.origin = transformedOrigin;
-				debugVec0 = transformedOrigin;
+				moveAxes.origin += delta;
+				debugVec0 = transformedOrigin + delta;
 			}
 			else {
 				moveAxes.origin = getEntOrigin(map, ent);
+				moveAxes.origin += delta;
 			}
 		}
-		if (pickInfo.entIdx == 0) {
+
+		if (pickInfo.entIdx <= 0) {
 			moveAxes.origin -= mapOffset;
 		}
 
@@ -2070,7 +2084,10 @@ void Renderer::updateDragAxes() {
 				}
 			}
 			if (selectTotal != 0)
+			{
 				moveAxes.origin = min + (max - min) * 0.5f;
+				moveAxes.origin += delta;
+			}
 		}
 	}
 

@@ -9,6 +9,7 @@ struct vec3
 	vec3(float x, float y, float z) : x(x), y(y), z(z) {}
 	vec3 normalize(float length = 1.0f);
 	float length();
+	bool IsZero();
 	vec3 invert();
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
 	std::string toString();

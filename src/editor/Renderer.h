@@ -201,6 +201,7 @@ private:
 	bool showDragAxes = false;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object
 	vec3 axisDragStart;
+	vec3 dragDelta;
 	vec3 axisDragEntOriginStart;
 	std::vector<ScalableTexinfo> scaleTexinfos; // texture coordinates to scale
 	bool textureLock = false;
@@ -301,7 +302,7 @@ private:
 
 	vec3 getAxisDragPoint(vec3 origin);
 
-	void updateDragAxes();
+	void updateDragAxes(vec3 delta = vec3());
 	void updateModelVerts();
 	void updateSelectionSize();
 	void updateEntConnections();
