@@ -3,15 +3,6 @@ name: C/C++ CI
 on: [push, pull_request]
 
 jobs:
-  tag_generator:
-    name: 'Generate tag'
-    
-    steps:
-     - name: Generate nightly release tag
-       id: tag
-       run: |
-         echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" >> $GITHUB_OUTPUT
-
   windows:
     name: 'Windows'
     runs-on: windows-latest
@@ -21,6 +12,11 @@ jobs:
      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
+     - name: Generate nightly release tag
+       id: tag
+       run: |
+         echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" >> $GITHUB_OUTPUT
+         
      - name: Checkout
        uses: actions/checkout@v2
        with:
@@ -45,8 +41,7 @@ jobs:
        uses: softprops/action-gh-release@v1
        with:
          tag_name: ${{ steps.tag.outputs.release_tag }}
-         files: |
-             ./vs-project/Release/bspguy.exe
+         files: ./vs-project/Release/bspguy.exe
 
   build-linux:
     runs-on: ubuntu-latest
@@ -55,6 +50,11 @@ jobs:
      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
      
     steps:
+    - name: Generate nightly release tag
+      id: tag
+      run: |
+        echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" >> $GITHUB_OUTPUT   
+        
     - name: Checkout repository
       uses: actions/checkout@v2
     
@@ -77,5 +77,4 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         tag_name: ${{ steps.tag.outputs.release_tag }}
-        files: |
-            build/bspguy
+        files: build/bspguy
