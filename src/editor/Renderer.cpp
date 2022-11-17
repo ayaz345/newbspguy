@@ -1594,7 +1594,6 @@ bool Renderer::transformAxisControls() {
 				{
 					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
-						pushEntityUndoState("Move Entity");
 						vec3 offset = getEntOffset(map, ent);
 						vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
 						vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
@@ -1602,28 +1601,29 @@ bool Renderer::transformAxisControls() {
 						ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
 						map->getBspRender()->refreshEnt(pickInfo.entIdx);
 						updateEntConnectionPositions();
+						pushEntityUndoState("Move Entity");
 					}
 				}
 				else 
 				{
 					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
-						pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
 						map->move(delta, ent->getBspModelIdx(), true);
 						map->getBspRender()->refreshEnt(pickInfo.entIdx);
 						map->getBspRender()->refreshModel(ent->getBspModelIdx());
 						updateEntConnectionPositions();
+						pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
 					}
 				}
 			}
 			else if (transformTarget == TRANSFORM_ORIGIN) {
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
-					pushEntityUndoState("Move Origin");
 					transformedOrigin = (oldOrigin + delta);
 					transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
 					map->getBspRender()->refreshEnt(pickInfo.entIdx);
 					updateEntConnectionPositions();
+					pushEntityUndoState("Move Origin");
 				}
 			}
 
@@ -1632,7 +1632,6 @@ bool Renderer::transformAxisControls() {
 			if (ent->isBspModel() && abs(delta.length()) >= EPSILON) {
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
-					pushModelUndoState("Move Model", EDIT_MODEL_LUMPS);
 					vec3 scaleDirs[6]{
 						vec3(1, 0, 0),
 						vec3(0, 1, 0),
@@ -1644,6 +1643,7 @@ bool Renderer::transformAxisControls() {
 
 					scaleSelectedObject(delta, scaleDirs[draggingAxis]);
 					map->getBspRender()->refreshModel(ent->getBspModelIdx());
+					pushModelUndoState("Move Model", EDIT_MODEL_LUMPS);
 				}
 			}
 		}
