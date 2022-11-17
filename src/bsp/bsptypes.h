@@ -99,7 +99,7 @@ enum MODEL_SORT_MODES {
 struct BSPLUMP
 {
 	int nOffset; // File offset to data
-	unsigned int nLength; // Length of data
+	int nLength; // Length of data
 };
 
 struct BSPHEADER
@@ -134,25 +134,25 @@ struct BSPTEXTUREINFO {
 	float shiftS;
 	vec3 vT;
 	float shiftT;
-	unsigned int iMiptex;
-	unsigned int nFlags;
+	int iMiptex;
+	int nFlags;
 };
 
 struct BSPMIPTEX
 {
 	char szName[MAXTEXTURENAME];  // Name of texture
-	unsigned int nWidth, nHeight;		  // Extends of the texture
-	unsigned int nOffsets[MIPLEVELS];	  // Offsets to texture mipmaps, relative to the start of this structure
+	int nWidth, nHeight;		  // Extends of the texture
+	int nOffsets[MIPLEVELS];	  // Offsets to texture mipmaps, relative to the start of this structure
 };
 
 struct BSPFACE {
 	unsigned short iPlane;          // Plane the face is parallel to
-	unsigned short nPlaneSide;      // Set if different normals orientation
-	unsigned int iFirstEdge;      // Index of the first surfedge
-	unsigned short nEdges;          // Number of consecutive surfedges
-	unsigned short iTextureInfo;    // Index of the texture info structure
+	short nPlaneSide;      // Set if different normals orientation
+	int iFirstEdge;      // Index of the first surfedge
+	short nEdges;          // Number of consecutive surfedges
+	short iTextureInfo;    // Index of the texture info structure
 	unsigned char nStyles[4];       // Specify lighting styles
-	unsigned int nLightmapOffset; // Offsets into the raw lightmap data
+	int nLightmapOffset; // Offsets into the raw lightmap data
 };
 
 struct BSPLEAF

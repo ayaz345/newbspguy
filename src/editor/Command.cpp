@@ -5,9 +5,9 @@
 #include <lodepng.h>
 #include "icons/aaatrigger.h"
 
-Command::Command(std::string desc, int mapIdx) {
-	this->desc = desc;
-	this->mapIdx = mapIdx;
+Command::Command(std::string _desc, int _mapIdx) {
+	this->desc = _desc;
+	this->mapIdx = _mapIdx;
 	debugf("New undo command added: %s\n", desc.c_str());
 }
 
@@ -72,7 +72,11 @@ Entity* EditEntityCommand::getEnt() {
 
 void EditEntityCommand::refresh() {
 	BspRenderer* renderer = getBspRenderer();
+	if (!renderer)
+		return;
 	Entity* ent = getEnt();
+	if (!ent)
+		return;
 	renderer->refreshEnt(entIdx);
 	if (!ent->isBspModel()) {
 		renderer->refreshPointEnt(entIdx);
@@ -104,7 +108,13 @@ DeleteEntityCommand::~DeleteEntityCommand() {
 }
 
 void DeleteEntityCommand::execute() {
+	if (entIdx < 0)
+		return;
+
 	Bsp* map = getBsp();
+
+	if (!map)
+		return;
 
 	if (g_app->pickInfo.entIdx == entIdx) {
 		g_app->deselectObject();
@@ -120,6 +130,8 @@ void DeleteEntityCommand::execute() {
 
 void DeleteEntityCommand::undo() {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 
 	if (g_app->pickInfo.entIdx >= entIdx) {
 		g_app->pickInfo.entIdx += 1;
@@ -303,7 +315,11 @@ CreateBspModelCommand::~CreateBspModelCommand() {
 
 void CreateBspModelCommand::execute() {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 	BspRenderer* renderer = getBspRenderer();
+	if (!renderer)
+		return;
 
 	int aaatriggerIdx = getDefaultTextureIdx();
 
@@ -344,6 +360,9 @@ void CreateBspModelCommand::undo() {
 	Bsp* map = getBsp();
 	BspRenderer* renderer = getBspRenderer();
 
+	if (!map || !renderer)
+		return;
+
 	map->replace_lumps(oldLumps);
 
 	delete map->ents[map->ents.size() - 1];
@@ -366,6 +385,8 @@ size_t CreateBspModelCommand::memoryUsage() {
 
 int CreateBspModelCommand::getDefaultTextureIdx() {
 	Bsp* map = getBsp();
+	if (!map )
+		return -1;
 
 	unsigned int totalTextures = ((unsigned int*)map->textures)[0];
 	for (unsigned int i = 0; i < totalTextures; i++) {
@@ -381,6 +402,8 @@ int CreateBspModelCommand::getDefaultTextureIdx() {
 
 int CreateBspModelCommand::addDefaultTexture() {
 	Bsp* map = getBsp();
+	if (!map)
+		return -1;
 	unsigned char* tex_dat = NULL;
 	unsigned int w, h;
 
@@ -421,6 +444,8 @@ EditBspModelCommand::~EditBspModelCommand() {
 void EditBspModelCommand::execute() {
 	Bsp* map = getBsp();
 	BspRenderer* renderer = getBspRenderer();
+	if (!map || !renderer)
+		return;
 
 	map->replace_lumps(newLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
@@ -431,6 +456,8 @@ void EditBspModelCommand::execute() {
 
 void EditBspModelCommand::undo() {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 
 	map->replace_lumps(oldLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
@@ -487,7 +514,8 @@ CleanMapCommand::~CleanMapCommand() {
 void CleanMapCommand::execute() {
 	Bsp* map = getBsp();
 	BspRenderer* renderer = getBspRenderer();
-
+	if (!map || !renderer)
+		return;
 	logf("Cleaning %s\n", map->bsp_name.c_str());
 	map->remove_unused_model_structures().print_delete_stats(1);
 
@@ -542,6 +570,8 @@ OptimizeMapCommand::~OptimizeMapCommand() {
 void OptimizeMapCommand::execute() {
 	Bsp* map = getBsp();
 	BspRenderer* renderer = getBspRenderer();
+	if (!map || !renderer)
+		return;
 
 	logf("Optimizing %s\n", map->bsp_name.c_str());
 	if (!map->has_hull2_ents()) {

@@ -978,6 +978,8 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps) {
 				get_lightmap_shift(oldLight, newLight, srcOffsetX, srcOffsetY);
 
 				for (int layer = 0; layer < newLight.layers; layer++) {
+					if (face.nLightmapOffset < 0)
+						continue;
 					int srcOffset = (face.nLightmapOffset + oldLayerSz * layer) / sizeof(COLOR3);
 					int dstOffset = (lightmapOffset + newLayerSz * layer) / sizeof(COLOR3);
 
@@ -1348,7 +1350,7 @@ unsigned int Bsp::remove_unused_lightmaps(bool* usedFaces) {
 	for (unsigned int i = 0; i < faceCount; i++) {
 		BSPFACE& face = faces[i];
 
-		if (usedFaces[i] && (face.nLightmapOffset + lightmapSizes[i]) <= (unsigned int)lightDataLength) {
+		if (usedFaces[i] && face.nLightmapOffset >= 0 && (face.nLightmapOffset + lightmapSizes[i]) <= (unsigned int)lightDataLength) {
 			memcpy(newColorData + offset, lightdata + face.nLightmapOffset, lightmapSizes[i]);
 			face.nLightmapOffset = offset;
 			offset += lightmapSizes[i];
@@ -1972,7 +1974,7 @@ vec3 Bsp::get_model_center(int modelIdx) {
 int Bsp::lightmap_count(int faceIdx) {
 	BSPFACE& face = faces[faceIdx];
 
-	if (texinfos[face.iTextureInfo].nFlags & TEX_SPECIAL || face.nLightmapOffset >= lightDataLength)
+	if (texinfos[face.iTextureInfo].nFlags & TEX_SPECIAL || face.nLightmapOffset < 0 || face.nLightmapOffset >= lightDataLength)
 		return 0;
 
 	int lightmapCount = 0;
@@ -2397,7 +2399,7 @@ bool Bsp::validate() {
 			isValid = false;
 		}
 		if (lightDataLength > 0 && faces[i].nStyles[0] != 255 &&
-			faces[i].nLightmapOffset != (unsigned int)-1 && faces[i].nLightmapOffset >= lightDataLength)
+			faces[i].nLightmapOffset < 0 && faces[i].nLightmapOffset >= lightDataLength)
 		{
 			logf("Bad lightmap offset in face %d: %d / %d\n", i, faces[i].nLightmapOffset, lightDataLength);
 			isValid = false;
@@ -3415,7 +3417,7 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 			info.vT = faceUp[i];
 			info.vS = crossProduct(faceUp[i], faceNormals[i]);
 			// TODO: fit texture to face
-			
+
 		}
 
 		replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 6) * sizeof(BSPTEXTUREINFO));
@@ -3905,10 +3907,15 @@ int Bsp::duplicate_model(int modelIdx) {
 			int size[2];
 			GetFaceLightmapSize(this, i, size);
 			int lightmapCount = lightmap_count(i);
+
 			int lightmapSz = size[0] * size[1] * lightmapCount;
-			COLOR3* lightmapSrc = (COLOR3*)(lightdata + face.nLightmapOffset);
-			for (int k = 0; k < lightmapSz; k++) {
-				newLightmaps.push_back(lightmapSrc[k]);
+
+			if (face.nLightmapOffset >= 0 && lightmapCount > 0)
+			{
+				COLOR3* lightmapSrc = (COLOR3*)(lightdata + face.nLightmapOffset);
+				for (int k = 0; k < lightmapSz; k++) {
+					newLightmaps.push_back(lightmapSrc[k]);
+				}
 			}
 
 			face.nLightmapOffset = lightmapCount != 0 ? lightDataLength + lightmapAppendSz : -1;
@@ -4179,8 +4186,8 @@ void Bsp::dump_lightmap_atlas(const std::string& outputPath) {
 				int lightmapOffset = (y * lightmapWidth + x) * sizeof(COLOR3);
 
 				COLOR3* src = (COLOR3*)(lightdata + face.nLightmapOffset + lightmapOffset);
-
-				pngData[dstY * atlasDim + dstX] = *src;
+				if (dstY * atlasDim + dstX < sz)
+					pngData[dstY * atlasDim + dstX] = *src;
 			}
 		}
 	}
@@ -4188,7 +4195,7 @@ void Bsp::dump_lightmap_atlas(const std::string& outputPath) {
 	lodepng_encode24_file(outputPath.c_str(), (unsigned char*)pngData, atlasDim, atlasDim);
 }
 
-void Bsp::write_csg_outputs(const std::string &path) {
+void Bsp::write_csg_outputs(const std::string& path) {
 	BSPPLANE* thisPlanes = (BSPPLANE*)lumps[LUMP_PLANES];
 	int numPlanes = bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
 
@@ -4617,7 +4624,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 					float th = 1.0f / (float)tex->nHeight;
 					float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
 					float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
-					
+
 					BSPPLANE& plane = planes[face.iPlane];
 
 					fprintf(f, "vt %f %f\n", fU * tw, fV * th);
@@ -4688,11 +4695,9 @@ void Bsp::ExportToMapWIP(std::string path)
 
 		bsprend->reload();
 
-		createDir(path + "textures");
-
 		for (unsigned int entIdx = 0; entIdx < ents.size(); entIdx++)
 		{
-			unsigned int modelIdx = entIdx == 0 ? 0 : bsprend->renderEnts[entIdx].modelIdx;
+			int modelIdx = entIdx == 0 ? 0 : bsprend->renderEnts[entIdx].modelIdx;
 			if (modelIdx < 0 || modelIdx > bsprend->numRenderModels)
 				continue;
 

@@ -10,13 +10,13 @@
 
 #include "icons/missing.h"
 
-BspRenderer::BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* fullBrightBspShader,
-	ShaderProgram* colorShader, PointEntRenderer* pointEntRenderer) {
-	this->map = map;
-	this->bspShader = bspShader;
-	this->fullBrightBspShader = fullBrightBspShader;
-	this->colorShader = colorShader;
-	this->pointEntRenderer = pointEntRenderer;
+BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _fullBrightBspShader,
+	ShaderProgram* _colorShader, PointEntRenderer* _pointEntRenderer) {
+	this->map = _map;
+	this->bspShader = _bspShader;
+	this->fullBrightBspShader = _fullBrightBspShader;
+	this->colorShader = _colorShader;
+	this->pointEntRenderer = _pointEntRenderer;
 
 	renderEnts = NULL;
 	renderModels = NULL;
@@ -243,11 +243,11 @@ void BspRenderer::addClipnodeModel(int modelIdx) {
 	if (modelIdx < 0)
 		return;
 	RenderClipnodes* newRenderClipnodes = new RenderClipnodes[numRenderClipnodes + 1];
+	newRenderClipnodes[numRenderClipnodes] = RenderClipnodes();
 	for (unsigned int i = 0; i < numRenderClipnodes; i++)
 	{
 		newRenderClipnodes[i] = renderClipnodes[i];
 	}
-	newRenderClipnodes[numRenderClipnodes] = RenderClipnodes();
 	numRenderClipnodes++;
 	renderClipnodes = newRenderClipnodes;
 
@@ -348,8 +348,8 @@ void BspRenderer::loadLightmaps() {
 
 	glLightmapTextures = new Texture * [atlasTextures.size()];
 	for (unsigned int i = 0; i < atlasTextures.size(); i++) {
-		delete atlases[i];
 		glLightmapTextures[i] = atlasTextures[i];
+		delete atlases[i];
 	}
 
 	numLightmapAtlases = atlasTextures.size();

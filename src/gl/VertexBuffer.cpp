@@ -89,10 +89,8 @@ void VertexBuffer::addAttributes(int attFlags)
 				commonAttr[i].handle = shaderProgram->vposID;
 			else if (i >= VBUF_COLOR_START)
 				commonAttr[i].handle = shaderProgram->vcolorID;
-			else if (i >= VBUF_TEX_START)
-				commonAttr[i].handle = shaderProgram->vtexID;
 			else
-				logf("Unused vertex buffer flag bit %d", i);
+				commonAttr[i].handle = shaderProgram->vtexID;
 
 			attribs.push_back(commonAttr[i]);
 			elementSize += commonAttr[i].size;

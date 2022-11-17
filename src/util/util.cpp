@@ -803,6 +803,11 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 {
 	FILE* outputFile = NULL;
 	fopen_s(&outputFile,fileName.c_str(), "wb");
+	if (!outputFile)
+	{
+		logf("Can't write to output file!\n");
+		return;
+	}
 	//*****HEADER************//
 	const char* BM = "BM";
 	fwrite(&BM[0], 1, 1, outputFile);
@@ -1271,7 +1276,7 @@ float VectorNormalize(vec3 v)
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt(length);
-	if (length == 0)
+	if (abs(length) < EPSILON)
 		return 0;
 
 	for (i = 0; i < 3; i++)

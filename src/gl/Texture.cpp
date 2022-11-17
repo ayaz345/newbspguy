@@ -32,7 +32,7 @@ Texture::~Texture()
 	delete[] data;
 }
 
-void Texture::upload(int format, bool lightmap)
+void Texture::upload(int _format, bool lightmap)
 {
 	if (uploaded) {
 		return;
@@ -57,7 +57,7 @@ void Texture::upload(int format, bool lightmap)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->nearFilter);
 	}
 
-	if (format == GL_RGB)
+	if (_format == GL_RGB)
 	{
 		glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 	}
@@ -66,7 +66,7 @@ void Texture::upload(int format, bool lightmap)
 
 	// TODO: load mipmaps from BSP/WAD
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, _format, GL_UNSIGNED_BYTE, data);
 
 
 	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB, width, height);

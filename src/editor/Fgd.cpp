@@ -13,8 +13,8 @@ std::map<std::string, int> fgdKeyTypes{
 	{"target_destination", FGD_KEY_TARGET_DST}
 };
 
-Fgd::Fgd(std::string path) {
-	this->path = path;
+Fgd::Fgd(std::string _path) {
+	this->path = _path;
 	this->name = stripExt(basename(path));
 	this->lineNum = 0;
 }

@@ -12,6 +12,7 @@ ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSourc
 	projMat = viewMat = modelMat = nullptr;
 	vShader = new Shader(vshaderSource, GL_VERTEX_SHADER);
 	fShader = new Shader(fshaderSource, GL_FRAGMENT_SHADER);
+	modelViewProjMat = modelViewMat = nullptr;
 	link();
 }
 
