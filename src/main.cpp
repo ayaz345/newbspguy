@@ -696,7 +696,6 @@ int main(int argc, char* argv[])
 #endif
 
 
-
 	g_settings_path = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() + "bspguy.cfg" : getConfigDir() + "bspguy.cfg";
 	g_config_dir = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() : getConfigDir();
 
@@ -704,11 +703,8 @@ int main(int argc, char* argv[])
 
 	CommandLine cli(argc, argv);
 
-	if (cli.command == "help" || cli.command == "--help" || cli.command == "-help" ||
-		cli.command == "h" || cli.command == "--h" || cli.command == "-h"
-		|| cli.command == "/?") {
-		logf(g_version_string);
-		print_help("help");
+	if (cli.askingForHelp) {
+		print_help(cli.command);
 		return 0;
 	}
 
@@ -754,9 +750,6 @@ int main(int argc, char* argv[])
 		logf("Load settings from : %s\n", g_settings_path.c_str());
 		if (!start_viewer(cli.bspfile.c_str()))
 		{
-			if (cli.askingForHelp) {
-				print_help(cli.command);
-			}
 			return 0;
 		}
 	}
