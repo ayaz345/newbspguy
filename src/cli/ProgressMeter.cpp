@@ -33,7 +33,7 @@ void ProgressMeter::tick() {
 	float percent = (progress / (float)progress_total) * 100;
 
 	for (int i = 0; i < 12; i++) logf("\b\b\b\b");
-	logf("        %-32s %.0f%%", progress_title, percent);
+	logf("\r          %-32s %.0f%%", progress_title, percent);
 }
 
 void ProgressMeter::clear() {

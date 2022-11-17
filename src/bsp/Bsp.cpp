@@ -61,7 +61,7 @@ void Bsp::init_empty_bsp()
 
 	update_lump_pointers();
 	update_ent_lump();
-
+/*/
 	float size = 64;
 	COLOR3* imageData = new COLOR3[64 * 64];
 	vec3 mins = vec3(-size, -size, -size);
@@ -80,7 +80,7 @@ void Bsp::init_empty_bsp()
 	modelCount = 1;
 
 	while (models[0].nVisLeafs >= leafCount)
-		create_leaf(CONTENTS_EMPTY);
+		create_leaf(CONTENTS_EMPTY);*/
 }
 
 void Bsp::selectModelEnt()

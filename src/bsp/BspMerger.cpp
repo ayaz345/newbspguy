@@ -863,8 +863,6 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB) {
 			logf("Keeping %s lump\n", g_lump_names[i]);
 		}
 		else {
-			//logf << "Merging " << g_lump_names[i] << " lump\n";
-
 			shouldMerge[i] = true;
 		}
 	}
@@ -1094,7 +1092,7 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB) {
 	size_t newLen = mergedPlanes.size() * sizeof(BSPPLANE);
 	size_t duplicates = (mapA.planeCount + mapB.planeCount) - mergedPlanes.size();
 
-	logf("\nRemoved %u duplicate planes\n", duplicates);
+	logf("\rRemoved %u duplicate planes                            \n", duplicates);
 
 	unsigned char* newPlanes = new unsigned char[newLen];
 	memcpy(newPlanes, &mergedPlanes[0], newLen);
@@ -1177,7 +1175,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB) {
 		g_progress.tick();
 	}
 
-	size_t duplicates = newTexCount - (mapA.textureCount + mapB.textureCount);
+	size_t duplicates = (mapA.textureCount + mapB.textureCount) - newTexCount;
 
 	unsigned int texHeaderSize = (unsigned int)((newTexCount + 1) * sizeof(int));
 	unsigned int newLen = (unsigned int)((mipTexWritePtr - newMipTexData) + texHeaderSize);
@@ -1195,7 +1193,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB) {
 	delete[] mipTexOffsets;
 
 
-	logf("\nRemoved %u duplicate textures\n", duplicates);
+	logf("\rRemoved %u duplicate textures                            \n", duplicates);
 
 	mapA.replace_lump(LUMP_TEXTURES, newTextureData, newLen);
 }
@@ -1253,12 +1251,12 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB) {
 	}
 
 	size_t newLen = mergedInfo.size() * sizeof(BSPTEXTUREINFO);
-	size_t duplicates = mergedInfo.size() - (mapA.texinfoCount + mapB.texinfoCount);
+	size_t duplicates = (mapA.texinfoCount + mapB.texinfoCount) - mergedInfo.size();
 
 	unsigned char* newTexinfoData = new unsigned char[newLen];
 	memcpy(newTexinfoData, &mergedInfo[0], newLen);
 
-	logf("\nRemoved %u duplicate tex infos\n", duplicates);
+	logf("\rRemoved %u duplicate tex infos                            \n", duplicates);
 
 	mapA.replace_lump(LUMP_TEXINFO, newTexinfoData, newLen);
 }
