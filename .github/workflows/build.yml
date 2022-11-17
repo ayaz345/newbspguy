@@ -15,7 +15,7 @@ jobs:
      - name: Generate nightly release tag
        id: tag
        run: |
-         echo "::set-output name=release_tag::NightBuild_$(date +"%Y.%m.%d_%H-%M")"
+         echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" | Out-File -FilePath $Env:GITHUB_OUTPUT -Encoding utf8 -Append 
          
      - name: Checkout
        uses: actions/checkout@v2
