@@ -20,7 +20,7 @@ CommandLine::CommandLine(int argc, char* argv[]) {
 			options.push_back(arg);
 		}
 
-		if ((i == 1 || i == 2) && larg.find("help") == 0 || larg.find("--help") == 0 || larg.find("-help") == 0) {
+		if ((i == 1 || i == 2) && larg.find("help") == 0 || larg.find("/?") == 0 || larg.find("--help") == 0 || larg.find("-help") == 0) {
 			askingForHelp = true;
 		}
 	}
