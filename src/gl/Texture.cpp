@@ -35,8 +35,7 @@ Texture::~Texture()
 void Texture::upload(int _format, bool lightmap)
 {
 	if (uploaded) {
-		return;
-		//glDeleteTextures(1, &id);
+		glDeleteTextures(1, &id);
 	}
 	glGenTextures(1, &id);
 	glBindTexture(GL_TEXTURE_2D, id); // Binds this texture handle so we can load the data into it

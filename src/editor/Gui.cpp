@@ -4431,13 +4431,12 @@ void Gui::drawLightMapTool() {
 
 	const char* lightToolTitle = "LightMap Editor";
 
-	if (needPickColor)
-	{
-		lightToolTitle = "LightMap Editor (PICK COLOR)";
-	}
 
 	if (ImGui::Begin(lightToolTitle, &showLightmapEditorWidget)) {
-
+		if (needPickColor)
+		{
+			ImGui::TextDisabled("Pick color : ");
+		}
 		Bsp* map = app->getSelectedMap();
 		if (map && app->selectedFaces.size())
 		{
@@ -4514,7 +4513,7 @@ void Gui::drawLightMapTool() {
 					continue;
 				}
 
-				if (ImGui::ImageButton((void*)(uint64_t)currentlightMap[i]->id, imgSize, ImVec2(0, 0), ImVec2(1, 1), 0)) {
+				if (ImGui::ImageButton((std::to_string(i) + "_lightmap").c_str(), (ImTextureID)currentlightMap[i]->id, imgSize, ImVec2(0, 0), ImVec2(1, 1))) {
 
 					float itemwidth = ImGui::GetItemRectMax().x - ImGui::GetItemRectMin().x;
 					float itemheight = ImGui::GetItemRectMax().y - ImGui::GetItemRectMin().y;
@@ -4548,7 +4547,7 @@ void Gui::drawLightMapTool() {
 					if (offset < 0)
 						offset = 0;
 
-					COLOR3* lighdata = (COLOR3*)&currentlightMap[i]->data[0];
+					COLOR3* lighdata = (COLOR3*)currentlightMap[i]->data;
 
 					if (needPickColor)
 					{
