@@ -244,7 +244,10 @@ private:
 	int oldLeftMouse;
 	int curLeftMouse;
 	int oldRightMouse;
+	int curRightMouse;
+
 	int oldScroll;
+
 	bool pressed[GLFW_KEY_LAST];
 	bool released[GLFW_KEY_LAST];
 	char oldPressed[GLFW_KEY_LAST];

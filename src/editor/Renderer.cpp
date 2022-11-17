@@ -370,9 +370,7 @@ Renderer::Renderer() {
 	clearSelection();
 
 
-	oldLeftMouse = curLeftMouse;
-	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	oldRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
 
 	g_app = this;
 
@@ -926,7 +924,7 @@ void Renderer::drawEntConnections() {
 void Renderer::controls() {
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
-	canControl = !io.WantCaptureKeyboard && !io.WantTextInput;
+	canControl = !io.WantCaptureKeyboard && !io.WantTextInput && !io.WantCaptureMouseUnlessPopupClose;
 
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++) {
 		pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
@@ -966,9 +964,14 @@ void Renderer::controls() {
 
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
+
 		vec2 mousePos((float)xpos, (float)ypos);
+
 		cameraOrigin += getMoveDir() * (float)frameTimeScale;
+
+
 		moveGrabbedEnt();
+
 		globalShortcutControls();
 
 		vertexEditControls();
@@ -988,7 +991,8 @@ void Renderer::controls() {
 
 	oldLeftMouse = curLeftMouse;
 	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	oldRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+	oldRightMouse = curRightMouse;
+	curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
 
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++) {
 		oldPressed[i] = pressed[i];
@@ -1208,7 +1212,7 @@ void Renderer::applyTransform(bool forceUpdate) {
 
 void Renderer::cameraRotationControls(vec2 mousePos) {
 	// camera rotation
-	if (draggingAxis == -1 && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS) {
+	if (draggingAxis == -1 && curRightMouse == GLFW_PRESS) {
 		if (!cameraIsRotating) {
 			lastMousePos = mousePos;
 			cameraIsRotating = true;
@@ -1335,7 +1339,7 @@ void Renderer::cameraObjectHovering() {
 void Renderer::cameraContextMenus() {
 	// context menus
 	bool wasTurning = cameraIsRotating && totalMouseDrag.length() >= 1;
-	if (draggingAxis == -1 && glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_RELEASE && oldRightMouse != GLFW_RELEASE && !wasTurning) {
+	if (draggingAxis == -1 && curRightMouse == GLFW_RELEASE && oldRightMouse != GLFW_RELEASE && !wasTurning) {
 		vec3 pickStart, pickDir;
 		getPickRay(pickStart, pickDir);
 
