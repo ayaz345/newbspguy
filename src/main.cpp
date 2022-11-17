@@ -112,7 +112,6 @@ void hideConsoleWindow() {
 
 bool start_viewer(const char * map) {
 	if (map && map[0] != '\0' && !fileExists(map)) {
-		logf("ERROR: File not found: %s", map);
 		return false;
 	}
 	if (!map)
@@ -695,6 +694,13 @@ int main(int argc, char* argv[])
 	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 #endif
 
+#ifdef USE_FILESYSTEM
+	if (strlen(argv[0]))
+	{
+		fs::path ph = argv[0];
+		fs::current_path(ph.parent_path());
+	}
+#endif
 
 	g_settings_path = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() + "bspguy.cfg" : getConfigDir() + "bspguy.cfg";
 	g_config_dir = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() : getConfigDir();
@@ -702,11 +708,6 @@ int main(int argc, char* argv[])
 	//return test();
 
 	CommandLine cli(argc, argv);
-
-	if (cli.askingForHelp) {
-		print_help(cli.command);
-		return 0;
-	}
 
 	if (cli.command == "version" || cli.command == "--version" || cli.command == "-version") {
 		logf(g_version_string);
@@ -745,13 +746,23 @@ int main(int argc, char* argv[])
 	else if (cli.command == "unembed") {
 		return unembed(cli);
 	}
-	else {
+	else if (cli.bspfile.size())
+	{
 		logf("%s\n", ("Start bspguy editor with map: " + cli.bspfile).c_str());
 		logf("Load settings from : %s\n", g_settings_path.c_str());
 		if (!start_viewer(cli.bspfile.c_str()))
 		{
-			return 0;
+			if (cli.askingForHelp) {
+				print_help(cli.command);
+				return 0;
+			}
+			logf("ERROR: File not found: %s", cli.bspfile.c_str());
 		}
+	}
+
+	if (cli.askingForHelp) {
+		print_help(cli.command);
+		return 0;
 	}
 	return 0;
 }
