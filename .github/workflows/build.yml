@@ -12,6 +12,11 @@ jobs:
      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
+     - name: Generate nightly release tag
+       id: tag
+       run: |
+         echo "::set-output name=release_tag::NightBuild_$(date +"%Y.%m.%d_%H-%M")"  
+         
      - name: Checkout
        uses: actions/checkout@v2
        with:
@@ -30,12 +35,7 @@ jobs:
        uses: actions/upload-artifact@v3
        with:
          name: Windows
-         path: ./vs-project/Release/bspguy.exe
-    
-     - name: Generate nightly release tag
-       id: tag
-       run: |
-         echo "::set-output name=release_tag::NightBuild_$(date +"%Y.%m.%d_%H-%M")"    
+         path: ./vs-project/Release/bspguy.exe  
         
      - name: Publish nightly binaries for windows
        uses: softprops/action-gh-release@v1
@@ -50,6 +50,11 @@ jobs:
      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
      
     steps:
+    - name: Generate nightly release tag
+      id: tag
+      run: |
+        echo "::set-output name=release_tag::NightBuild_$(date +"%Y.%m.%d_%H-%M")"    
+        
     - name: Checkout repository
       uses: actions/checkout@v2
     
@@ -68,10 +73,6 @@ jobs:
       with:
         name: bspguy-linux
         path: build/bspguy
-    - name: Generate nightly release tag
-      id: tag
-      run: |
-        echo "::set-output name=release_tag::NightBuild_$(date +"%Y.%m.%d_%H-%M")"    
     - name: Publish nightly binaries for linux
       uses: softprops/action-gh-release@v1
       with:
