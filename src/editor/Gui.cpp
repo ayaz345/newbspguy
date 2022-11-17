@@ -3200,7 +3200,8 @@ void Gui::drawAbout() {
 void Gui::drawMergeWindow() {
 	ImGui::SetNextWindowSize(ImVec2(500.f, 240.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(500.f, 240.f), ImVec2(500.f, 240.f));
-	static char Path[256];
+	static char outPath[256];
+	static char inPath[16][256];
 	static bool DeleteUnusedInfo = true;
 	static bool Optimize = false;
 	static bool DeleteHull2 = false;
@@ -3208,7 +3209,18 @@ void Gui::drawMergeWindow() {
 	static bool NoScript = true;
 
 	if (ImGui::Begin("Merge maps", &showMergeMapWidget)) {
-		ImGui::InputText("output .bsp file", Path, 256);
+		ImGui::InputText("Input map1.bsp file", inPath[0], 256);
+		ImGui::InputText("Input map2.bsp file", inPath[1], 256);
+		for (int i = 2; i < 16 ; i++)
+		{
+			if (strlen(inPath[i - 1]))
+			{
+				ImGui::InputText((std::string("Input map") + std::to_string(i + 1) + ".bsp file").c_str(), inPath[i], 256);
+			}
+			else
+				break;
+		}
+		ImGui::InputText("output .bsp file", outPath, 256);
 		ImGui::Checkbox("Delete unused info", &DeleteUnusedInfo);
 		ImGui::Checkbox("Optimize", &Optimize);
 		ImGui::Checkbox("No hull 2", &DeleteHull2);
@@ -3218,13 +3230,32 @@ void Gui::drawMergeWindow() {
 		if (ImGui::Button("Merge maps", ImVec2(120, 0)))
 		{
 			std::vector<Bsp*> maps;
-			for (auto const& s : g_app->mapRenderers)
+			for (int i = 0; i < 16; i++)
 			{
-				if (!s->map->is_model)
-					maps.push_back(s->map);
+				if (i == 0 || strlen(inPath[i - 1]))
+				{
+					if (fileExists(inPath[i]))
+					{
+						Bsp* tmpMap = new Bsp(inPath[i]);
+						if (tmpMap->bsp_valid)
+						{
+							maps.push_back(tmpMap);
+						}
+						else
+						{
+							delete tmpMap;
+							continue;
+						}
+					}
+				}
+				else
+					break;
 			}
 			if (maps.size() < 2)
 			{
+				for (auto& map : maps)
+					delete map;
+				maps.clear();
 				logf("ERROR: at least 2 input maps are required\n");
 			}
 			else
@@ -3254,20 +3285,20 @@ void Gui::drawMergeWindow() {
 				}
 
 				BspMerger merger;
-				Bsp* result = merger.merge(maps, vec3(), Path, NoRipent, NoScript);
+				Bsp* result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript);
 
 				logf("\n");
-				if (result->isValid()) result->write(Path);
+				if (result->isValid()) result->write(outPath);
 				logf("\n");
 				result->print_info(false, 0, 0);
 
 				g_app->clearMaps();
 
-				fixupPath(Path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+				fixupPath(outPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
 
-				if (fileExists(Path))
+				if (fileExists(outPath))
 				{
-					result = new Bsp(Path);
+					result = new Bsp(outPath);
 					g_app->addMap(result);
 				}
 				else
@@ -3275,6 +3306,10 @@ void Gui::drawMergeWindow() {
 					logf("Error while map merge!\n");
 					g_app->addMap(new Bsp());
 				}
+
+				for (auto& map : maps)
+					delete map;
+				maps.clear();
 			}
 			showMergeMapWidget = false;
 		}

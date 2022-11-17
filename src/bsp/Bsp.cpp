@@ -33,26 +33,54 @@ void Bsp::init_empty_bsp()
 
 	for (int i = 0; i < HEADER_LUMPS; i++) {
 		replacedLump[i] = true;
-		lumps[i] = new unsigned char[4];
-		memset(lumps[i], 0, 4);
+		lumps[i] = new unsigned char[512];
+		memset(lumps[i], 0, 512);
 		bsp_header.lump[i].nOffset = 0;
 		bsp_header.lump[i].nLength = 4;
 	}
 
-	bsp_name = "merged";
+	bsp_name = "empty";
+	bsp_path = "empty.bsp";
 	bsp_valid = true;
 	renderer = NULL;
 
 	logf("Loaded empty map.\n");
 
-	load_ents();
-	update_lump_pointers();
-
-
 	renderer = NULL;
 	bsp_valid = true;
 
+	update_lump_pointers();
 
+	load_ents();
+
+	Entity* ent = new Entity();
+	ent->setOrAddKeyvalue("mapversion", "220");
+	ent->setOrAddKeyvalue("classname", "worldspawn");
+	ents.push_back(ent);
+
+
+	update_lump_pointers();
+	update_ent_lump();
+
+	float size = 64;
+	COLOR3* imageData = new COLOR3[64 * 64];
+	vec3 mins = vec3(-size, -size, -size);
+	vec3 maxs = vec3(size, size, size);
+	modelCount = 0;
+	memset(imageData, 0xFF / 2, 64 * 64 * 3);
+	add_texture("WHITETEX", (unsigned char*)imageData, 64, 64);
+	create_solid(mins, maxs, 0);
+
+	this->models[0].iHeadnodes[0] = this->models[0].iHeadnodes[1] =
+		this->models[0].iHeadnodes[2] = this->models[0].iHeadnodes[3] = -1;
+
+	update_lump_pointers();
+	update_ent_lump();
+
+	modelCount = 1;
+
+	while (models[0].nVisLeafs >= leafCount)
+		create_leaf(CONTENTS_EMPTY);
 }
 
 void Bsp::selectModelEnt()
@@ -1438,7 +1466,6 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes) 
 			}
 		}
 	}
-	delete[] usedModels;
 
 	STRUCTREMAP remap(this);
 	STRUCTCOUNT removeCount;
@@ -1467,7 +1494,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes) 
 	removeCount.verts = remove_unused_structs(LUMP_VERTICES, usedStructures.verts, remap.verts);
 	removeCount.textures = remove_unused_textures(usedStructures.textures, remap.textures);
 
-	if (visDataLength)
+	if (visDataLength && usedStructures.count.leaves)
 		removeCount.visdata = remove_unused_visdata(usedStructures.leaves, (BSPLEAF*)oldLeaves, usedStructures.count.leaves);
 
 	STRUCTCOUNT newCounts(this);
@@ -1530,6 +1557,10 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes) 
 		}
 	}
 
+	if (modelCount > 0)
+	{
+		delete[] usedModels;
+	}
 	return removeCount;
 }
 
@@ -1946,6 +1977,7 @@ void Bsp::update_ent_lump(bool stripNodes) {
 		}
 
 		ent_data << "}";
+
 		if (i < ents.size() - 1) {
 			ent_data << "\n"; // trailing newline crashes sven, and only sven, and only sometimes
 		}

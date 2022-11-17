@@ -1591,6 +1591,11 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB) {
 }
 
 void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB) {
+	if (thisLeafCount == 0)
+	{
+		logf("Invalid leaf count.\n");
+		return;
+	}
 	BSPLEAF* allLeaves = mapA.leaves; // combined with mapB's leaves earlier in merge_leaves
 
 	int thisVisLeaves = thisLeafCount - 1; // VIS ignores the shared solid leaf 0

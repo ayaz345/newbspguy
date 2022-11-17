@@ -751,7 +751,7 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx) {
 void BspRenderer::loadClipnodes() {
 	numRenderClipnodes = map->modelCount;
 	renderClipnodes = new RenderClipnodes[numRenderClipnodes];
-	
+
 	for (unsigned int i = 0; i < numRenderClipnodes; i++)
 		renderClipnodes[i] = RenderClipnodes();
 
@@ -946,9 +946,9 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue) {
 	}
 }
 
-void BspRenderer::preRenderEnts() 
+void BspRenderer::preRenderEnts()
 {
-	if (renderEnts) 
+	if (renderEnts)
 	{
 		delete[] renderEnts;
 	}
@@ -956,12 +956,12 @@ void BspRenderer::preRenderEnts()
 
 	numPointEnts = 0;
 
-	for (int i = 1; i < map->ents.size(); i++) 
+	for (int i = 1; i < map->ents.size(); i++)
 	{
 		numPointEnts += !map->ents[i]->isBspModel();
 	}
 
-	for (int i = 0; i < map->ents.size(); i++) 
+	for (int i = 0; i < map->ents.size(); i++)
 	{
 		refreshEnt(i);
 	}
@@ -1132,7 +1132,10 @@ void BspRenderer::refreshFace(int faceIdx) {
 			v1 = allVerts[e];
 		}
 	}
-
+	if (allVerts.size() == 0)
+	{
+		allVerts.push_back(vec3());
+	}
 	vec3 plane_x = (v1 - allVerts[0]).normalize(1.0f);
 	vec3 plane_y = crossProduct(planeNormal, plane_x).normalize(1.0f);
 	vec3 plane_z = planeNormal;

@@ -186,7 +186,7 @@ struct BSPMODEL
 
 struct BSPNODE
 {
-	unsigned int iPlane;            // Index into Planes lump
+	int iPlane;            // Index into Planes lump
 	short iChildren[2];       // If > 0, then indices into Nodes // otherwise bitwise inverse indices into Leafs
 	short nMins[3], nMaxs[3]; // Defines bounding box
 	unsigned short firstFace, nFaces; // Index and count into Faces
