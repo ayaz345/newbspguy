@@ -26,7 +26,7 @@ jobs:
        run: msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=Release
 
      - name: Artifact1
-       uses: actions/upload-artifact@v2
+       uses: actions/upload-artifact@v3
        with:
          name: Windows
          path: ./vs-project/Release/bspguy.exe
@@ -49,7 +49,13 @@ jobs:
         make
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: bspguy-linux
         path: build/bspguy
+    - name: Release with Notes
+      uses: softprops/action-gh-release@v1
+      with:
+        files: build/bspguy
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
