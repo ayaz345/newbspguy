@@ -19,20 +19,20 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 - Basic face editing
 
 Added new features in this fork:
--- Texture Rotation
--- Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
--- Export obj, wad, ent, bsp(selected model with working collision, can be used in any entity instead of MDL models)
--- Import wad, ent, bsp(now only one mode - import as new entity outside map)
--- Render bsp models(no MDL render at this time)
--- Full support for "angle" and "angles" keyvalue.
--- Render ents and models using these keyvalues.
--- Full featured LightMap Editor.
--- Sorting by fgd flags.
--- Added "undo/redo" for any manipulation. (Move ents/origin, etc)
--- Added move model(as option for transforming)
--- Added CRC-Spoofing(now possible to replace original map and play it on any servers)
--- Updated controls logic(now can't using hotkeys and manipulation, if any input/window is active)
--- Replaced and edited many functions(using static analysis proposals, compiler warnings)
+- Texture Rotation
+- Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
+- Export obj, wad, ent, bsp(selected model with working collision, can be used in any entity instead of MDL models)
+- Import wad, ent, bsp(now only one mode - import as new entity outside map)
+- Render bsp models(no MDL render at this time)
+- Full support for "angle" and "angles" keyvalue.
+- Render ents and models using these keyvalues.
+- Full featured LightMap Editor.
+- Sorting by fgd flags.
+- Added "undo/redo" for any manipulation. (Move ents/origin, etc)
+- Added move model(as option for transforming)
+- Added CRC-Spoofing(now possible to replace original map and play it on any servers)
+- Updated controls logic(now can't using hotkeys and manipulation, if any input/window is active)
+- Replaced and edited many functions(using static analysis proposals, compiler warnings)
 ...
 
 ![image](https://user-images.githubusercontent.com/12087544/88471604-1768ac80-cec0-11ea-9ce5-13095e843ce7.png)
