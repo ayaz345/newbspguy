@@ -296,7 +296,7 @@ size_t DuplicateBspModelCommand::memoryUsage() {
 CreateBspModelCommand::CreateBspModelCommand(std::string desc, int mapIdx, Entity* entData, float size) : Command(desc, mapIdx) {
 	this->entData = new Entity();
 	*this->entData = *entData;
-	this->size = size;
+	this->mdl_size = size;
 	this->initialized = false;
 	memset(&oldLumps, 0, sizeof(LumpState));
 }
@@ -337,8 +337,8 @@ void CreateBspModelCommand::execute() {
 		renderer->reloadTextures();
 	}
 
-	vec3 mins = vec3(-size, -size, -size);
-	vec3 maxs = vec3(size, size, size);
+	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
+	vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
 	int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx);
 
 	if (!initialized) {

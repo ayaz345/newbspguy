@@ -4,9 +4,6 @@
 
 Keyvalues::Keyvalues(std::string & line)
 {
-	int begin = -1;
-	int end = -1;
-
 	keys.clear();
 	values.clear();
 	

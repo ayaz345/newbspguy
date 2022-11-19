@@ -350,15 +350,15 @@ Renderer::Renderer() {
 	gui = new Gui(this);
 
 	bspShader = new ShaderProgram(Shaders::g_shader_multitexture_vertex, Shaders::g_shader_multitexture_fragment);
-	bspShader->setMatrixes(&model, &view, &projection, &modelView, &modelViewProjection);
+	bspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	bspShader->setMatrixNames(NULL, "modelViewProjection");
 
 	fullBrightBspShader = new ShaderProgram(Shaders::g_shader_fullbright_vertex, Shaders::g_shader_fullbright_fragment);
-	fullBrightBspShader->setMatrixes(&model, &view, &projection, &modelView, &modelViewProjection);
+	fullBrightBspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	fullBrightBspShader->setMatrixNames(NULL, "modelViewProjection");
 
 	colorShader = new ShaderProgram(Shaders::g_shader_cVert_vertex, Shaders::g_shader_cVert_fragment);
-	colorShader->setMatrixes(&model, &view, &projection, &modelView, &modelViewProjection);
+	colorShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	colorShader->setMatrixNames(NULL, "modelViewProjection");
 	colorShader->setVertexAttributeNames("vPosition", "vColor", NULL);
 
@@ -480,9 +480,9 @@ void Renderer::renderLoop() {
 
 		double spin = g_time * 2;
 
-		model.loadIdentity();
-		model.rotateZ((float)spin);
-		model.rotateX((float)spin);
+		matmodel.loadIdentity();
+		matmodel.rotateZ((float)spin);
+		matmodel.rotateX((float)spin);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -500,7 +500,6 @@ void Renderer::renderLoop() {
 			Bsp* curMap = mapRenderers[i]->map;
 			if (!curMap)
 				continue;
-			bool forceRender = false;
 
 			if (map == curMap && pickMode == PICK_OBJECT) {
 				highlightEnt = pickInfo.entIdx;
@@ -548,7 +547,7 @@ void Renderer::renderLoop() {
 			}
 		}
 
-		model.loadIdentity();
+		matmodel.loadIdentity();
 		colorShader->bind();
 
 		if (map) {
@@ -572,10 +571,10 @@ void Renderer::renderLoop() {
 
 			if (g_render_flags & RENDER_ORIGIN) {
 				colorShader->bind();
-				model.loadIdentity();
+				matmodel.loadIdentity();
 				colorShader->pushMatrix(MAT_MODEL);
 				vec3 offset = map->getBspRender()->mapOffset.flip();
-				model.translate(offset.x, offset.y, offset.z);
+				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
 				drawLine(debugPoint - vec3(32, 0, 0), debugPoint + vec3(32, 0, 0), { 128, 128, 255, 255 });
 				drawLine(debugPoint - vec3(0, 32, 0), debugPoint + vec3(0, 32, 0), { 0, 255, 0, 255 });
@@ -585,7 +584,7 @@ void Renderer::renderLoop() {
 		}
 
 		if (entConnectionPoints && (g_render_flags & RENDER_ENT_CONNECTIONS)) {
-			model.loadIdentity();
+			matmodel.loadIdentity();
 			colorShader->updateMatrixes();
 			glDisable(GL_DEPTH_TEST);
 			entConnectionPoints->drawFull();
@@ -849,8 +848,8 @@ void Renderer::drawModelVerts() {
 		modelVertCubes[cubeIdx++] = cCube(min, max, color);
 	}
 
-	model.loadIdentity();
-	model.translate(renderOffset.x, renderOffset.y, renderOffset.z);
+	matmodel.loadIdentity();
+	matmodel.translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	colorShader->updateMatrixes();
 	modelVertBuff->drawFull();
 }
@@ -863,7 +862,6 @@ void Renderer::drawModelOrigin() {
 
 	Bsp* map = g_app->getSelectedMap();
 	vec3 mapOffset = map->getBspRender()->mapOffset;
-	Entity* ent = map->ents[pickInfo.entIdx];
 
 	COLOR4 vertDimColor = { 0, 200, 0, 255 };
 	COLOR4 vertHoverColor = { 128, 255, 128, 255 };
@@ -889,7 +887,7 @@ void Renderer::drawModelOrigin() {
 	}
 	modelOriginCube = cCube(min, max, color);
 
-	model.loadIdentity();
+	matmodel.loadIdentity();
 	colorShader->updateMatrixes();
 	modelOriginBuff->drawFull();
 }
@@ -900,13 +898,13 @@ void Renderer::drawTransformAxes() {
 	glDisable(GL_CULL_FACE);
 	if (transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT) {
 		vec3 ori = scaleAxes.origin;
-		model.translate(ori.x, ori.z, -ori.y);
+		matmodel.translate(ori.x, ori.z, -ori.y);
 		colorShader->updateMatrixes();
 		scaleAxes.buffer->drawFull();
 	}
 	if (transformMode == TRANSFORM_MOVE) {
 		vec3 ori = moveAxes.origin;
-		model.translate(ori.x, ori.z, -ori.y);
+		matmodel.translate(ori.x, ori.z, -ori.y);
 		colorShader->updateMatrixes();
 		moveAxes.buffer->drawFull();
 	}
@@ -915,7 +913,7 @@ void Renderer::drawTransformAxes() {
 
 void Renderer::drawEntConnections() {
 	if (entConnections && (g_render_flags & RENDER_ENT_CONNECTIONS)) {
-		model.loadIdentity();
+		matmodel.loadIdentity();
 		colorShader->updateMatrixes();
 		entConnections->drawFull();
 	}
@@ -943,8 +941,8 @@ void Renderer::controls() {
 		if (anyCtrlPressed && (oldPressed[GLFW_KEY_A] || pressed[GLFW_KEY_A]) && released[GLFW_KEY_A]
 			&& pickMode == PICK_FACE && selectedFaces.size())
 		{
-			Bsp* map;
-			if (map = getSelectedMap())
+			Bsp* map = getSelectedMap();
+			if (map)
 			{
 				BSPFACE& selface = map->faces[selectedFaces[0]];
 				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
@@ -1379,9 +1377,9 @@ void Renderer::moveGrabbedEnt() {
 		vec3 delta = ((cameraOrigin - mapOffset) + cameraForward * grabDist) - grabStartOrigin;
 		Entity* ent = map->ents[pickInfo.entIdx];
 
-		vec3 oldOrigin = grabStartEntOrigin;
+		vec3 tmpOrigin = grabStartEntOrigin;
 		vec3 offset = getEntOffset(map, ent);
-		vec3 newOrigin = (oldOrigin + delta) - offset;
+		vec3 newOrigin = (tmpOrigin + delta) - offset;
 		vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
 		transformedOrigin = this->oldOrigin = rounded;
@@ -1784,10 +1782,10 @@ void Renderer::setupView() {
 
 	projection.perspective(fov, (float)windowWidth / (float)windowHeight, zNear, zFar);
 
-	view.loadIdentity();
-	view.rotateX(PI * cameraAngles.x / 180.0f);
-	view.rotateY(PI * cameraAngles.z / 180.0f);
-	view.translate(-cameraOrigin.x, -cameraOrigin.z, cameraOrigin.y);
+	matview.loadIdentity();
+	matview.rotateX(PI * cameraAngles.x / 180.0f);
+	matview.rotateY(PI * cameraAngles.z / 180.0f);
+	matview.translate(-cameraOrigin.x, -cameraOrigin.z, cameraOrigin.y);
 }
 
 void Renderer::reloadBspModels()
@@ -2632,7 +2630,6 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir) {
 	for (int i = 0; i < scaleTexinfos.size(); i++) {
 		ScalableTexinfo& oldinfo = scaleTexinfos[i];
 		BSPTEXTUREINFO& info = map->texinfos[scaleTexinfos[i].texinfoIdx];
-		BSPPLANE& plane = map->planes[scaleTexinfos[i].planeIdx];
 
 		info.vS = (scaleMat * vec4(oldinfo.oldS, 1)).xyz();
 		info.vT = (scaleMat * vec4(oldinfo.oldT, 1)).xyz();
@@ -2746,7 +2743,6 @@ bool Renderer::splitModelFace() {
 		return false;
 	}
 
-	BSPPLANE& splitPlane = map->planes[commonPlane];
 	vec3 splitPoints[2] = {
 		getEdgeControlPoint(modelVerts, edge1),
 		getEdgeControlPoint(modelVerts, edge2)
@@ -2958,7 +2954,6 @@ vec3 Renderer::getCentroid(std::vector<TransformVert>& hullVerts) {
 
 vec3 Renderer::snapToGrid(const vec3& pos) {
 	float snapSize = (float)pow(2.0f, gridSnapLevel);
-	float halfSnap = snapSize * 0.5f;
 
 	float x = round((pos.x) / snapSize) * snapSize;
 	float y = round((pos.y) / snapSize) * snapSize;
@@ -3026,12 +3021,12 @@ void Renderer::pasteEnt(bool noModifyOrigin) {
 
 	if (!noModifyOrigin) {
 		// can't just set camera origin directly because solid ents can have (0,0,0) origins
-		vec3 oldOrigin = getEntOrigin(map, &insertEnt);
+		vec3 tmpOrigin = getEntOrigin(map, &insertEnt);
 		vec3 modelOffset = getEntOffset(map, &insertEnt);
 		vec3 mapOffset = map->getBspRender()->mapOffset;
 
-		vec3 moveDist = (cameraOrigin + cameraForward * 100) - oldOrigin;
-		vec3 newOri = (oldOrigin + moveDist) - (modelOffset + mapOffset);
+		vec3 moveDist = (cameraOrigin + cameraForward * 100) - tmpOrigin;
+		vec3 newOri = (tmpOrigin + moveDist) - (modelOffset + mapOffset);
 		vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
 		insertEnt.setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
 	}
@@ -3041,7 +3036,7 @@ void Renderer::pasteEnt(bool noModifyOrigin) {
 	pushUndoCommand(createCommand);
 
 	clearSelection();
-	selectEnt(map, map->ents.size() > 1 ? (int)(map->ents.size() - 1) : 0);
+	selectEnt(map, map->ents.size() > 1 ? ((int)map->ents.size() - 1) : 0);
 }
 
 void Renderer::deleteEnt() {

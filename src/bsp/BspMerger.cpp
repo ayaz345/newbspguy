@@ -976,8 +976,6 @@ void BspMerger::merge_ents(Bsp& mapA, Bsp& mapB)
 {
 	g_progress.update("Merging entities", (int)(mapA.ents.size() + mapB.ents.size()));
 
-	size_t oldEntCount = mapA.ents.size();
-
 	// update model indexes since this map's models will be appended after the other map's models
 	size_t otherModelCount = (mapB.bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL)) - 1;
 	for (int i = 0; i < mapA.ents.size(); i++) {
@@ -1110,7 +1108,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB) {
 	unsigned char* mipTexWritePtr = newMipTexData;
 
 	// offsets relative to the start of the mipmap data, not the lump
-	unsigned int* mipTexOffsets = new unsigned int[mapA.textureCount + mapB.textureCount];
+	int* mipTexOffsets = new int[mapA.textureCount + mapB.textureCount];
 
 	g_progress.update("Merging textures", mapA.textureCount + mapB.textureCount);
 
@@ -1639,6 +1637,8 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB) {
 	memcpy(compressedVisResize, compressedVis, newVisLen);
 
 	mapA.replace_lump(LUMP_VISIBILITY, compressedVisResize, newVisLen);
+
+	logf("\rVis data length %u > %u                            \n", oldLen, newVisLen);
 
 	delete[] decompressedVis;
 	delete[] compressedVis;

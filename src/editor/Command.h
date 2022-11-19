@@ -92,7 +92,7 @@ public:
 	Entity* entData;
 	LumpState oldLumps = LumpState();
 	bool initialized = false;
-	float size;
+	float mdl_size;
 
 	CreateBspModelCommand(std::string desc, int mapIdx, Entity* entData, float size);
 	~CreateBspModelCommand();

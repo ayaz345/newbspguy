@@ -62,7 +62,6 @@ bool Fgd::parse() {
 	std::ifstream in(path);
 
 	lineNum = 0;
-	int lastBracket = -1;
 
 	FgdClass* fgdClass = new FgdClass();
 	int bracketNestLevel = 0;

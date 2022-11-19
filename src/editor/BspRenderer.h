@@ -172,12 +172,12 @@ public:
 
 	size_t numLightmapAtlases;
 
-	unsigned int numRenderModels;
-	unsigned int numRenderClipnodes;
-	unsigned int numRenderLightmapInfos;
-	unsigned int numFaceMaths;
-	unsigned int numPointEnts;
-	unsigned int numLoadedTextures;
+	int numRenderModels;
+	int numRenderClipnodes;
+	int numRenderLightmapInfos;
+	int numFaceMaths;
+	int numPointEnts;
+	int numLoadedTextures;
 
 
 	Texture** glTextures = NULL;
@@ -201,9 +201,9 @@ public:
 	std::future<void> clipnodesFuture;
 
 	void loadLightmaps();
-	void genRenderFaces(unsigned int& renderModelCount);
+	void genRenderFaces(int& renderModelCount);
 	void loadClipnodes();
-	void generateClipnodeBuffer(unsigned int modelIdx);
+	void generateClipnodeBuffer(int modelIdx);
 	void deleteRenderModel(RenderModel* renderModel);
 	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);
 	void deleteRenderClipnodes();

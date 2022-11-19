@@ -21,7 +21,7 @@ Winding& Winding::operator=(const Winding& other)
 	return *this;
 }
 
-Winding::Winding(unsigned int numpoints)
+Winding::Winding(int numpoints)
 {
 	m_NumPoints = numpoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
@@ -79,7 +79,7 @@ Winding::Winding(Bsp* bsp, const BSPFACE& face, vec_t epsilon)
 // Remove the colinear point of any three points that forms a triangle which is thinner than ON_EPSILON
 void Winding::RemoveColinearPoints(vec_t epsilon)
 {
-	unsigned int	i;
+	int	i;
 	vec3_t			v1, v2;
 	vec_t* p1, * p2, * p3;
 	for (i = 0; i < m_NumPoints; i++)

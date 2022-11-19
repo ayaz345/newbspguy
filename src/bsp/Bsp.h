@@ -54,20 +54,20 @@ public:
 	bool is_model = false;
 	void selectModelEnt();
 
-	unsigned int planeCount;
-	unsigned int texinfoCount;
-	unsigned int leafCount;
-	unsigned int modelCount;
-	unsigned int nodeCount;
-	unsigned int vertCount;
-	unsigned int faceCount;
-	unsigned int clipnodeCount;
-	unsigned int marksurfCount;
-	unsigned int surfedgeCount;
-	unsigned int edgeCount;
-	unsigned int textureCount;
-	unsigned int lightDataLength;
-	unsigned int visDataLength;
+	int planeCount;
+	int texinfoCount;
+	int leafCount;
+	int modelCount;
+	int nodeCount;
+	int vertCount;
+	int faceCount;
+	int clipnodeCount;
+	int marksurfCount;
+	int surfedgeCount;
+	int edgeCount;
+	int textureCount;
+	int lightDataLength;
+	int visDataLength;
 
 	std::vector<Entity*> ents;
 
@@ -98,9 +98,6 @@ public:
 	// strips a collision hull from all models
 	// and redirects to the given hull, if redirect>0
 	void delete_hull(int hull_number, int redirect);
-
-	void dump_lightmap(int faceIdx, const std::string& outputPath);
-	void dump_lightmap_atlas(const std::string& outputPath);
 
 	void write_csg_outputs(const std::string &path);
 
@@ -255,7 +252,7 @@ private:
 	void print_leaf(const BSPLEAF &leaf);
 	void print_node(const BSPNODE& node);
 	void print_stat(const std::string &name, unsigned int val, unsigned int max, bool isMem);
-	void print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, unsigned int max, bool isMem);
+	void print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bool isMem);
 
 	std::string get_model_usage(int modelIdx);
 	std::vector<Entity*> get_model_ents(int modelIdx);

@@ -387,7 +387,6 @@ void BspRenderer::preRenderFaces() {
 
 	for (unsigned int i = 0; i < numRenderModels; i++) {
 		RenderModel& model = renderModels[i];
-		RenderClipnodes& clip = renderClipnodes[i];
 		for (int k = 0; k < model.groupCount; k++) {
 			model.renderGroups[k].buffer->bindAttributes(true);
 			model.renderGroups[k].wireframeBuffer->bindAttributes(true);
@@ -397,7 +396,7 @@ void BspRenderer::preRenderFaces() {
 	}
 }
 
-void BspRenderer::genRenderFaces(unsigned int& renderModelCount) {
+void BspRenderer::genRenderFaces(int& renderModelCount) {
 	renderModels = new RenderModel[map->modelCount];
 	memset(renderModels, 0, sizeof(RenderModel) * map->modelCount);
 	renderModelCount = map->modelCount;
@@ -760,7 +759,7 @@ void BspRenderer::loadClipnodes() {
 	}
 }
 
-void BspRenderer::generateClipnodeBuffer(unsigned int modelIdx) {
+void BspRenderer::generateClipnodeBuffer(int modelIdx) {
 	BSPMODEL& model = map->models[modelIdx];
 	RenderClipnodes* renderClip = &renderClipnodes[modelIdx];
 
@@ -1330,7 +1329,6 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx) {
 ShaderProgram* activeShader; vec3 renderOffset;
 
 void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipnodeHull) {
-	BSPMODEL& world = map->models[0];
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
 
@@ -1631,8 +1629,9 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& p
 		pickInfo.ent = map->ents[0];
 		foundBetterPick = true;
 	}
+	int sz = (int)map->ents.size();
 
-	for (size_t i = 0, sz = map->ents.size(); i < sz; i++) {
+	for (int i = 0; i < sz; i++) {
 		if (renderEnts[i].modelIdx >= 0 && (unsigned int)renderEnts[i].modelIdx < map->modelCount) {
 
 			bool isSpecial = false;
@@ -1651,7 +1650,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& p
 			}
 
 			if (pickModelPoly(start, dir, renderEnts[i].offset, renderEnts[i].modelIdx, hullIdx, pickInfo)) {
-				pickInfo.entIdx = (int)i;
+				pickInfo.entIdx = i;
 				pickInfo.modelIdx = renderEnts[i].modelIdx;
 				pickInfo.map = map;
 				pickInfo.ent = map->ents[i];
@@ -1662,7 +1661,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& p
 			vec3 mins = renderEnts[i].offset + renderEnts[i].pointEntCube->mins;
 			vec3 maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
 			if (pickAABB(start, dir, mins, maxs, pickInfo.bestDist)) {
-				pickInfo.entIdx = (int)i;
+				pickInfo.entIdx = i;
 				pickInfo.modelIdx = -1;
 				pickInfo.faceIdx = -1;
 				pickInfo.map = map;

@@ -260,7 +260,7 @@ void Gui::pasteLightmap() {
 }
 
 
-void ExportModel(Bsp* map, unsigned int id, int ExportType)
+void ExportModel(Bsp* map, int id, int ExportType)
 {
 	map->update_ent_lump();
 
@@ -324,7 +324,7 @@ void ExportModel(Bsp* map, unsigned int id, int ExportType)
 			markid += tmpLeaf.nMarkSurfaces;
 		}
 
-		while (tmpMap->models[0].nVisLeafs >= (int)tmpMap->leafCount)
+		while (tmpMap->models[0].nVisLeafs >= tmpMap->leafCount)
 			tmpMap->create_leaf(ExportType == 2 ? CONTENTS_WATER : CONTENTS_EMPTY);
 
 		//tmpMap.lumps[LUMP_LEAVES] = (unsigned char*)tmpMap.leaves;
@@ -480,9 +480,7 @@ void Gui::draw3dContextMenus() {
 					ImGui::Separator();
 
 					for (int i = 1; i < MAX_MAP_HULLS; i++) {
-						bool isHullValid = model.iHeadnodes[i] >= 0;
-
-						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()/*, 0, false, isHullValid*/)) {
+						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str())) {
 							map->regenerate_clipnodes(app->pickInfo.modelIdx, i);
 							checkValidHulls();
 							logf("Regenerated hull %d on model %d\n", i, app->pickInfo.modelIdx);
@@ -936,7 +934,7 @@ void Gui::drawMenuBar() {
 				if (map)
 				{
 					if (ImGui::BeginMenu((std::string("Map ") + map->bsp_name + ".bsp").c_str())) {
-						for (unsigned int i = 0; i < map->modelCount; i++)
+						for (int i = 0; i < map->modelCount; i++)
 						{
 							if (ImGui::MenuItem(("Export Model" + std::to_string(i) + ".bsp").c_str(), NULL, app->pickInfo.modelIdx == i))
 							{
@@ -1196,8 +1194,6 @@ void Gui::drawMenuBar() {
 
 	if (ImGui::BeginMenu("Create"))
 	{
-		Bsp* map = app->getSelectedMap();
-
 		if (ImGui::MenuItem("Entity", 0, false, map)) {
 			Entity* newEnt = new Entity();
 			vec3 origin = (cameraOrigin + app->cameraForward * 100);
@@ -1675,8 +1671,6 @@ void Gui::drawKeyvalueEditor() {
 			&& !app->isLoading && !app->isModelsReloading && !app->reloading) {
 			Bsp* map = app->getSelectedMap();
 			Entity* ent = app->pickInfo.ent;
-			BSPMODEL& model = map->models[app->pickInfo.modelIdx];
-			BSPFACE& face = map->faces[app->pickInfo.faceIdx];
 			std::string cname = ent->keyvalues["classname"];
 			FgdClass* fgdClass = app->fgd->getFgdClass(cname);
 
@@ -2650,7 +2644,7 @@ void Gui::drawTransformWidget() {
 					else if (app->transformTarget == TRANSFORM_OBJECT) {
 						int modelIdx = ent->getBspModelIdx();
 						app->scaleSelectedObject(sx, sy, sz);
-						map->getBspRender()->refreshModel(ent->getBspModelIdx());
+						map->getBspRender()->refreshModel(modelIdx);
 					}
 					else if (app->transformTarget == TRANSFORM_ORIGIN) {
 						logf("Scaling has no effect on origins\n");
@@ -3129,7 +3123,6 @@ void Gui::drawHelp() {
 				ImGui::Dummy(ImVec2(0, 10));
 
 				// user guide from the demo
-				ImGuiIO& io = ImGui::GetIO();
 				ImGui::BulletText("Click and drag on lower corner to resize window\n(double-click to auto fit window to its contents).");
 				ImGui::BulletText("While adjusting numeric inputs:\n");
 				ImGui::Indent();
@@ -3149,8 +3142,6 @@ void Gui::drawHelp() {
 
 			if (ImGui::BeginTabItem("3D Controls")) {
 				ImGui::Dummy(ImVec2(0, 10));
-
-				ImGuiIO& io = ImGui::GetIO();
 				ImGui::BulletText("WASD to move (hold SHIFT/CTRL for faster/slower movement).");
 				ImGui::BulletText("Hold right mouse button to rotate view.");
 				ImGui::BulletText("Left click to select objects/entities. Right click for options.");
@@ -3169,8 +3160,6 @@ void Gui::drawHelp() {
 
 			if (ImGui::BeginTabItem("Vertex Manipulation")) {
 				ImGui::Dummy(ImVec2(0, 10));
-
-				ImGuiIO& io = ImGui::GetIO();
 				ImGui::BulletText("Press F to split a face while 2 edges are selected.");
 				ImGui::Unindent();
 
@@ -3497,7 +3486,7 @@ void Gui::drawLimits() {
 
 void Gui::drawLimitTab(Bsp* map, int sortMode) {
 
-	int maxCount;
+	int maxCount = 0;
 	const char* countName = "None";
 	switch (sortMode) {
 	case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
@@ -3511,8 +3500,8 @@ void Gui::drawLimitTab(Bsp* map, int sortMode) {
 
 		limitModels[sortMode].clear();
 		for (int i = 0; i < modelInfos.size(); i++) {
+			int val = 0;
 
-			int val;
 			switch (sortMode) {
 			case SORT_VERTS:		val = modelInfos[i]->sum.verts; break;
 			case SORT_NODES:		val = modelInfos[i]->sum.nodes; break;
@@ -4152,7 +4141,7 @@ void DrawImageAtOneBigLightMap(COLOR3* img, int w, int h, int x, int y)
 	}
 }
 
-void DrawOneBigLightMapAtImage(COLOR3* img, unsigned int len, int w, int h, int x, int y)
+void DrawOneBigLightMapAtImage(COLOR3* img, int w, int h, int x, int y)
 {
 	for (int x1 = 0; x1 < w; x1++)
 	{
@@ -4228,7 +4217,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 
 				unsigned char* lightmapData = new unsigned char[lightmapSz];
 
-				DrawOneBigLightMapAtImage((COLOR3*)(lightmapData), lightmapSz, sizeX, sizeY, current_x, current_y);
+				DrawOneBigLightMapAtImage((COLOR3*)(lightmapData), sizeX, sizeY, current_x, current_y);
 				memcpy((unsigned char*)(map->lightdata + offset), lightmapData, lightmapSz);
 
 				delete[] lightmapData;
@@ -4974,7 +4963,6 @@ void Gui::drawTextureTool() {
 
 							map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
-							BspRenderer* mapRenderer = map->getBspRender();
 							mapRenderer->ReuploadTextures();
 
 							delete[] imageData;

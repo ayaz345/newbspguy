@@ -60,7 +60,7 @@ namespace ifd {
 #endif
 
 			FileTreeNode(const std::string& path) {
-				Path = std::filesystem::u8path(path);
+				Path = std::filesystem::path(path);
 				Read = false;
 			}
 

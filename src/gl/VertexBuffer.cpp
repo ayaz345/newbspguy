@@ -53,7 +53,7 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const voi
 	this->primitive = primitive;
 	addAttributes(attFlags);
 	setData(dat, numVerts, primitive);
-	vboId = -1;
+	vboId = 0xFFFFFFFF;
 
 	//glGenQueries(1, &drawQuery);
 }
@@ -62,7 +62,7 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primi
 {
 	numVerts = 0;
 	data = NULL;
-	vboId = -1;
+	vboId = 0xFFFFFFFF;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
@@ -137,7 +137,7 @@ void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 	}
 
 	bindAttributes(hideErrors);
-	if (vboId != -1)
+	if (vboId != 0xFFFFFFFF)
 	{
 		deleteBuffer();
 		upload();
@@ -162,17 +162,17 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 	attributesBound = true;
 }
 
-void VertexBuffer::setData(const void* data, GLsizei numVerts)
+void VertexBuffer::setData(const void* _data, GLsizei _numVerts)
 {
-	this->data = (unsigned char*)data;
-	this->numVerts = numVerts;
+	this->data = (unsigned char*)_data;
+	this->numVerts = _numVerts;
 }
 
-void VertexBuffer::setData(const void* data, GLsizei numVerts, int primitive)
+void VertexBuffer::setData(const void* _data, GLsizei _numVerts, int _primitive)
 {
-	this->data = (unsigned char*)data;
-	this->numVerts = numVerts;
-	this->primitive = primitive;
+	this->data = (unsigned char*)_data;
+	this->numVerts = _numVerts;
+	this->primitive = _primitive;
 }
 
 void VertexBuffer::upload() {
@@ -200,59 +200,9 @@ void VertexBuffer::upload() {
 }
 
 void VertexBuffer::deleteBuffer() {
-	if (vboId != -1)
+	if (vboId != 0xFFFFFFFF)
 		glDeleteBuffers(1, &vboId);
-	vboId = -1;
-}
-
-bool VertexBuffer::isNeedDraw(GLint start, GLsizei end)
-{
-	/*char* offsetPtr = (char*)data;
-	shaderProgram->bind();
-	bindAttributes();
-	glBindBuffer(GL_ARRAY_BUFFER, vboId);
-
-	offsetPtr = NULL;
-	int offset = 0;
-	for (int i = 0; i < attribs.size(); i++)
-	{
-		VertexAttr& a = attribs[i];
-		void* ptr = offsetPtr + offset;
-		offset += a.size;
-		if (a.handle == -1)
-			continue;
-		glEnableVertexAttribArray(a.handle);
-		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
-	}
-	glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
-
-	//glDisable(GL_DEPTH_TEST);
-	//glDepthMask(GL_TRUE);
-	GLuint isAvailable = 0;
-	glBeginQuery(GL_SAMPLES_PASSED, drawQuery);
-
-	glDrawArrays(primitive, start, end - start);
-
-	glEndQuery(GL_SAMPLES_PASSED);
-	glGetQueryObjectuiv(drawQuery, GL_QUERY_RESULT, &isAvailable);
-
-	//glEnable(GL_DEPTH_TEST);
-	//glDepthMask(GL_FALSE);
-	glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
-
-	for (int i = 0; i < attribs.size(); i++)
-	{
-		VertexAttr& a = attribs[i];
-		if (a.handle == -1)
-			continue;
-		glDisableVertexAttribArray(a.handle);
-	}
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-
-	return isAvailable > 0;*/
-	return true;
+	vboId = 0xFFFFFFFF;
 }
 
 void VertexBuffer::drawRange(GLint start, GLsizei end)
@@ -265,55 +215,12 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 		logf("Invalid draw range: %d -> %d\n", start, end);
 	else
 	{
-		/*if (drawQuery == -1)
-		{
-			glGenQueries(1, &drawQuery);
-		}
-		/*if (frameCheck == g_frame_counter && primitive != GL_LINES)
-		{
-			logf("Double draw GL_TRIANGLES frame %u!\n", g_frame_counter);
-		}
-		frameCheck = g_frame_counter;*/
-		/*
-
-		if (needDrawChecked)
-		{
-			needDrawChecked = false;
-			needDraw = isNeedDraw(start, end);
-			//if (needDraw)
-			//	return;
-		}
-
-		if (!needDraw)
-		{
-			if ((abs(g_time - drawTime) > 0.5 || abs(drawTime) < 0.1) && (camAngles != cameraAngles || camOrigin != cameraOrigin))
-			{
-				needDrawChecked = false;
-				needDraw = true;
-				drawTime = g_time;
-			}
-		}
-		else if (needDraw)
-		{
-			if (abs(g_time - drawTime) > 2.0 && camAngles == cameraAngles && camOrigin == cameraOrigin)
-			{
-				needDrawChecked = true;
-				drawTime = g_time;
-			}
-		}
-
-		camAngles = cameraAngles;
-		camOrigin = cameraOrigin;
-
-		if (!needDraw)
-			return;
-		*/
 		char* offsetPtr = (char*)data;
 
 		shaderProgram->bind();
 		bindAttributes();
 
-		if (vboId != -1) {
+		if (vboId != 0xFFFFFFFF) {
 			glBindBuffer(GL_ARRAY_BUFFER, vboId);
 			offsetPtr = NULL;
 		}
@@ -343,7 +250,7 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 			glDisableVertexAttribArray(a.handle);
 		}
 
-		if (vboId != -1) {
+		if (vboId != 0xFFFFFFFF) {
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 

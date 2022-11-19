@@ -179,7 +179,7 @@ private:
 	float rotationSpeed = 5.0f;
 	int windowWidth;
 	int windowHeight;
-	mat4x4 model = mat4x4(), view = mat4x4(), projection = mat4x4(), modelView = mat4x4(), modelViewProjection = mat4x4();
+	mat4x4 matmodel = mat4x4(), matview = mat4x4(), projection = mat4x4(), modelView = mat4x4(), modelViewProjection = mat4x4();
 
 	vec2 lastMousePos;
 	vec2 totalMouseDrag;

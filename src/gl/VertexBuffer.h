@@ -70,7 +70,6 @@ public:
 	void upload();
 	void deleteBuffer();
 	void setShader(ShaderProgram* program, bool hideErrors = false);
-	bool isNeedDraw(GLint start, GLsizei end);
 	void drawRange(GLint start, GLsizei end);
 	void drawFull();
 
@@ -84,7 +83,7 @@ private:
 	vec3 camOrigin, camAngles;
 	double drawTime = 0.0;
 	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
-	unsigned int vboId = -1;
+	unsigned int vboId = 0xFFFFFFFF;
 
 	bool attributesBound = false;
 	GLuint drawQuery = 0xFFFFFFFF;

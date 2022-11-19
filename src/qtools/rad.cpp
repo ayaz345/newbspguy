@@ -349,7 +349,6 @@ void GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 
 void CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
 {
-	const int       facenum = l->surfnum;
 	BSPFACE* s;
 	float           mins[2], maxs[2], val; //vec_t           mins[2], maxs[2], val; //vluzacn
 	int             i, j, e;
@@ -418,8 +417,6 @@ void CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
 
 void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
 {
-	const int       facenum = l->surfnum;
-	const BSPFACE* f = bsp->faces + facenum;
 	const int       h = l->texsize[1] + 1;
 	const int       w = l->texsize[0] + 1;
 	const vec_t     starts = l->texmins[0] * TEXTURE_STEP * 1.0f;
@@ -445,7 +442,8 @@ void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
 
 
 	{
-		int s_other, t_other;
+		int s_other = 0;
+		int t_other = 0;
 		unsigned char* pLuxelFlags_other;
 		bool adjusted;
 		for (int i = 0; i < h + w; i++)

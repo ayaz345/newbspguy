@@ -442,10 +442,10 @@ std::vector<NodeVolumeCuts> Bsp::get_model_leaf_volume_cuts(int modelIdx, int hu
 		bool is_valid_node = false;
 
 		if (hullIdx == 0) {
-			is_valid_node = nodeIdx >= 0 && nodeIdx < (int)nodeCount;
+			is_valid_node = nodeIdx >= 0 && nodeIdx < nodeCount;
 		}
 		else {
-			is_valid_node = nodeIdx >= 0 && nodeIdx < (int)clipnodeCount;
+			is_valid_node = nodeIdx >= 0 && nodeIdx < clipnodeCount;
 		}
 
 		if (nodeIdx >= 0 && is_valid_node) {
@@ -692,7 +692,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 }
 
 bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
-	if (modelIdx < 0 || modelIdx >= (int)modelCount) {
+	if (modelIdx < 0 || modelIdx >= modelCount) {
 		logf("Invalid modelIdx moved");
 		return false;
 	}
@@ -722,7 +722,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel) {
 		memset(oldLightmaps, 0, sizeof(LIGHTMAP) * faceCount);
 		memset(newLightmaps, 0, sizeof(LIGHTMAP) * faceCount);
 
-		for (int i = 0; i < (int)faceCount; i++) {
+		for (int i = 0; i < faceCount; i++) {
 			int size[2];
 			GetFaceLightmapSize(this, i, size);
 
@@ -937,15 +937,10 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps) {
 	int totalLightmaps = 0;
 	int lightmapsResizeCount = 0;
 	for (unsigned int i = 0; i < faceCount; i++) {
-		BSPFACE& face = faces[i];
-
 		g_progress.tick();
 
 		if (lightmap_count(i) == 0)
 			continue;
-
-		BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
-		int texOffset = ((int*)textures)[info.iMiptex + 1];
 
 		int size[2];
 		GetFaceLightmapSize(this, i, size);
@@ -1054,7 +1049,7 @@ void Bsp::split_shared_model_structures(int modelIdx) {
 	g_progress.update("Split model structures", modelCount);
 
 	mark_model_structures(modelIdx, &shouldMove, modelIdx == 0);
-	for (unsigned int i = 0; i < modelCount; i++) {
+	for (int i = 0; i < modelCount; i++) {
 		if (i != modelIdx)
 			mark_model_structures(i, &shouldNotMove, false);
 
@@ -1164,19 +1159,19 @@ bool Bsp::does_model_use_shared_structures(int modelIdx) {
 	STRUCTUSAGE shouldMove(this);
 	STRUCTUSAGE shouldNotMove(this);
 
-	for (unsigned int i = 0; i < modelCount; i++) {
+	for (int i = 0; i < modelCount; i++) {
 		if (i == modelIdx)
 			mark_model_structures(i, &shouldMove, true);
 		else
 			mark_model_structures(i, &shouldNotMove, false);
 	}
 
-	for (unsigned int i = 0; i < planeCount; i++) {
+	for (int i = 0; i < planeCount; i++) {
 		if (shouldMove.planes[i] && shouldNotMove.planes[i]) {
 			return true;
 		}
 	}
-	for (unsigned int i = 0; i < clipnodeCount; i++) {
+	for (int i = 0; i < clipnodeCount; i++) {
 		if (shouldMove.clipnodes[i] && shouldNotMove.clipnodes[i]) {
 			return true;
 		}
@@ -1328,7 +1323,7 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 	int newTexCount = oldTexCount - removeCount;
 	unsigned char* newTexData = new unsigned char[bsp_header.lump[LUMP_TEXTURES].nLength - removeSize];
 
-	unsigned int* texHeader = (unsigned int*)newTexData;
+	int* texHeader = (int*)newTexData;
 	texHeader[0] = newTexCount;
 
 	int newOffset = (newTexCount + 1) * sizeof(int);
@@ -1447,9 +1442,9 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes) 
 	bool* usedModels = new bool[modelCount];
 	memset(usedModels, 0, sizeof(bool) * modelCount);
 	usedModels[0] = true; // never delete worldspawn
-	for (unsigned int i = 0; i < ents.size(); i++) {
+	for (int i = 0; i < (int)ents.size(); i++) {
 		int modelIdx = ents[i]->getBspModelIdx();
-		if (modelIdx >= 0 && modelIdx < (int)modelCount) {
+		if (modelIdx >= 0 && modelIdx < modelCount) {
 			usedModels[modelIdx] = true;
 		}
 	}
@@ -1457,7 +1452,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes) 
 	// reversed so models can be deleted without shifting the next delete index
 	if (modelCount > 0)
 	{
-		for (int i = (int)modelCount - 1; i >= 0; i--) {
+		for (int i = modelCount - 1; i >= 0; i--) {
 			if (!usedModels[i]) {
 				delete_model(i);
 			}
@@ -1607,7 +1602,7 @@ bool Bsp::has_hull2_ents() {
 		}
 		else if (cname == "func_pushable") {
 			int modelIdx = ents[i]->getBspModelIdx();
-			if (modelIdx >= 0 && modelIdx < (int)modelCount) {
+			if (modelIdx >= 0 && modelIdx < modelCount) {
 				BSPMODEL& model = models[modelIdx];
 				vec3 size = model.nMaxs - model.nMins;
 
@@ -2190,7 +2185,6 @@ void Bsp::load_ents()
 		delete ents[i];
 	ents.clear();
 
-	bool verbose = true;
 	membuf sbuf((char*)lumps[LUMP_ENTITIES], bsp_header.lump[LUMP_ENTITIES].nLength);
 	std::istream in(&sbuf);
 
@@ -2338,7 +2332,7 @@ void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max
 	print_color(PRINT_RED | PRINT_GREEN | PRINT_BLUE);
 }
 
-void Bsp::print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, unsigned int max, bool isMem)
+void Bsp::print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bool isMem)
 {
 	std::string classname = modelInfo->modelIdx == 0 ? "worldspawn" : "???";
 	std::string targetname = modelInfo->modelIdx == 0 ? "" : "???";
@@ -2498,19 +2492,19 @@ bool Bsp::validate() {
 
 	int totalVisLeaves = 1; // solid leaf not included in model leaf counts
 	int totalFaces = 0;
-	for (unsigned int i = 0; i < modelCount; i++) {
+	for (int i = 0; i < modelCount; i++) {
 		totalVisLeaves += models[i].nVisLeafs;
 		totalFaces += models[i].nFaces;
-		if (models[i].nFaces > 0 && (models[i].iFirstFace < 0 || (unsigned int)models[i].iFirstFace >= faceCount)) {
+		if (models[i].nFaces > 0 && (models[i].iFirstFace < 0 || models[i].iFirstFace >= faceCount)) {
 			logf("Bad face reference in model %d: %d / %d\n", i, models[i].iFirstFace, faceCount);
 			isValid = false;
 		}
-		if (models[i].iHeadnodes[0] >= (int)nodeCount) {
+		if (models[i].iHeadnodes[0] >= nodeCount) {
 			logf("Bad node reference in model %d hull 0: %d / %d\n", i, models[i].iHeadnodes[0], nodeCount);
 			isValid = false;
 		}
 		for (int k = 1; k < MAX_MAP_HULLS; k++) {
-			if (models[i].iHeadnodes[k] >= (int)clipnodeCount) {
+			if (models[i].iHeadnodes[k] >= clipnodeCount) {
 				logf("Bad clipnode reference in model %d hull %d: %d / %d\n", i, k, models[i].iHeadnodes[k], clipnodeCount);
 				isValid = false;
 			}
@@ -2933,7 +2927,7 @@ void Bsp::mark_model_structures(int modelIdx, STRUCTUSAGE* usage, bool skipLeave
 	if (model.iHeadnodes[0] >= 0 && (model.iHeadnodes[0] < clipnodeCount || model.iHeadnodes[0] < nodeCount))
 		mark_node_structures(model.iHeadnodes[0], usage, skipLeaves);
 	for (int k = 1; k < MAX_MAP_HULLS; k++) {
-		if (model.iHeadnodes[k] >= 0 && model.iHeadnodes[k] < (int)clipnodeCount)
+		if (model.iHeadnodes[k] >= 0 && model.iHeadnodes[k] < clipnodeCount)
 			mark_clipnode_structures(model.iHeadnodes[k], usage);
 	}
 }
@@ -2982,7 +2976,7 @@ void Bsp::remap_clipnode_structures(int iNode, STRUCTREMAP* remap) {
 
 	for (int i = 0; i < 2; i++) {
 		if (node.iChildren[i] >= 0) {
-			if (node.iChildren[i] < (int)remap->count.clipnodes) {
+			if (node.iChildren[i] < remap->count.clipnodes) {
 				node.iChildren[i] = remap->clipnodes[node.iChildren[i]];
 			}
 
@@ -3001,14 +2995,14 @@ void Bsp::remap_model_structures(int modelIdx, STRUCTREMAP* remap) {
 
 	if (model.iHeadnodes[0] >= 0) {
 		model.iHeadnodes[0] = remap->nodes[model.iHeadnodes[0]];
-		if (model.iHeadnodes[0] < (int)clipnodeCount && !remap->visitedNodes[model.iHeadnodes[0]]) {
+		if (model.iHeadnodes[0] < clipnodeCount && !remap->visitedNodes[model.iHeadnodes[0]]) {
 			remap_node_structures(model.iHeadnodes[0], remap);
 		}
 	}
 	for (int k = 1; k < MAX_MAP_HULLS; k++) {
 		if (model.iHeadnodes[k] >= 0) {
 			model.iHeadnodes[k] = remap->clipnodes[model.iHeadnodes[k]];
-			if (model.iHeadnodes[k] < (int)clipnodeCount && !remap->visitedClipnodes[model.iHeadnodes[k]]) {
+			if (model.iHeadnodes[k] < clipnodeCount && !remap->visitedClipnodes[model.iHeadnodes[k]]) {
 				remap_clipnode_structures(model.iHeadnodes[k], remap);
 			}
 		}
@@ -3504,8 +3498,6 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 		BSPNODE* newNodes = new BSPNODE[nodeCount + 6];
 		memcpy(newNodes, nodes, nodeCount * sizeof(BSPNODE));
 
-		unsigned int nodeIdx = nodeCount;
-
 		for (int k = 0; k < 6; k++) {
 			BSPNODE& node = newNodes[nodeCount + k];
 			memset(&node, 0, sizeof(BSPNODE));
@@ -3676,8 +3668,6 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel) {
 		BSPNODE* newNodes = new BSPNODE[nodeCount + solid.faces.size() + 1];
 		memcpy(newNodes, nodes, nodeCount * sizeof(BSPNODE));
 
-		unsigned int nodeIdx = nodeCount;
-
 		for (int k = 0; k < solid.faces.size(); k++) {
 			BSPNODE& node = newNodes[nodeCount + k];
 			memset(&node, 0, sizeof(BSPNODE));
@@ -3745,7 +3735,7 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 		addPlanes.push_back({ vec3(0, 0, 1), min.z, PLANE_Z }); // bottom
 		addPlanes.push_back({ vec3(0, 0, 1), max.z, PLANE_Z }); // top
 
-		targetModel->iHeadnodes[i] = (int)(clipnodeCount + addNodes.size());
+		targetModel->iHeadnodes[i] = clipnodeCount + (int)addNodes.size();
 
 		for (int k = 0; k < 6; k++) {
 			BSPCLIPNODE node;
@@ -3878,7 +3868,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	std::vector<BSPPLANE> newPlanes;
 	for (unsigned int i = 0; i < usage.count.planes; i++) {
 		if (usage.planes[i]) {
-			remap.planes[i] = (int)(planeCount + newPlanes.size());
+			remap.planes[i] = planeCount + (int)newPlanes.size();
 			newPlanes.push_back(planes[i]);
 		}
 	}
@@ -3886,7 +3876,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	std::vector<vec3> newVerts;
 	for (unsigned int i = 0; i < usage.count.verts; i++) {
 		if (usage.verts[i]) {
-			remap.verts[i] = (int)(vertCount + newVerts.size());
+			remap.verts[i] = vertCount + (int)newVerts.size();
 			newVerts.push_back(verts[i]);
 		}
 	}
@@ -3894,7 +3884,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	std::vector<BSPEDGE> newEdges;
 	for (unsigned int i = 0; i < usage.count.edges; i++) {
 		if (usage.edges[i]) {
-			remap.edges[i] = (int)(edgeCount + newEdges.size());
+			remap.edges[i] = edgeCount + (int)newEdges.size();
 
 			BSPEDGE edge = edges[i];
 			for (int k = 0; k < 2; k++)
@@ -3906,7 +3896,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	std::vector<int> newSurfedges;
 	for (unsigned int i = 0; i < usage.count.surfEdges; i++) {
 		if (usage.surfEdges[i]) {
-			remap.surfEdges[i] = (int)(surfedgeCount + newSurfedges.size());
+			remap.surfEdges[i] = surfedgeCount + (int)newSurfedges.size();
 
 			int surfedge = remap.edges[abs(surfedges[i])];
 			if (surfedges[i] < 0)
@@ -3918,7 +3908,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	std::vector<BSPTEXTUREINFO> newTexinfo;
 	for (unsigned int i = 0; i < usage.count.texInfos; i++) {
 		if (usage.texInfo[i]) {
-			remap.texInfo[i] = (int)(texinfoCount + newTexinfo.size());
+			remap.texInfo[i] = texinfoCount + (int)newTexinfo.size();
 			newTexinfo.push_back(texinfos[i]);
 		}
 	}
@@ -3928,7 +3918,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	int lightmapAppendSz = 0;
 	for (unsigned int i = 0; i < usage.count.faces; i++) {
 		if (usage.faces[i]) {
-			remap.faces[i] = (int)(faceCount + newFaces.size());
+			remap.faces[i] = faceCount + (int)newFaces.size();
 
 			BSPFACE face = faces[i];
 			face.iFirstEdge = remap.surfEdges[face.iFirstEdge];
@@ -3960,7 +3950,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	std::vector<BSPNODE> newNodes;
 	for (unsigned int i = 0; i < usage.count.nodes; i++) {
 		if (usage.nodes[i]) {
-			remap.nodes[i] = (int)(nodeCount + newNodes.size());
+			remap.nodes[i] = nodeCount + (int)newNodes.size();
 			newNodes.push_back(nodes[i]);
 		}
 	}
@@ -3979,7 +3969,7 @@ int Bsp::duplicate_model(int modelIdx) {
 	std::vector<BSPCLIPNODE> newClipnodes;
 	for (unsigned int i = 0; i < usage.count.clipnodes; i++) {
 		if (usage.clipnodes[i]) {
-			remap.clipnodes[i] = (int)(clipnodeCount + newClipnodes.size());
+			remap.clipnodes[i] = clipnodeCount + (int)newClipnodes.size();
 			newClipnodes.push_back(clipnodes[i]);
 		}
 	}
@@ -4034,7 +4024,7 @@ BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx) {
 	BSPFACE& targetFace = faces[faceIdx];
 	int targetInfo = targetFace.iTextureInfo;
 
-	for (unsigned int i = 0; i < faceCount; i++) {
+	for (int i = 0; i < faceCount; i++) {
 		if (i != faceIdx && faces[i].iTextureInfo == targetFace.iTextureInfo) {
 			int newInfo = create_texinfo();
 			texinfos[newInfo] = texinfos[targetInfo];
@@ -4051,7 +4041,7 @@ BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx) {
 bool Bsp::is_unique_texinfo(int faceIdx) {
 	BSPFACE& targetFace = faces[faceIdx];
 
-	for (unsigned int i = 0; i < faceCount; i++)
+	for (int i = 0; i < faceCount; i++)
 	{
 		if (i != faceIdx && faces[i].iTextureInfo == targetFace.iTextureInfo)
 		{
@@ -4104,7 +4094,6 @@ short Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx) {
 		break;
 	}
 
-	int oldCount = clipnodeCount;
 	int newClipnodeIdx = create_clipnode();
 	clipnodes[newClipnodeIdx].iPlane = create_plane();
 
@@ -4171,62 +4160,6 @@ void Bsp::regenerate_clipnodes(int modelIdx, int hullIdx) {
 	}
 }
 
-void Bsp::dump_lightmap(int faceIdx, const std::string& outputPath) {
-	BSPFACE& face = faces[faceIdx];
-
-	int mins[2];
-	int extents[2];
-	GetFaceExtents(this, faceIdx, mins, extents);
-
-	int lightmapSz = extents[0] * extents[1];
-
-	lodepng_encode24_file(outputPath.c_str(), (unsigned char*)lightdata + face.nLightmapOffset, extents[0], extents[1]);
-}
-
-void Bsp::dump_lightmap_atlas(const std::string& outputPath) {
-	int lightmapWidth = MAX_SURFACE_EXTENT;
-
-	int lightmapsPerDim = (int)ceil(sqrt(faceCount));
-	int atlasDim = lightmapsPerDim * lightmapWidth;
-	int sz = atlasDim * atlasDim;
-	logf("ATLAS SIZE %d x %d (%.2f KB)", lightmapsPerDim, lightmapsPerDim, (sz * sizeof(COLOR3)) / 1024.0f);
-
-	COLOR3* pngData = new COLOR3[sz];
-
-	memset(pngData, 0, sz * sizeof(COLOR3));
-
-	for (unsigned int i = 0; i < faceCount; i++) {
-		BSPFACE& face = faces[i];
-
-		if (face.nStyles[0] == 255)
-			continue; // no lighting info
-
-		int atlasX = (i % lightmapsPerDim) * lightmapWidth;
-		int atlasY = (i / lightmapsPerDim) * lightmapWidth;
-
-		int size[2];
-		GetFaceLightmapSize(this, i, size);
-
-		int lightmapWidth = size[0];
-		int lightmapHeight = size[1];
-
-		for (int y = 0; y < lightmapHeight; y++) {
-			for (int x = 0; x < lightmapWidth; x++) {
-				int dstX = atlasX + x;
-				int dstY = atlasY + y;
-
-				int lightmapOffset = (y * lightmapWidth + x) * sizeof(COLOR3);
-
-				COLOR3* src = (COLOR3*)(lightdata + face.nLightmapOffset + lightmapOffset);
-				if (dstY * atlasDim + dstX < sz)
-					pngData[dstY * atlasDim + dstX] = *src;
-			}
-		}
-	}
-
-	lodepng_encode24_file(outputPath.c_str(), (unsigned char*)pngData, atlasDim, atlasDim);
-}
-
 void Bsp::write_csg_outputs(const std::string& path) {
 	BSPPLANE* thisPlanes = (BSPPLANE*)lumps[LUMP_PLANES];
 	int numPlanes = bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
@@ -4260,9 +4193,6 @@ void Bsp::write_csg_outputs(const std::string& path) {
 		pln_file.write((char*)&csgplane, sizeof(CSGPLANE));
 	}
 	logf("Wrote %d planes\n", numPlanes);
-
-	BSPFACE* thisFaces = (BSPFACE*)lumps[LUMP_FACES];
-	int thisFaceCount = bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE);
 
 	BSPMODEL* tmodels = (BSPMODEL*)lumps[LUMP_MODELS];
 	BSPMODEL world = tmodels[0];
@@ -4327,7 +4257,6 @@ void Bsp::write_csg_polys(short nodeIdx, FILE* polyfile, int flipPlaneSkip, bool
 	BSPLEAF& leaf = leaves[~nodeIdx];
 
 	int detaillevel = 0; // no way to know which faces came from a func_detail
-	int contents = leaf.nContents;
 
 	for (int i = leaf.iFirstMarkSurface; i < leaf.iFirstMarkSurface + leaf.nMarkSurfaces; i++) {
 		for (int z = 0; z < 2; z++) {
@@ -4356,7 +4285,7 @@ void Bsp::write_csg_polys(short nodeIdx, FILE* polyfile, int flipPlaneSkip, bool
 			fprintf(polyfile, "%i %i %u %i %u\n", detaillevel, iPlane, face.iTextureInfo, faceContents, face.nEdges);
 
 			if (flipped) {
-				for (int e = (int)(face.iFirstEdge + face.nEdges) - 1; e >= (int)face.iFirstEdge; e--) {
+				for (int e = (face.iFirstEdge + face.nEdges) - 1; e >= face.iFirstEdge; e--) {
 					int edgeIdx = surfedges[e];
 					BSPEDGE& edge = edges[abs(edgeIdx)];
 					vec3 v = edgeIdx >= 0 ? verts[edge.iVertex[1]] : verts[edge.iVertex[0]];
@@ -4640,7 +4569,6 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 
 				for (int n = 0; n < rface->vertCount; n++)
 				{
-					BSPPLANE& plane = planes[face.iPlane];
 					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
 					vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
 
@@ -4657,13 +4585,10 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 					float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
 					float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
 
-					BSPPLANE& plane = planes[face.iPlane];
-
 					fprintf(f, "vt %f %f\n", fU * tw, fV * th);
 				}
 				for (int n = 0; n < rface->vertCount; n++)
 				{
-					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
 					BSPPLANE& plane = planes[face.iPlane];
 
 					fprintf(f, "vn %f %f %f\n", plane.vNormal.x, plane.vNormal.z, plane.vNormal.y);

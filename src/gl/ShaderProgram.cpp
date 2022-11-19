@@ -3,7 +3,7 @@
 #include "util.h"
 #include <string>
 
-static int g_active_shader_program;
+static unsigned int g_active_shader_program = 0xFFFFFFFF;
 
 ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSource)
 {

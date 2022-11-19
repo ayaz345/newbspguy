@@ -56,8 +56,8 @@ public:
 
 private:
 	// uniforms
-	unsigned int modelViewID;
-	unsigned int modelViewProjID;
+	int modelViewID;
+	int modelViewProjID;
 
 	// computed from model, view, and projection matrices
 	mat4x4* modelViewProjMat; // for transforming vertices onto the screen

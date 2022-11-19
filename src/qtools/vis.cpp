@@ -147,7 +147,6 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 	unsigned char* dest;
 	int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
 	int newVisRowSize = ((newNumLeaves + 63) & ~63) >> 3;
-	int len = 0;
 
 	// calculate which bits of an uncompressed visibility row are used/unused
 	unsigned char lastChunkMask = 0;
@@ -176,7 +175,6 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 			if (lastUsedIdx < newVisRowSize) {
 				dest[lastUsedIdx] &= lastChunkMask;
 				int sz = newVisRowSize - (lastUsedIdx + 1);
-				int last = lastUsedIdx + 1 + sz;
 				memset(dest + lastUsedIdx + 1, 0, sz);
 			}
 		}

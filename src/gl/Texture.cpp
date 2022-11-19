@@ -74,19 +74,8 @@ void Texture::upload(int _format, bool lightmap)
 	uploaded = true;
 }
 
-GLuint lasttex = 0xFFFFFFFF; 
-unsigned int lastid = 0xFFFFFFFF;
-
 void Texture::bind(GLuint texnum)
 {
-	if (lasttex == texnum && lastid == id)
-	{
-		return;
-	}
 	glActiveTexture(GL_TEXTURE0 + texnum);
 	glBindTexture(GL_TEXTURE_2D,id);
-	//glBindTextureUnit(texnum, id);
-	//glBindImageTexture(texnum, id, 0, GL_FALSE, 0, GL_READ_WRITE, GL_RGB);
-	lasttex = texnum;
-	lastid = id;
 }

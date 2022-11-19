@@ -355,8 +355,6 @@ bool operator==(COLOR4 c1, COLOR4 c2) {
 }
 
 bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist) {
-	bool foundBetterPick = false;
-
 	/*
 	Fast Ray-Box Intersection
 	by Andrew Woo
