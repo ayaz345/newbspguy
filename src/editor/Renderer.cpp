@@ -1029,8 +1029,17 @@ void Renderer::vertexEditControls() {
 		canTransform = (transformTarget == TRANSFORM_OBJECT || transformTarget == TRANSFORM_ORIGIN) && transformMode == TRANSFORM_MOVE;
 	}
 
-	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F]) {
-		splitModelFace();
+
+	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F])
+	{
+		if (!anyCtrlPressed)
+		{
+			splitModelFace();
+		}
+		else
+		{
+			gui->showEntityReport = true;
+		}
 	}
 
 	if (canTransform)
