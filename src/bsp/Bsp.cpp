@@ -4577,15 +4577,14 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 				for (int n = 0; n < rface->vertCount; n++)
 				{
 					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
-					vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
-					vec3 pos = vec3(org_pos.x, -org_pos.z, -org_pos.y);
-
-					float tw = 1.0f / (float)tex->nWidth;
-					float th = 1.0f / (float)tex->nHeight;
+					//vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
+					//vec3 pos = vec3(org_pos.x, -org_pos.z, -org_pos.y);
+					vec3 pos = vec3(vert.x, -vert.z, vert.y);
 					float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
 					float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
-
-					fprintf(f, "vt %f %f\n", fU * tw, fV * th);
+					fU /= (float)tex->nWidth;
+					fV /= -(float)tex->nHeight;
+					fprintf(f, "vt %f %f\n", fU, fV );
 				}
 				for (int n = 0; n < rface->vertCount; n++)
 				{
