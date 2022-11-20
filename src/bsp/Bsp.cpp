@@ -4549,7 +4549,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 			{
 				int entid = entIds[e];
 				Entity* ent = ents[entid];
-				vec3 origin_offset = ent->getOrigin();
+				vec3 origin_offset = ent->getOrigin().flip();
 
 				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(entid) != groupname)
 				{
@@ -4570,10 +4570,19 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 				for (int n = 0; n < rface->vertCount; n++)
 				{
 					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
-					vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.z, vert.z + -origin_offset.y);
+
+					vec3 org_pos = vec3(vert.x + origin_offset.x, vert.y + origin_offset.y, vert.z + origin_offset.z);
 
 					fprintf(f, "v %f %f %f\n", org_pos.x * scale, org_pos.y * scale, org_pos.z * scale);
 				}
+
+				BSPPLANE tmpPlane = getPlaneFromFace(this,&face);
+				
+				for (int n = 0; n < rface->vertCount; n++)
+				{
+					fprintf(f, "vn %f %f %f\n", tmpPlane.vNormal.x, tmpPlane.vNormal.z, -tmpPlane.vNormal.y);
+				}
+
 				for (int n = 0; n < rface->vertCount; n++)
 				{
 					lightmapVert& vert = rgroup->verts[rface->vertOffset + n];
@@ -4586,15 +4595,9 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 					fV /= -(float)tex->nHeight;
 					fprintf(f, "vt %f %f\n", fU, fV );
 				}
-				for (int n = 0; n < rface->vertCount; n++)
-				{
-					BSPPLANE& plane = planes[face.iPlane];
-
-					fprintf(f, "vn %f %f %f\n", plane.vNormal.x, plane.vNormal.z, plane.vNormal.y);
-				}
 
 				fprintf(f, "%s", "\nf");
-				for (int n = 0; n < rface->vertCount; n++)
+				for (int n = rface->vertCount - 1; n >= 0; n--)
 				{
 					int id = vertoffset + n;
 

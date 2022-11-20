@@ -484,7 +484,6 @@ bool getPlaneFromVerts(const std::vector<vec3>& verts, vec3& outNormal, float& o
 		else {
 			float dot = dotProduct(outNormal, normal);
 			if (abs(dot) < 1.0f - tolerance) {
-				//logf("DOT %f", dot);
 				return false; // non-planar face
 			}
 		}
