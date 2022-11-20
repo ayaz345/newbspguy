@@ -4416,7 +4416,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 
 		fprintf(f, "s off\n");
 
-		fprintf(f, "mtllib materials.mtl\n");
+		fprintf(f, "mtllib %s.mtl\n", bsp_name.c_str());
 
 		std::string groupname = std::string();
 
@@ -4431,8 +4431,8 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 
 		int vertoffset = 1;
 
-		int materialid = 0;
-		int lastmaterialid = -1;
+		std::string materialid = std::string();
+		std::string lastmaterialid = std::string();
 
 		std::set<int> refreshedModels;
 
@@ -4466,16 +4466,16 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 				entIds.push_back(0);
 			}
 
-			materialid = -1;
+			materialid = std::string();
 			for (int m = 0; m < matnames.size(); m++)
 			{
 				if (matnames[m] == tex->szName)
-					materialid = m;
+					materialid = tex->szName;
 			}
-			if (materialid == -1)
+			if (materialid.empty())
 			{
-				materialid = (int)matnames.size();
-				materials.emplace_back("newmtl textures" + std::to_string(materialid));
+				materialid = tex->szName;
+				materials.emplace_back("newmtl " + materialid);
 				if (toLowerCase(tex->szName) == "aaatrigger" ||
 					toLowerCase(tex->szName) == "null" ||
 					toLowerCase(tex->szName) == "sky" ||
@@ -4484,7 +4484,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 					toLowerCase(tex->szName) == "origin" ||
 					toLowerCase(tex->szName) == "bevel" ||
 					toLowerCase(tex->szName) == "hint" ||
-					toLowerCase(tex->szName) == "uhh"
+					toLowerCase(tex->szName) == "skip"
 					)
 				{
 					materials.push_back("illum 4");
@@ -4573,7 +4573,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 				}
 
 				if (lastmaterialid != materialid)
-					fprintf(f, "usemtl textures%i\n", materialid);
+					fprintf(f, "usemtl %s\n", materialid.c_str());
 
 				lastmaterialid = materialid;
 
@@ -4621,7 +4621,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 		}
 
 		FILE* fmat = NULL;
-		fopen_s(&fmat, (path + "materials.mtl").c_str(), "wt");
+		fopen_s(&fmat, (path + bsp_name + ".mtl").c_str(), "wt");
 
 		if (fmat)
 		{
