@@ -4434,10 +4434,21 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 		int materialid = 0;
 		int lastmaterialid = -1;
 
+		std::set<int> refreshedModels;
+
 		for (unsigned int i = 0; i < faceCount; i++)
 		{
+			int mdlid = get_model_from_face(i);
+
 			RenderFace* rface;
 			RenderGroup* rgroup;
+
+			if (refreshedModels.find(mdlid) == refreshedModels.end())
+			{
+				bsprend->refreshModel(mdlid, false, true);
+				refreshedModels.insert(mdlid);
+			}
+			
 			if (!bsprend->getRenderPointers(i, &rface, &rgroup)) {
 				logf("Bad face index\n");
 				break;
@@ -4448,7 +4459,6 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 			int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
 			BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + texOffset));
 
-			int mdlid = get_model_from_face(i);
 			std::vector<int> entIds = get_model_ents_ids(mdlid);
 
 			if (entIds.empty())
@@ -4623,6 +4633,9 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 		}
 
 		fclose(f);
+
+		for (auto m : refreshedModels)
+			bsprend->refreshModel(m, false);
 	}
 	else
 	{
