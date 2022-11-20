@@ -4848,7 +4848,7 @@ void Gui::drawTextureTool() {
 
 		ImGui::SameLine();
 
-		ImGui::Checkbox("Lock Rotate Angles", &lockRotate);
+		ImGui::Checkbox("Lock Angles", &lockRotate);
 
 		if (app->selectedFaces.size() == 1)
 		{
@@ -4981,14 +4981,6 @@ void Gui::drawTextureTool() {
 
 				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
 
-
-				if (scaledX) {
-					texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
-				}
-				if (scaledY) {
-					texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
-				}
-
 				if (shiftedX) {
 					texinfo->shiftS = shiftX;
 				}
@@ -5000,6 +4992,15 @@ void Gui::drawTextureTool() {
 				{
 					texinfo->vS = AxisFromTextureAngle(rotateX, true, bestplane);
 					texinfo->vT = AxisFromTextureAngle(rotateY, false, bestplane);
+					texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
+					texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
+				}
+
+				if (scaledX) {
+					texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
+				}
+				if (scaledY) {
+					texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
 				}
 
 				if (toggledFlags) {
