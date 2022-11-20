@@ -125,7 +125,7 @@ public:
 
 	void setRenderAngles(int entIdx, vec3 angles);
 	void refreshEnt(int entIdx);
-	int refreshModel(int modelIdx, bool refreshClipnodes = true);
+	int refreshModel(int modelIdx, bool refreshClipnodes = true, bool noTriangulate = false);
 	bool refreshModelClipnodes(int modelIdx);
 	void refreshFace(int faceIdx);
 	void refreshPointEnt(int entIdx);

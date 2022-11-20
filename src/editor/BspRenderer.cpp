@@ -499,7 +499,7 @@ void BspRenderer::deleteFaceMaths() {
 	faceMaths = NULL;
 }
 
-int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes) {
+int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriangulate) {
 	if (modelIdx < 0)
 		return 0;
 
@@ -607,19 +607,27 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes) {
 			}
 		}
 
-
-		// convert TRIANGLE_FAN verts to TRIANGLES so multiple faces can be drawn in a single draw call
-		int newCount = face.nEdges + std::max(0, face.nEdges - 3) * 2;
-		int wireframeVertCount = face.nEdges * 2;
-		lightmapVert* newVerts = new lightmapVert[newCount];
-		lightmapVert* wireframeVerts = new lightmapVert[wireframeVertCount];
-
 		int idx = 0;
-		for (int k = 2; k < face.nEdges; k++) {
-			newVerts[idx++] = verts[0];
-			newVerts[idx++] = verts[k - 1];
-			newVerts[idx++] = verts[k];
+
+		if (!noTriangulate)
+		{
+			// convert TRIANGLE_FAN verts to TRIANGLES so multiple faces can be drawn in a single draw call
+			int newCount = face.nEdges + std::max(0, face.nEdges - 3) * 2;
+			lightmapVert* newVerts = new lightmapVert[newCount];
+
+			for (int k = 2; k < face.nEdges; k++) {
+				newVerts[idx++] = verts[0];
+				newVerts[idx++] = verts[k - 1];
+				newVerts[idx++] = verts[k];
+			}
+
+			delete[] verts;
+			verts = newVerts;
+			vertCount = newCount;
 		}
+
+		int wireframeVertCount = face.nEdges * 2;
+		lightmapVert* wireframeVerts = new lightmapVert[wireframeVertCount];
 
 		idx = 0;
 		for (int k = 0; k < face.nEdges && (k + 1) % face.nEdges < face.nEdges; k++) {
@@ -636,10 +644,6 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes) {
 			wireframeVerts[k].b = 1.0f;
 			wireframeVerts[k].a = 1.0f;
 		}
-
-		delete[] verts;
-		verts = newVerts;
-		vertCount = newCount;
 
 		// add face to a render group (faces that share that same textures and opacity flag)
 		bool isTransparent = opacity < 1.0f;
