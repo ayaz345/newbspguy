@@ -1614,7 +1614,7 @@ void Renderer::pickObject() {
 		transformTarget = TRANSFORM_OBJECT;
 	}
 
-	isTransformableSolid = pickInfo.modelIdx > 0 && pickInfo.entIdx > 0;
+	isTransformableSolid = pickInfo.modelIdx > 0 || pickInfo.entIdx > 0;
 
 
 	if ((pickMode == PICK_OBJECT || !anyCtrlPressed)) {
