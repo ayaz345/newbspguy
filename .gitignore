@@ -1,5 +1,3 @@
-build/.vs/*
-build/CMakeFiles/*
 vs-project/Release/bspguy.exe
 *.obj
 *.tlog
@@ -11,7 +9,6 @@ vs-project/Release/bspguy.exe
 *.css
 *.jpg
 *.stamp
-*.in
 *.suo
 *.bin
 *.db-shm
