@@ -3414,18 +3414,18 @@ void Gui::drawImportMapWidget() {
 				showImportMapWidget = false;
 				if (showImportMapWidget_Type == SHOW_IMPORT_ADD_NEW)
 				{
-					g_app->addMap(new Bsp(Path));
+					g_app->addMap(new Bsp(mapPath));
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_OPEN)
 				{
 					g_app->clearMaps();
-					g_app->addMap(new Bsp(Path));
+					g_app->addMap(new Bsp(mapPath));
 				}
 				else
 				{
 					if (g_app->mapRenderers.size() && g_app->mapRenderers[0]->map)
 					{
-						Bsp* model = new Bsp(Path);
+						Bsp* model = new Bsp(mapPath);
 						if (!model->ents.size())
 						{
 							logf("Error! No worldspawn found!\n");
@@ -3435,13 +3435,13 @@ void Gui::drawImportMapWidget() {
 							Bsp* map = g_app->getSelectedMap();
 							logf("Binding .bsp model to func_breakable.\n");
 							Entity* tmpEnt = new Entity("func_breakable");
-							tmpEnt->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(Path));
-							tmpEnt->setOrAddKeyvalue("model", std::string("models/") + basename(Path));
+							tmpEnt->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(mapPath));
+							tmpEnt->setOrAddKeyvalue("model", std::string("models/") + basename(mapPath));
 							tmpEnt->setOrAddKeyvalue("spawnflags", "1");
 							tmpEnt->setOrAddKeyvalue("origin", cameraOrigin.toKeyvalueString());
 							map->ents.push_back(tmpEnt);
 							map->update_ent_lump();
-							logf("Success! Now you needs to copy model to path: %s\n", (std::string("models/") + basename(Path)).c_str());
+							logf("Success! Now you needs to copy model to path: %s\n", (std::string("models/") + basename(mapPath)).c_str());
 							app->updateEnts();
 							app->reloadBspModels();
 						}
