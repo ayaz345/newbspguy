@@ -117,6 +117,13 @@ void AppSettings::loadDefault()
 
 	fgdPaths.clear();
 	resPaths.clear();
+
+	conditionalPointEntTriggers.clear();
+	entsThatNeverNeedAnyHulls.clear();
+	entsThatNeverNeedCollision.clear();
+	passableEnts.clear();
+	playerOnlyTriggers.clear();
+	monsterOnlyTriggers.clear();
 }
 
 void AppSettings::load() {
@@ -167,6 +174,12 @@ void AppSettings::load() {
 			else if (key == "res") { resPaths.push_back(val); }
 			else if (key == "savebackup") { g_settings.backUpMap = atoi(val.c_str()) != 0; }
 			else if (key == "save_crc") { g_settings.preserveCrc32 = atoi(val.c_str()) != 0; }
+			else if (key == "optimizer_cond_ents") { conditionalPointEntTriggers.push_back(val); }
+			else if (key == "optimizer_no_hulls_ents") { entsThatNeverNeedAnyHulls.push_back(val); }
+			else if (key == "optimizer_no_collision_ents") { entsThatNeverNeedCollision.push_back(val); }
+			else if (key == "optimizer_passable_ents") { passableEnts.push_back(val); }
+			else if (key == "optimizer_player_hull_ents") { playerOnlyTriggers.push_back(val); }
+			else if (key == "optimizer_monster_hull_ents") { monsterOnlyTriggers.push_back(val); }
 		}
 
 		if (g_settings.windowY == -32000 &&
@@ -193,6 +206,59 @@ void AppSettings::load() {
 			windowWidth = 800;
 		}
 
+
+		if (conditionalPointEntTriggers.empty())
+		{
+			conditionalPointEntTriggers.push_back("trigger_once");
+			conditionalPointEntTriggers.push_back("trigger_multiple");
+			conditionalPointEntTriggers.push_back("trigger_counter");
+			conditionalPointEntTriggers.push_back("trigger_gravity");
+			conditionalPointEntTriggers.push_back("trigger_teleport");
+		}
+
+		if (entsThatNeverNeedAnyHulls.empty())
+		{
+			entsThatNeverNeedAnyHulls.push_back("env_bubbles");
+			entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
+			entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
+			entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
+			entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
+			entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
+		}
+
+		if (entsThatNeverNeedCollision.empty())
+		{
+			entsThatNeverNeedCollision.push_back("func_illusionary");
+			entsThatNeverNeedCollision.push_back("func_mortar_field");
+		}
+
+		if (passableEnts.empty())
+		{
+			passableEnts.push_back("func_door");
+			passableEnts.push_back("func_door_rotating");
+			passableEnts.push_back("func_pendulum");
+			passableEnts.push_back("func_tracktrain");
+			passableEnts.push_back("func_train");
+			passableEnts.push_back("func_water");
+			passableEnts.push_back("momentary_door");
+		}
+
+		if (playerOnlyTriggers.empty())
+		{
+			playerOnlyTriggers.push_back("func_ladder");
+			playerOnlyTriggers.push_back("game_zone_player");
+			playerOnlyTriggers.push_back("player_respawn_zone");
+			playerOnlyTriggers.push_back("trigger_cdaudio");
+			playerOnlyTriggers.push_back("trigger_changelevel");
+			playerOnlyTriggers.push_back("trigger_transition");
+		}
+
+		if (monsterOnlyTriggers.empty())
+		{
+			monsterOnlyTriggers.push_back("func_monsterclip");
+			monsterOnlyTriggers.push_back("trigger_monsterjump");
+		}
+
 		if (fgdPaths.empty()) {
 			fgdPaths.push_back("/svencoop/sven-coop.fgd");
 		}
@@ -214,12 +280,49 @@ void AppSettings::load() {
 #endif
 		windowHeight = 600;
 		windowWidth = 800;
+
 		fgdPaths.push_back("/svencoop/sven-coop.fgd");
 
 		resPaths.push_back("/svencoop/");
 		resPaths.push_back("/svencoop_addon/");
 		resPaths.push_back("/svencoop_downloads/");
 		resPaths.push_back("/svencoop_hd/");
+
+		conditionalPointEntTriggers.push_back("trigger_once");
+		conditionalPointEntTriggers.push_back("trigger_multiple");
+		conditionalPointEntTriggers.push_back("trigger_counter");
+		conditionalPointEntTriggers.push_back("trigger_gravity");
+		conditionalPointEntTriggers.push_back("trigger_teleport");
+
+		entsThatNeverNeedAnyHulls.push_back("env_bubbles");
+		entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
+		entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
+		entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
+		entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
+		entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
+
+		entsThatNeverNeedCollision.push_back("func_illusionary");
+		entsThatNeverNeedCollision.push_back("func_mortar_field");
+
+		passableEnts.push_back("func_door");
+		passableEnts.push_back("func_door_rotating");
+		passableEnts.push_back("func_pendulum");
+		passableEnts.push_back("func_tracktrain");
+		passableEnts.push_back("func_train");
+		passableEnts.push_back("func_water");
+		passableEnts.push_back("momentary_door");
+
+		playerOnlyTriggers.push_back("func_ladder");
+		playerOnlyTriggers.push_back("game_zone_player");
+		playerOnlyTriggers.push_back("player_respawn_zone");
+		playerOnlyTriggers.push_back("trigger_cdaudio");
+		playerOnlyTriggers.push_back("trigger_changelevel");
+		playerOnlyTriggers.push_back("trigger_transition");
+
+		monsterOnlyTriggers.push_back("func_monsterclip");
+		monsterOnlyTriggers.push_back("trigger_monsterjump");
+
+
 		logf("Failed to open user config: %s\n", g_settings_path.c_str());
 	}
 }
@@ -258,6 +361,30 @@ void AppSettings::save(std::string path)
 		file << "res=" << g_settings.resPaths[i] << std::endl;
 	}
 
+	for (int i = 0; i < conditionalPointEntTriggers.size(); i++) {
+		file << "optimizer_cond_ents=" << g_settings.conditionalPointEntTriggers[i] << std::endl;
+	}
+
+	for (int i = 0; i < entsThatNeverNeedAnyHulls.size(); i++) {
+		file << "optimizer_no_hulls_ents=" << g_settings.entsThatNeverNeedAnyHulls[i] << std::endl;
+	}
+
+	for (int i = 0; i < entsThatNeverNeedCollision.size(); i++) {
+		file << "optimizer_no_collision_ents=" << g_settings.entsThatNeverNeedCollision[i] << std::endl;
+	}
+
+	for (int i = 0; i < passableEnts.size(); i++) {
+		file << "optimizer_passable_ents=" << g_settings.passableEnts[i] << std::endl;
+	}
+
+	for (int i = 0; i < playerOnlyTriggers.size(); i++) {
+		file << "optimizer_player_hull_ents=" << g_settings.playerOnlyTriggers[i] << std::endl;
+	}
+
+	for (int i = 0; i < monsterOnlyTriggers.size(); i++) {
+		file << "optimizer_monster_hull_ents=" << g_settings.monsterOnlyTriggers[i] << std::endl;
+	}
+
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "show_transform_axes=" << g_settings.show_transform_axes << std::endl;
 	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;
@@ -271,7 +398,9 @@ void AppSettings::save(std::string path)
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
 
-	writeFile(g_settings_path, file.str().c_str(), (int)file.str().size());
+	file.flush();
+	
+	writeFile(g_settings_path, file.str());
 }
 
 void AppSettings::save() {
@@ -920,9 +1049,7 @@ void Renderer::drawEntConnections() {
 }
 
 void Renderer::controls() {
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-	canControl = !io.WantCaptureKeyboard && !io.WantTextInput && !io.WantCaptureMouseUnlessPopupClose;
+	canControl = !gui->imgui_io->WantCaptureKeyboard && !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
 
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++) {
 		pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;

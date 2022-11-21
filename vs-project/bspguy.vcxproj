@@ -57,7 +57,7 @@
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
@@ -80,10 +80,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;USE_FILESYSTEM;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -106,7 +106,7 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <AssemblerListingLocation>$(IntDir)</AssemblerListingLocation>
       <DisableSpecificWarnings>
       </DisableSpecificWarnings>
@@ -142,10 +142,10 @@
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;NDEBUG;GLEW_STATIC;USE_FILESYSTEM;</PreprocessorDefinitions>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
     <Midl>
-      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>.\..\src;.\..\src\bsp;.\..\src\cli;.\..\src\data;.\..\src\editor;.\..\src\filedialog;.\..\src\gl;.\..\src\qtools;.\..\src\util;.\..\src\mdlviewer;.\..\imgui;.\..\imgui\examples;.\..\imgui\backends;.\..\imgui\misc\cpp;.\..\glew\include;.\..\glfw\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <OutputDirectory>$(ProjectDir)/$(IntDir)</OutputDirectory>
       <HeaderFileName>%(Filename).h</HeaderFileName>
       <TypeLibraryName>%(Filename).tlb</TypeLibraryName>
@@ -247,6 +247,7 @@
     <ClCompile Include=".\..\imgui\imgui_draw.cpp" />
     <ClCompile Include=".\..\imgui\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include=".\..\imgui\backends\imgui_impl_opengl3.cpp" />
+    <ClCompile Include=".\..\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClInclude Include=".\..\src\util\lodepng.h" />
     <ClCompile Include=".\..\src\util\lodepng.cpp" />
     <ClInclude Include=".\..\src\filedialog\stb_image.h" />

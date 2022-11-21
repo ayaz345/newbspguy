@@ -16,11 +16,15 @@
 #include "icons/object.h"
 #include "icons/face.h"
 
+#include "imgui_stdlib.h"
+
 #ifdef WIN32
 #include <Windows.h>
 #else
 #define MAX_PATH 256
 #endif
+
+
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
 
@@ -39,11 +43,11 @@ void Gui::init() {
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-	//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+	imgui_io = &ImGui::GetIO();
+	//imgui_io->ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
+	//imgui_io->ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
 
-	io.IniFilename = iniPath.c_str();
+	imgui_io->IniFilename = iniPath.c_str();
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -80,7 +84,7 @@ void Gui::init() {
 
 	loadFonts();
 
-	io.ConfigWindowsMoveFromTitleBarOnly = true;
+	imgui_io->ConfigWindowsMoveFromTitleBarOnly = true;
 
 	clearLog();
 
@@ -179,15 +183,14 @@ void Gui::draw() {
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 	if (shouldReloadFonts) {
-		ImGuiIO& io = ImGui::GetIO(); (void)io;
 		shouldReloadFonts = false;
 
 		ImGui_ImplOpenGL3_DestroyFontsTexture();
-		io.Fonts->Clear();
+		imgui_io->Fonts->Clear();
 
 		loadFonts();
 
-		io.Fonts->Build();
+		imgui_io->Fonts->Build();
 		ImGui_ImplOpenGL3_CreateFontsTexture();
 	}
 }
@@ -1361,14 +1364,13 @@ void Gui::FaceSelectePressed()
 }
 
 void Gui::drawFpsOverlay() {
-	ImGuiIO& io = ImGui::GetIO();
-	ImVec2 window_pos = ImVec2(io.DisplaySize.x - 10.0f, 35.0f);
+	ImVec2 window_pos = ImVec2(imgui_io->DisplaySize.x - 10.0f, 35.0f);
 	ImVec2 window_pos_pivot = ImVec2(1.0f, 0.0f);
 	ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always, window_pos_pivot);
 	ImGui::SetNextWindowBgAlpha(0.35f); // Transparent background
 	if (ImGui::Begin("Overlay", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
 	{
-		ImGui::Text("%.0f FPS", ImGui::GetIO().Framerate);
+		ImGui::Text("%.0f FPS", imgui_io->Framerate);
 		if (ImGui::BeginPopupContextWindow())
 		{
 			if (ImGui::MenuItem("VSync", NULL, vsync)) {
@@ -1398,7 +1400,7 @@ void Gui::drawStatusMessage() {
 			if (app->modelUsesSharedStructures) {
 				if (app->transformMode == TRANSFORM_MOVE)
 					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA (EDIT ONLY VISUAL DATA WITHOUT COLLISION)");
-				else 
+				else
 					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA");
 				if (ImGui::IsItemHovered())
 				{
@@ -1557,8 +1559,8 @@ void Gui::drawDebugWidget() {
 						float anglex, angley;
 						vec3 xv, yv;
 						int val = TextureAxisFromPlane(plane, xv, yv);
-						ImGui::Text("Plane type %d : axis (%fx%f)", val, anglex = AngleFromTextureAxis(texinfo.vS,true,val), angley = AngleFromTextureAxis(texinfo.vT, false, val));
-						ImGui::Text("Texinfo: %f/%f/%f + %f / %f/%f/%f + %f ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS, 
+						ImGui::Text("Plane type %d : axis (%fx%f)", val, anglex = AngleFromTextureAxis(texinfo.vS, true, val), angley = AngleFromTextureAxis(texinfo.vT, false, val));
+						ImGui::Text("Texinfo: %f/%f/%f + %f / %f/%f/%f + %f ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS,
 							texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT);
 
 						xv = AxisFromTextureAngle(anglex, true, val);
@@ -1779,9 +1781,6 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent) {
 
 	ImGui::Columns(2, "smartcolumns", false); // 4-ways, with border
 
-	static char keyNames[MAX_KEYS_PER_ENT][MAX_KEY_LEN];
-	static char keyValues[MAX_KEYS_PER_ENT][MAX_VAL_LEN];
-
 	float paddingx = style.WindowPadding.x + style.FramePadding.x;
 	float inputWidth = (ImGui::GetWindowWidth() - (paddingx * 2)) * 0.5f;
 
@@ -1840,9 +1839,6 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent) {
 			if (value.size() >= MAX_VAL_LEN)
 				value = value.substr(0, MAX_VAL_LEN - 1);
 
-			memcpy(keyNames[i], niceName.c_str(), niceName.size() + 1);
-			memcpy(keyValues[i], value.c_str(), value.size() + 1);
-
 			inputData[i].key = key;
 			inputData[i].defaultValue = keyvalue.defaultValue;
 			inputData[i].entIdx = app->pickInfo.entIdx;
@@ -1851,7 +1847,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent) {
 
 			ImGui::SetNextItemWidth(inputWidth);
 			ImGui::AlignTextToFramePadding();
-			ImGui::Text(keyNames[i]); ImGui::NextColumn();
+			ImGui::Text(niceName.c_str()); ImGui::NextColumn();
 
 			ImGui::SetNextItemWidth(inputWidth);
 
@@ -1932,12 +1928,12 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent) {
 				};
 
 				if (keyvalue.iType == FGD_KEY_INTEGER) {
-					ImGui::InputText(("##val" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), keyValues[i], 64,
+					ImGui::InputText(("##val" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[key.c_str()],
 						ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackAlways,
 						InputChangeCallback::keyValueChanged, &inputData[i]);
 				}
 				else {
-					ImGui::InputText(("##val" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), keyValues[i], 64,
+					ImGui::InputText(("##val" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[key.c_str()],
 						ImGuiInputTextFlags_CallbackAlways, InputChangeCallback::keyValueChanged, &inputData[i]);
 				}
 
@@ -2026,9 +2022,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 	ImGui::SetColumnWidth(1, textColWidth);
 	ImGui::SetColumnWidth(2, textColWidth);
 	ImGui::SetColumnWidth(3, butColWidth);
-
-	static char keyNames[MAX_KEYS_PER_ENT][MAX_KEY_LEN];
-	static char keyValues[MAX_KEYS_PER_ENT][MAX_VAL_LEN];
 
 	float paddingx = style.WindowPadding.x + style.FramePadding.x;
 	float inputWidth = (ImGui::GetWindowWidth() - paddingx * 2) * 0.5f;
@@ -2155,18 +2148,8 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 			ImGui::NextColumn();
 		}
 
-		std::string key = ent->keyOrder[i];
-		std::string value = ent->keyvalues[key];
-
 		{
-			bool invalidKey = lastPickCount == app->pickCount && key != keyNames[i];
-
-
-			if (key.size() >= MAX_KEY_LEN)
-				key = key.substr(0, MAX_KEY_LEN - 1);
-
-			memcpy(keyNames[i], key.c_str(), key.size() + 1);
-
+			bool invalidKey = lastPickCount == app->pickCount;
 
 			keyIds[i].idx = i;
 			keyIds[i].entIdx = app->pickInfo.entIdx;
@@ -2181,7 +2164,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 			}
 
 			ImGui::SetNextItemWidth(inputWidth);
-			ImGui::InputText(("##key" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), keyNames[i], MAX_KEY_LEN, ImGuiInputTextFlags_CallbackAlways,
+			ImGui::InputText(("##key" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), &ent->keyOrder[i], ImGuiInputTextFlags_CallbackAlways,
 				TextChangeCallback::keyNameChanged, &keyIds[i]);
 
 
@@ -2192,11 +2175,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 			ImGui::NextColumn();
 		}
 		{
-			if (value.size() >= MAX_VAL_LEN)
-				value = value.substr(0, MAX_VAL_LEN - 1);
-
-			memcpy(keyValues[i], value.c_str(), value.size() + 1);
-
 			valueIds[i].idx = i;
 			valueIds[i].entIdx = app->pickInfo.entIdx;
 			valueIds[i].entRef = ent;
@@ -2206,12 +2184,10 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, dragColor);
 			}
 			ImGui::SetNextItemWidth(inputWidth);
-			ImGui::InputText(("##val" + std::to_string(i) + std::to_string(app->pickCount)).c_str(), keyValues[i], MAX_VAL_LEN, ImGuiInputTextFlags_CallbackAlways,
+			ImGui::InputText(("##val" + std::to_string(i) + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[ent->keyOrder[i]], ImGuiInputTextFlags_CallbackAlways,
 				TextChangeCallback::keyValueChanged, &valueIds[i]);
 
-
-
-			if (strcmp(keyNames[i], "angles") == 0)
+			if (ent->keyOrder[i].find("angles") != std::string::npos)
 			{
 				ImGui::SetNextItemWidth(inputWidth);
 				if (IsEntNotSupportAngles(ent->keyvalues["classname"]))
@@ -2228,7 +2204,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 				}
 			}
 
-
 			if (hoveredDrag[i]) {
 				ImGui::PopStyleColor();
 			}
@@ -2241,9 +2216,9 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 			if (ImGui::Button((" X ##del" + std::to_string(i)).c_str())) {
-				ent->removeKeyvalue(key);
+				ent->removeKeyvalue(ent->keyOrder[i]);
 				map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
-				if (key == "model")
+				if (ent->keyOrder[i] == "model")
 					map->getBspRender()->preRenderEnts();
 				g_app->updateEntConnections();
 				g_app->pushEntityUndoState("Delete Keyvalue");
@@ -2266,7 +2241,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 	ImGui::Dummy(ImVec2(0, style.FramePadding.y));
 	ImGui::Dummy(ImVec2(butColWidth, 0)); ImGui::SameLine();
 
-	static char keyName[128] = "NewKey";
+	static std::string keyName = "NewKey";
 
 
 	if (ImGui::Button(" Add : ")) {
@@ -2276,10 +2251,12 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent) {
 			map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
 			app->updateEntConnections();
 			app->pushEntityUndoState("Add Keyvalue");
+			keyName = "";
 		}
 	}
 	ImGui::SameLine();
-	ImGui::InputText("##gamedir", keyName, 256);
+
+	ImGui::InputText("##keyval_add", &keyName);
 
 	ImGui::EndChild();
 }
@@ -2693,21 +2670,19 @@ void Gui::loadFonts() {
 	config.RasterizerMultiply = 1.5f;
 	config.PixelSnapH = true;
 
-	ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config);
+	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config);
 
 	config.MergeMode = true;
 
-	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, io.Fonts->GetGlyphRangesCyrillic());
+	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesCyrillic());
 
-	io.Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, io.Fonts->GetGlyphRangesDefault());
+	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesDefault());
 
 
-	smallFont = io.Fonts->AddFontFromMemoryTTF((void*)smallFontData, sizeof(robotomedium), fontSize, &config);
-	largeFont = io.Fonts->AddFontFromMemoryTTF((void*)largeFontData, sizeof(robotomedium), fontSize * 1.1f, &config);
-	consoleFont = io.Fonts->AddFontFromMemoryTTF((void*)consoleFontData, sizeof(robotomono), fontSize, &config);
-	consoleFontLarge = io.Fonts->AddFontFromMemoryTTF((void*)consoleFontLargeData, sizeof(robotomono), fontSize * 1.1f, &config);
+	smallFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)smallFontData, sizeof(robotomedium), fontSize, &config);
+	largeFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)largeFontData, sizeof(robotomedium), fontSize * 1.1f, &config);
+	consoleFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)consoleFontData, sizeof(robotomono), fontSize, &config);
+	consoleFontLarge = imgui_io->Fonts->AddFontFromMemoryTTF((void*)consoleFontLargeData, sizeof(robotomono), fontSize * 1.1f, &config);
 }
 
 void Gui::drawLog() {
@@ -2783,14 +2758,18 @@ void Gui::drawLog() {
 void Gui::drawSettings() {
 
 	ImGui::SetNextWindowSize(ImVec2(790.f, 350.f), ImGuiCond_FirstUseEver);
+
+	bool oldShowSettings = showSettingsWidget;
+
 	if (ImGui::Begin("Settings", &showSettingsWidget))
 	{
 		ImGuiContext& g = *GImGui;
-		const int settings_tabs = 5;
+		const int settings_tabs = 6;
 		static const char* tab_titles[settings_tabs] = {
 			"General",
 			"FGDs",
 			"Asset Paths",
+			"Optimizing",
 			"Rendering",
 			"Controls"
 		};
@@ -2814,27 +2793,10 @@ void Gui::drawSettings() {
 		ImGui::Text(tab_titles[settingsTab]);
 		ImGui::Separator();
 
-		static char gamedir[MAX_PATH];
-		static char workingdir[MAX_PATH];
-		static size_t numFgds = 0;
-		static size_t numRes = 0;
-
-		static std::vector<std::string> tmpFgdPaths;
-		static std::vector<std::string> tmpResPaths;
 
 		if (reloadSettings) {
 			if (g_settings.gamedir.size() >= MAX_PATH)
 				g_settings.gamedir = g_settings.gamedir.substr(0, MAX_PATH - 1);
-			if (g_settings.gamedir.size() >= MAX_PATH)
-				g_settings.gamedir = g_settings.gamedir.substr(0, MAX_PATH - 1);
-
-			memcpy(gamedir, g_settings.gamedir.c_str(), g_settings.gamedir.size() + 1);
-			memcpy(workingdir, g_settings.workingdir.c_str(), g_settings.gamedir.size() + 1);
-			tmpFgdPaths = g_settings.fgdPaths;
-			tmpResPaths = g_settings.resPaths;
-
-			numFgds = tmpFgdPaths.size();
-			numRes = tmpResPaths.size();
 
 			reloadSettings = false;
 		}
@@ -2847,14 +2809,14 @@ void Gui::drawSettings() {
 		if (ifd::FileDialog::Instance().IsDone("GameDir")) {
 			if (ifd::FileDialog::Instance().HasResult()) {
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				snprintf(gamedir, sizeof(gamedir), "%s", res.parent_path().string().c_str());
+				g_settings.gamedir = res.parent_path().string();
 			}
 			ifd::FileDialog::Instance().Close();
 		}
 		if (ifd::FileDialog::Instance().IsDone("WorkingDir")) {
 			if (ifd::FileDialog::Instance().HasResult()) {
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-				snprintf(workingdir, sizeof(workingdir), "%s", res.parent_path().string().c_str());
+				g_settings.workingdir = res.parent_path().string();
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -2863,7 +2825,7 @@ void Gui::drawSettings() {
 		if (settingsTab == 0) {
 			ImGui::Text("Game Directory:");
 			ImGui::SetNextItemWidth(pathWidth);
-			ImGui::InputText("##gamedir", gamedir, 256);
+			ImGui::InputText("##gamedir", &g_settings.gamedir);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(delWidth);
 			if (ImGui::Button("...##gamedir"))
@@ -2872,7 +2834,7 @@ void Gui::drawSettings() {
 			}
 			ImGui::Text("Import/Export Directory:");
 			ImGui::SetNextItemWidth(pathWidth);
-			ImGui::InputText("##workdir", workingdir, 256);
+			ImGui::InputText("##workdir", &g_settings.workingdir);
 			ImGui::SameLine();
 			ImGui::SetNextItemWidth(delWidth);
 			if (ImGui::Button("...##workdir"))
@@ -2899,10 +2861,9 @@ void Gui::drawSettings() {
 			}
 		}
 		else if (settingsTab == 1) {
-			for (int i = 0; i < numFgds; i++) {
+			for (int i = 0; i < g_settings.fgdPaths.size(); i++) {
 				ImGui::SetNextItemWidth(pathWidth);
-				tmpFgdPaths[i].resize(256);
-				ImGui::InputText(("##fgd" + std::to_string(i)).c_str(), &tmpFgdPaths[i][0], 256);
+				ImGui::InputText(("##fgd" + std::to_string(i)).c_str(), &g_settings.fgdPaths[i]);
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
@@ -2910,22 +2871,19 @@ void Gui::drawSettings() {
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 				if (ImGui::Button((" X ##del_fgd" + std::to_string(i)).c_str())) {
-					tmpFgdPaths.erase(tmpFgdPaths.begin() + i);
-					numFgds--;
+					g_settings.fgdPaths.erase(g_settings.fgdPaths.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
 			}
 
 			if (ImGui::Button("Add fgd path")) {
-				numFgds++;
-				tmpFgdPaths.emplace_back(std::string());
+				g_settings.fgdPaths.emplace_back(std::string());
 			}
 		}
 		else if (settingsTab == 2) {
-			for (int i = 0; i < numRes; i++) {
+			for (int i = 0; i < g_settings.resPaths.size(); i++) {
 				ImGui::SetNextItemWidth(pathWidth);
-				tmpResPaths[i].resize(256);
-				ImGui::InputText(("##res" + std::to_string(i)).c_str(), &tmpResPaths[i][0], 256);
+				ImGui::InputText(("##res" + std::to_string(i)).c_str(), &g_settings.resPaths[i]);
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
@@ -2933,19 +2891,152 @@ void Gui::drawSettings() {
 				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
 				if (ImGui::Button((" X ##del_res" + std::to_string(i)).c_str())) {
-					tmpResPaths.erase(tmpResPaths.begin() + i);
-					numRes--;
+					g_settings.resPaths.erase(g_settings.resPaths.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
 
 			}
 
 			if (ImGui::Button("Add res path")) {
-				numRes++;
-				tmpResPaths.emplace_back(std::string());
+				g_settings.resPaths.emplace_back(std::string());
 			}
 		}
 		else if (settingsTab == 3) {
+			ImGui::SetNextItemWidth(pathWidth);
+			ImGui::Text("Conditional Point Ent Triggers");
+
+			for (int i = 0; i < g_settings.conditionalPointEntTriggers.size(); i++) {
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##pointent" + std::to_string(i)).c_str(), &g_settings.conditionalPointEntTriggers[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##pointent" + std::to_string(i)).c_str())) {
+					g_settings.conditionalPointEntTriggers.erase(g_settings.conditionalPointEntTriggers.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+
+
+				if (ImGui::Button("Add new 'Point Ent Trigger'")) {
+					g_settings.conditionalPointEntTriggers.emplace_back(std::string());
+				}
+			}
+
+			ImGui::Text("Ents That Never Need Any Hulls");
+
+			for (int i = 0; i < g_settings.entsThatNeverNeedAnyHulls.size(); i++) {
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##entnohull" + std::to_string(i)).c_str(), &g_settings.entsThatNeverNeedAnyHulls[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##entnohull" + std::to_string(i)).c_str())) {
+					g_settings.entsThatNeverNeedAnyHulls.erase(g_settings.entsThatNeverNeedAnyHulls.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+
+
+				if (ImGui::Button("Add new 'No Hulls Ent'")) {
+					g_settings.entsThatNeverNeedAnyHulls.emplace_back(std::string());
+				}
+			}
+
+			ImGui::Text("Ents That Never Need Collision");
+
+			for (int i = 0; i < g_settings.entsThatNeverNeedCollision.size(); i++) {
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##entnocoll" + std::to_string(i)).c_str(), &g_settings.entsThatNeverNeedCollision[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##entnocoll" + std::to_string(i)).c_str())) {
+					g_settings.entsThatNeverNeedCollision.erase(g_settings.entsThatNeverNeedCollision.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+
+
+				if (ImGui::Button("Add new 'No Collision Ent'")) {
+					g_settings.entsThatNeverNeedCollision.emplace_back(std::string());
+				}
+			}
+
+			ImGui::Text("Passable ents");
+
+			for (int i = 0; i < g_settings.passableEnts.size(); i++) {
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##entpass" + std::to_string(i)).c_str(), &g_settings.passableEnts[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##entpass" + std::to_string(i)).c_str())) {
+					g_settings.passableEnts.erase(g_settings.passableEnts.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+
+
+				if (ImGui::Button("Add new 'Passable Ent'")) {
+					g_settings.passableEnts.emplace_back(std::string());
+				}
+			}
+
+			ImGui::Text("Player Only Triggers");
+
+			for (int i = 0; i < g_settings.playerOnlyTriggers.size(); i++) {
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##entpltrigg" + std::to_string(i)).c_str(), &g_settings.playerOnlyTriggers[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##entpltrigg" + std::to_string(i)).c_str())) {
+					g_settings.playerOnlyTriggers.erase(g_settings.playerOnlyTriggers.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+
+
+				if (ImGui::Button("Add new 'Player Trigger Ent'")) {
+					g_settings.playerOnlyTriggers.emplace_back(std::string());
+				}
+			}
+
+
+			ImGui::Text("Monster Only Triggers");
+
+			for (int i = 0; i < g_settings.monsterOnlyTriggers.size(); i++) {
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##entmonsterrigg" + std::to_string(i)).c_str(), &g_settings.monsterOnlyTriggers[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##entmonsterrigg" + std::to_string(i)).c_str())) {
+					g_settings.monsterOnlyTriggers.erase(g_settings.monsterOnlyTriggers.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+
+
+				if (ImGui::Button("Add new 'Monster Trigger Ent'")) {
+					g_settings.monsterOnlyTriggers.emplace_back(std::string());
+				}
+			}
+		}
+		else if (settingsTab == 4) {
 			ImGui::Text("Viewport:");
 			if (ImGui::Checkbox("VSync", &vsync)) {
 				glfwSwapInterval(vsync ? 1 : 0);
@@ -3037,80 +3128,62 @@ void Gui::drawSettings() {
 
 			ImGui::Columns(1);
 		}
-		else if (settingsTab == 4) {
+		else if (settingsTab == 5) {
 			ImGui::DragFloat("Movement speed", &app->moveSpeed, 0.1f, 0.1f, 1000, "%.1f");
 			ImGui::DragFloat("Rotation speed", &app->rotationSpeed, 0.01f, 0.1f, 100, "%.1f");
 		}
 
 		ImGui::EndChild();
 		ImGui::EndChild();
-
-		if (settingsTab <= 2) {
-			ImGui::Separator();
-
-			if (ImGui::Button("Apply Changes")) {
-				g_settings.gamedir = std::string(gamedir);
-				g_settings.workingdir = std::string(workingdir);
-				/* fixup gamedir */
-				fixupPath(g_settings.gamedir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-				snprintf(gamedir, sizeof(gamedir), "%s", g_settings.gamedir.c_str());
-
-				if (g_settings.workingdir.find(':') == std::string::npos)
-				{
-					/* fixup workingdir */
-					fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-					snprintf(workingdir, sizeof(workingdir), "%s", g_settings.workingdir.c_str());
-				}
-				else
-				{
-					fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-					snprintf(workingdir, sizeof(workingdir), "%s", g_settings.workingdir.c_str());
-				}
-
-				g_settings.fgdPaths.clear();
-				for (auto& s : tmpFgdPaths)
-				{
-					std::string s2 = s.c_str();
-					if (s2.find(':') == std::string::npos)
-					{
-						fixupPath(s2, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-					}
-					else
-					{
-						fixupPath(s2, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-					}
-					g_settings.fgdPaths.push_back(s2);
-					s = s2;
-				}
-				g_settings.resPaths.clear();
-				for (auto& s : tmpResPaths)
-				{
-					std::string s2 = s.c_str();
-					if (s2.find(':') == std::string::npos)
-					{
-						fixupPath(s2, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-					}
-					else
-					{
-						fixupPath(s2, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-					}
-					g_settings.resPaths.push_back(s2);
-					s = s2;
-				}
-				app->reloading = true;
-				app->reloadingGameDir = true;
-				app->loadFgds();
-				app->postLoadFgds();
-				app->reloadingGameDir = false;
-				app->reloading = false;
-				g_settings.save();
-			}
-		}
-
-
 		ImGui::EndGroup();
 	}
 	ImGui::End();
+
+
+	if (oldShowSettings && !showSettingsWidget)
+	{
+		/* fixup gamedir */
+		fixupPath(g_settings.gamedir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+
+		if (g_settings.workingdir.find(':') == std::string::npos)
+		{
+			/* fixup workingdir */
+			fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		}
+		else
+		{
+			fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		}
+		for (auto& s : g_settings.fgdPaths)
+		{
+			if (s.find(':') == std::string::npos)
+			{
+				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+			}
+			else
+			{
+				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+			}
+		}
+		for (auto& s : g_settings.resPaths)
+		{
+			if (s.find(':') == std::string::npos)
+			{
+				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+			}
+			else
+			{
+				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+			}
+		}
+		app->reloading = true;
+		app->reloadingGameDir = true;
+		app->loadFgds();
+		app->postLoadFgds();
+		app->reloadingGameDir = false;
+		app->reloading = false;
+		g_settings.save();
+	}
 }
 
 void Gui::drawHelp() {
@@ -3174,7 +3247,7 @@ void Gui::drawHelp() {
 void Gui::drawAbout() {
 	ImGui::SetNextWindowSize(ImVec2(500.f, 140.f), ImGuiCond_FirstUseEver);
 	if (ImGui::Begin("About", &showAboutWidget)) {
-		ImGui::InputText("Version", g_version_string, strlen(g_version_string), ImGuiInputTextFlags_ReadOnly);
+		ImGui::InputText("Version", &g_version_string, ImGuiInputTextFlags_ReadOnly);
 
 		static char author[] = "w00tguy";
 		ImGui::InputText("Author", author, strlen(author), ImGuiInputTextFlags_ReadOnly);
@@ -3189,27 +3262,35 @@ void Gui::drawAbout() {
 void Gui::drawMergeWindow() {
 	ImGui::SetNextWindowSize(ImVec2(500.f, 240.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(500.f, 240.f), ImVec2(500.f, 240.f));
-	static char outPath[256];
-	static char inPath[16][256];
+	static std::string outPath;
+	static std::vector<std::string> inPaths;
 	static bool DeleteUnusedInfo = true;
 	static bool Optimize = false;
 	static bool DeleteHull2 = false;
 	static bool NoRipent = false;
 	static bool NoScript = true;
 
+
 	if (ImGui::Begin("Merge maps", &showMergeMapWidget)) {
-		ImGui::InputText("Input map1.bsp file", inPath[0], 256);
-		ImGui::InputText("Input map2.bsp file", inPath[1], 256);
-		for (int i = 2; i < 16 ; i++)
+
+		if (inPaths.size() < 2)
 		{
-			if (strlen(inPath[i - 1]))
-			{
-				ImGui::InputText((std::string("Input map") + std::to_string(i + 1) + ".bsp file").c_str(), inPath[i], 256);
-			}
-			else
-				break;
+			inPaths.push_back(std::string());
+			inPaths.push_back(std::string());
 		}
-		ImGui::InputText("output .bsp file", outPath, 256);
+
+		ImGui::InputText("Input map1.bsp file", &inPaths[0]);
+		ImGui::InputText("Input map2.bsp file", &inPaths[1]);
+		int p = 1;
+		while (inPaths[p].size())
+		{
+			p++;
+			if (inPaths.size() < p)
+				inPaths.push_back(std::string());
+			ImGui::InputText("Input map2.bsp file", &inPaths[p]);
+		}
+
+		ImGui::InputText("output .bsp file", &outPath);
 		ImGui::Checkbox("Delete unused info", &DeleteUnusedInfo);
 		ImGui::Checkbox("Optimize", &Optimize);
 		ImGui::Checkbox("No hull 2", &DeleteHull2);
@@ -3221,11 +3302,11 @@ void Gui::drawMergeWindow() {
 			std::vector<Bsp*> maps;
 			for (int i = 0; i < 16; i++)
 			{
-				if (i == 0 || strlen(inPath[i - 1]))
+				if (i == 0 || inPaths[i - 1].size())
 				{
-					if (fileExists(inPath[i]))
+					if (fileExists(inPaths[i - 1]))
 					{
-						Bsp* tmpMap = new Bsp(inPath[i]);
+						Bsp* tmpMap = new Bsp(inPaths[i - 1]);
 						if (tmpMap->bsp_valid)
 						{
 							maps.push_back(tmpMap);
@@ -3310,7 +3391,7 @@ void Gui::drawMergeWindow() {
 void Gui::drawImportMapWidget() {
 	ImGui::SetNextWindowSize(ImVec2(500.f, 140.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(500.f, 140.f), ImVec2(500.f, 140.f));
-	static char Path[256];
+	static std::string mapPath;
 	const char* title = "Import .bsp model as func_breakable entity";
 
 	if (showImportMapWidget_Type == SHOW_IMPORT_OPEN)
@@ -3323,13 +3404,13 @@ void Gui::drawImportMapWidget() {
 	}
 
 	if (ImGui::Begin(title, &showImportMapWidget)) {
-		ImGui::InputText(".bsp file", Path, 256);
+		ImGui::InputText(".bsp file", &mapPath);
 		if (ImGui::Button("Load", ImVec2(120, 0)))
 		{
-			fixupPath(Path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
-			if (fileExists(Path))
+			fixupPath(mapPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+			if (fileExists(mapPath))
 			{
-				logf("Loading new map file from %s path.\n", Path);
+				logf("Loading new map file from %s path.\n", mapPath.c_str());
 				showImportMapWidget = false;
 				if (showImportMapWidget_Type == SHOW_IMPORT_ADD_NEW)
 				{
@@ -3598,7 +3679,6 @@ void Gui::drawLimitTab(Bsp* map, int sortMode) {
 
 void Gui::drawEntityReport() {
 	ImGui::SetNextWindowSize(ImVec2(550.f, 630.f), ImGuiCond_FirstUseEver);
-
 	Bsp* map = app->getSelectedMap();
 
 	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
@@ -3610,8 +3690,8 @@ void Gui::drawEntityReport() {
 		else {
 			ImGui::BeginGroup();
 			const int MAX_FILTERS = 1;
-			static char keyFilter[MAX_FILTERS][MAX_KEY_LEN];
-			static char valueFilter[MAX_FILTERS][MAX_VAL_LEN];
+			static std::string keyFilter[MAX_FILTERS];
+			static std::string valueFilter[MAX_FILTERS];
 			static int lastSelect = -1;
 			static std::string classFilter = "(none)";
 			static std::string flagsFilter = "(none)";
@@ -3619,7 +3699,7 @@ void Gui::drawEntityReport() {
 			static std::vector<int> visibleEnts;
 			static std::vector<bool> selectedItems;
 
-			const ImGuiModFlags expected_key_mod_flags = ImGui::GetMergedModFlags();
+			const ImGuiKeyChord expected_key_mod_flags = imgui_io->KeyMods;
 
 			float footerHeight = ImGui::GetFrameHeightWithSpacing() * 5.f + 16.f;
 			ImGui::BeginChild("entlist", ImVec2(0.f, -footerHeight));
@@ -3657,7 +3737,7 @@ void Gui::drawEntityReport() {
 					}
 
 					for (int k = 0; k < MAX_FILTERS; k++) {
-						if (keyFilter[k][0] != '\0') {
+						if (keyFilter[k].size()) {
 							std::string searchKey = trimSpaces(toLowerCase(keyFilter[k]));
 
 							bool foundKey = false;
@@ -3725,11 +3805,11 @@ void Gui::drawEntityReport() {
 					std::string cname = ent->hasKey("classname") ? ent->keyvalues["classname"] : "";
 
 					if (cname.length() && ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick)) {
-						if (expected_key_mod_flags & ImGuiKeyModFlags_Ctrl) {
+						if (expected_key_mod_flags & ImGuiModFlags_Ctrl) {
 							selectedItems[i] = !selectedItems[i];
 							lastSelect = i;
 						}
-						else if (expected_key_mod_flags & ImGuiKeyModFlags_Shift) {
+						else if (expected_key_mod_flags & ImGuiModFlags_Shift) {
 							if (lastSelect >= 0) {
 								int begin = i > lastSelect ? lastSelect : i;
 								int end = i > lastSelect ? i : lastSelect;
@@ -3881,13 +3961,13 @@ void Gui::drawEntityReport() {
 
 			for (int i = 0; i < MAX_FILTERS; i++) {
 				ImGui::SetNextItemWidth(inputWidth);
-				if (ImGui::InputText(("##Key" + std::to_string(i)).c_str(), keyFilter[i], 64)) {
+				if (ImGui::InputText(("##Key" + std::to_string(i)).c_str(), &keyFilter[i])) {
 					filterNeeded = true;
 				}
 				ImGui::SameLine();
 				ImGui::Text(" = "); ImGui::SameLine();
 				ImGui::SetNextItemWidth(inputWidth);
-				if (ImGui::InputText(("##Value" + std::to_string(i)).c_str(), valueFilter[i], 64)) {
+				if (ImGui::InputText(("##Value" + std::to_string(i)).c_str(), &valueFilter[i])) {
 					filterNeeded = true;
 				}
 			}
@@ -3906,7 +3986,7 @@ void Gui::drawEntityReport() {
 }
 
 
-static bool ColorPicker(float* col, bool alphabar)
+static bool ColorPicker(ImGuiIO* imgui_io, float* col, bool alphabar)
 {
 	const int    EDGE_SIZE = 200; // = int( ImGui::GetWindowWidth() * 0.75f );
 	const ImVec2 SV_PICKER_SIZE = ImVec2(EDGE_SIZE, EDGE_SIZE);
@@ -4014,10 +4094,10 @@ static bool ColorPicker(float* col, bool alphabar)
 
 	ImGui::InvisibleButton("saturation_value_selector", SV_PICKER_SIZE);
 
-	if (ImGui::IsItemActive() && ImGui::GetIO().MouseDown[0])
+	if (ImGui::IsItemActive() && imgui_io->MouseDown[0])
 	{
 		ImVec2 mouse_pos_in_canvas = ImVec2(
-			ImGui::GetIO().MousePos.x - picker_pos.x, ImGui::GetIO().MousePos.y - picker_pos.y);
+			imgui_io->MousePos.x - picker_pos.x, imgui_io->MousePos.y - picker_pos.y);
 
 		/**/ if (mouse_pos_in_canvas.x < 0) mouse_pos_in_canvas.x = 0;
 		else if (mouse_pos_in_canvas.x >= SV_PICKER_SIZE.x - 1) mouse_pos_in_canvas.x = SV_PICKER_SIZE.x - 1;
@@ -4035,10 +4115,10 @@ static bool ColorPicker(float* col, bool alphabar)
 	ImGui::SetCursorScreenPos(ImVec2(picker_pos.x + SPACING + SV_PICKER_SIZE.x, picker_pos.y));
 	ImGui::InvisibleButton("hue_selector", ImVec2(HUE_PICKER_WIDTH, SV_PICKER_SIZE.y));
 
-	if (ImGui::GetIO().MouseDown[0] && (ImGui::IsItemHovered() || ImGui::IsItemActive()))
+	if (imgui_io->MouseDown[0] && (ImGui::IsItemHovered() || ImGui::IsItemActive()))
 	{
 		ImVec2 mouse_pos_in_canvas = ImVec2(
-			ImGui::GetIO().MousePos.x - picker_pos.x, ImGui::GetIO().MousePos.y - picker_pos.y);
+			imgui_io->MousePos.x - picker_pos.x, imgui_io->MousePos.y - picker_pos.y);
 
 		/**/ if (mouse_pos_in_canvas.y < 0) mouse_pos_in_canvas.y = 0;
 		else if (mouse_pos_in_canvas.y >= SV_PICKER_SIZE.y - 1) mouse_pos_in_canvas.y = SV_PICKER_SIZE.y - 1;
@@ -4054,10 +4134,10 @@ static bool ColorPicker(float* col, bool alphabar)
 		ImGui::SetCursorScreenPos(ImVec2(picker_pos.x + SPACING * 2 + HUE_PICKER_WIDTH + SV_PICKER_SIZE.x, picker_pos.y));
 		ImGui::InvisibleButton("alpha_selector", ImVec2(HUE_PICKER_WIDTH, SV_PICKER_SIZE.y));
 
-		if (ImGui::GetIO().MouseDown[0] && (ImGui::IsItemHovered() || ImGui::IsItemActive()))
+		if (imgui_io->MouseDown[0] && (ImGui::IsItemHovered() || ImGui::IsItemActive()))
 		{
 			ImVec2 mouse_pos_in_canvas = ImVec2(
-				ImGui::GetIO().MousePos.x - picker_pos.x, ImGui::GetIO().MousePos.y - picker_pos.y);
+				imgui_io->MousePos.x - picker_pos.x, imgui_io->MousePos.y - picker_pos.y);
 
 			/**/ if (mouse_pos_in_canvas.y < 0) mouse_pos_in_canvas.y = 0;
 			else if (mouse_pos_in_canvas.y >= SV_PICKER_SIZE.y - 1) mouse_pos_in_canvas.y = SV_PICKER_SIZE.y - 1;
@@ -4105,12 +4185,12 @@ static bool ColorPicker(float* col, bool alphabar)
 	return value_changed || widget_used;
 }
 
-bool ColorPicker3(float col[3]) {
-	return ColorPicker(col, false);
+bool ColorPicker3(ImGuiIO* imgui_io, float col[3]) {
+	return ColorPicker(imgui_io, col, false);
 }
 
-bool ColorPicker4(float col[4]) {
-	return ColorPicker(col, true);
+bool ColorPicker4(ImGuiIO* imgui_io, float col[4]) {
+	return ColorPicker(imgui_io, col, true);
 }
 
 int ArrayXYtoId(int w, int x, int y)
@@ -4556,7 +4636,7 @@ void Gui::drawLightMapTool() {
 			ImGui::Separator();
 			ImGui::Text("Lightmap width:%d height:%d", size[0], size[1]);
 			ImGui::Separator();
-			ColorPicker3(colourPatch);
+			ColorPicker3(imgui_io, colourPatch);
 			ImGui::SetNextItemWidth(100.f);
 			if (ImGui::Button("Pick color", ImVec2(120, 0)))
 			{
@@ -4860,7 +4940,7 @@ void Gui::drawTextureTool() {
 
 			BSPFACE face = map->faces[app->selectedFaces[0]];
 			int edgeIdx = 0;
-			for (auto &v : edgeVerts)
+			for (auto& v : edgeVerts)
 			{
 				edgeIdx++;
 				snprintf(tmplabel, sizeof(tmplabel), "##edge%d1", edgeIdx);
@@ -4924,7 +5004,7 @@ void Gui::drawTextureTool() {
 		ImGui::SameLine();
 		ImGui::Text("%.0fx%.0f", width, height);
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) &&
-			(updatedFaceVec || scaledX ||scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags || updatedTexVec)) {
+			(updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags || updatedTexVec)) {
 			unsigned int newMiptex = 0;
 			app->pickCount++;
 			app->saveLumpState(map, 0xffffffff, false);
@@ -5020,7 +5100,7 @@ void Gui::drawTextureTool() {
 			{
 				int faceIdx = app->selectedFaces[0];
 				int vecId = 0;
-				for (unsigned int e = map->faces[faceIdx].iFirstEdge; e < map->faces[faceIdx].iFirstEdge + map->faces[faceIdx].nEdges; e++,vecId++) {
+				for (unsigned int e = map->faces[faceIdx].iFirstEdge; e < map->faces[faceIdx].iFirstEdge + map->faces[faceIdx].nEdges; e++, vecId++) {
 					int edgeIdx = map->surfedges[e];
 					BSPEDGE edge = map->edges[abs(edgeIdx)];
 					vec3& v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];

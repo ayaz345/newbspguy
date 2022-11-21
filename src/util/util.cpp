@@ -106,12 +106,23 @@ char* loadFile(const std::string& fileName, int& length)
 bool writeFile(const std::string& fileName, const char* data, int len)
 {
 	std::ofstream file(fileName, std::ios::trunc | std::ios::binary);
-	if (!file.is_open()) {
+	if (!file.is_open() || len <= 0) {
 		return false;
 	}
 	file.write(data, len);
 	return true;
 }
+
+bool writeFile(const std::string& fileName, const std::string& data)
+{
+	std::ofstream file(fileName, std::ios::trunc | std::ios::binary);
+	if (!file.is_open() || !data.size()) {
+		return false;
+	}
+	file.write(data.c_str(), strlen(data.c_str()));
+	return true;
+}
+
 
 bool removeFile(const std::string& fileName)
 {

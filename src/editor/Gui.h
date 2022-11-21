@@ -56,6 +56,8 @@ public:
 	void refresh();
 
 private:
+	ImGuiIO* imgui_io = nullptr;
+
 	bool vsync = true;
 	bool showDebugWidget = false;
 	bool showKeyvalueWidget = false;

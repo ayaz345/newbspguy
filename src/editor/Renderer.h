@@ -84,6 +84,15 @@ struct AppSettings {
 	std::vector<std::string> fgdPaths;
 	std::vector<std::string> resPaths;
 
+
+
+	std::vector<std::string> conditionalPointEntTriggers;
+	std::vector<std::string> entsThatNeverNeedAnyHulls;
+	std::vector<std::string> entsThatNeverNeedCollision;
+	std::vector<std::string> passableEnts;
+	std::vector<std::string> playerOnlyTriggers;
+	std::vector<std::string> monsterOnlyTriggers;
+
 	void loadDefault();
 	void load();
 	void save();

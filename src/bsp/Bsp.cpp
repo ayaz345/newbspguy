@@ -1644,45 +1644,6 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress) {
 			continue;
 		}
 
-		std::set<std::string> conditionalPointEntTriggers;
-		conditionalPointEntTriggers.insert("trigger_once");
-		conditionalPointEntTriggers.insert("trigger_multiple");
-		conditionalPointEntTriggers.insert("trigger_counter");
-		conditionalPointEntTriggers.insert("trigger_gravity");
-		conditionalPointEntTriggers.insert("trigger_teleport");
-
-		std::set<std::string> entsThatNeverNeedAnyHulls;
-		entsThatNeverNeedAnyHulls.insert("env_bubbles");
-		entsThatNeverNeedAnyHulls.insert("func_tankcontrols");
-		entsThatNeverNeedAnyHulls.insert("func_traincontrols");
-		entsThatNeverNeedAnyHulls.insert("func_vehiclecontrols");
-		entsThatNeverNeedAnyHulls.insert("trigger_autosave"); // obsolete in sven
-		entsThatNeverNeedAnyHulls.insert("trigger_endsection"); // obsolete in sven
-
-		std::set<std::string> entsThatNeverNeedCollision;
-		entsThatNeverNeedCollision.insert("func_illusionary");
-		entsThatNeverNeedCollision.insert("func_mortar_field");
-
-		std::set<std::string> passableEnts;
-		passableEnts.insert("func_door");
-		passableEnts.insert("func_door_rotating");
-		passableEnts.insert("func_pendulum");
-		passableEnts.insert("func_tracktrain");
-		passableEnts.insert("func_train");
-		passableEnts.insert("func_water");
-		passableEnts.insert("momentary_door");
-
-		std::set<std::string> playerOnlyTriggers;
-		playerOnlyTriggers.insert("func_ladder");
-		playerOnlyTriggers.insert("game_zone_player");
-		playerOnlyTriggers.insert("player_respawn_zone");
-		playerOnlyTriggers.insert("trigger_cdaudio");
-		playerOnlyTriggers.insert("trigger_changelevel");
-		playerOnlyTriggers.insert("trigger_transition");
-
-		std::set<std::string> monsterOnlyTriggers;
-		monsterOnlyTriggers.insert("func_monsterclip");
-		monsterOnlyTriggers.insert("trigger_monsterjump");
 
 		std::string uses;
 		bool needsPlayerHulls = false; // HULL 1 + HULL 3
@@ -1698,18 +1659,22 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress) {
 			}
 			uses += "\"" + tname + "\" (" + cname + ")";
 
-			if (entsThatNeverNeedAnyHulls.find(cname) != entsThatNeverNeedAnyHulls.end()) {
+			if (std::find(g_settings.entsThatNeverNeedAnyHulls.begin(), g_settings.entsThatNeverNeedAnyHulls.end(), cname) != g_settings.entsThatNeverNeedAnyHulls.end()) 
+			{
 				continue; // no collision or faces needed at all
 			}
-			else if (entsThatNeverNeedCollision.find(cname) != entsThatNeverNeedCollision.end()) {
+			else if (std::find(g_settings.entsThatNeverNeedCollision.begin(), g_settings.entsThatNeverNeedCollision.end(), cname) != g_settings.entsThatNeverNeedCollision.end()) 
+			{
 				needsVisibleHull = !is_invisible_solid(usageEnts[k]);
 			}
-			else if (passableEnts.find(cname) != passableEnts.end()) {
+			else if (std::find(g_settings.passableEnts.begin(), g_settings.passableEnts.end(), cname) != g_settings.passableEnts.end())
+			{
 				needsPlayerHulls = needsMonsterHulls = !(spawnflags & 8); // "Passable" or "Not solid" unchecked
 				needsVisibleHull = !(spawnflags & 8) || !is_invisible_solid(usageEnts[k]);
 			}
 			else if (cname.find("trigger_") == 0) {
-				if (conditionalPointEntTriggers.find(cname) != conditionalPointEntTriggers.end()) {
+				if (std::find(g_settings.conditionalPointEntTriggers.begin(), g_settings.conditionalPointEntTriggers.end(), cname) != g_settings.conditionalPointEntTriggers.end())
+				{
 					needsVisibleHull = spawnflags & 8; // "Everything else" flag checked
 					needsPlayerHulls = !(spawnflags & 2); // "No clients" unchecked
 					needsMonsterHulls = (spawnflags & 1) || (spawnflags & 4); // "monsters" or "pushables" checked
@@ -1753,10 +1718,12 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress) {
 				needsPlayerHulls = true;
 				needsVisibleHull = true;
 			}
-			else if (playerOnlyTriggers.find(cname) != playerOnlyTriggers.end()) {
+			else if (std::find(g_settings.playerOnlyTriggers.begin(), g_settings.playerOnlyTriggers.end(), cname) != g_settings.playerOnlyTriggers.end())
+			{
 				needsPlayerHulls = true;
 			}
-			else if (monsterOnlyTriggers.find(cname) != monsterOnlyTriggers.end()) {
+			else if (std::find(g_settings.monsterOnlyTriggers.begin(), g_settings.monsterOnlyTriggers.end(), cname) != g_settings.monsterOnlyTriggers.end())
+			{
 				needsMonsterHulls = true;
 			}
 			else {

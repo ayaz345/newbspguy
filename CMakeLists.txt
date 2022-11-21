@@ -60,6 +60,7 @@ set(SOURCE_FILES
 	imgui/imgui_draw.cpp
 	imgui/backends/imgui_impl_glfw.cpp
 	imgui/backends/imgui_impl_opengl3.cpp
+	imgui/misc/cpp/imgui_stdlib.cpp
 	src/util/lodepng.h
 	src/util/lodepng.cpp
 	
@@ -80,6 +81,7 @@ include_directories(src/qtools)
 include_directories(src/util)
 include_directories(imgui)
 include_directories(imgui/examples)
+include_directories(imgui/misc/cpp)
 include_directories(imgui/backends)
 include_directories(glew/include)
 
@@ -182,6 +184,7 @@ if(MSVC)
 													imgui/imgui_draw.cpp
 													imgui/backends/imgui_impl_glfw.cpp
 													imgui/backends/imgui_impl_opengl3.cpp
+													imgui/misc/cpp/imgui_stdlib.cpp
 													src/util/lodepng.cpp)
 													
 	source_group("Header Files\\filedialog" FILES	

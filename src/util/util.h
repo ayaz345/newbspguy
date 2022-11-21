@@ -26,6 +26,9 @@ namespace fs = std::experimental::filesystem;
 #include "ProgressMeter.h"
 #include "bsptypes.h"
 
+
+extern std::string g_version_string;
+
 #ifndef WIN32
 #define fopen_s(pFile,filename,mode) ((*(pFile))=fopen((filename),  (mode)))==NULL
 #endif
@@ -59,7 +62,6 @@ extern bool DebugKeyPressed;
 extern bool g_verbose;
 extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;
-extern char g_version_string[];
 extern std::mutex g_log_mutex;
 
 extern int g_render_flags;
@@ -73,6 +75,7 @@ bool fileExists(const std::string& fileName);
 char* loadFile(const std::string& fileName, int& length);
 
 bool writeFile(const std::string& fileName, const char* data, int len);
+bool writeFile(const std::string& fileName, const std::string& data);
 
 bool removeFile(const std::string& fileName);
 

@@ -418,8 +418,6 @@ void Fgd::processClassInheritance() {
 					classes[i]->keyvalues[c].choices = newSpawnflags;
 				}
 			}
-
-			//logf << endl;
 		}
 
 	}

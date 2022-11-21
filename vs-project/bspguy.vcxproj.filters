@@ -112,6 +112,9 @@
     <ClCompile Include=".\..\imgui\backends\imgui_impl_opengl3.cpp">
       <Filter>Source Files\util\lib</Filter>
     </ClCompile>
+    <ClCompile Include=".\..\imgui\misc\cpp\imgui_stdlib.cpp">
+      <Filter>Source Files\util\lib</Filter>
+    </ClCompile>
     <ClCompile Include=".\..\src\util\lodepng.cpp">
       <Filter>Source Files\util\lib</Filter>
     </ClCompile>

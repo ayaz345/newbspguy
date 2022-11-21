@@ -4,17 +4,14 @@ vs-project/Release/bspguy.exe
 *.obj
 *.tlog
 *.log
-*.txt
 *.recipe
 *.exp
 *.html
 *.png
 *.css
 *.jpg
-*.txt
 *.stamp
 *.in
-*.cmake
 *.suo
 *.bin
 *.db-shm
@@ -30,8 +27,6 @@ vs-project/Release/bspguy.exe
 *.lock
 *.exe
 vs-project/Release/bspguy.cfg
-*.idb
-*.idb
 vs-project/glfw/src/Debug/glfw3.lib
 vs-project/glfw/src/Release/glfw3.lib
 vs-project/bspguy.dir/Debug/vc143.idb
@@ -40,3 +35,8 @@ vs-project/glfw/src/Release/glfw3.lib
 vs-project/bspguy.dir/Debug/bsp.obj.enc
 vs-project/bspguy.dir/Debug/bsprenderer.obj.enc
 vs-project/bspguy.dir/Debug/renderer.obj.enc
+vs-project/bspguy.dir/Debug/bspguy.vcxproj.FileListAbsolute.txt
+vs-project/bspguy.dir/Release/bspguy.vcxproj.FileListAbsolute.txt
+vs-project/glfw/src/glfw.dir/Debug/glfw.vcxproj.FileListAbsolute.txt
+vs-project/glfw/src/glfw.dir/Release/glfw.vcxproj.FileListAbsolute.txt
+vs-project/Release/log.txt
