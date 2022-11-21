@@ -19,7 +19,6 @@
 #include "imgui_stdlib.h"
 
 #ifdef WIN32
-#define NOMINMAX
 #include <Windows.h>
 #else
 #define MAX_PATH 256

@@ -198,6 +198,7 @@ if(MSVC)
 	
 	source_group("Source Files\\filedialog" FILES	src/filedialog/ImFileDialog.c)
 	add_definitions(-DUSE_FILESYSTEM)
+	add_definitions(-DNOMINMAX)
 else()
 	target_link_libraries(${PROJECT_NAME} GL GLU X11 Xxf86vm Xrandr pthread Xi GLEW stdc++fs)
 	if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.1")
