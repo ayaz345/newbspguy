@@ -2918,13 +2918,12 @@ void Gui::drawSettings() {
 					g_settings.conditionalPointEntTriggers.erase(g_settings.conditionalPointEntTriggers.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
-
-
-				if (ImGui::Button("Add new 'Point Ent Trigger'")) {
-					g_settings.conditionalPointEntTriggers.emplace_back(std::string());
-				}
 			}
 
+			if (ImGui::Button("Add new 'Point Ent Trigger'")) {
+				g_settings.conditionalPointEntTriggers.emplace_back(std::string());
+			}
+			ImGui::Separator();
 			ImGui::Text("Ents That Never Need Any Hulls");
 
 			for (int i = 0; i < g_settings.entsThatNeverNeedAnyHulls.size(); i++) {
@@ -2940,13 +2939,12 @@ void Gui::drawSettings() {
 					g_settings.entsThatNeverNeedAnyHulls.erase(g_settings.entsThatNeverNeedAnyHulls.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
-
-
-				if (ImGui::Button("Add new 'No Hulls Ent'")) {
-					g_settings.entsThatNeverNeedAnyHulls.emplace_back(std::string());
-				}
 			}
 
+			if (ImGui::Button("Add new 'No Hulls Ent'")) {
+				g_settings.entsThatNeverNeedAnyHulls.emplace_back(std::string());
+			}
+			ImGui::Separator();
 			ImGui::Text("Ents That Never Need Collision");
 
 			for (int i = 0; i < g_settings.entsThatNeverNeedCollision.size(); i++) {
@@ -2962,13 +2960,12 @@ void Gui::drawSettings() {
 					g_settings.entsThatNeverNeedCollision.erase(g_settings.entsThatNeverNeedCollision.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
-
-
-				if (ImGui::Button("Add new 'No Collision Ent'")) {
-					g_settings.entsThatNeverNeedCollision.emplace_back(std::string());
-				}
 			}
 
+			if (ImGui::Button("Add new 'No Collision Ent'")) {
+				g_settings.entsThatNeverNeedCollision.emplace_back(std::string());
+			}
+			ImGui::Separator();
 			ImGui::Text("Passable ents");
 
 			for (int i = 0; i < g_settings.passableEnts.size(); i++) {
@@ -2984,13 +2981,12 @@ void Gui::drawSettings() {
 					g_settings.passableEnts.erase(g_settings.passableEnts.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
-
-
-				if (ImGui::Button("Add new 'Passable Ent'")) {
-					g_settings.passableEnts.emplace_back(std::string());
-				}
 			}
 
+			if (ImGui::Button("Add new 'Passable Ent'")) {
+				g_settings.passableEnts.emplace_back(std::string());
+			}
+			ImGui::Separator();
 			ImGui::Text("Player Only Triggers");
 
 			for (int i = 0; i < g_settings.playerOnlyTriggers.size(); i++) {
@@ -3006,14 +3002,12 @@ void Gui::drawSettings() {
 					g_settings.playerOnlyTriggers.erase(g_settings.playerOnlyTriggers.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
-
-
-				if (ImGui::Button("Add new 'Player Trigger Ent'")) {
-					g_settings.playerOnlyTriggers.emplace_back(std::string());
-				}
 			}
 
-
+			if (ImGui::Button("Add new 'Player Trigger Ent'")) {
+				g_settings.playerOnlyTriggers.emplace_back(std::string());
+			}
+			ImGui::Separator();
 			ImGui::Text("Monster Only Triggers");
 
 			for (int i = 0; i < g_settings.monsterOnlyTriggers.size(); i++) {
@@ -3029,11 +3023,10 @@ void Gui::drawSettings() {
 					g_settings.monsterOnlyTriggers.erase(g_settings.monsterOnlyTriggers.begin() + i);
 				}
 				ImGui::PopStyleColor(3);
+			}
 
-
-				if (ImGui::Button("Add new 'Monster Trigger Ent'")) {
-					g_settings.monsterOnlyTriggers.emplace_back(std::string());
-				}
+			if (ImGui::Button("Add new 'Monster Trigger Ent'")) {
+				g_settings.monsterOnlyTriggers.emplace_back(std::string());
 			}
 		}
 		else if (settingsTab == 4) {
