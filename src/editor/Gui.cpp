@@ -770,7 +770,7 @@ void Gui::drawMenuBar() {
 							if (wadNames[k].find(res.filename().string()) == std::string::npos)
 								newWadNames += wadNames[k] + ";";
 						}
-						map->ents[i]->keyvalues["wad"] = newWadNames;
+						map->ents[i]->setOrAddKeyvalue("wad",newWadNames);
 						break;
 					}
 				}
