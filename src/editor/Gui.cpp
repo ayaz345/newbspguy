@@ -831,9 +831,22 @@ void Gui::drawMenuBar() {
 			if (ImGui::MenuItem("Entity file", NULL)) {
 				if (map)
 				{
-					logf("Export entities: %s%s\n", GetWorkDir().c_str(), (map->bsp_name + ".ent").c_str());
-					createDir(GetWorkDir());
-					std::ofstream entFile(GetWorkDir() + (map->bsp_name + ".ent"), std::ios::trunc);
+                    std::string entFilePath;
+                    if (g_settings.sameDirForEnt) {
+                        std::string bspFilePath = map->bsp_path;
+                        if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
+                            entFilePath = bspFilePath + ".ent";
+                        }
+                        else {
+                            entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
+                        }
+                    }
+                    else {
+                        entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
+                    }
+                    
+					logf("Export entities: %s\n", entFilePath.c_str());
+					std::ofstream entFile(entFilePath, std::ios::trunc);
 					map->update_ent_lump();
 					if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
 					{
@@ -962,11 +975,25 @@ void Gui::drawMenuBar() {
 			if (ImGui::MenuItem("Entity file", NULL)) {
 				if (map)
 				{
-					logf("Import entities from: %s%s\n", GetWorkDir().c_str(), (map->bsp_name + ".ent").c_str());
-					if (fileExists(GetWorkDir() + (map->bsp_name + ".ent")))
+                    std::string entFilePath;
+                    if (g_settings.sameDirForEnt) {
+                        std::string bspFilePath = map->bsp_path;
+                        if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
+                            entFilePath = bspFilePath + ".ent";
+                        }
+                        else {
+                            entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
+                        }
+                    }
+                    else {
+                        entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
+                    }
+
+					logf("Import entities from: %s\n", entFilePath.c_str());
+					if (fileExists(entFilePath))
 					{
 						int len;
-						char* newlump = loadFile(GetWorkDir() + (map->bsp_name + ".ent"), len);
+						char* newlump = loadFile(entFilePath, len);
 						map->replace_lump(LUMP_ENTITIES, newlump, len);
 						map->load_ents();
 						for (int i = 0; i < app->mapRenderers.size(); i++) {
@@ -2859,6 +2886,20 @@ void Gui::drawSettings() {
 				ImGui::TextUnformatted("Hack original map CRC after anything edited.");
 				ImGui::EndTooltip();
 			}
+
+            ImGui::Checkbox("Auto import entity file", &g_settings.autoImportEnt);
+            if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted("Automatically import an entity file when the map is opened.");
+                ImGui::EndTooltip();
+            }
+
+            ImGui::Checkbox("Same directory for entity file", &g_settings.sameDirForEnt);
+            if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+                ImGui::BeginTooltip();
+                ImGui::TextUnformatted("Use the same directory as the bsp file to import and export the entity file.");
+                ImGui::EndTooltip();
+            }
 		}
 		else if (settingsTab == 1) {
 			for (int i = 0; i < g_settings.fgdPaths.size(); i++) {

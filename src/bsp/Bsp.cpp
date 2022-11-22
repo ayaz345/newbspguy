@@ -145,6 +145,22 @@ Bsp::Bsp(std::string fpath)
 
 	logf("(CRC \"%u\")\n", reverse_bits(originCrc32));
 
+    std::string entFilePath;
+    if (g_settings.sameDirForEnt) {
+        entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
+    }
+    else {
+        entFilePath = GetWorkDir() + (this->bsp_name + ".ent");
+    }
+
+    if (g_settings.autoImportEnt && fileExists(entFilePath)) {
+        logf("Import entities from: %s\n", entFilePath.c_str());
+
+        int len;
+        char* newlump = loadFile(entFilePath, len);
+        replace_lump(LUMP_ENTITIES, newlump, len);
+    }
+
 	load_ents();
 	update_lump_pointers();
 

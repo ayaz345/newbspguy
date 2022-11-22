@@ -109,6 +109,8 @@ void AppSettings::loadDefault()
 	vsync = true;
 	backUpMap = true;
 	preserveCrc32 = false;
+    autoImportEnt = false;
+    sameDirForEnt = false;
 
 	moveSpeed = 4.0f;
 	fov = 75.0f;
@@ -174,6 +176,8 @@ void AppSettings::load() {
 			else if (key == "res") { resPaths.push_back(val); }
 			else if (key == "savebackup") { g_settings.backUpMap = atoi(val.c_str()) != 0; }
 			else if (key == "save_crc") { g_settings.preserveCrc32 = atoi(val.c_str()) != 0; }
+            else if (key == "auto_import_ent") { g_settings.autoImportEnt = atoi(val.c_str()) != 0; }
+            else if (key == "same_dir_for_ent") { g_settings.sameDirForEnt = atoi(val.c_str()) != 0; }
 			else if (key == "optimizer_cond_ents") { conditionalPointEntTriggers.push_back(val); }
 			else if (key == "optimizer_no_hulls_ents") { entsThatNeverNeedAnyHulls.push_back(val); }
 			else if (key == "optimizer_no_collision_ents") { entsThatNeverNeedCollision.push_back(val); }
@@ -397,6 +401,8 @@ void AppSettings::save(std::string path)
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
+    file << "auto_import_ent" << g_settings.autoImportEnt << std::endl;
+    file << "same_dir_for_ent" << g_settings.sameDirForEnt << std::endl;
 
 	file.flush();
 	
