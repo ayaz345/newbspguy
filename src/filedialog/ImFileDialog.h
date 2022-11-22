@@ -13,8 +13,10 @@
 #define IFD_DIALOG_DIRECTORY	1
 #define IFD_DIALOG_SAVE			2
 
-namespace ifd {
-	class FileDialog {
+namespace ifd
+{
+	class FileDialog
+	{
 	public:
 		static inline FileDialog& Instance()
 		{
@@ -31,35 +33,54 @@ namespace ifd {
 
 		bool IsDone(const std::string& key);
 
-		inline bool HasResult() { return m_result.size(); }
-		inline const std::filesystem::path& GetResult() { return m_result[0]; }
-		inline const std::vector<std::filesystem::path>& GetResults() { return m_result; }
+		inline bool HasResult()
+		{
+			return m_result.size();
+		}
+		inline const std::filesystem::path& GetResult()
+		{
+			return m_result[0];
+		}
+		inline const std::vector<std::filesystem::path>& GetResults()
+		{
+			return m_result;
+		}
 
 		void Close();
 
 		void RemoveFavorite(const std::string& path);
 		void AddFavorite(const std::string& path);
-		inline const std::vector<std::string>& GetFavorites() { return m_favorites; }
+		inline const std::vector<std::string>& GetFavorites()
+		{
+			return m_favorites;
+		}
 
-		inline void SetZoom(float z) {
+		inline void SetZoom(float z)
+		{
 			m_zoom = std::min<float>(25.0f, std::max<float>(1.0f, z));
 			m_refreshIconPreview();
 		}
-		inline float GetZoom() { return m_zoom; }
+		inline float GetZoom()
+		{
+			return m_zoom;
+		}
 
 		std::function<void* (unsigned char*, int, int, char)> CreateTexture; // char -> fmt -> { 0 = BGRA, 1 = RGBA }
 		std::function<void(void*)> DeleteTexture;
 
-		class FileTreeNode {
+		class FileTreeNode
+		{
 		public:
 #ifdef _WIN32
-			FileTreeNode(const std::wstring& path) {
+			FileTreeNode(const std::wstring& path)
+			{
 				Path = std::filesystem::path(path);
 				Read = false;
 			}
 #endif
 
-			FileTreeNode(const std::string& path) {
+			FileTreeNode(const std::string& path)
+			{
 				Path = std::filesystem::path(path);
 				Read = false;
 			}
@@ -68,7 +89,8 @@ namespace ifd {
 			bool Read;
 			std::vector<FileTreeNode*> Children;
 		};
-		class FileData {
+		class FileData
+		{
 		public:
 			FileData(const std::filesystem::path& path);
 

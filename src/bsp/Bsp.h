@@ -14,7 +14,8 @@ class BspRenderer;
 
 struct membuf : std::streambuf
 {
-	membuf(char* begin, int len) {
+	membuf(char* begin, int len)
+	{
 		this->setg(begin, begin, begin + len);
 	}
 };
@@ -87,8 +88,8 @@ public:
 	void print_model_hull(int modelIdx, int hull);
 	void print_clipnode_tree(int iNode, int depth);
 	void recurse_node(short node, int depth);
-	int pointContents(int iNode, const vec3 & p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
-	int pointContents(int iNode, const vec3 & p, int hull);
+	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
+	int pointContents(int iNode, const vec3& p, int hull);
 	const char* getLeafContentsName(int contents);
 
 	// strips a collision hull from the given model index
@@ -99,7 +100,7 @@ public:
 	// and redirects to the given hull, if redirect>0
 	void delete_hull(int hull_number, int redirect);
 
-	void write_csg_outputs(const std::string &path);
+	void write_csg_outputs(const std::string& path);
 
 	// get the bounding box for the world
 	void get_bounding_box(vec3& mins, vec3& maxs);
@@ -161,7 +162,7 @@ public:
 	bool validate();
 
 	// creates a solid cube
-	int create_solid(const vec3 & mins, const vec3& maxs, int textureIdx);
+	int create_solid(const vec3& mins, const vec3& maxs, int textureIdx);
 
 	// creates a new solid from the given solid definition (must be convex).
 	int create_solid(Solid& solid, int targetModelIdx = -1);
@@ -249,9 +250,9 @@ private:
 	void get_lightmap_shift(const LIGHTMAP& oldLightmap, const LIGHTMAP& newLightmap, int& srcOffsetX, int& srcOffsetY);
 
 	void print_model_bsp(int modelIdx);
-	void print_leaf(const BSPLEAF &leaf);
+	void print_leaf(const BSPLEAF& leaf);
 	void print_node(const BSPNODE& node);
-	void print_stat(const std::string &name, unsigned int val, unsigned int max, bool isMem);
+	void print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem);
 	void print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bool isMem);
 
 	std::string get_model_usage(int modelIdx);
@@ -273,7 +274,7 @@ private:
 	void remap_node_structures(int iNode, STRUCTREMAP* remap);
 	void remap_clipnode_structures(int iNode, STRUCTREMAP* remap);
 
-	
+
 	BspRenderer* renderer;
 	unsigned int originCrc32 = 0;
 };

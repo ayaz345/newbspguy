@@ -7,7 +7,8 @@
 
 // Undoable actions following the Command Pattern
 
-class Command {
+class Command
+{
 public:
 	std::string desc;
 	int mapIdx;
@@ -24,7 +25,8 @@ public:
 };
 
 
-class EditEntityCommand : public Command {
+class EditEntityCommand : public Command
+{
 public:
 	int entIdx;
 	Entity* oldEntData;
@@ -41,7 +43,8 @@ public:
 };
 
 
-class DeleteEntityCommand : public Command {
+class DeleteEntityCommand : public Command
+{
 public:
 	int entIdx;
 	Entity* entData;
@@ -56,7 +59,8 @@ public:
 };
 
 
-class CreateEntityCommand : public Command {
+class CreateEntityCommand : public Command
+{
 public:
 	Entity* entData;
 
@@ -70,7 +74,8 @@ public:
 };
 
 
-class DuplicateBspModelCommand : public Command {
+class DuplicateBspModelCommand : public Command
+{
 public:
 	int oldModelIdx;
 	int newModelIdx; // TODO: could break redos if this is ever not deterministic
@@ -87,7 +92,8 @@ public:
 };
 
 
-class CreateBspModelCommand : public Command {
+class CreateBspModelCommand : public Command
+{
 public:
 	Entity* entData;
 	LumpState oldLumps = LumpState();
@@ -107,7 +113,8 @@ private:
 };
 
 
-class EditBspModelCommand : public Command {
+class EditBspModelCommand : public Command
+{
 public:
 	int modelIdx;
 	int entIdx;
@@ -126,7 +133,8 @@ public:
 };
 
 
-class CleanMapCommand : public Command {
+class CleanMapCommand : public Command
+{
 public:
 	LumpState oldLumps = LumpState();
 
@@ -140,7 +148,8 @@ public:
 };
 
 
-class OptimizeMapCommand : public Command {
+class OptimizeMapCommand : public Command
+{
 public:
 	LumpState oldLumps = LumpState();
 

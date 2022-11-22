@@ -5,28 +5,33 @@
 
 // https://www.geometrictools.com/Documentation/ClipMesh.pdf
 
-struct CVertex {
+struct CVertex
+{
 	vec3 pos;
 	float distance = 0;
 	int occurs = 0;
 	bool visible = true;
 
-	CVertex(vec3 pos) : pos(pos) {}
+	CVertex(vec3 pos) : pos(pos)
+	{}
 };
 
-struct CEdge {
+struct CEdge
+{
 	int verts[2];
 	int faces[2];
 	bool visible = true;
 
-	CEdge(int v1, int v2) {
+	CEdge(int v1, int v2)
+	{
 		verts[0] = v1;
 		verts[1] = v2;
 		faces[0] = -1;
 		faces[1] = -1;
 	}
 
-	CEdge(int v1, int v2, int f1, int f2) {
+	CEdge(int v1, int v2, int f1, int f2)
+	{
 		verts[0] = v1;
 		verts[1] = v2;
 		faces[0] = f1;
@@ -34,24 +39,28 @@ struct CEdge {
 	}
 };
 
-struct CFace {
+struct CFace
+{
 	std::vector<int> edges;
 	bool visible = true;
 	vec3 normal;
 
-	CFace(std::vector<int> edges, vec3 normal) {
+	CFace(std::vector<int> edges, vec3 normal)
+	{
 		this->edges = std::move(edges);
 		this->normal = normal;
 	}
 };
 
-struct CMesh {
+struct CMesh
+{
 	std::vector<CVertex> verts;
 	std::vector<CEdge> edges;
 	std::vector<CFace> faces;
 };
 
-class Clipper {
+class Clipper
+{
 public:
 
 	Clipper();

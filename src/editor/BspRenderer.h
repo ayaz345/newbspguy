@@ -11,7 +11,8 @@
 
 #define LIGHTMAP_ATLAS_SIZE 512
 
-enum RenderFlags {
+enum RenderFlags
+{
 	RENDER_TEXTURES = 1,
 	RENDER_LIGHTMAPS = 2,
 	RENDER_WIREFRAME = 4,
@@ -25,8 +26,9 @@ enum RenderFlags {
 	RENDER_ENT_CONNECTIONS = 1024
 };
 
-struct LightmapInfo {
-	// each face can have 4 lightmaps, and those may be split across multiple atlases
+struct LightmapInfo
+{
+// each face can have 4 lightmaps, and those may be split across multiple atlases
 	int atlasId[MAXLIGHTMAPS];
 	int x[MAXLIGHTMAPS];
 	int y[MAXLIGHTMAPS];
@@ -37,14 +39,16 @@ struct LightmapInfo {
 	float midPolyU, midPolyV;
 };
 
-struct FaceMath {
+struct FaceMath
+{
 	mat4x4 worldToLocal; // transforms world coordiantes to this face's plane's coordinate system
 	vec3 normal;
 	float fdist;
 	std::vector<vec2> localVerts;
 };
 
-struct RenderEnt {
+struct RenderEnt
+{
 	mat4x4 modelMat; // model matrix for rendering with angles
 	mat4x4 modelMatOrigin; // model matrix for render origin
 	vec3 offset; // vertex transformations for picking
@@ -53,7 +57,8 @@ struct RenderEnt {
 	EntCube* pointEntCube;
 };
 
-struct RenderGroup {
+struct RenderGroup
+{
 	lightmapVert* wireframeVerts; // verts for rendering wireframe
 	lightmapVert* verts;
 	int vertCount;
@@ -65,26 +70,30 @@ struct RenderGroup {
 	bool transparent;
 };
 
-struct RenderFace {
+struct RenderFace
+{
 	int group;
 	int vertOffset;
 	int vertCount;
 };
 
-struct RenderModel {
+struct RenderModel
+{
 	int groupCount;
 	int renderFaceCount;
 	RenderFace* renderFaces;
 	RenderGroup* renderGroups;
 };
 
-struct RenderClipnodes {
+struct RenderClipnodes
+{
 	VertexBuffer* clipnodeBuffer[MAX_MAP_HULLS];
 	VertexBuffer* wireframeClipnodeBuffer[MAX_MAP_HULLS];
 	std::vector<FaceMath> faceMaths[MAX_MAP_HULLS];
 };
 
-struct PickInfo {
+struct PickInfo
+{
 	int entIdx;
 	int modelIdx;
 	int faceIdx;
@@ -100,7 +109,8 @@ struct PickInfo {
 	}
 };
 
-class BspRenderer {
+class BspRenderer
+{
 public:
 	Bsp* map;
 	PointEntRenderer* pointEntRenderer;

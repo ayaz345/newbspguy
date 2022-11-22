@@ -2,47 +2,56 @@
 #include "primitives.h"
 #include <string.h>
 
-PointEntRenderer::PointEntRenderer(Fgd* fgd, ShaderProgram* colorShader) {
+PointEntRenderer::PointEntRenderer(Fgd* fgd, ShaderProgram* colorShader)
+{
 	this->fgd = fgd;
 	this->colorShader = colorShader;
 
 	genPointEntCubes();
 }
 
-PointEntRenderer::~PointEntRenderer() {
-	for (int i = 0; i < entCubes.size(); i++) {
+PointEntRenderer::~PointEntRenderer()
+{
+	for (int i = 0; i < entCubes.size(); i++)
+	{
 		delete entCubes[i]->buffer;
 		delete entCubes[i]->selectBuffer;
 		delete entCubes[i]->wireframeBuffer;
 	}
 }
 
-EntCube* PointEntRenderer::getEntCube(Entity* ent) {
+EntCube* PointEntRenderer::getEntCube(Entity* ent)
+{
 	std::string cname = ent->keyvalues["classname"];
 
-	if (cubeMap.find(cname) != cubeMap.end()) {
+	if (cubeMap.find(cname) != cubeMap.end())
+	{
 		return cubeMap[cname];
 	}
 
 	return entCubes[0]; // default purple cube from hammer
 }
 
-void PointEntRenderer::genPointEntCubes() {
-	// default purple cube
+void PointEntRenderer::genPointEntCubes()
+{
+// default purple cube
 	EntCube* defaultCube = new EntCube();
-	defaultCube->color = { 220, 0, 220, 255 };
-	defaultCube->mins = { -8, -8, -8 };
-	defaultCube->maxs = { 8, 8, 8 };
+	defaultCube->color = {220, 0, 220, 255};
+	defaultCube->mins = {-8, -8, -8};
+	defaultCube->maxs = {8, 8, 8};
 	genCubeBuffers(defaultCube);
 	entCubes.push_back(defaultCube);
 
-	if (!fgd) {
+	if (!fgd)
+	{
 		return;
 	}
 
-	for (int i = 0; i < fgd->classes.size(); i++) {
+	for (int i = 0; i < fgd->classes.size(); i++)
+	{
 		FgdClass* fgdClass = fgd->classes[i];
-		if (fgdClass->classType == FGD_CLASS_POINT) {
+		if (fgdClass->classType == FGD_CLASS_POINT)
+		{
 			EntCube* cube = new EntCube();
 			cube->mins = fgdClass->mins;
 			cube->maxs = fgdClass->maxs;
@@ -50,12 +59,14 @@ void PointEntRenderer::genPointEntCubes() {
 
 			EntCube* matchingCube = getCubeMatchingProps(cube);
 
-			if (!matchingCube) {
+			if (!matchingCube)
+			{
 				genCubeBuffers(cube);
 				entCubes.push_back(cube);
 				cubeMap[fgdClass->name] = cube;
 			}
-			else {
+			else
+			{
 				delete cube;
 				cubeMap[fgdClass->name] = matchingCube;
 			}
@@ -65,18 +76,22 @@ void PointEntRenderer::genPointEntCubes() {
 	debugf("Generated %d entity cubes\n", entCubes.size());
 }
 
-EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube) {
-	for (int i = 0; i < entCubes.size(); i++) {
+EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube)
+{
+	for (int i = 0; i < entCubes.size(); i++)
+	{
 		if (entCubes[i]->mins == entCube->mins
 			&& entCubes[i]->maxs == entCube->maxs
-			&& entCubes[i]->color == entCube->color) {
+			&& entCubes[i]->color == entCube->color)
+		{
 			return entCubes[i];
 		}
 	}
 	return NULL;
 }
 
-void PointEntRenderer::genCubeBuffers(EntCube* entCube) {
+void PointEntRenderer::genCubeBuffers(EntCube* entCube)
+{
 	vec3 min = entCube->mins;
 	vec3 max = entCube->maxs;
 
@@ -92,7 +107,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube) {
 	cube->model.top.setColor(entCube->color * 0.40f);
 	cube->model.back.setColor(entCube->color * 0.53f);
 
-	COLOR4 selectColor = { 220, 0, 0, 255 };
+	COLOR4 selectColor = {220, 0, 0, 255};
 	entCube->buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, cube, (6 * 6) * 2, GL_TRIANGLES);
 
 	cCubeAxes* selectCube = new cCubeAxes(min, max, selectColor);
@@ -117,7 +132,7 @@ void PointEntRenderer::genCubeBuffers(EntCube* entCube) {
 		vec3(min.x, max.y, max.z), // back-left-top
 	};
 
-	COLOR4 yellow = { 255, 255, 0, 255 };
+	COLOR4 yellow = {255, 255, 0, 255};
 
 	// edges
 	cVert selectWireframe[12 * 2] = {

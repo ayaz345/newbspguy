@@ -1,7 +1,8 @@
 #include "util.h"
 #include "Entity.h"
 
-class CommandLine {
+class CommandLine
+{
 public:
 	std::string command;
 	std::string bspfile;

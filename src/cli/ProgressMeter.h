@@ -2,7 +2,8 @@
 #include <chrono>
 #include <ctime>
 
-class ProgressMeter {
+class ProgressMeter
+{
 public:
 	bool simpleMode = false;
 	bool hide = false;

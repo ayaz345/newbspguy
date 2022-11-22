@@ -23,7 +23,8 @@
 #define LUMP_MODELS       14
 #define HEADER_LUMPS      15
 
-enum lump_copy_targets {
+enum lump_copy_targets
+{
 	ENTITIES = 1,
 	PLANES = 2,
 	TEXTURES = 4,
@@ -88,7 +89,8 @@ static const char* g_lump_names[HEADER_LUMPS] = {
 	"MODELS"
 };
 
-enum MODEL_SORT_MODES {
+enum MODEL_SORT_MODES
+{
 	SORT_VERTS,
 	SORT_NODES,
 	SORT_CLIPNODES,
@@ -108,12 +110,14 @@ struct BSPHEADER
 	BSPLUMP lump[HEADER_LUMPS]; // Stores the directory of lumps
 };
 
-struct LumpState {
+struct LumpState
+{
 	unsigned char* lumps[HEADER_LUMPS];
 	int lumpLen[HEADER_LUMPS];
 };
 
-struct BSPPLANE {
+struct BSPPLANE
+{
 	vec3 vNormal;
 	float fDist;
 	int nType;
@@ -122,14 +126,16 @@ struct BSPPLANE {
 	bool update(vec3 newNormal, float fdist);
 };
 
-struct CSGPLANE {
+struct CSGPLANE
+{
 	double normal[3];
 	double origin[3];
 	double dist;
 	int nType;
 };
 
-struct BSPTEXTUREINFO {
+struct BSPTEXTUREINFO
+{
 	vec3 vS;
 	float shiftS;
 	vec3 vT;
@@ -145,7 +151,8 @@ struct BSPMIPTEX
 	int nOffsets[MIPLEVELS];	  // Offsets to texture mipmaps, relative to the start of this structure
 };
 
-struct BSPFACE {
+struct BSPFACE
+{
 	unsigned short iPlane;          // Plane the face is parallel to
 	short nPlaneSide;      // Set if different normals orientation
 	int iFirstEdge;      // Index of the first surfedge
@@ -166,7 +173,8 @@ struct BSPLEAF
 	bool isEmpty();
 };
 
-struct BSPEDGE {
+struct BSPEDGE
+{
 	unsigned short iVertex[2]; // Indices into vertex array
 
 	BSPEDGE();
@@ -203,7 +211,8 @@ struct BSPCLIPNODE
  * application types (not part of the BSP)
  */
 
-struct ScalableTexinfo {
+struct ScalableTexinfo
+{
 	int texinfoIdx;
 	vec3 oldS, oldT;
 	float oldShiftS, oldShiftT;
@@ -211,7 +220,8 @@ struct ScalableTexinfo {
 	int faceIdx;
 };
 
-struct TransformVert {
+struct TransformVert
+{
 	vec3 pos;
 	vec3* ptr; // face vertex to move with (null for invisible faces)
 	std::vector<int> iPlanes;
@@ -220,27 +230,31 @@ struct TransformVert {
 	bool selected;
 };
 
-struct HullEdge {
+struct HullEdge
+{
 	int verts[2]; // index into modelVerts/hullVerts
 	int planes[2]; // index into iPlanes
 	bool selected;
 };
 
-struct Face {
+struct Face
+{
 	std::vector<int> verts; // index into hullVerts
 	BSPPLANE plane;
 	int planeSide;
 	int iTextureInfo;
 };
 
-struct Solid {
+struct Solid
+{
 	std::vector<Face> faces;
 	std::vector<TransformVert> hullVerts; // control points for hull 0
 	std::vector<HullEdge> hullEdges; // for vertex manipulation (holds indexes into hullVerts)
 };
 
 // used to construct bounding volumes for solid leaves
-struct NodeVolumeCuts {
+struct NodeVolumeCuts
+{
 	int nodeIdx;
 	std::vector<BSPPLANE> cuts; // cuts which define the leaf boundaries when applied to a bounding box, in order.
 };

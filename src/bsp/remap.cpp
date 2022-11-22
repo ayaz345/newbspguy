@@ -4,7 +4,8 @@
 
 STRUCTCOUNT::STRUCTCOUNT() = default;
 
-STRUCTCOUNT::STRUCTCOUNT(Bsp * map) {
+STRUCTCOUNT::STRUCTCOUNT(Bsp* map)
+{
 	planes = map->bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
 	texInfos = map->bsp_header.lump[LUMP_TEXINFO].nLength / sizeof(BSPTEXTUREINFO);
 	leaves = map->bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
@@ -21,7 +22,8 @@ STRUCTCOUNT::STRUCTCOUNT(Bsp * map) {
 	visdata = map->bsp_header.lump[LUMP_VISIBILITY].nLength;
 }
 
-void STRUCTCOUNT::add(const STRUCTCOUNT & other) {
+void STRUCTCOUNT::add(const STRUCTCOUNT& other)
+{
 	planes += other.planes;
 	texInfos += other.texInfos;
 	leaves += other.leaves;
@@ -38,7 +40,8 @@ void STRUCTCOUNT::add(const STRUCTCOUNT & other) {
 	visdata += other.visdata;
 }
 
-void STRUCTCOUNT::sub(const STRUCTCOUNT & other) {
+void STRUCTCOUNT::sub(const STRUCTCOUNT& other)
+{
 	planes -= other.planes;
 	texInfos -= other.texInfos;
 	leaves -= other.leaves;
@@ -55,18 +58,21 @@ void STRUCTCOUNT::sub(const STRUCTCOUNT & other) {
 	visdata -= other.visdata;
 }
 
-bool STRUCTCOUNT::allZero() {
+bool STRUCTCOUNT::allZero()
+{
 	STRUCTCOUNT zeros;
 	memset(&zeros, 0, sizeof(zeros));
 
 	return memcmp(&zeros, this, sizeof(zeros)) == 0;
 }
 
-void print_stat(int indent, int stat, const char* data) {
+void print_stat(int indent, int stat, const char* data)
+{
 	for (int i = 0; i < indent; i++)
 		logf("    ");
 	const char* plural = "s";
-	if (std::string(data) == "vertex") {
+	if (std::string(data) == "vertex")
+	{
 		plural = "es";
 	}
 	int statabs = abs(stat);
@@ -74,7 +80,8 @@ void print_stat(int indent, int stat, const char* data) {
 	logf("%s %d %s%s\n", stat > 0 ? "Deleted" : "Added", statabs, data, statabs > 1 ? plural : "");
 }
 
-void print_stat_mem(int indent, int bytes, const char* data) {
+void print_stat_mem(int indent, int bytes, const char* data)
+{
 	if (!bytes)
 		return;
 	for (int i = 0; i < indent; i++)
@@ -82,7 +89,8 @@ void print_stat_mem(int indent, int bytes, const char* data) {
 	logf("%s %.2f KB of %s\n", bytes > 0 ? "Deleted" : "Added", abs(bytes) / 1024.0f, data);
 }
 
-void STRUCTCOUNT::print_delete_stats(int indent) {
+void STRUCTCOUNT::print_delete_stats(int indent)
+{
 	print_stat(indent, models, "model");
 	print_stat(indent, planes, "plane");
 	print_stat(indent, verts, "vertex");
@@ -99,7 +107,8 @@ void STRUCTCOUNT::print_delete_stats(int indent) {
 	print_stat_mem(indent, visdata, "VIS data");
 }
 
-STRUCTUSAGE::STRUCTUSAGE(Bsp * map) : count(map) {
+STRUCTUSAGE::STRUCTUSAGE(Bsp* map) : count(map)
+{
 	modelIdx = 0;
 
 	nodes = new bool[count.nodes];
@@ -127,7 +136,8 @@ STRUCTUSAGE::STRUCTUSAGE(Bsp * map) : count(map) {
 	memset(edges, 0, count.edges * sizeof(bool));
 }
 
-void STRUCTUSAGE::compute_sum() {
+void STRUCTUSAGE::compute_sum()
+{
 	memset(&sum, 0, sizeof(STRUCTCOUNT));
 	for (unsigned int i = 0; i < count.planes; i++) sum.planes += planes[i];
 	for (unsigned int i = 0; i < count.texInfos; i++) sum.texInfos += texInfo[i];
@@ -142,7 +152,8 @@ void STRUCTUSAGE::compute_sum() {
 	for (unsigned int i = 0; i < count.edges; i++) sum.edges += edges[i];
 }
 
-STRUCTUSAGE::~STRUCTUSAGE() {
+STRUCTUSAGE::~STRUCTUSAGE()
+{
 	delete[] nodes;
 	delete[] clipnodes;
 	delete[] leaves;
@@ -156,7 +167,8 @@ STRUCTUSAGE::~STRUCTUSAGE() {
 	delete[] edges;
 }
 
-STRUCTREMAP::STRUCTREMAP(Bsp * map) : count(map) {
+STRUCTREMAP::STRUCTREMAP(Bsp* map) : count(map)
+{
 	nodes = new int[count.nodes];
 	clipnodes = new int[count.clipnodes];
 	leaves = new int[count.leaves];
@@ -193,7 +205,8 @@ STRUCTREMAP::STRUCTREMAP(Bsp * map) : count(map) {
 	memset(visitedLeaves, 0, count.leaves * sizeof(bool));
 }
 
-STRUCTREMAP::~STRUCTREMAP() {
+STRUCTREMAP::~STRUCTREMAP()
+{
 	delete[] nodes;
 	delete[] clipnodes;
 	delete[] leaves;

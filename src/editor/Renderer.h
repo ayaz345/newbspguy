@@ -19,24 +19,28 @@ extern std::string g_config_dir;
 
 class Gui;
 
-enum transform_modes {
+enum transform_modes
+{
 	TRANSFORM_NONE = -1,
 	TRANSFORM_MOVE,
 	TRANSFORM_SCALE
 };
 
-enum transform_targets {
+enum transform_targets
+{
 	TRANSFORM_OBJECT,
 	TRANSFORM_VERTEX,
 	TRANSFORM_ORIGIN
 };
 
-enum pick_modes {
+enum pick_modes
+{
 	PICK_OBJECT,
 	PICK_FACE
 };
 
-struct TransformAxes {
+struct TransformAxes
+{
 	cCube model[6];
 	VertexBuffer* buffer;
 	vec3 origin;
@@ -47,7 +51,8 @@ struct TransformAxes {
 	int numAxes;
 };
 
-struct AppSettings {
+struct AppSettings
+{
 	int windowWidth;
 	int windowHeight;
 	int windowX;
@@ -111,7 +116,8 @@ extern Renderer* g_app;
 extern vec3 cameraOrigin;
 extern vec3 cameraAngles;
 
-class Renderer {
+class Renderer
+{
 	friend class Gui;
 	friend class EditEntityCommand;
 	friend class DeleteEntityCommand;
@@ -160,7 +166,7 @@ public:
 	void selectMap(Bsp* map);
 	void deselectMap(Bsp* map);
 	void clearSelection();
-	void pushModelUndoState(const std::string & actionDesc, int targetLumps);
+	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
 
 	std::vector<int> selectedFaces;
 private:
@@ -347,7 +353,7 @@ private:
 	void goToCoords(float x, float y, float z);
 	void ungrabEnt();
 
-	void pushEntityUndoState(const std::string & actionDesc);
+	void pushEntityUndoState(const std::string& actionDesc);
 	void pushUndoCommand(Command* cmd);
 	void undo();
 	void redo();

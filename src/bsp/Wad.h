@@ -13,15 +13,18 @@ struct COLOR3
 	unsigned char r, g, b;
 
 	COLOR3() = default;
-	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b) {}
+	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b)
+	{}
 };
 #pragma pack(pop)
 struct COLOR4
 {
 	unsigned char r, g, b, a;
 	COLOR4() = default;
-	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a) {}
-	COLOR4(COLOR3 c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a) {}
+	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a)
+	{}
+	COLOR4(COLOR3 c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
+	{}
 };
 
 COLOR3 operator*(COLOR3 v, float f);

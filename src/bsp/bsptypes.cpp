@@ -4,46 +4,56 @@
 
 BSPEDGE::BSPEDGE() = default;
 
-BSPEDGE::BSPEDGE(unsigned short v1, unsigned short v2) {
+BSPEDGE::BSPEDGE(unsigned short v1, unsigned short v2)
+{
 	iVertex[0] = v1;
 	iVertex[1] = v2;
 }
 
-bool BSPPLANE::update(vec3 newNormal, float fdist) {
+bool BSPPLANE::update(vec3 newNormal, float fdist)
+{
 	double fx = abs(newNormal.x);
 	double fy = abs(newNormal.y);
 	double fz = abs(newNormal.z);
 	int planeType = PLANE_ANYZ;
 	bool shouldFlip = false;
-	if (fx > 0.9999) {
+	if (fx > 0.9999)
+	{
 		planeType = PLANE_X;
 		if (newNormal.x < 0) shouldFlip = true;
 	}
-	else if (fy > 0.9999) {
+	else if (fy > 0.9999)
+	{
 		planeType = PLANE_Y;
 		if (newNormal.y < 0) shouldFlip = true;
 	}
-	else if (fz > 0.9999) {
+	else if (fz > 0.9999)
+	{
 		planeType = PLANE_Z;
 		if (newNormal.z < 0) shouldFlip = true;
 	}
-	else {
-		if (fx > fy && fx > fz) {
+	else
+	{
+		if (fx > fy && fx > fz)
+		{
 			planeType = PLANE_ANYX;
 			//if (newNormal.x < 0) shouldFlip = true;
 		}
-		else if (fy > fx && fy > fz) {
+		else if (fy > fx && fy > fz)
+		{
 			planeType = PLANE_ANYY;
 			//if (newNormal.y < 0) shouldFlip = true;
 		}
-		else {
+		else
+		{
 			planeType = PLANE_ANYZ;
 			//if (newNormal.z < 0) shouldFlip = true;
 		}
 	}
 
 	// TODO: negative normals seem to be working for submodels. Just doesn't work for head nodes?
-	if (shouldFlip) {
+	if (shouldFlip)
+	{
 		newNormal *= -1;
 		fdist = -fdist;
 	}
@@ -55,7 +65,8 @@ bool BSPPLANE::update(vec3 newNormal, float fdist) {
 	return shouldFlip;
 }
 
-bool BSPLEAF::isEmpty() {
+bool BSPLEAF::isEmpty()
+{
 	BSPLEAF emptyLeaf;
 	memset(&emptyLeaf, 0, sizeof(BSPLEAF));
 	emptyLeaf.nContents = CONTENTS_SOLID;

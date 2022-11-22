@@ -4,7 +4,8 @@
 #include "lodepng.h"
 #include "util.h"
 
-Texture::Texture(GLsizei _width, GLsizei _height, const char * name) {
+Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
+{
 	this->width = _width;
 	this->height = _height;
 	this->nearFilter = GL_LINEAR;
@@ -14,7 +15,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char * name) {
 	snprintf(texName, 64, "%s", name);
 }
 
-Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char * name)
+Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char* name)
 {
 	this->width = _width;
 	this->height = _height;
@@ -34,7 +35,8 @@ Texture::~Texture()
 
 void Texture::upload(int _format, bool lightmap)
 {
-	if (uploaded) {
+	if (uploaded)
+	{
 		glDeleteTextures(1, &id);
 	}
 	glGenTextures(1, &id);
@@ -77,5 +79,5 @@ void Texture::upload(int _format, bool lightmap)
 void Texture::bind(GLuint texnum)
 {
 	glActiveTexture(GL_TEXTURE0 + texnum);
-	glBindTexture(GL_TEXTURE_2D,id);
+	glBindTexture(GL_TEXTURE_2D, id);
 }

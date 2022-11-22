@@ -29,15 +29,15 @@ void Entity::addKeyvalue(const std::string& key, const std::string& value, bool 
 			dup++;
 		}
 	}
-	else 
+	else
 		keyvalues[key] = value;
 	dup = 1;
 
-	if (find(keyOrder.begin(), keyOrder.end(), key) == keyOrder.end()) 
+	if (find(keyOrder.begin(), keyOrder.end(), key) == keyOrder.end())
 	{
 		keyOrder.push_back(key);
 	}
-	else if(multisupport)
+	else if (multisupport)
 	{
 		while (true)
 		{
@@ -55,14 +55,16 @@ void Entity::addKeyvalue(const std::string& key, const std::string& value, bool 
 	targetsCached = false;
 }
 
-void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value) {
+void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
+{
 	cachedModelIdx = -2;
 	targetsCached = false;
 
 	addKeyvalue(key, value);
 }
 
-void Entity::removeKeyvalue(const std::string& key) {
+void Entity::removeKeyvalue(const std::string& key)
+{
 	if (!hasKey(key))
 		return;
 	keyOrder.erase(find(keyOrder.begin(), keyOrder.end(), key));
@@ -71,12 +73,16 @@ void Entity::removeKeyvalue(const std::string& key) {
 	targetsCached = false;
 }
 
-bool Entity::renameKey(int idx, const std::string& newName) {
-	if (idx < 0 || idx >= keyOrder.size() || newName.empty()) {
+bool Entity::renameKey(int idx, const std::string& newName)
+{
+	if (idx < 0 || idx >= keyOrder.size() || newName.empty())
+	{
 		return false;
 	}
-	for (int i = 0; i < keyOrder.size(); i++) {
-		if (keyOrder[i] == newName) {
+	for (int i = 0; i < keyOrder.size(); i++)
+	{
+		if (keyOrder[i] == newName)
+		{
 			return false;
 		}
 	}
@@ -89,16 +95,20 @@ bool Entity::renameKey(int idx, const std::string& newName) {
 	return true;
 }
 
-void Entity::clearAllKeyvalues() {
+void Entity::clearAllKeyvalues()
+{
 	keyOrder.clear();
 	keyvalues.clear();
 	cachedModelIdx = -2;
 }
 
-void Entity::clearEmptyKeyvalues() {
+void Entity::clearEmptyKeyvalues()
+{
 	std::vector<std::string> newKeyOrder;
-	for (int i = 0; i < keyOrder.size(); i++) {
-		if (!keyvalues[keyOrder[i]].empty()) {
+	for (int i = 0; i < keyOrder.size(); i++)
+	{
+		if (!keyvalues[keyOrder[i]].empty())
+		{
 			newKeyOrder.push_back(keyOrder[i]);
 		}
 	}
@@ -112,24 +122,29 @@ bool Entity::hasKey(const std::string& key)
 	return keyvalues.find(key) != keyvalues.end() && find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end();
 }
 
-int Entity::getBspModelIdx() {
-	if (cachedModelIdx != -2) {
+int Entity::getBspModelIdx()
+{
+	if (cachedModelIdx != -2)
+	{
 		return cachedModelIdx;
 	}
 
-	if (!hasKey("model")) {
+	if (!hasKey("model"))
+	{
 		cachedModelIdx = -1;
 		return -1;
 	}
 
 	std::string model = keyvalues["model"];
-	if (model.size() <= 1 || model[0] != '*') {
+	if (model.size() <= 1 || model[0] != '*')
+	{
 		cachedModelIdx = -1;
 		return -1;
 	}
 
 	std::string modelIdxStr = model.substr(1);
-	if (!isNumeric(modelIdxStr)) {
+	if (!isNumeric(modelIdxStr))
+	{
 		cachedModelIdx = -1;
 		return -1;
 	}
@@ -137,28 +152,34 @@ int Entity::getBspModelIdx() {
 	return cachedModelIdx;
 }
 
-int Entity::getBspModelIdxForce() {
-	if (!hasKey("model")) {
+int Entity::getBspModelIdxForce()
+{
+	if (!hasKey("model"))
+	{
 		return -1;
 	}
 
 	std::string model = keyvalues["model"];
-	if (model.size() <= 1 || model[0] != '*') {
+	if (model.size() <= 1 || model[0] != '*')
+	{
 		return -1;
 	}
 
 	std::string modelIdxStr = model.substr(1);
-	if (!isNumeric(modelIdxStr)) {
+	if (!isNumeric(modelIdxStr))
+	{
 		return -1;
 	}
 	return atoi(modelIdxStr.c_str());
 }
 
-bool Entity::isBspModel() {
+bool Entity::isBspModel()
+{
 	return getBspModelIdx() >= 0;
 }
 
-vec3 Entity::getOrigin() {
+vec3 Entity::getOrigin()
+{
 	return hasKey("origin") ? parseVector(keyvalues["origin"]) : vec3(0, 0, 0);
 }
 
@@ -365,29 +386,36 @@ const char* potential_tergetname_keys[TOTAL_TARGETNAME_KEYS] = {
 
 // This needs to be kept in sync with the FGD
 
-std::vector<std::string> Entity::getTargets() {
-	if (targetsCached) {
+std::vector<std::string> Entity::getTargets()
+{
+	if (targetsCached)
+	{
 		return cachedTargets;
 	}
 
 	std::vector<std::string> targets;
 
-	for (int i = 1; i < TOTAL_TARGETNAME_KEYS; i++) { // skip targetname
+	for (int i = 1; i < TOTAL_TARGETNAME_KEYS; i++)
+	{ // skip targetname
 		const char* key = potential_tergetname_keys[i];
-		if (hasKey(key)) {
+		if (hasKey(key))
+		{
 			targets.push_back(keyvalues[key]);
 		}
 	}
 
-	if (keyvalues["classname"] == "multi_manager") {
-		// multi_manager is a special case where the targets are in the key names
-		for (int i = 0; i < keyOrder.size(); i++) {
+	if (keyvalues["classname"] == "multi_manager")
+	{
+// multi_manager is a special case where the targets are in the key names
+		for (int i = 0; i < keyOrder.size(); i++)
+		{
 			std::string tname = keyOrder[i];
 			size_t hashPos = tname.find('#');
 			// std::string suffix;
 
 			// duplicate targetnames have a #X suffix to differentiate them
-			if (hashPos != std::string::npos) {
+			if (hashPos != std::string::npos)
+			{
 				tname = tname.substr(0, hashPos);
 			}
 			targets.push_back(tname);
@@ -396,7 +424,8 @@ std::vector<std::string> Entity::getTargets() {
 
 	cachedTargets.clear();
 	cachedTargets.reserve(targets.size());
-	for (int i = 0; i < targets.size(); i++) {
+	for (int i = 0; i < targets.size(); i++)
+	{
 		cachedTargets.push_back(targets[i]);
 	}
 	targetsCached = true;
@@ -404,10 +433,13 @@ std::vector<std::string> Entity::getTargets() {
 	return targets;
 }
 
-bool Entity::hasTarget(const std::string& checkTarget) {
+bool Entity::hasTarget(const std::string& checkTarget)
+{
 	std::vector<std::string> targets = getTargets();
-	for (int i = 0; i < targets.size(); i++) {
-		if (targets[i] == checkTarget) {
+	for (int i = 0; i < targets.size(); i++)
+	{
+		if (targets[i] == checkTarget)
+		{
 			return true;
 		}
 	}
@@ -415,28 +447,35 @@ bool Entity::hasTarget(const std::string& checkTarget) {
 	return false;
 }
 
-void Entity::renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname) {
-	for (int i = 0; i < TOTAL_TARGETNAME_KEYS; i++) {
+void Entity::renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname)
+{
+	for (int i = 0; i < TOTAL_TARGETNAME_KEYS; i++)
+	{
 		const char* key = potential_tergetname_keys[i];
-		if (keyvalues.find(key) != keyvalues.end() && keyvalues[key] == oldTargetname) {
+		if (keyvalues.find(key) != keyvalues.end() && keyvalues[key] == oldTargetname)
+		{
 			keyvalues[key] = newTargetname;
 		}
 	}
 
-	if (keyvalues["classname"] == "multi_manager") {
-		// multi_manager is a special case where the targets are in the key names
-		for (int i = 0; i < keyOrder.size(); i++) {
+	if (keyvalues["classname"] == "multi_manager")
+	{
+// multi_manager is a special case where the targets are in the key names
+		for (int i = 0; i < keyOrder.size(); i++)
+		{
 			std::string tname = keyOrder[i];
 			size_t hashPos = tname.find('#');
 			std::string suffix;
 
 			// duplicate targetnames have a #X suffix to differentiate them
-			if (hashPos != std::string::npos) {
+			if (hashPos != std::string::npos)
+			{
 				tname = keyOrder[i].substr(0, hashPos);
 				suffix = keyOrder[i].substr(hashPos);
 			}
 
-			if (tname == oldTargetname) {
+			if (tname == oldTargetname)
+			{
 				std::string newKey = newTargetname + suffix;
 				keyvalues[newKey] = keyvalues[keyOrder[i]];
 				keyOrder[i] = newKey;
@@ -445,16 +484,20 @@ void Entity::renameTargetnameValues(const std::string& oldTargetname, const std:
 	}
 }
 
-size_t Entity::getMemoryUsage() {
+size_t Entity::getMemoryUsage()
+{
 	size_t size = sizeof(Entity);
 
-	for (int i = 0; i < cachedTargets.size(); i++) {
+	for (int i = 0; i < cachedTargets.size(); i++)
+	{
 		size += cachedTargets[i].size();
 	}
-	for (int i = 0; i < keyOrder.size(); i++) {
+	for (int i = 0; i < keyOrder.size(); i++)
+	{
 		size += keyOrder[i].size();
 	}
-	for (const auto& entry : keyvalues) {
+	for (const auto& entry : keyvalues)
+	{
 		size += entry.first.size() + entry.second.size();
 	}
 

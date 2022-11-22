@@ -10,7 +10,8 @@
 #include "qtools/rad.h"
 #include <GLFW/glfw3.h>
 
-struct ModelInfo {
+struct ModelInfo
+{
 	std::string classname;
 	std::string targetname;
 	std::string model;
@@ -19,7 +20,8 @@ struct ModelInfo {
 	int entIdx;
 };
 
-struct StatInfo {
+struct StatInfo
+{
 	std::string name;
 	std::string val;
 	std::string max;
@@ -34,7 +36,8 @@ class Renderer;
 #define SHOW_IMPORT_ADD_NEW 2
 #define SHOW_IMPORT_MODEL 3
 
-class Gui {
+class Gui
+{
 	friend class Renderer;
 
 public:
@@ -94,12 +97,12 @@ private:
 	bool badSurfaceExtents = false;
 	bool lightmapTooLarge = false;
 
-	bool loadedLimit[SORT_MODES] = { false };
+	bool loadedLimit[SORT_MODES] = {false};
 	std::vector<ModelInfo> limitModels[SORT_MODES];
 	bool loadedStats = false;
 	std::vector<StatInfo> stats;
 
-	bool anyHullValid[MAX_MAP_HULLS] = { false };
+	bool anyHullValid[MAX_MAP_HULLS] = {false};
 
 	int guiHoverAxis; // axis being hovered in the transform menu
 	int contextMenuEnt = -1; // open entity context menu if >= 0

@@ -3,16 +3,22 @@
 
 bool g_debug_shift = false;
 
-void printVisRow(unsigned char* vis, int len, int offsetLeaf, int mask) {
-	for (int i = 0; i < len; i++) {
+void printVisRow(unsigned char* vis, int len, int offsetLeaf, int mask)
+{
+	for (int i = 0; i < len; i++)
+	{
 		unsigned char bits = vis[i];
-		for (int b = 0; b < 8; b++) {
+		for (int b = 0; b < 8; b++)
+		{
 			int leafIdx = i * 8 + b;
-			if (leafIdx == offsetLeaf) {
+			if (leafIdx == offsetLeaf)
+			{
 				print_color(PRINT_GREEN | PRINT_BRIGHT);
 			}
-			else {
-				if (i * 8 < offsetLeaf && i * 8 + 8 > offsetLeaf && (1 << b) & mask) {
+			else
+			{
+				if (i * 8 < offsetLeaf && i * 8 + 8 > offsetLeaf && (1 << b) & mask)
+				{
 					print_color(PRINT_RED | PRINT_GREEN);
 				}
 				else
@@ -25,14 +31,16 @@ void printVisRow(unsigned char* vis, int len, int offsetLeaf, int mask) {
 	logf("\n");
 }
 
-bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift) {
+bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
+{
 	if (shift == 0)
 		return false;
 
 	unsigned char bitsPerStep = 8;
 	unsigned char offsetBit = offsetLeaf % bitsPerStep;
 	unsigned char mask = 0; // part of the unsigned char that shouldn't be shifted
-	for (int i = 0; i < offsetBit; i++) {
+	for (int i = 0; i < offsetBit; i++)
+	{
 		mask |= 1 << i;
 	}
 
@@ -41,73 +49,91 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift) {
 
 	// shift until offsetLeaf isn't sharing a unsigned char with the leaves that come before it
 	// then we can do a much faster memcpy on the section that needs to be shifted
-	if ((offsetLeaf % 8) + bitShifts < 8 && byteShifts > 0) {
+	if ((offsetLeaf % 8) + bitShifts < 8 && byteShifts > 0)
+	{
 		byteShifts -= 1;
 		bitShifts += 8;
 	}
 
-	if (shift < 0) {
-		// TODO: memcpy for negative shifts
+	if (shift < 0)
+	{
+// TODO: memcpy for negative shifts
 		bitShifts += byteShifts * 8;
 		byteShifts = 0;
 	}
 
-	if (g_debug_shift) {
+	if (g_debug_shift)
+	{
 		logf("\nSHIFT\n");
 	}
 
 	int overflow = 0;
-	for (int k = 0; k < bitShifts; k++) {
+	for (int k = 0; k < bitShifts; k++)
+	{
 
-		if (g_debug_shift) {
+		if (g_debug_shift)
+		{
 			logf("%2d = ", k);
 			printVisRow(vis, len, offsetLeaf, mask);
 		}
 
-		if (shift > 0) {
+		if (shift > 0)
+		{
 			bool carry = 0;
-			for (int i = 0; i < len; i++) {
+			for (int i = 0; i < len; i++)
+			{
 				unsigned int oldCarry = carry;
 				carry = (vis[i] & 0x80) != 0;
 
-				if (offsetBit != 0 && i * bitsPerStep < offsetLeaf && i * bitsPerStep + bitsPerStep > offsetLeaf) {
+				if (offsetBit != 0 && i * bitsPerStep < offsetLeaf && i * bitsPerStep + bitsPerStep > offsetLeaf)
+				{
 					vis[i] = (vis[i] & mask) | ((vis[i] & ~mask) << 1);
 				}
-				else if (i >= offsetLeaf / bitsPerStep) {
+				else if (i >= offsetLeaf / bitsPerStep)
+				{
 					vis[i] = (vis[i] << 1) + oldCarry;
 				}
-				else {
+				else
+				{
 					carry = 0;
 				}
 			}
 
-			if (carry) {
+			if (carry)
+			{
 				overflow++;
 			}
 		}
-		else {
+		else
+		{
 			bool carry = 0;
-			for (int i = len - 1; i >= 0; i--) {
+			for (int i = len - 1; i >= 0; i--)
+			{
 				unsigned int oldCarry = carry;
 				carry = (vis[i] & 0x01) != 0;
 
-				if (offsetBit != 0 && i * bitsPerStep < offsetLeaf && i * bitsPerStep + bitsPerStep > offsetLeaf) {
+				if (offsetBit != 0 && i * bitsPerStep < offsetLeaf && i * bitsPerStep + bitsPerStep > offsetLeaf)
+				{
 					vis[i] = (vis[i] & mask) | ((vis[i] >> 1) & ~mask) | (oldCarry << 7);
 				}
-				else if (i >= offsetLeaf / bitsPerStep) {
+				else if (i >= offsetLeaf / bitsPerStep)
+				{
 					vis[i] = (vis[i] >> 1) + (oldCarry << 7);
 				}
-				else {
+				else
+				{
 					carry = 0;
 				}
 			}
 
-			if (carry) {
+			if (carry)
+			{
 				overflow++;
 			}
 		}
 
-		if (g_debug_shift && k == bitShifts - 1) {
+		if (g_debug_shift && k == bitShifts - 1)
+		{
 			logf("%2d = ", k + 1);
 			printVisRow(vis, len, offsetLeaf, mask);
 		}
@@ -116,11 +142,13 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift) {
 		logf("OVERFLOWED %d VIS LEAVES WHILE SHIFTING\n", overflow);
 
 
-	if (byteShifts > 0) {
-		// TODO: detect overflows here too
+	if (byteShifts > 0)
+	{
+// TODO: detect overflows here too
 		static unsigned char temp[MAX_MAP_LEAVES / 8];
 
-		if (shift > 0) {
+		if (shift > 0)
+		{
 			int startByte = (offsetLeaf + bitShifts) / 8;
 			int moveSize = len - (startByte + byteShifts);
 
@@ -128,8 +156,9 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift) {
 			memset((unsigned char*)vis + startByte, 0, byteShifts);
 			memcpy((unsigned char*)vis + startByte + byteShifts, temp, moveSize);
 		}
-		else {
-			// TODO LOL
+		else
+		{
+	  // TODO LOL
 		}
 
 	}
@@ -142,7 +171,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift) {
 // visDataLeafCount = total leaves in this map (exluding the shared solid leaf 0)
 // newNumLeaves = total leaves that will be in the map after merging is finished (again, excluding solid leaf 0)
 void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned char* output,
-	int iterationLeaves, int visDataLeafCount, int newNumLeaves)
+						 int iterationLeaves, int visDataLeafCount, int newNumLeaves)
 {
 	unsigned char* dest;
 	int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
@@ -151,7 +180,8 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 	// calculate which bits of an uncompressed visibility row are used/unused
 	unsigned char lastChunkMask = 0;
 	int lastUsedIdx = (iterationLeaves / 8);
-	for (unsigned char k = 0; k < iterationLeaves % 8; k++) {
+	for (unsigned char k = 0; k < iterationLeaves % 8; k++)
+	{
 		lastChunkMask = lastChunkMask | (1 << k);
 	}
 
@@ -161,7 +191,8 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 		dest = output + i * newVisRowSize;
 		if (lastUsedIdx >= 0)
 		{
-			if (leafLump[i + 1].nVisOffset < 0) {
+			if (leafLump[i + 1].nVisOffset < 0)
+			{
 				memset(dest, 255, lastUsedIdx);
 				dest[lastUsedIdx] |= lastChunkMask;
 				continue;
@@ -172,13 +203,15 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 			// Leaf visibility row lengths are multiples of 64 leaves, so there are usually some unused bits at the end.
 			// Maps sometimes set those unused bits randomly (e.g. leaf index 100 is marked visible, but there are only 90 leaves...)
 			// Leaves for submodels also don't matter and can be set to 0 to save space during recompression.
-			if (lastUsedIdx < newVisRowSize) {
+			if (lastUsedIdx < newVisRowSize)
+			{
 				dest[lastUsedIdx] &= lastChunkMask;
 				int sz = newVisRowSize - (lastUsedIdx + 1);
 				memset(dest + lastUsedIdx + 1, 0, sz);
 			}
 		}
-		else {
+		else
+		{
 			logf("Overflow decompressing VIS lump!");
 			return;
 		}
@@ -288,16 +321,20 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 	unsigned char* vismap_p = output;
 
 	int* sharedRows = new int[iterLeaves];
-	for (int i = 0; i < iterLeaves; i++) {
+	for (int i = 0; i < iterLeaves; i++)
+	{
 		src = uncompressed + i * g_bitbytes;
 
 		sharedRows[i] = i;
-		for (int k = 0; k < i; k++) {
-			if (sharedRows[k] != k) {
+		for (int k = 0; k < i; k++)
+		{
+			if (sharedRows[k] != k)
+			{
 				continue; // already compared in an earlier row
 			}
 			unsigned char* previous = uncompressed + k * g_bitbytes;
-			if (memcmp(src, previous, g_bitbytes) == 0) {
+			if (memcmp(src, previous, g_bitbytes) == 0)
+			{
 				sharedRows[i] = k;
 				break;
 			}
@@ -307,7 +344,8 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 
 	for (int i = 0; i < iterLeaves; i++)
 	{
-		if (sharedRows[i] != i) {
+		if (sharedRows[i] != i)
+		{
 			leafs[i + 1].nVisOffset = leafs[sharedRows[i] + 1].nVisOffset;
 			continue;
 		}
@@ -327,7 +365,7 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 			logf("Vismap expansion overflow\n");
 		}
 
-		leafs[i + 1].nVisOffset = (int)( dest - output );            // leaf 0 is a common solid
+		leafs[i + 1].nVisOffset = (int)(dest - output);            // leaf 0 is a common solid
 
 		memcpy(dest, compressed, x);
 	}
