@@ -13,31 +13,39 @@ std::map<std::string, int> fgdKeyTypes{
 	{"target_destination", FGD_KEY_TARGET_DST}
 };
 
-Fgd::Fgd(std::string _path) {
+Fgd::Fgd(std::string _path)
+{
 	this->path = _path;
 	this->name = stripExt(basename(path));
 	this->lineNum = 0;
 }
 
-Fgd::~Fgd() {
-	for (int i = 0; i < classes.size(); i++) {
+Fgd::~Fgd()
+{
+	for (int i = 0; i < classes.size(); i++)
+	{
 		delete classes[i];
 	}
 }
 
-FgdClass* Fgd::getFgdClass(const std::string& cname) {
-	if (classMap.find(cname) == classMap.end()) {
+FgdClass* Fgd::getFgdClass(const std::string& cname)
+{
+	if (classMap.find(cname) == classMap.end())
+	{
 		return NULL;
 	}
 	return classMap[cname];
 }
 
-void Fgd::merge(Fgd* other) {
-	for (auto it = other->classMap.begin(); it != other->classMap.end(); ++it) {
+void Fgd::merge(Fgd* other)
+{
+	for (auto it = other->classMap.begin(); it != other->classMap.end(); ++it)
+	{
 		std::string className = it->first;
 		FgdClass* fgdClass = it->second;
 
-		if (classMap.find(className) != classMap.end()) {
+		if (classMap.find(className) != classMap.end())
+		{
 			logf("Skipping duplicate definition for %s in FGD %s\n", className.c_str(), other->name.c_str());
 			continue;
 		}
@@ -50,9 +58,11 @@ void Fgd::merge(Fgd* other) {
 	}
 }
 
-bool Fgd::parse() {
+bool Fgd::parse()
+{
 
-	if (!fileExists(path)) {
+	if (!fileExists(path))
+	{
 		logf("Missing FGD: %s\n", path.c_str());
 		return false;
 	}
@@ -67,7 +77,8 @@ bool Fgd::parse() {
 	int bracketNestLevel = 0;
 
 	line.clear();
-	while (getline(in, line)) {
+	while (getline(in, line))
+	{
 		lineNum++;
 
 		// strip comments
@@ -80,35 +91,44 @@ bool Fgd::parse() {
 		if (line.empty())
 			continue;
 
-		if (line[0] == '@') {
-			if (bracketNestLevel) {
+		if (line[0] == '@')
+		{
+			if (bracketNestLevel)
+			{
 				logf("ERROR: New FGD class definition starts before previous one ends (line %d)\n", lineNum);
 			}
 
 			parseClassHeader(*fgdClass);
 		}
 
-		if (line.find('[') != std::string::npos) {
+		if (line.find('[') != std::string::npos)
+		{
 			bracketNestLevel++;
 		}
-		if (line.find(']') != std::string::npos) {
+		if (line.find(']') != std::string::npos)
+		{
 			bracketNestLevel--;
-			if (bracketNestLevel == 0) {
+			if (bracketNestLevel == 0)
+			{
 				classes.push_back(fgdClass);
 				fgdClass = new FgdClass(); //memory leak
 			}
 		}
 
-		if (line == "[" || line == "]") {
+		if (line == "[" || line == "]")
+		{
 			continue;
 		}
 
-		if (bracketNestLevel == 1) {
+		if (bracketNestLevel == 1)
+		{
 			parseKeyvalue(*fgdClass);
 		}
 
-		if (bracketNestLevel == 2) {
-			if (fgdClass->keyvalues.empty()) {
+		if (bracketNestLevel == 2)
+		{
+			if (fgdClass->keyvalues.empty())
+			{
 				logf("ERROR: Choice values begin before any keyvalue are defined (line %d)\n", lineNum);
 				continue;
 			}
@@ -123,10 +143,12 @@ bool Fgd::parse() {
 	return true;
 }
 
-void Fgd::parseClassHeader(FgdClass& fgdClass) {
+void Fgd::parseClassHeader(FgdClass& fgdClass)
+{
 	std::vector<std::string> headerParts = splitString(line, "=");
 
-	if (headerParts.empty()) {
+	if (headerParts.empty())
+	{
 		logf("ERROR: Unexpected end of class header (line %d)\n", lineNum);
 		return;
 	}
@@ -137,97 +159,120 @@ void Fgd::parseClassHeader(FgdClass& fgdClass) {
 
 	std::string classType = toLowerCase(typeParts[0]);
 
-	if (classType == "@baseclass") {
+	if (classType == "@baseclass")
+	{
 		fgdClass.classType = FGD_CLASS_BASE;
 	}
-	else if (classType == "@solidclass") {
+	else if (classType == "@solidclass")
+	{
 		fgdClass.classType = FGD_CLASS_SOLID;
 	}
-	else if (classType == "@pointclass") {
+	else if (classType == "@pointclass")
+	{
 		fgdClass.classType = FGD_CLASS_POINT;
 	}
-	else {
+	else
+	{
 		logf("ERROR: Unrecognized FGD class type '%s'\n", typeParts[0].c_str());
 	}
 
 	// parse constructors/properties
-	for (int i = 1; i < typeParts.size(); i++) {
+	for (int i = 1; i < typeParts.size(); i++)
+	{
 		std::string lpart = toLowerCase(typeParts[i]);
 
-		if (lpart.find("base(") == 0) {
+		if (lpart.find("base(") == 0)
+		{
 			std::vector<std::string> baseClassList = splitString(getValueInParens(typeParts[i]), ",");
-			for (int k = 0; k < baseClassList.size(); k++) {
+			for (int k = 0; k < baseClassList.size(); k++)
+			{
 				std::string baseClass = trimSpaces(baseClassList[k]);
 				fgdClass.baseClasses.push_back(baseClass);
 			}
 		}
-		else if (lpart.find("size(") == 0) {
+		else if (lpart.find("size(") == 0)
+		{
 			std::vector<std::string> sizeList = splitString(getValueInParens(typeParts[i]), ",");
 
-			if (sizeList.size() == 1) {
+			if (sizeList.size() == 1)
+			{
 				vec3 size = parseVector(sizeList[0]);
 				fgdClass.mins = size * -0.5f;
 				fgdClass.maxs = size * 0.5f;
 			}
-			else if (sizeList.size() == 2) {
+			else if (sizeList.size() == 2)
+			{
 				fgdClass.mins = parseVector(sizeList[0]);
 				fgdClass.maxs = parseVector(sizeList[1]);
 			}
-			else {
+			else
+			{
 				logf("ERROR: Expected 2 vectors in size() property (line %d)\n", lineNum);
 			}
 
 			fgdClass.sizeSet = true;
 		}
-		else if (lpart.find("color(") == 0) {
+		else if (lpart.find("color(") == 0)
+		{
 			std::vector<std::string> nums = splitString(getValueInParens(typeParts[i]), " ");
 
-			if (nums.size() == 3) {
-				fgdClass.color = { (unsigned char)atoi(nums[0].c_str()), (unsigned char)atoi(nums[1].c_str()), (unsigned char)atoi(nums[2].c_str()) };
+			if (nums.size() == 3)
+			{
+				fgdClass.color = {(unsigned char)atoi(nums[0].c_str()), (unsigned char)atoi(nums[1].c_str()), (unsigned char)atoi(nums[2].c_str())};
 			}
-			else {
+			else
+			{
 				logf("ERROR: Expected 3 components in color() property (line %d)\n", lineNum);
 			}
 
 			fgdClass.colorSet = true;
 		}
-		else if (lpart.find("studio(") == 0) {
+		else if (lpart.find("studio(") == 0)
+		{
 			fgdClass.model = getValueInParens(typeParts[i]);
 			fgdClass.isModel = true;
 		}
-		else if (lpart.find("iconsprite(") == 0) {
+		else if (lpart.find("iconsprite(") == 0)
+		{
 			fgdClass.iconSprite = getValueInParens(typeParts[i]);
 		}
-		else if (lpart.find("sprite(") == 0) {
+		else if (lpart.find("sprite(") == 0)
+		{
 			fgdClass.sprite = getValueInParens(typeParts[i]);
 			fgdClass.isSprite = true;
 		}
-		else if (lpart.find("decal(") == 0) {
+		else if (lpart.find("decal(") == 0)
+		{
 			fgdClass.isDecal = true;
 		}
-		else if (typeParts[i].find('(') != std::string::npos) {
+		else if (typeParts[i].find('(') != std::string::npos)
+		{
 			std::string typeName = typeParts[i].substr(0, typeParts[i].find('('));
 			logf("WARNING: Unrecognized type %s (line %d)\n", typeName.c_str(), lineNum);
 		}
 	}
 
-	if (headerParts.size() == 1) {
+	if (headerParts.size() == 1)
+	{
 		logf("ERROR: Unexpected end of class header (line %d)\n", lineNum);
 		return;
 	}
 	std::vector<std::string> nameParts = splitStringIgnoringQuotes(headerParts[1], ":");
 
-	if (nameParts.size() >= 2) {
+	if (nameParts.size() >= 2)
+	{
 		fgdClass.description = getValueInQuotes(nameParts[1]);
 	}
-	if (nameParts.size() >= 1) {
+	if (nameParts.size() >= 1)
+	{
 		fgdClass.name = trimSpaces(nameParts[0]);
 		// strips brackets if they're there
 		fgdClass.name = fgdClass.name.substr(0, fgdClass.name.find(' '));
 	}
 }
 
-void Fgd::parseKeyvalue(FgdClass& outClass) {
+void Fgd::parseKeyvalue(FgdClass& outClass)
+{
 	std::vector<std::string> keyParts = splitStringIgnoringQuotes(line, ":");
 
 	KeyvalueDef def;
@@ -236,13 +281,15 @@ void Fgd::parseKeyvalue(FgdClass& outClass) {
 	def.valueType = toLowerCase(getValueInParens(keyParts[0]));
 
 	def.iType = FGD_KEY_STRING;
-	if (fgdKeyTypes.find(def.valueType) != fgdKeyTypes.end()) {
+	if (fgdKeyTypes.find(def.valueType) != fgdKeyTypes.end())
+	{
 		def.iType = fgdKeyTypes[def.valueType];
 	}
 
 	if (keyParts.size() > 1)
 		def.description = getValueInQuotes(keyParts[1]);
-	else {
+	else
+	{
 		def.description = def.name;
 
 		// capitalize (infodecal)
@@ -250,14 +297,18 @@ void Fgd::parseKeyvalue(FgdClass& outClass) {
 			def.description[0] = def.description[0] - 32;
 	}
 
-	if (keyParts.size() > 2) {
-		if (keyParts[2].find('=') != std::string::npos) { // choice
+	if (keyParts.size() > 2)
+	{
+		if (keyParts[2].find('=') != std::string::npos)
+		{ // choice
 			def.defaultValue = trimSpaces(keyParts[2].substr(0, keyParts[2].find('=')));
 		}
-		else if (keyParts[2].find('\"') != std::string::npos) { // std::string
+		else if (keyParts[2].find('\"') != std::string::npos)
+		{ // std::string
 			def.defaultValue = getValueInQuotes(keyParts[2]);
 		}
-		else { // integer
+		else
+		{ // integer
 			def.defaultValue = trimSpaces(keyParts[2]);
 		}
 	}
@@ -267,17 +318,20 @@ void Fgd::parseKeyvalue(FgdClass& outClass) {
 	//logf << "ADD KEY " << def.name << "(" << def.valueType << ") : " << def.description << " : " << def.defaultValue << endl;
 }
 
-void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey) {
+void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
+{
 	std::vector<std::string> keyParts = splitString(line, ":");
 
 	KeyvalueChoice def;
 
-	if (keyParts[0].find('\"') != std::string::npos) {
+	if (keyParts[0].find('\"') != std::string::npos)
+	{
 		def.svalue = getValueInQuotes(keyParts[0]);
 		def.ivalue = 0;
 		def.isInteger = false;
 	}
-	else {
+	else
+	{
 		def.svalue = trimSpaces(keyParts[0]);
 		def.ivalue = atoi(keyParts[0].c_str());
 		def.isInteger = true;
@@ -291,23 +345,29 @@ void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey) {
 	//logf << "ADD CHOICE LINE " << lineNum << " = " << def.svalue << " : " << def.name << endl;
 }
 
-std::vector<std::string> Fgd::groupParts(std::vector<std::string>& ungrouped) {
+std::vector<std::string> Fgd::groupParts(std::vector<std::string>& ungrouped)
+{
 	std::vector<std::string> grouped;
 
-	for (int i = 0; i < ungrouped.size(); i++) {
+	for (int i = 0; i < ungrouped.size(); i++)
+	{
 
-		if (stringGroupStarts(ungrouped[i])) {
+		if (stringGroupStarts(ungrouped[i]))
+		{
 			std::string groupedPart = ungrouped[i];
 			i++;
-			for (; i < ungrouped.size(); i++) {
+			for (; i < ungrouped.size(); i++)
+			{
 				groupedPart += " " + ungrouped[i];
-				if (stringGroupEnds(ungrouped[i])) {
+				if (stringGroupEnds(ungrouped[i]))
+				{
 					break;
 				}
 			}
 			grouped.push_back(groupedPart);
 		}
-		else {
+		else
+		{
 			grouped.push_back(ungrouped[i]);
 		}
 	}
@@ -315,13 +375,16 @@ std::vector<std::string> Fgd::groupParts(std::vector<std::string>& ungrouped) {
 	return grouped;
 }
 
-bool Fgd::stringGroupStarts(const std::string& s) {
-	if (s.find('(') != std::string::npos) {
+bool Fgd::stringGroupStarts(const std::string& s)
+{
+	if (s.find('(') != std::string::npos)
+	{
 		return s.find(')') == std::string::npos;
 	}
 
 	size_t startStringPos = s.find('\"');
-	if (startStringPos != std::string::npos) {
+	if (startStringPos != std::string::npos)
+	{
 		size_t endStringPos = s.rfind('\"');
 		return endStringPos == startStringPos || endStringPos == std::string::npos;
 	}
@@ -329,29 +392,35 @@ bool Fgd::stringGroupStarts(const std::string& s) {
 	return false;
 }
 
-bool Fgd::stringGroupEnds(const std::string& s) {
+bool Fgd::stringGroupEnds(const std::string& s)
+{
 	return s.find(')') != std::string::npos || s.find('\"') != std::string::npos;
 }
 
-std::string Fgd::getValueInParens(std::string s) {
+std::string Fgd::getValueInParens(std::string s)
+{
 	s = s.substr(s.find('(') + 1);
 	s = s.substr(0, s.rfind(')'));
 	return trimSpaces(s);
 }
 
-std::string Fgd::getValueInQuotes(std::string s) {
+std::string Fgd::getValueInQuotes(std::string s)
+{
 	s = s.substr(s.find('\"') + 1);
 	s = s.substr(0, s.rfind('\"'));
 	return s;
 }
 
-void Fgd::processClassInheritance() {
-	for (int i = 0; i < classes.size(); i++) {
+void Fgd::processClassInheritance()
+{
+	for (int i = 0; i < classes.size(); i++)
+	{
 		classMap[classes[i]->name] = classes[i];
 		//logf("Got class %s\n", classes[i]->name.c_str());
 	}
 
-	for (int i = 0; i < classes.size(); i++) {
+	for (int i = 0; i < classes.size(); i++)
+	{
 		if (classes[i]->classType == FGD_CLASS_BASE)
 			continue;
 
@@ -365,26 +434,34 @@ void Fgd::processClassInheritance() {
 			std::set<std::string> addedKeys;
 			std::set<std::string> addedSpawnflags;
 			//logf << classes[i]->name << " INHERITS FROM: ";
-			for (int k = (int)allBaseClasses.size() - 1; k >= 0; k--) {
-				if (!classes[i]->colorSet && allBaseClasses[k]->colorSet) {
+			for (int k = (int)allBaseClasses.size() - 1; k >= 0; k--)
+			{
+				if (!classes[i]->colorSet && allBaseClasses[k]->colorSet)
+				{
 					classes[i]->color = allBaseClasses[k]->color;
 				}
-				if (!classes[i]->sizeSet && allBaseClasses[k]->sizeSet) {
+				if (!classes[i]->sizeSet && allBaseClasses[k]->sizeSet)
+				{
 					classes[i]->mins = allBaseClasses[k]->mins;
 					classes[i]->maxs = allBaseClasses[k]->maxs;
 				}
 				auto tmpBaseClass = allBaseClasses[k];
-				for (int c = 0; c < tmpBaseClass->keyvalues.size(); c++) {
+				for (int c = 0; c < tmpBaseClass->keyvalues.size(); c++)
+				{
 
 					auto tmpBaseKeys = tmpBaseClass->keyvalues[c];
-					if (addedKeys.find(tmpBaseKeys.name) == addedKeys.end()) {
+					if (addedKeys.find(tmpBaseKeys.name) == addedKeys.end())
+					{
 						newKeyvalues.push_back(tmpBaseClass->keyvalues[c]);
 						addedKeys.insert(tmpBaseKeys.name);
 					}
-					if (tmpBaseKeys.iType == FGD_KEY_FLAGS) {
-						for (int f = 0; f < tmpBaseKeys.choices.size(); f++) {
+					if (tmpBaseKeys.iType == FGD_KEY_FLAGS)
+					{
+						for (int f = 0; f < tmpBaseKeys.choices.size(); f++)
+						{
 							KeyvalueChoice& spawnflagOption = tmpBaseKeys.choices[f];
-							if (addedSpawnflags.find(spawnflagOption.svalue) == addedSpawnflags.end()) {
+							if (addedSpawnflags.find(spawnflagOption.svalue) == addedSpawnflags.end())
+							{
 								newSpawnflags.push_back(spawnflagOption);
 								addedSpawnflags.insert(spawnflagOption.svalue);
 							}
@@ -394,16 +471,21 @@ void Fgd::processClassInheritance() {
 				//logf << allBaseClasses[k]->name << " ";
 			}
 
-			for (int c = 0; c < classes[i]->keyvalues.size(); c++) {
+			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			{
 				auto tmpBaseKeys = classes[i]->keyvalues[c];
-				if (addedKeys.find(tmpBaseKeys.name) == addedKeys.end()) {
+				if (addedKeys.find(tmpBaseKeys.name) == addedKeys.end())
+				{
 					newKeyvalues.push_back(tmpBaseKeys);
 					addedKeys.insert(tmpBaseKeys.name);
 				}
-				if (tmpBaseKeys.iType == FGD_KEY_FLAGS) {
-					for (int f = 0; f < tmpBaseKeys.choices.size(); f++) {
+				if (tmpBaseKeys.iType == FGD_KEY_FLAGS)
+				{
+					for (int f = 0; f < tmpBaseKeys.choices.size(); f++)
+					{
 						KeyvalueChoice& spawnflagOption = tmpBaseKeys.choices[f];
-						if (addedSpawnflags.find(spawnflagOption.svalue) == addedSpawnflags.end()) {
+						if (addedSpawnflags.find(spawnflagOption.svalue) == addedSpawnflags.end())
+						{
 							newSpawnflags.push_back(spawnflagOption);
 							addedSpawnflags.insert(spawnflagOption.svalue);
 						}
@@ -413,8 +495,10 @@ void Fgd::processClassInheritance() {
 
 			classes[i]->keyvalues = std::move(newKeyvalues);
 
-			for (int c = 0; c < classes[i]->keyvalues.size(); c++) {
-				if (classes[i]->keyvalues[c].iType == FGD_KEY_FLAGS) {
+			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			{
+				if (classes[i]->keyvalues[c].iType == FGD_KEY_FLAGS)
+				{
 					classes[i]->keyvalues[c].choices = newSpawnflags;
 				}
 			}
@@ -423,11 +507,14 @@ void Fgd::processClassInheritance() {
 	}
 }
 
-void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList) {
+void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList)
+{
 	if (!baseClasses.empty())
 	{
-		for (int i = (int)baseClasses.size() - 1; i >= 0; i--) {
-			if (fgd->classMap.find(baseClasses[i]) == fgd->classMap.end()) {
+		for (int i = (int)baseClasses.size() - 1; i >= 0; i--)
+		{
+			if (fgd->classMap.find(baseClasses[i]) == fgd->classMap.end())
+			{
 				logf("ERROR: Invalid base class %s\n", baseClasses[i].c_str());
 				continue;
 			}
@@ -437,11 +524,13 @@ void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList)
 	}
 }
 
-void Fgd::createEntGroups() {
+void Fgd::createEntGroups()
+{
 	std::set<std::string> addedPointGroups;
 	std::set<std::string> addedSolidGroups;
 
-	for (int i = 0; i < classes.size(); i++) {
+	for (int i = 0; i < classes.size(); i++)
+	{
 		if (classes[i]->classType == FGD_CLASS_BASE || classes[i]->name == "worldspawn")
 			continue;
 		std::string cname = classes[i]->name;
@@ -452,7 +541,8 @@ void Fgd::createEntGroups() {
 		std::set<std::string>* targetSet = isPointEnt ? &addedPointGroups : &addedSolidGroups;
 		std::vector<FgdGroup>* targetGroup = isPointEnt ? &pointEntGroups : &solidEntGroups;
 
-		if (targetSet->find(groupName) == targetSet->end()) {
+		if (targetSet->find(groupName) == targetSet->end())
+		{
 			FgdGroup newGroup;
 			newGroup.groupName = groupName;
 
@@ -460,8 +550,10 @@ void Fgd::createEntGroups() {
 			targetSet->insert(groupName);
 		}
 
-		for (int k = 0; k < targetGroup->size(); k++) {
-			if (targetGroup->at(k).groupName == groupName) {
+		for (int k = 0; k < targetGroup->size(); k++)
+		{
+			if (targetGroup->at(k).groupName == groupName)
+			{
 				targetGroup->at(k).classes.push_back(classes[i]);
 				break;
 			}
@@ -470,8 +562,10 @@ void Fgd::createEntGroups() {
 
 	FgdGroup otherPointEnts;
 	otherPointEnts.groupName = "other";
-	for (int i = 0; i < pointEntGroups.size(); i++) {
-		if (pointEntGroups[i].classes.size() == 1) {
+	for (int i = 0; i < pointEntGroups.size(); i++)
+	{
+		if (pointEntGroups[i].classes.size() == 1)
+		{
 			otherPointEnts.classes.push_back(pointEntGroups[i].classes[0]);
 			pointEntGroups.erase(pointEntGroups.begin() + i);
 			i--;
@@ -481,8 +575,10 @@ void Fgd::createEntGroups() {
 
 	FgdGroup otherSolidEnts;
 	otherSolidEnts.groupName = "other";
-	for (int i = 0; i < solidEntGroups.size(); i++) {
-		if (solidEntGroups[i].classes.size() == 1) {
+	for (int i = 0; i < solidEntGroups.size(); i++)
+	{
+		if (solidEntGroups[i].classes.size() == 1)
+		{
 			otherSolidEnts.classes.push_back(solidEntGroups[i].classes[0]);
 			solidEntGroups.erase(solidEntGroups.begin() + i);
 			i--;
@@ -491,36 +587,45 @@ void Fgd::createEntGroups() {
 	solidEntGroups.push_back(otherSolidEnts);
 }
 
-void Fgd::setSpawnflagNames() {
-	for (int i = 0; i < classes.size(); i++) {
+void Fgd::setSpawnflagNames()
+{
+	for (int i = 0; i < classes.size(); i++)
+	{
 		if (classes[i]->classType == FGD_CLASS_BASE)
 			continue;
 
-		for (int k = 0; k < classes[i]->keyvalues.size(); k++) {
-			if (classes[i]->keyvalues[k].name == "spawnflags") {
-				for (int c = 0; c < classes[i]->keyvalues[k].choices.size(); c++) {
+		for (int k = 0; k < classes[i]->keyvalues.size(); k++)
+		{
+			if (classes[i]->keyvalues[k].name == "spawnflags")
+			{
+				for (int c = 0; c < classes[i]->keyvalues[k].choices.size(); c++)
+				{
 					KeyvalueChoice& choice = classes[i]->keyvalues[k].choices[c];
 
-					if (!choice.isInteger) {
+					if (!choice.isInteger)
+					{
 						logf("ERROR: Invalid spwanflag value %s\n", choice.svalue.c_str());
 						continue;
 					}
 
 					int val = choice.ivalue;
 					int bit = 0;
-					while (val >>= 1) {
+					while (val >>= 1)
+					{
 						bit++;
 					}
 
-					if (bit > 31) {
+					if (bit > 31)
+					{
 						logf("ERROR: Invalid spawnflag value %s\n", choice.svalue.c_str());
 					}
-					else {
+					else
+					{
 						classes[i]->spawnFlagNames[bit] = choice.name;
 
 						bool flgnameexists = false;
 
-						for (auto & s : existsFlagNames)
+						for (auto& s : existsFlagNames)
 						{
 							if (s == choice.name)
 								flgnameexists = true;

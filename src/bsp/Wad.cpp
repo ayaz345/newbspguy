@@ -83,7 +83,10 @@ bool Wad::readInfo()
 	bool usableTextures = false;
 	for (int i = 0; i < numTex; i++)
 	{
-		if (fin.eof()) { logf("Unexpected end of WAD\n"); return false; }
+		if (fin.eof())
+		{
+			logf("Unexpected end of WAD\n"); return false;
+		}
 		fin.read((char*)&dirEntries[i], sizeof(WADDIRENTRY));
 		if (dirEntries[i].nType == 0x43) usableTextures = true;
 	}
@@ -102,7 +105,7 @@ bool Wad::readInfo()
 	return true;
 }
 
-bool Wad::hasTexture(const std::string & name)
+bool Wad::hasTexture(const std::string& name)
 {
 	for (int d = 0; d < header.nDir; d++)
 		if (strcasecmp(name.c_str(), dirEntries[d].szName) == 0)

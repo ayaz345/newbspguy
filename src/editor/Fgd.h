@@ -3,13 +3,15 @@
 #include "Wad.h"
 #include "Entity.h"
 
-enum FGD_CLASS_TYPES {
+enum FGD_CLASS_TYPES
+{
 	FGD_CLASS_BASE,
 	FGD_CLASS_SOLID,
 	FGD_CLASS_POINT
 };
 
-enum FGD_KEY_TYPES {
+enum FGD_KEY_TYPES
+{
 	FGD_KEY_INTEGER,
 	FGD_KEY_STRING,
 	FGD_KEY_CHOICES,
@@ -23,14 +25,16 @@ enum FGD_KEY_TYPES {
 };
 
 // for both "choice" and "flags" keyvalue types
-struct KeyvalueChoice {
+struct KeyvalueChoice
+{
 	std::string name;
 	std::string svalue;
 	int ivalue;
 	bool isInteger;
 };
 
-struct KeyvalueDef {
+struct KeyvalueDef
+{
 	std::string name;
 	std::string valueType;
 	int iType;
@@ -41,7 +45,8 @@ struct KeyvalueDef {
 
 class Fgd;
 
-struct FgdClass {
+struct FgdClass
+{
 	int classType;
 	std::string name;
 	std::string description;
@@ -63,7 +68,8 @@ struct FgdClass {
 	bool colorSet;
 	bool sizeSet;
 
-	FgdClass() {
+	FgdClass()
+	{
 		classType = FGD_CLASS_POINT;
 		name = "???";
 		isSprite = false;
@@ -75,7 +81,7 @@ struct FgdClass {
 		// default to the purple cube
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
-		color = { 220, 0, 220 };
+		color = {220, 0, 220};
 	}
 
 	// get parent classes from youngest to oldest, in right-to-left order
@@ -83,12 +89,14 @@ struct FgdClass {
 	void getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList);
 };
 
-struct FgdGroup {
+struct FgdGroup
+{
 	std::vector<FgdClass*> classes;
 	std::string groupName;
 };
 
-class Fgd {
+class Fgd
+{
 public:
 	std::string path;
 	std::string name;
@@ -108,7 +116,7 @@ public:
 	bool parse();
 	void merge(Fgd* other);
 
-	FgdClass* getFgdClass(const std::string & cname);
+	FgdClass* getFgdClass(const std::string& cname);
 
 private:
 	int lineNum;
@@ -124,10 +132,10 @@ private:
 	void setSpawnflagNames();
 
 	// true if value begins a group of strings separated by spaces
-	bool stringGroupStarts(const std::string & s);
+	bool stringGroupStarts(const std::string& s);
 
 	// true if any closing paren or quote is found
-	bool stringGroupEnds(const std::string &  s);
+	bool stringGroupEnds(const std::string& s);
 
 	// get the value inside a prefixed set of parens
 	std::string getValueInParens(std::string s);

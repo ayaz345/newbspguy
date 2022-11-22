@@ -3,7 +3,8 @@
 #include "Fgd.h"
 #include "VertexBuffer.h"
 
-struct EntCube {
+struct EntCube
+{
 	vec3 mins;
 	vec3 maxs;
 	COLOR4 color;
@@ -13,7 +14,8 @@ struct EntCube {
 	VertexBuffer* wireframeBuffer; // yellow outline for selected ents
 };
 
-class PointEntRenderer {
+class PointEntRenderer
+{
 public:
 	Fgd* fgd;
 

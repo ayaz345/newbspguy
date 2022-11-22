@@ -8,7 +8,7 @@ static unsigned int g_active_shader_program = 0xFFFFFFFF;
 ShaderProgram::ShaderProgram(const char* vshaderSource, const char* fshaderSource)
 {
 	modelViewID = modelViewProjID = -1;
-	vposID = vcolorID = vtexID = 0; 
+	vposID = vcolorID = vtexID = 0;
 	projMat = viewMat = modelMat = nullptr;
 	vShader = new Shader(vshaderSource, GL_VERTEX_SHADER);
 	fShader = new Shader(fshaderSource, GL_FRAGMENT_SHADER);
@@ -130,7 +130,7 @@ void ShaderProgram::pushMatrix(int matType)
 
 void ShaderProgram::popMatrix(int matType)
 {
-	mat4x4* targets[3] = { modelMat, viewMat, projMat };
+	mat4x4* targets[3] = {modelMat, viewMat, projMat};
 	for (int idx = 0, mask = 1; idx < 3; ++idx, mask <<= 1)
 	{
 		if (matType & mask)

@@ -1,6 +1,7 @@
 #include "CommandLine.h"
 
-CommandLine::CommandLine(int argc, char* argv[]) {
+CommandLine::CommandLine(int argc, char* argv[])
+{
 
 	askingForHelp = argc <= 1;
 
@@ -9,10 +10,12 @@ CommandLine::CommandLine(int argc, char* argv[]) {
 		std::string arg = argv[i];
 		std::string larg = toLowerCase(arg);
 
-		if (i == 1) {
+		if (i == 1)
+		{
 			command = larg;
 		}
-		if (i == 2) {
+		if (i == 2)
+		{
 			bspfile = larg;
 		}
 		if (i > 2)
@@ -20,22 +23,27 @@ CommandLine::CommandLine(int argc, char* argv[]) {
 			options.push_back(arg);
 		}
 
-		if ((i == 1 || i == 2) && larg.find("help") == 0 || larg.find("/?") == 0 || larg.find("--help") == 0 || larg.find("-help") == 0 || larg.find("-h") == 0) {
+		if ((i == 1 || i == 2) && larg.find("help") == 0 || larg.find("/?") == 0 || larg.find("--help") == 0 || larg.find("-help") == 0 || larg.find("-h") == 0)
+		{
 			askingForHelp = true;
 		}
 	}
 
-	if (askingForHelp) {
+	if (askingForHelp)
+	{
 		return;
 	}
 
-	for (int i = 0; i < options.size(); i++) {
+	for (int i = 0; i < options.size(); i++)
+	{
 		std::string opt = toLowerCase(options[i]);
 
-		if (i < options.size() - 1) {
+		if (i < options.size() - 1)
+		{
 			optionVals[opt] = options[i + 1];
 		}
-		else {
+		else
+		{
 			optionVals[opt].clear();
 		}
 	}
@@ -46,18 +54,21 @@ CommandLine::CommandLine(int argc, char* argv[]) {
 	}
 }
 
-bool CommandLine::hasOption(const std::string& optionName) {
+bool CommandLine::hasOption(const std::string& optionName)
+{
 	return optionVals.find(optionName) != optionVals.end();
 }
 
-bool CommandLine::hasOptionVector(const std::string& optionName) {
+bool CommandLine::hasOptionVector(const std::string& optionName)
+{
 	if (!hasOption(optionName))
 		return false;
 
 	std::string val = optionVals[optionName];
 	std::vector<std::string> parts = splitString(val, ",");
 
-	if (parts.size() != 3) {
+	if (parts.size() != 3)
+	{
 		logf("ERROR: invalid number of coordinates for option %s\n", optionName.c_str());
 		return false;
 	}
@@ -65,19 +76,23 @@ bool CommandLine::hasOptionVector(const std::string& optionName) {
 	return true;
 }
 
-std::string CommandLine::getOption(const std::string& optionName) {
+std::string CommandLine::getOption(const std::string& optionName)
+{
 	return optionVals[optionName];
 }
 
-int CommandLine::getOptionInt(const std::string& optionName) {
+int CommandLine::getOptionInt(const std::string& optionName)
+{
 	return atoi(optionVals[optionName].c_str());
 }
 
-vec3 CommandLine::getOptionVector(const std::string& optionName) {
+vec3 CommandLine::getOptionVector(const std::string& optionName)
+{
 	vec3 ret;
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");
 
-	if (parts.size() != 3) {
+	if (parts.size() != 3)
+	{
 		logf("ERROR: invalid number of coordinates for option %s\n", optionName.c_str());
 		return ret;
 	}
@@ -89,10 +104,12 @@ vec3 CommandLine::getOptionVector(const std::string& optionName) {
 	return ret;
 }
 
-std::vector<std::string> CommandLine::getOptionList(const std::string& optionName) {
+std::vector<std::string> CommandLine::getOptionList(const std::string& optionName)
+{
 	std::vector<std::string> parts = splitString(optionVals[optionName], ",");
 
-	for (int i = 0; i < parts.size(); i++) {
+	for (int i = 0; i < parts.size(); i++)
+	{
 		parts[i] = trimSpaces(parts[i]);
 	}
 

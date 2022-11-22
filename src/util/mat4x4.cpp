@@ -12,7 +12,7 @@ void mat4x4::loadIdentity()
 }
 
 void glhFrustumf2(float* matrix, float left, float right, float bottom, float top,
-	float znear, float zfar)
+				  float znear, float zfar)
 {
 	float temp, temp2, temp3, temp4;
 	temp = 2.0f * znear;
@@ -124,7 +124,8 @@ void mat4x4::rotateZ(float r)
 	mult(rmat);
 }
 
-mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z) {
+mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z)
+{
 	const vec3 world_x(1, 0, 0);
 	const vec3 world_y(0, 1, 0);
 	const vec3 world_z(0, 0, 1);

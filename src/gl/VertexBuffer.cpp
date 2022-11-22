@@ -27,23 +27,23 @@ VertexAttr::VertexAttr(int numValues, int valueType, int vhandle, int normalized
 {
 	switch (valueType)
 	{
-	case(GL_BYTE):
-	case(GL_UNSIGNED_BYTE):
-		size = numValues;
-		break;
-	case(GL_SHORT):
-	case(GL_UNSIGNED_SHORT):
-		size = numValues * 2;
-		break;
-	case(GL_FLOAT):
-	case(GL_INT):
-	case(GL_UNSIGNED_INT):
-		size = numValues * 4;
-		break;
-	default:
-		logf("Unknown attribute value type: %d", valueType);
-		handle = -1;
-		size = 0;
+		case(GL_BYTE):
+		case(GL_UNSIGNED_BYTE):
+			size = numValues;
+			break;
+		case(GL_SHORT):
+		case(GL_UNSIGNED_SHORT):
+			size = numValues * 2;
+			break;
+		case(GL_FLOAT):
+		case(GL_INT):
+		case(GL_UNSIGNED_INT):
+			size = numValues * 4;
+			break;
+		default:
+			logf("Unknown attribute value type: %d", valueType);
+			handle = -1;
+			size = 0;
 	}
 }
 
@@ -69,9 +69,11 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primi
 //	glGenQueries(1, &drawQuery);
 }
 
-VertexBuffer::~VertexBuffer() {
+VertexBuffer::~VertexBuffer()
+{
 	deleteBuffer();
-	if (ownData) {
+	if (ownData)
+	{
 		delete[] data;
 	}
 	//glDeleteQueries(1, &drawQuery);
@@ -98,14 +100,16 @@ void VertexBuffer::addAttributes(int attFlags)
 	}
 }
 
-void VertexBuffer::addAttribute(int numValues, int valueType, int normalized, const char* varName) {
+void VertexBuffer::addAttribute(int numValues, int valueType, int normalized, const char* varName)
+{
 	VertexAttr attribute(numValues, valueType, -1, normalized, varName);
 
 	attribs.push_back(attribute);
 	elementSize += attribute.size;
 }
 
-void VertexBuffer::addAttribute(int type, const char* varName) {
+void VertexBuffer::addAttribute(int type, const char* varName)
+{
 
 	int idx = 0;
 	while (type >>= 1) // unroll for more speed...
@@ -113,7 +117,8 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 		idx++;
 	}
 
-	if (idx >= VBUF_FLAGBITS) {
+	if (idx >= VBUF_FLAGBITS)
+	{
 		logf("Invalid attribute type\n");
 		return;
 	}
@@ -126,12 +131,14 @@ void VertexBuffer::addAttribute(int type, const char* varName) {
 	elementSize += attribute.size;
 }
 
-void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
+void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors)
+{
 	shaderProgram = program;
 	attributesBound = false;
 	for (int i = 0; i < attribs.size(); i++)
 	{
-		if (attribs[i].varName[0] != '\0') {
+		if (attribs[i].varName[0] != '\0')
+		{
 			attribs[i].handle = -1;
 		}
 	}
@@ -144,7 +151,8 @@ void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 	}
 }
 
-void VertexBuffer::bindAttributes(bool hideErrors) {
+void VertexBuffer::bindAttributes(bool hideErrors)
+{
 	if (attributesBound)
 		return;
 
@@ -175,7 +183,8 @@ void VertexBuffer::setData(const void* _data, GLsizei _numVerts, int _primitive)
 	this->primitive = _primitive;
 }
 
-void VertexBuffer::upload() {
+void VertexBuffer::upload()
+{
 	shaderProgram->bind();
 	bindAttributes();
 
@@ -189,7 +198,8 @@ void VertexBuffer::upload() {
 		VertexAttr& a = attribs[i];
 		void* ptr = (void*)offset;
 		offset += a.size;
-		if (a.handle == -1) {
+		if (a.handle == -1)
+		{
 			continue;
 		}
 		glEnableVertexAttribArray(a.handle);
@@ -199,7 +209,8 @@ void VertexBuffer::upload() {
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VertexBuffer::deleteBuffer() {
+void VertexBuffer::deleteBuffer()
+{
 	if (vboId != 0xFFFFFFFF)
 		glDeleteBuffers(1, &vboId);
 	vboId = 0xFFFFFFFF;
@@ -220,7 +231,8 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 		shaderProgram->bind();
 		bindAttributes();
 
-		if (vboId != 0xFFFFFFFF) {
+		if (vboId != 0xFFFFFFFF)
+		{
 			glBindBuffer(GL_ARRAY_BUFFER, vboId);
 			offsetPtr = NULL;
 		}
@@ -250,7 +262,8 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 			glDisableVertexAttribArray(a.handle);
 		}
 
-		if (vboId != 0xFFFFFFFF) {
+		if (vboId != 0xFFFFFFFF)
+		{
 			glBindBuffer(GL_ARRAY_BUFFER, 0);
 		}
 

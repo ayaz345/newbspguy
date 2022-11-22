@@ -2,7 +2,8 @@
 class Bsp;
 
 // excludes entities
-struct STRUCTCOUNT {
+struct STRUCTCOUNT
+{
 	unsigned int planes;
 	unsigned int texInfos;
 	unsigned int leaves;

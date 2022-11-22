@@ -3,7 +3,8 @@
 #include "Bsp.h"
 #include <algorithm>
 
-void qrad_get_lightmap_flags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut) {
+void qrad_get_lightmap_flags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut)
+{
 
 	BSPFACE* f = &bsp->faces[faceIdx];
 
@@ -199,8 +200,8 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 
 static bool TestSampleFrag(Bsp* bsp, int facenum, vec_t s, vec_t t, const vec_t square[2][2], int maxsize)
 {
-	const vec3_t v_s = { s, 0, 0 };
-	const vec3_t v_t = { 0, t, 0 };
+	const vec3_t v_s = {s, 0, 0};
+	const vec3_t v_t = {0, t, 0};
 
 	samplefrag_t head;
 
@@ -252,7 +253,8 @@ float CalculatePointVecsProduct(const volatile float* point, const volatile floa
 	return (float)val;
 }
 
-void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2]) {
+void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2])
+{
 	int mins[2];
 	int maxs[2];
 
@@ -276,13 +278,15 @@ void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2]) {
 	//return !badSurfaceExtents;
 }
 
-int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum) {
+int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum)
+{
 	int size[2];
 	GetFaceLightmapSize(bsp, facenum, size);
 	BSPFACE& face = bsp->faces[facenum];
 
 	int lightmapCount = 0;
-	for (int k = 0; k < 4; k++) {
+	for (int k = 0; k < 4; k++)
+	{
 		lightmapCount += face.nStyles[k] != 255;
 	}
 	return size[0] * size[1] * lightmapCount * sizeof(COLOR3);
@@ -460,10 +464,10 @@ void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
 					{
 						switch (n)
 						{
-						case 0: s_other = s + 1; t_other = t; break;
-						case 1: s_other = s - 1; t_other = t; break;
-						case 2: s_other = s; t_other = t + 1; break;
-						case 3: s_other = s; t_other = t - 1; break;
+							case 0: s_other = s + 1; t_other = t; break;
+							case 1: s_other = s - 1; t_other = t; break;
+							case 2: s_other = s; t_other = t + 1; break;
+							case 3: s_other = s; t_other = t - 1; break;
 						}
 						if (t_other < 0 || t_other >= h || s_other < 0 || s_other >= w)
 							continue;

@@ -2,12 +2,12 @@
 #include "util.h"
 #include <sstream>
 
-Keyvalues::Keyvalues(std::string & line)
+Keyvalues::Keyvalues(std::string& line)
 {
 	keys.clear();
 	values.clear();
-	
-	std::vector<std::string> allstrings = splitString(line,"\"");
+
+	std::vector<std::string> allstrings = splitString(line, "\"");
 	if (allstrings.size() > 1)
 	{
 		if (allstrings[0].find('{') != std::string::npos)

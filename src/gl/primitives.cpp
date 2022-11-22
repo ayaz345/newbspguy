@@ -128,7 +128,7 @@ cCube::cCube(vec3 mins, vec3 maxs, COLOR4 c)
 	v2 = cVert(maxs.x, maxs.y, mins.z, c);
 	v3 = cVert(maxs.x, mins.y, mins.z, c);
 	v4 = cVert(mins.x, mins.y, mins.z, c);
-	front = { v1, v2, v3, v4 };
+	front = {v1, v2, v3, v4};
 
 	v1 = cVert(maxs.x, maxs.y, maxs.z, c);
 	v2 = cVert(mins.x, maxs.y, maxs.z, c);
@@ -168,7 +168,7 @@ cCubeAxes::cCubeAxes(vec3 mins, vec3 maxs, COLOR4 c)
 	mins.x = maxs.x;
 	mins.y = center.y + 2.5f;
 	mins.z = center.z - 2.5f;
-	
+
 	maxs.x += size.x;
 	maxs.y = center.y - 2.5f;
 	maxs.z = center.z + 2.5f;

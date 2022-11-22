@@ -12,9 +12,12 @@ struct tVert
 	float x, y, z;
 
 	tVert() = default;
-	tVert(float x, float y, float z, float u, float v) : u(u), v(v), x(x), y(y), z(z) {}
-	tVert(vec3 p, float u, float v) : u(u), v(v), x(p.x), y(p.y), z(p.z) {}
-	tVert(vec3 p, vec2 uv) : u(uv.x), v(uv.y), x(p.x), y(p.y), z(p.z) {}
+	tVert(float x, float y, float z, float u, float v) : u(u), v(v), x(x), y(y), z(z)
+	{}
+	tVert(vec3 p, float u, float v) : u(u), v(v), x(p.x), y(p.y), z(p.z)
+	{}
+	tVert(vec3 p, vec2 uv) : u(uv.x), v(uv.y), x(p.x), y(p.y), z(p.z)
+	{}
 
 	vec3 pos();
 };
@@ -38,8 +41,10 @@ struct cVert
 	float x, y, z;
 
 	cVert() = default;
-	cVert(float x, float y, float z, COLOR4 c) : c(c), x(x), y(y), z(z) {}
-	cVert(vec3 p, COLOR4 c) : c(c), x(p.x), y(p.y), z(p.z) {}
+	cVert(float x, float y, float z, COLOR4 c) : c(c), x(x), y(y), z(z)
+	{}
+	cVert(vec3 p, COLOR4 c) : c(c), x(p.x), y(p.y), z(p.z)
+	{}
 };
 
 struct tTri
@@ -47,7 +52,8 @@ struct tTri
 	tVert v1, v2, v3;
 
 	tTri() = default;
-	tTri(tVert v1, tVert v2, tVert v3) : v1(v1), v2(v2), v3(v3) {}
+	tTri(tVert v1, tVert v2, tVert v3) : v1(v1), v2(v2), v3(v3)
+	{}
 };
 
 struct cTri
@@ -55,7 +61,8 @@ struct cTri
 	cVert v1, v2, v3;
 
 	cTri() = default;
-	cTri(cVert v1, cVert v2, cVert v3) : v1(v1), v2(v2), v3(v3) {}
+	cTri(cVert v1, cVert v2, cVert v3) : v1(v1), v2(v2), v3(v3)
+	{}
 };
 
 // Textured 3D Quad

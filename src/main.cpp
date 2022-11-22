@@ -102,7 +102,8 @@ bool g_verbose = false;
 #include <Windows.h>
 #endif
 
-void hideConsoleWindow() {
+void hideConsoleWindow()
+{
 #ifdef WIN32
 #ifdef NDEBUG
 	::ShowWindow(::GetConsoleWindow(), SW_HIDE);
@@ -110,8 +111,10 @@ void hideConsoleWindow() {
 #endif
 }
 
-bool start_viewer(const char * map) {
-	if (map && map[0] != '\0' && !fileExists(map)) {
+bool start_viewer(const char* map)
+{
+	if (map && map[0] != '\0' && !fileExists(map))
+	{
 		return false;
 	}
 	if (!map)
@@ -126,13 +129,15 @@ bool start_viewer(const char * map) {
 	return true;
 }
 
-int test() {
-	//start_viewer("hl_c09.bsp");
-	//return 0;
+int test()
+{
+//start_viewer("hl_c09.bsp");
+//return 0;
 
 	std::vector<Bsp*> maps;
 
-	for (int i = 1; i < 22; i++) {
+	for (int i = 1; i < 22; i++)
+	{
 		Bsp* map = new Bsp("2nd/saving_the_2nd_amendment" + (i > 1 ? std::to_string(i) : "") + ".bsp");
 		maps.push_back(map);
 	}
@@ -146,11 +151,14 @@ int test() {
 	memset(&removed, 0, sizeof(removed));
 
 	g_verbose = true;
-	for (int i = 0; i < maps.size(); i++) {
-		if (!maps[i]->bsp_valid) {
+	for (int i = 0; i < maps.size(); i++)
+	{
+		if (!maps[i]->bsp_valid)
+		{
 			return 1;
 		}
-		if (!maps[i]->validate()) {
+		if (!maps[i]->validate())
+		{
 			logf("");
 		}
 		logf("Preprocess %s\n", maps[i]->bsp_name.c_str());
@@ -167,7 +175,8 @@ int test() {
 	BspMerger merger;
 	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false);
 	logf("\n");
-	if (result) {
+	if (result)
+	{
 		result->write("yabma_move.bsp");
 		result->write("D:/Steam/steamapps/common/Sven Co-op/svencoop_addon/maps/yabma_move.bsp");
 		result->print_info(false, 0, 0);
@@ -178,17 +187,20 @@ int test() {
 	return 0;
 }
 
-int merge_maps(CommandLine& cli) {
+int merge_maps(CommandLine& cli)
+{
 	std::vector<std::string> input_maps = cli.getOptionList("-maps");
 
-	if (input_maps.size() < 2) {
+	if (input_maps.size() < 2)
+	{
 		logf("ERROR: at least 2 input maps are required\n");
 		return 1;
 	}
 
 	std::vector<Bsp*> maps;
 
-	for (int i = 0; i < input_maps.size(); i++) {
+	for (int i = 0; i < input_maps.size(); i++)
+	{
 		Bsp* map = new Bsp(input_maps[i]);
 		if (!map->bsp_valid)
 		{
@@ -197,7 +209,8 @@ int merge_maps(CommandLine& cli) {
 		maps.push_back(map);
 	}
 
-	for (int i = 0; i < maps.size(); i++) {
+	for (int i = 0; i < maps.size(); i++)
+	{
 		logf("Preprocessing %s:\n", maps[i]->bsp_name.c_str());
 
 		logf("    Deleting unused data...\n");
@@ -205,13 +218,15 @@ int merge_maps(CommandLine& cli) {
 		g_progress.clear();
 		removed.print_delete_stats(2);
 
-		if (cli.hasOption("-nohull2") || (cli.hasOption("-optimize") && !maps[i]->has_hull2_ents())) {
+		if (cli.hasOption("-nohull2") || (cli.hasOption("-optimize") && !maps[i]->has_hull2_ents()))
+		{
 			logf("    Deleting hull 2...\n");
 			maps[i]->delete_hull(2, 1);
 			maps[i]->remove_unused_model_structures().print_delete_stats(2);
 		}
 
-		if (cli.hasOption("-optimize")) {
+		if (cli.hasOption("-optimize"))
+		{
 			logf("    Optmizing...\n");
 			maps[i]->delete_unused_hulls().print_delete_stats(2);
 		}
@@ -231,14 +246,16 @@ int merge_maps(CommandLine& cli) {
 	logf("\n");
 	result->print_info(false, 0, 0);
 
-	for (int i = 0; i < maps.size(); i++) {
+	for (int i = 0; i < maps.size(); i++)
+	{
 		delete maps[i];
 	}
 
 	return 0;
 }
 
-int print_info(CommandLine& cli) {
+int print_info(CommandLine& cli)
+{
 	Bsp* map = new Bsp(cli.bspfile);
 	if (map->bsp_valid)
 	{
@@ -246,29 +263,36 @@ int print_info(CommandLine& cli) {
 		int listLength = 10;
 		int sortMode = SORT_CLIPNODES;
 
-		if (cli.hasOption("-limit")) {
+		if (cli.hasOption("-limit"))
+		{
 			std::string limitName = cli.getOption("-limit");
 
 			limitMode = true;
-			if (limitName == "clipnodes") {
+			if (limitName == "clipnodes")
+			{
 				sortMode = SORT_CLIPNODES;
 			}
-			else if (limitName == "nodes") {
+			else if (limitName == "nodes")
+			{
 				sortMode = SORT_NODES;
 			}
-			else if (limitName == "faces") {
+			else if (limitName == "faces")
+			{
 				sortMode = SORT_FACES;
 			}
-			else if (limitName == "vertexes") {
+			else if (limitName == "vertexes")
+			{
 				sortMode = SORT_VERTS;
 			}
-			else {
+			else
+			{
 				logf("ERROR: invalid limit name: %s\n", limitName.c_str());
 				delete map;
 				return 0;
 			}
 		}
-		if (cli.hasOption("-all")) {
+		if (cli.hasOption("-all"))
+		{
 			listLength = 32768; // should be more than enough
 		}
 
@@ -279,7 +303,8 @@ int print_info(CommandLine& cli) {
 	return 1;
 }
 
-int noclip(CommandLine& cli) {
+int noclip(CommandLine& cli)
+{
 	Bsp* map = new Bsp(cli.bspfile);
 	if (map->bsp_valid)
 	{
@@ -287,27 +312,33 @@ int noclip(CommandLine& cli) {
 		int hull = -1;
 		int redirect = 0;
 
-		if (cli.hasOption("-hull")) {
+		if (cli.hasOption("-hull"))
+		{
 			hull = cli.getOptionInt("-hull");
 
-			if (hull < 0 || hull >= MAX_MAP_HULLS) {
+			if (hull < 0 || hull >= MAX_MAP_HULLS)
+			{
 				logf("ERROR: hull number must be 0-3\n");
 				return 1;
 			}
 		}
 
-		if (cli.hasOption("-redirect")) {
-			if (!cli.hasOption("-hull")) {
+		if (cli.hasOption("-redirect"))
+		{
+			if (!cli.hasOption("-hull"))
+			{
 				logf("ERROR: -redirect must be used with -hull\n");
 				return 1;
 			}
 			redirect = cli.getOptionInt("-redirect");
 
-			if (redirect < 1 || redirect >= MAX_MAP_HULLS) {
+			if (redirect < 1 || redirect >= MAX_MAP_HULLS)
+			{
 				logf("ERROR: redirect hull number must be 1-3\n");
 				return 1;
 			}
-			if (redirect == hull) {
+			if (redirect == hull)
+			{
 				logf("ERROR: Can't redirect hull to itself\n");
 				return 1;
 			}
@@ -315,22 +346,26 @@ int noclip(CommandLine& cli) {
 
 		STRUCTCOUNT removed = map->remove_unused_model_structures();
 
-		if (!removed.allZero()) {
+		if (!removed.allZero())
+		{
 			logf("Deleting unused data:\n");
 			removed.print_delete_stats(1);
 			g_progress.clear();
 			logf("\n");
 		}
 
-		if (cli.hasOption("-model")) {
+		if (cli.hasOption("-model"))
+		{
 			model = cli.getOptionInt("-model");
 
-			if (model < 0 || (unsigned int)model >= map->modelCount) {
+			if (model < 0 || (unsigned int)model >= map->modelCount)
+			{
 				logf("ERROR: model number must be 0 - %d\n", map->modelCount);
 				return 1;
 			}
 
-			if (hull != -1) {
+			if (hull != -1)
+			{
 				if (redirect)
 					logf("Redirecting HULL %d to HULL %d in model %d:\n", hull, redirect, model);
 				else
@@ -338,30 +373,37 @@ int noclip(CommandLine& cli) {
 
 				map->delete_hull(hull, model, redirect);
 			}
-			else {
+			else
+			{
 				logf("Deleting HULL 1, 2, and 3 from model %d:\n", model);
-				for (int i = 1; i < MAX_MAP_HULLS; i++) {
+				for (int i = 1; i < MAX_MAP_HULLS; i++)
+				{
 					map->delete_hull(i, model, redirect);
 				}
 			}
 		}
-		else {
-			if (hull == 0) {
+		else
+		{
+			if (hull == 0)
+			{
 				logf("HULL 0 can't be stripped globally. The entire map would be invisible!\n");
 				delete map;
 				return 0;
 			}
 
-			if (hull != -1) {
+			if (hull != -1)
+			{
 				if (redirect)
 					logf("Redirecting HULL %d to HULL %d:\n", hull, redirect);
 				else
 					logf("Deleting HULL %d:\n", hull);
 				map->delete_hull(hull, redirect);
 			}
-			else {
+			else
+			{
 				logf("Deleting HULL 1, 2, and 3:\n", hull);
-				for (int i = 1; i < MAX_MAP_HULLS; i++) {
+				for (int i = 1; i < MAX_MAP_HULLS; i++)
+				{
 					map->delete_hull(i, redirect);
 				}
 			}
@@ -385,21 +427,25 @@ int noclip(CommandLine& cli) {
 	return 1;
 }
 
-int simplify(CommandLine& cli) {
+int simplify(CommandLine& cli)
+{
 	Bsp* map = new Bsp(cli.bspfile);
 	if (map->bsp_valid)
 	{
 		int hull = 0;
 
-		if (!cli.hasOption("-model")) {
+		if (!cli.hasOption("-model"))
+		{
 			logf("ERROR: -model is required\n");
 			return 1;
 		}
 
-		if (cli.hasOption("-hull")) {
+		if (cli.hasOption("-hull"))
+		{
 			hull = cli.getOptionInt("-hull");
 
-			if (hull < 1 || hull >= MAX_MAP_HULLS) {
+			if (hull < 1 || hull >= MAX_MAP_HULLS)
+			{
 				logf("ERROR: hull number must be 1-3\n");
 				return 1;
 			}
@@ -409,7 +455,8 @@ int simplify(CommandLine& cli) {
 
 		STRUCTCOUNT removed = map->remove_unused_model_structures();
 
-		if (!removed.allZero()) {
+		if (!removed.allZero())
+		{
 			logf("Deleting unused data:\n");
 			removed.print_delete_stats(1);
 			g_progress.clear();
@@ -418,15 +465,18 @@ int simplify(CommandLine& cli) {
 
 		STRUCTCOUNT oldCounts(map);
 
-		if (modelIdx < 0 || (unsigned int)modelIdx >= map->modelCount) {
+		if (modelIdx < 0 || (unsigned int)modelIdx >= map->modelCount)
+		{
 			logf("ERROR: model number must be 0 - %d\n", map->modelCount);
 			return 1;
 		}
 
-		if (hull != 0) {
+		if (hull != 0)
+		{
 			logf("Simplifying HULL %d in model %d:\n", hull, modelIdx);
 		}
-		else {
+		else
+		{
 			logf("Simplifying collision hulls in model %d:\n", modelIdx);
 		}
 
@@ -454,20 +504,23 @@ int simplify(CommandLine& cli) {
 	return 1;
 }
 
-int deleteCmd(CommandLine& cli) {
+int deleteCmd(CommandLine& cli)
+{
 	Bsp* map = new Bsp(cli.bspfile);
 	if (map->bsp_valid)
 	{
 		STRUCTCOUNT removed = map->remove_unused_model_structures();
 
-		if (!removed.allZero()) {
+		if (!removed.allZero())
+		{
 			logf("Deleting unused data:\n");
 			removed.print_delete_stats(1);
 			g_progress.clear();
 			logf("\n");
 		}
 
-		if (cli.hasOption("-model")) {
+		if (cli.hasOption("-model"))
+		{
 			int modelIdx = cli.getOptionInt("-model");
 
 			logf("Deleting model %d:\n", modelIdx);
@@ -490,22 +543,25 @@ int deleteCmd(CommandLine& cli) {
 	return 1;
 }
 
-int transform(CommandLine& cli) {
+int transform(CommandLine& cli)
+{
 	Bsp* map = new Bsp(cli.bspfile);
 	if (map->bsp_valid)
 	{
 		vec3 move;
 
-		if (cli.hasOptionVector("-move")) {
+		if (cli.hasOptionVector("-move"))
+		{
 			move = cli.getOptionVector("-move");
 
 			logf("Applying offset (%.2f, %.2f, %.2f)\n",
-				move.x, move.y, move.z);
+				 move.x, move.y, move.z);
 
 			map->move(move);
 		}
-		else {
-			logf("ERROR: at least one transformation option is required\n"); 
+		else
+		{
+			logf("ERROR: at least one transformation option is required\n");
 			return 1;
 		}
 
@@ -519,7 +575,8 @@ int transform(CommandLine& cli) {
 	return 1;
 }
 
-int unembed(CommandLine& cli) {
+int unembed(CommandLine& cli)
+{
 	Bsp* map = new Bsp(cli.bspfile);
 	if (map->bsp_valid)
 	{
@@ -534,8 +591,10 @@ int unembed(CommandLine& cli) {
 	return 1;
 }
 
-void print_help(const std::string& command) {
-	if (command == "merge") {
+void print_help(const std::string& command)
+{
+	if (command == "merge")
+	{
 		logf(
 			"merge - Merges two or more maps together\n\n"
 
@@ -564,7 +623,8 @@ void print_help(const std::string& command) {
 			"  -verbose     : Verbose console output.\n"
 		);
 	}
-	else if (command == "info") {
+	else if (command == "info")
+	{
 		logf(
 			"info - Show BSP data summary\n\n"
 
@@ -577,7 +637,8 @@ void print_help(const std::string& command) {
 			"  -all          : Show the full list of models when using -limit.\n"
 		);
 	}
-	else if (command == "noclip") {
+	else if (command == "noclip")
+	{
 		logf(
 			"noclip - Delete some clipnodes from the BSP\n\n"
 
@@ -598,7 +659,8 @@ void print_help(const std::string& command) {
 			"  -o <file>   : Output file. By default, <mapname> is overwritten.\n"
 		);
 	}
-	else if (command == "simplify") {
+	else if (command == "simplify")
+	{
 		logf(
 			"simplify - Replaces model hulls with a simple bounding box\n\n"
 
@@ -614,7 +676,8 @@ void print_help(const std::string& command) {
 			"  -o <file>   : Output file. By default, <mapname> is overwritten.\n"
 		);
 	}
-	else if (command == "delete") {
+	else if (command == "delete")
+	{
 		logf(
 			"delete - Delete BSP models.\n\n"
 
@@ -627,7 +690,8 @@ void print_help(const std::string& command) {
 			"  -o <file> : Output file. By default, <mapname> is overwritten.\n"
 		);
 	}
-	else if (command == "transform") {
+	else if (command == "transform")
+	{
 		logf(
 			"transform - Apply 3D transformations\n\n"
 
@@ -639,7 +703,8 @@ void print_help(const std::string& command) {
 			"  -o <file>     : Output file. By default, <mapname> is overwritten.\n"
 		);
 	}
-	else if (command == "unembed") {
+	else if (command == "unembed")
+	{
 		logf(
 			"unembed - Deletes embedded texture data, so that they reference WADs instead.\n\n"
 
@@ -647,7 +712,8 @@ void print_help(const std::string& command) {
 			"Example: bspguy unembed c1a0.bsp\n"
 		);
 	}
-	else if (command == "exportobj") {
+	else if (command == "exportobj")
+	{
 		logf(
 			"exportobj - Export bsp geometry to obj [WIP].\n\n"
 
@@ -655,7 +721,8 @@ void print_help(const std::string& command) {
 			"Example: bspguy exportobj c1a0.bsp\n"
 		);
 	}
-	else if (command == "editor" || command == "empty") {
+	else if (command == "editor" || command == "empty")
+	{
 		logf(
 			"editor -\n"
 			"empty - Open bspguy editor window.\n\n"
@@ -664,7 +731,8 @@ void print_help(const std::string& command) {
 			"Usage:   bspguy empty\n"
 		);
 	}
-	else {
+	else
+	{
 		logf("%s\n\n", g_version_string.c_str());
 		logf(
 			"This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
@@ -709,41 +777,51 @@ int main(int argc, char* argv[])
 
 	CommandLine cli(argc, argv);
 
-	if (cli.command == "version" || cli.command == "--version" || cli.command == "-version") {
+	if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
+	{
 		logf(g_version_string.c_str());
 		return 0;
 	}
 
-	if (cli.command == "exportobj") {
+	if (cli.command == "exportobj")
+	{
 		Bsp* tmpBsp = new Bsp(cli.bspfile);
 		tmpBsp->ExportToObjWIP(cli.bspfile);
 		delete tmpBsp;
 		return 0;
 	}
 
-	if (cli.hasOption("-v") || cli.hasOption("-verbose")) {
+	if (cli.hasOption("-v") || cli.hasOption("-verbose"))
+	{
 		g_verbose = true;
 	}
 
-	if (cli.command == "info") {
+	if (cli.command == "info")
+	{
 		return print_info(cli);
 	}
-	else if (cli.command == "noclip") {
+	else if (cli.command == "noclip")
+	{
 		return noclip(cli);
 	}
-	else if (cli.command == "simplify") {
+	else if (cli.command == "simplify")
+	{
 		return simplify(cli);
 	}
-	else if (cli.command == "delete") {
+	else if (cli.command == "delete")
+	{
 		return deleteCmd(cli);
 	}
-	else if (cli.command == "transform") {
+	else if (cli.command == "transform")
+	{
 		return transform(cli);
 	}
-	else if (cli.command == "merge") {
+	else if (cli.command == "merge")
+	{
 		return merge_maps(cli);
 	}
-	else if (cli.command == "unembed") {
+	else if (cli.command == "unembed")
+	{
 		return unembed(cli);
 	}
 	else if (cli.bspfile.size())
@@ -752,7 +830,8 @@ int main(int argc, char* argv[])
 		logf("Load settings from : %s\n", g_settings_path.c_str());
 		if (!start_viewer(cli.bspfile.c_str()))
 		{
-			if (cli.askingForHelp) {
+			if (cli.askingForHelp)
+			{
 				print_help(cli.command);
 				return 0;
 			}
@@ -760,7 +839,8 @@ int main(int argc, char* argv[])
 		}
 	}
 
-	if (cli.askingForHelp) {
+	if (cli.askingForHelp)
+	{
 		print_help(cli.command);
 		return 0;
 	}
