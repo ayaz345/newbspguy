@@ -95,13 +95,18 @@ if(MSVC)
 	add_subdirectory(glfw)
 	
 	# compile using the static runtime
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MT /wd4244 /wd4018")
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MTd /wd4244 /wd4018 /W0")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
+	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /wd4244 /wd4018")
+	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /wd4244 /wd4018 /W0")
 	
 	# Disable C++ exceptions
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT bspguy)
-	
-	target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32s.lib)
+
+	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+		target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32s.lib)
+	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
+		target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/Win32/glew32s.lib)
+	endif()
 	
 	source_group("Header Files\\bsp" FILES	src/bsp/forcecrc32.h
 											src/bsp/BspMerger.h
@@ -193,6 +198,7 @@ if(MSVC)
 	
 	source_group("Source Files\\filedialog" FILES	src/filedialog/ImFileDialog.c)
 	add_definitions(-DUSE_FILESYSTEM)
+	add_definitions(-DNOMINMAX)
 else()
 	target_link_libraries(${PROJECT_NAME} GL GLU X11 Xxf86vm Xrandr pthread Xi GLEW stdc++fs)
 	if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.1")
