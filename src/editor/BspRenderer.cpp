@@ -837,7 +837,7 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 	{
 		return false;
 	}
-	if (modelIdx < 0 || (unsigned int)modelIdx >= numRenderClipnodes)
+	if (modelIdx < 0 || modelIdx >= numRenderClipnodes)
 	{
 		logf("Bad model idx\n");
 		return false;
@@ -1515,7 +1515,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
 	if (highlightEnt > 0 && !highlightAlwaysOnTop)
 	{
-		if (renderEnts[highlightEnt].modelIdx >= 0 && (unsigned int)renderEnts[highlightEnt].modelIdx < map->modelCount)
+		if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 		{
 			activeShader->pushMatrix(MAT_MODEL);
 			*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
@@ -1537,7 +1537,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 
 		for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
 		{
-			if (renderEnts[i].modelIdx >= 0 && (unsigned int)renderEnts[i].modelIdx < map->modelCount)
+			if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 			{
 				activeShader->pushMatrix(MAT_MODEL);
 				*activeShader->modelMat = renderEnts[i].modelMat;
@@ -1570,7 +1570,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 		{
 			for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
 			{
-				if (renderEnts[i].modelIdx >= 0 && (unsigned int)renderEnts[i].modelIdx < map->modelCount)
+				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
 					if (clipnodeHull == -1 && renderModels[renderEnts[i].modelIdx].groupCount > 0)
 					{
@@ -1605,7 +1605,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 	{
 		activeShader->bind();
 
-		if (renderEnts[highlightEnt].modelIdx >= 0 && (unsigned int)renderEnts[highlightEnt].modelIdx < map->modelCount)
+		if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 		{
 			activeShader->pushMatrix(MAT_MODEL);
 			*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
@@ -1627,7 +1627,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly)
 {
 	int modelIdx = ent ? ent->modelIdx : 0;
-	if (modelIdx < 0 || (unsigned int)modelIdx >= numRenderModels)
+	if (modelIdx < 0 || modelIdx >= numRenderModels)
 	{
 		return;
 	}
@@ -1827,7 +1827,7 @@ void BspRenderer::drawPointEntities(int highlightEnt)
 	colorShader->popMatrix(MAT_MODEL);
 }
 
-bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo)
+bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& tempPickInfo)
 {
 	bool foundBetterPick = false;
 
@@ -1838,21 +1838,23 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& p
 	start -= mapOffset;
 
 
-	if (pickModelPoly(start, dir, vec3(0, 0, 0), 0, hullIdx, pickInfo))
+	if (pickModelPoly(start, dir, vec3(0, 0, 0), 0, hullIdx, tempPickInfo))
 	{
-		pickInfo.entIdx = 0;
-		pickInfo.modelIdx = 0;
-		pickInfo.map = map;
-		pickInfo.ent = map->ents[0];
-		foundBetterPick = true;
+		if (tempPickInfo.map || (tempPickInfo.map && map && tempPickInfo.map == map))
+		{
+			tempPickInfo.entIdx = 0;
+			tempPickInfo.modelIdx = 0;
+			tempPickInfo.map = map;
+			tempPickInfo.ent = map->ents[0];
+			foundBetterPick = true;
+		}
 	}
 	int sz = (int)map->ents.size();
 
 	for (int i = 0; i < sz; i++)
 	{
-		if (renderEnts[i].modelIdx >= 0 && (unsigned int)renderEnts[i].modelIdx < map->modelCount)
+		if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 		{
-
 			bool isSpecial = false;
 			for (int k = 0; k < renderModels[renderEnts[i].modelIdx].groupCount; k++)
 			{
@@ -1872,27 +1874,33 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& p
 				continue;
 			}
 
-			if (pickModelPoly(start, dir, renderEnts[i].offset, renderEnts[i].modelIdx, hullIdx, pickInfo))
+			if (pickModelPoly(start, dir, renderEnts[i].offset, renderEnts[i].modelIdx, hullIdx, tempPickInfo))
 			{
-				pickInfo.entIdx = i;
-				pickInfo.modelIdx = renderEnts[i].modelIdx;
-				pickInfo.map = map;
-				pickInfo.ent = map->ents[i];
-				foundBetterPick = true;
+				if (!tempPickInfo.map || (tempPickInfo.map && map && tempPickInfo.map == map))
+				{
+					tempPickInfo.entIdx = i;
+					tempPickInfo.modelIdx = renderEnts[i].modelIdx;
+					tempPickInfo.map = map;
+					tempPickInfo.ent = map->ents[i];
+					foundBetterPick = true;
+				}
 			}
 		}
 		else if (i > 0 && g_render_flags & RENDER_POINT_ENTS)
 		{
 			vec3 mins = renderEnts[i].offset + renderEnts[i].pointEntCube->mins;
 			vec3 maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
-			if (pickAABB(start, dir, mins, maxs, pickInfo.bestDist))
+			if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
 			{
-				pickInfo.entIdx = i;
-				pickInfo.modelIdx = -1;
-				pickInfo.faceIdx = -1;
-				pickInfo.map = map;
-				pickInfo.ent = map->ents[i];
-				foundBetterPick = true;
+				if (!tempPickInfo.map || (tempPickInfo.map && map && tempPickInfo.map == map))
+				{
+					tempPickInfo.entIdx = i;
+					tempPickInfo.modelIdx = -1;
+					tempPickInfo.faceIdx = -1;
+					tempPickInfo.map = map;
+					tempPickInfo.ent = map->ents[i];
+					foundBetterPick = true;
+				}
 			};
 		}
 	}

@@ -78,16 +78,7 @@ void debugf(const char* format, ...)
 
 bool fileExists(const std::string& fileName)
 {
-#ifdef USE_FILESYSTEM
 	return fs::exists(fileName) && !fs::is_directory(fileName);
-#else
-	if (FILE* file = fopen(fileName.c_str(), "r"))
-	{
-		fclose(file);
-		return true;
-	}
-	return false;
-#endif
 }
 
 char* loadFile(const std::string& fileName, int& length)
@@ -131,13 +122,7 @@ bool writeFile(const std::string& fileName, const std::string& data)
 
 bool removeFile(const std::string& fileName)
 {
-#ifdef USE_FILESYSTEM
 	return fs::exists(fileName) && fs::remove(fileName);
-#elif WIN32
-	return DeleteFile(fileName.c_str());
-#else 
-	return remove(fileName.c_str());
-#endif
 }
 
 std::streampos fileSize(const std::string& filePath)
@@ -961,23 +946,7 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 
 bool dirExists(const std::string& dirName)
 {
-#ifdef USE_FILESYSTEM
 	return fs::exists(dirName) && fs::is_directory(dirName);
-#else
-#ifdef WIN32
-	DWORD ftyp = GetFileAttributesA(dirName.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES)
-		return false;  //something is wrong with your path!
-
-	if (ftyp & FILE_ATTRIBUTE_DIRECTORY)
-		return true;   // this is a directory!
-
-	return false;    // this is not a directory!
-#else 
-	struct stat sb;
-	return stat(dirName.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode);
-#endif
-#endif
 }
 
 #ifndef WIN32
@@ -1057,7 +1026,6 @@ int mkdir_p(const char* dir, const mode_t mode)
 
 bool createDir(const std::string& dirName)
 {
-#ifdef USE_FILESYSTEM
 	std::string fixDirName = dirName;
 	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 	if (dirExists(dirName))
@@ -1066,40 +1034,12 @@ bool createDir(const std::string& dirName)
 	if (dirExists(dirName))
 		return true;
 	return false;
-#else
-#ifdef WIN32
-	std::string fixDirName = dirName;
-	fixupPath(fixDirName, FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH_REMOVE);
-	if (dirExists(dirName))
-		return true;
-	int ret = SHCreateDirectoryExA(NULL, dirName.c_str(), NULL);
-	if (ret != ERROR_SUCCESS)
-	{
-		logf("Could not create directory: %s. Error: %i", dirName.c_str(), ret);
-		return false;
-	}
-	return true;
-#else 
-	if (dirExists(dirName))
-		return true;
-
-	int ret = mkdir_p(dirName.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
-	if (ret != 0)
-	{
-		logf("Could not create directory: %s", dirName.c_str());
-		return false;
-	}
-	return true;
-#endif
-#endif
 }
 
 void removeDir(const std::string& dirName)
 {
-#ifdef USE_FILESYSTEM
 	std::error_code e;
 	fs::remove_all(dirName, e);
-#endif
 }
 
 
@@ -1186,21 +1126,10 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 
 std::string GetCurrentWorkingDir()
 {
-#ifdef USE_FILESYSTEM
 #ifdef WIN32
 	return fs::current_path().string() + "\\";
 #else 
 	return fs::current_path().string() + "/";
-#endif
-#else
-
-	char buff[FILENAME_MAX];
-	GetCurrentDir(buff, FILENAME_MAX);
-#ifdef WIN32
-	return std::string(buff) + "\\";
-#else 
-	return std::string(buff) + "/";
-#endif
 #endif
 }
 

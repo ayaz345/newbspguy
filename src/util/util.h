@@ -1,19 +1,7 @@
 #pragma once
 
-
-#if defined(__cpp_lib_filesystem) || defined(USE_FILESYSTEM) || ((defined(__GNUC__) && (7 <= __GNUC_MAJOR__)))
 #include <filesystem>
 namespace fs = std::filesystem;
-#ifndef USE_FILESYSTEM
-#define USE_FILESYSTEM
-#endif
-#elif _MSC_VER > 1920 || defined(USE_EXPERIMENTAL_FILESYSTEM)
-#define _SILENCE_EXPERIMENTAL_FILESYSTEM_DEPRECATION_WARNING
-#include <experimental/filesystem>
-namespace fs = std::experimental::filesystem;
-#define USE_FILESYSTEM
-#endif
-
 
 #include <string>
 #include <vector>

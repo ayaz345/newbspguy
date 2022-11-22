@@ -302,6 +302,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 
 	Bsp* tmpMap = new Bsp(map->bsp_path);
 	tmpMap->is_model = true;
+	tmpMap->parentMap = map;
 
 	BSPMODEL tmpModel = map->models[id];
 
@@ -730,7 +731,7 @@ void Gui::draw3dContextMenus()
 			{
 				copyTexture();
 			}
-			if (ImGui::MenuItem("Paste texture", "Ctrl+V", false, copiedMiptex >= 0 && (unsigned int)copiedMiptex < map->textureCount))
+			if (ImGui::MenuItem("Paste texture", "Ctrl+V", false, copiedMiptex >= 0 && copiedMiptex < map->textureCount))
 			{
 				pasteTexture();
 			}
@@ -748,7 +749,7 @@ void Gui::draw3dContextMenus()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::MenuItem("Paste lightmap", "", false, copiedLightmapFace >= 0 && (unsigned int)copiedLightmapFace < map->faceCount))
+			if (ImGui::MenuItem("Paste lightmap", "", false, copiedLightmapFace >= 0 && copiedLightmapFace < map->faceCount))
 			{
 				pasteLightmap();
 			}
@@ -882,8 +883,7 @@ void Gui::drawMenuBar()
 		if (ifd::FileDialog::Instance().HasResult())
 		{
 			std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-			this->app->clearMaps();
-			this->app->addMap(new Bsp(res.string()));
+			app->addMap(new Bsp(res.string()));
 			g_settings.lastdir = res.parent_path().string();
 		}
 		ifd::FileDialog::Instance().Close();
@@ -1426,6 +1426,23 @@ void Gui::drawMenuBar()
 		ImGui::EndMenu();
 	}
 
+	if (ImGui::BeginMenu("Windows"))
+	{
+		for (BspRenderer* bspRend : app->mapRenderers)
+		{
+			Bsp* selectedMap = app->getSelectedMap();
+			if (bspRend->map && !bspRend->map->is_model)
+			{
+				if (ImGui::MenuItem(bspRend->map->bsp_name.c_str(), NULL, selectedMap == bspRend->map))
+				{
+					app->clearSelection();
+					app->selectMap(bspRend->map);
+				}
+			}
+		}
+		ImGui::EndMenu();
+	}
+
 	if (ImGui::BeginMenu("Help"))
 	{
 		if (ImGui::MenuItem("View help"))
@@ -1696,67 +1713,74 @@ void Gui::drawDebugWidget()
 		}
 
 		Bsp* map = app->getSelectedMap();
-		Entity* ent = app->pickInfo.ent;
-		if (!map || !ent)
+
+		if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Text("No map selected");
-		}
-		else
-		{
-			if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
+			if (!map)
+			{
+				ImGui::Text("No map selected.");
+			}
+			else
 			{
 				ImGui::Text("Name: %s", map->bsp_name.c_str());
-			}
 
-			if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
-			{
-				ImGui::Text("Entity ID: %d", app->pickInfo.entIdx);
-
-				if (app->pickInfo.modelIdx > 0)
+				if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					ImGui::Checkbox("Debug clipnodes", &app->debugClipnodes);
-					ImGui::SliderInt("Clipnode", &app->debugInt, 0, app->debugIntMax);
-
-					ImGui::Checkbox("Debug nodes", &app->debugNodes);
-					ImGui::SliderInt("Node", &app->debugNode, 0, app->debugNodeMax);
-				}
-
-				if (app->pickInfo.faceIdx != -1)
-				{
-					BSPMODEL& model = map->models[app->pickInfo.modelIdx];
-					BSPFACE& face = map->faces[app->pickInfo.faceIdx];
-
-					ImGui::Text("Model ID: %d", app->pickInfo.modelIdx);
-					ImGui::Text("Model polies: %d", model.nFaces);
-
-					ImGui::Text("Face ID: %d", app->pickInfo.faceIdx);
-					ImGui::Text("Plane ID: %d", face.iPlane);
-
-					if (face.iTextureInfo < map->texinfoCount)
+					if (app->pickInfo.entIdx)
 					{
-						BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
-						int texOffset = ((int*)map->textures)[info.iMiptex + 1];
-						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-						ImGui::Text("Texinfo ID: %d", face.iTextureInfo);
-						ImGui::Text("Texture ID: %d", info.iMiptex);
-						ImGui::Text("Texture: %s (%dx%d)", tex.szName, tex.nWidth, tex.nHeight);
-						BSPPLANE& plane = map->planes[face.iPlane];
-						BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-						float anglex, angley;
-						vec3 xv, yv;
-						int val = TextureAxisFromPlane(plane, xv, yv);
-						ImGui::Text("Plane type %d : axis (%fx%f)", val, anglex = AngleFromTextureAxis(texinfo.vS, true, val), angley = AngleFromTextureAxis(texinfo.vT, false, val));
-						ImGui::Text("Texinfo: %f/%f/%f + %f / %f/%f/%f + %f ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS,
-									texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT);
-
-						xv = AxisFromTextureAngle(anglex, true, val);
-						yv = AxisFromTextureAngle(angley, false, val);
-
-						ImGui::Text("AxisBack: %f/%f/%f + %f / %f/%f/%f + %f ", xv.x, xv.y, xv.z, texinfo.shiftS,
-									yv.x, yv.y, yv.z, texinfo.shiftT);
-
+						ImGui::Text("Entity ID: %d", app->pickInfo.entIdx);
 					}
-					ImGui::Text("Lightmap Offset: %d", face.nLightmapOffset);
+
+					if (app->pickInfo.modelIdx > 0)
+					{
+						ImGui::Checkbox("Debug clipnodes", &app->debugClipnodes);
+						ImGui::SliderInt("Clipnode", &app->debugInt, 0, app->debugIntMax);
+
+						ImGui::Checkbox("Debug nodes", &app->debugNodes);
+						ImGui::SliderInt("Node", &app->debugNode, 0, app->debugNodeMax);
+					}
+
+					if (app->pickInfo.faceIdx >= 0 && app->pickInfo.faceIdx < map->faceCount)
+					{
+						BSPFACE& face = map->faces[app->pickInfo.faceIdx];
+
+						if (app->pickInfo.modelIdx > 0)
+						{
+							BSPMODEL& model = map->models[app->pickInfo.modelIdx];
+							ImGui::Text("Model ID: %d", app->pickInfo.modelIdx);
+
+							ImGui::Text("Model polies: %d", model.nFaces);
+						}
+
+						ImGui::Text("Face ID: %d", app->pickInfo.faceIdx);
+						ImGui::Text("Plane ID: %d", face.iPlane);
+
+						if (face.iTextureInfo < map->texinfoCount)
+						{
+							BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
+							int texOffset = ((int*)map->textures)[info.iMiptex + 1];
+							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+							ImGui::Text("Texinfo ID: %d", face.iTextureInfo);
+							ImGui::Text("Texture ID: %d", info.iMiptex);
+							ImGui::Text("Texture: %s (%dx%d)", tex.szName, tex.nWidth, tex.nHeight);
+							BSPPLANE& plane = map->planes[face.iPlane];
+							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+							float anglex, angley;
+							vec3 xv, yv;
+							int val = TextureAxisFromPlane(plane, xv, yv);
+							ImGui::Text("Plane type %d : axis (%fx%f)", val, anglex = AngleFromTextureAxis(texinfo.vS, true, val), angley = AngleFromTextureAxis(texinfo.vT, false, val));
+							ImGui::Text("Texinfo: %f/%f/%f + %f / %f/%f/%f + %f ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS,
+										texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT);
+
+							xv = AxisFromTextureAngle(anglex, true, val);
+							yv = AxisFromTextureAngle(angley, false, val);
+
+							ImGui::Text("AxisBack: %f/%f/%f + %f / %f/%f/%f + %f ", xv.x, xv.y, xv.z, texinfo.shiftS,
+										yv.x, yv.y, yv.z, texinfo.shiftT);
+
+						}
+						ImGui::Text("Lightmap Offset: %d", face.nLightmapOffset);
+					}
 				}
 			}
 		}
@@ -3810,7 +3834,8 @@ void Gui::drawImportMapWidget()
 				}
 				else
 				{
-					if (g_app->mapRenderers.size() && g_app->mapRenderers[0]->map)
+					Bsp* map = g_app->getSelectedMap();
+					if (map)
 					{
 						Bsp* model = new Bsp(mapPath);
 						if (!model->ents.size())
@@ -3819,7 +3844,6 @@ void Gui::drawImportMapWidget()
 						}
 						else
 						{
-							Bsp* map = g_app->getSelectedMap();
 							logf("Binding .bsp model to func_breakable.\n");
 							Entity* tmpEnt = new Entity("func_breakable");
 							tmpEnt->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(mapPath));

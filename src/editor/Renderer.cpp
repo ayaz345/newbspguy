@@ -755,6 +755,8 @@ void Renderer::renderLoop()
 
 		isLoading = reloading;
 
+		Bsp* selectedMap = getSelectedMap();
+
 		std::set<int> modelidskip;
 		for (size_t i = 0; i < mapRenderers.size(); i++)
 		{
@@ -766,6 +768,11 @@ void Renderer::renderLoop()
 			if (map == curMap && pickMode == PICK_OBJECT)
 			{
 				highlightEnt = pickInfo.entIdx;
+			}
+
+			if (selectedMap && getSelectedMap() != curMap && !curMap->is_model)
+			{
+				continue;
 			}
 
 			if (curMap->ents.size() && !isLoading)
@@ -1730,17 +1737,24 @@ void Renderer::cameraContextMenus()
 
 		PickInfo tempPick = PickInfo();
 		tempPick.bestDist = FLT_MAX_COORD;
-		for (int i = 0; i < mapRenderers.size(); i++)
-		{
-			if (mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick))
-			{
 
+		Bsp* map = getSelectedMap();
+
+		map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick);
+
+		if (tempPick.entIdx < 0)
+		{
+			for (int i = 0; i < mapRenderers.size(); i++)
+			{
+				if (getSelectedMap() == mapRenderers[i]->map->parentMap && mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick) && tempPick.entIdx > 0)
+				{
+					break;
+				}
 			}
 		}
 
 		if (tempPick.entIdx != 0 && tempPick.entIdx == pickInfo.entIdx)
 		{
-			selectMap(tempPick.map);
 			gui->openContextMenu(pickInfo.entIdx);
 		}
 		else
@@ -1861,23 +1875,34 @@ void Renderer::globalShortcutControls()
 
 void Renderer::pickObject()
 {
+	if (!getSelectedMap())
+		return;
 	bool pointEntWasSelected = pickInfo.ent && !pickInfo.ent->isBspModel();
 	int oldSelectedEntIdx = pickInfo.entIdx;
 
+	Bsp* map = getSelectedMap();
 	vec3 pickStart, pickDir;
 	getPickRay(pickStart, pickDir);
-	clearSelection();
+
 	int oldEntIdx = pickInfo.entIdx;
+
+	clearSelection();
+	selectMap(map);
 
 	pickInfo.bestDist = FLT_MAX_COORD;
 
+	map->getBspRender()->preRenderEnts();
+	map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo);
+
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
-		mapRenderers[i]->preRenderEnts();
-		mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo);
+		if (map == mapRenderers[i]->map->parentMap)
+		{
+			mapRenderers[i]->preRenderEnts();
+			mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo);
+		}
 	}
 
-	Bsp* map = pickInfo.map;
 
 	if (movingEnt && oldEntIdx != pickInfo.entIdx)
 	{
@@ -1896,7 +1921,6 @@ void Renderer::pickObject()
 	}
 
 	isTransformableSolid = pickInfo.modelIdx > 0 || pickInfo.entIdx > 0;
-
 
 	if ((pickMode == PICK_OBJECT || !anyCtrlPressed))
 	{
@@ -2166,7 +2190,7 @@ int Renderer::getSelectedMapId()
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
 		BspRenderer* s = mapRenderers[i];
-		if (s->map && s->map == pickInfo.map)
+		if (s->map && s->map == getSelectedMap())
 		{
 			return i;
 		}
@@ -2200,7 +2224,6 @@ void Renderer::deselectMap(Bsp* map)
 
 void Renderer::clearSelection()
 {
-
 	pickInfo = PickInfo();
 }
 
@@ -2305,6 +2328,7 @@ void Renderer::reloadBspModels()
 							{
 								Bsp* tmpBsp = new Bsp(tryPath);
 								tmpBsp->is_model = true;
+								tmpBsp->parentMap = bsprend->map;
 								if (tmpBsp->bsp_valid)
 								{
 									BspRenderer* mapRenderer = new BspRenderer(tmpBsp, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
@@ -2324,7 +2348,6 @@ void Renderer::reloadBspModels()
 
 void Renderer::addMap(Bsp* map)
 {
-
 	if (!map->bsp_valid)
 	{
 		logf("Invalid map!\n");
@@ -3632,6 +3655,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 	pushUndoCommand(createCommand);
 
 	clearSelection();
+	selectMap(map);
 	selectEnt(map, map->ents.size() > 1 ? ((int)map->ents.size() - 1) : 0);
 }
 
