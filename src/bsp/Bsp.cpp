@@ -2250,12 +2250,6 @@ int Bsp::lightmap_count(int faceIdx)
 
 void Bsp::write(std::string path)
 {
-
-	if (path.rfind(".bsp") != path.size() - 4)
-	{
-		path = path + ".bsp";
-	}
-
 	// calculate lump offsets
 	int offset = sizeof(BSPHEADER);
 	for (int i = 0; i < HEADER_LUMPS; i++)
