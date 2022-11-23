@@ -1063,8 +1063,13 @@ void Gui::drawMenuBar()
 		}
 		if (ImGui::BeginMenu("Import", !app->isLoading))
 		{
+			if (ImGui::MenuItem("BSP model", NULL))
+			{
+				showImportMapWidget_Type = SHOW_IMPORT_MODEL_BSP;
+				showImportMapWidget = !showImportMapWidget;
+			}
 
-			if (ImGui::MenuItem(".bsp model as func_breakable", NULL))
+			if (ImGui::MenuItem(".bsp model path in func_breakable", NULL))
 			{
 				showImportMapWidget_Type = SHOW_IMPORT_MODEL;
 				showImportMapWidget = !showImportMapWidget;
@@ -3817,6 +3822,18 @@ void Gui::drawImportMapWidget()
 	static std::string mapPath;
 	const char* title = "Import .bsp model as func_breakable entity";
 
+	if (ifd::FileDialog::Instance().IsDone("BspOpenDialog"))
+	{
+		if (ifd::FileDialog::Instance().HasResult())
+		{
+			std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+			mapPath = res.string();
+			g_settings.lastdir = res.parent_path().string();
+		}
+		ifd::FileDialog::Instance().Close();
+	}
+
+
 	if (showImportMapWidget_Type == SHOW_IMPORT_OPEN)
 	{
 		title = "Open map";
@@ -3825,10 +3842,19 @@ void Gui::drawImportMapWidget()
 	{
 		title = "Add map to renderer";
 	}
+	else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
+	{
+		title = "Copy BSP model to current map";
+	}
 
 	if (ImGui::Begin(title, &showImportMapWidget))
 	{
 		ImGui::InputText(".bsp file", &mapPath);
+		ImGui::SameLine();
+		if (ImGui::Button("...##open_bsp_file1"))
+		{
+			ifd::FileDialog::Instance().Open("BspOpenDialog", "Open a map", "Map file (*.bsp){.bsp},.*", false, g_settings.lastdir);
+		}
 		if (ImGui::Button("Load", ImVec2(120, 0)))
 		{
 			fixupPath(mapPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
@@ -3844,6 +3870,70 @@ void Gui::drawImportMapWidget()
 				{
 					g_app->clearMaps();
 					g_app->addMap(new Bsp(mapPath));
+				}
+				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
+				{
+					Bsp* bspModel = new Bsp(mapPath);
+					Bsp* map = g_app->getSelectedMap();
+					std::vector<BSPPLANE> newPlanes;
+					std::vector<vec3> newVerts;
+					std::vector<BSPEDGE> newEdges;
+					std::vector<int> newSurfedges;
+					std::vector<BSPTEXTUREINFO> newTexinfo;
+					std::vector<BSPFACE> newFaces;
+					std::vector<COLOR3> newLightmaps;
+					std::vector<BSPNODE> newNodes;
+					std::vector<BSPCLIPNODE> newClipnodes;
+
+					STRUCTREMAP * remap = new STRUCTREMAP();
+
+					bspModel->copy_bsp_model(0, bspModel, *remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
+
+					if (newClipnodes.size())
+						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE) * newClipnodes.size());
+					if (newEdges.size())
+						map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE) * newEdges.size());
+					if (newFaces.size())
+						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE) * newFaces.size());
+					if (newNodes.size())
+						map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE) * newNodes.size());
+					if (newPlanes.size())
+						map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
+					if (newSurfedges.size())
+						map->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
+					if (newTexinfo.size())
+						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
+					if (newVerts.size())
+						map->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
+					if (newLightmaps.size())
+						map->append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
+
+					int newModelIdx = map->create_model();
+					BSPMODEL& oldModel = bspModel->models[0];
+					BSPMODEL& newModel = map->models[newModelIdx];
+					memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
+
+					newModel.iFirstFace = remap->faces[oldModel.iFirstFace];
+					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap->nodes[oldModel.iHeadnodes[0]];
+					for (int i = 1; i < MAX_MAP_HULLS; i++)
+					{
+						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap->clipnodes[oldModel.iHeadnodes[i]];
+					}
+
+					map->ents.push_back(new Entity("func_wall"));
+					map->ents[map->ents.size()-1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
+
+					map->getBspRender()->updateLightmapInfos();
+					map->getBspRender()->calcFaceMaths();
+					map->getBspRender()->preRenderFaces();
+					map->getBspRender()->preRenderEnts();
+					map->getBspRender()->reloadLightmaps();
+					map->getBspRender()->addClipnodeModel(newModelIdx);
+					g_app->gui->refresh();
+
+					g_app->deselectObject();
+
+					delete bspModel;
 				}
 				else
 				{
