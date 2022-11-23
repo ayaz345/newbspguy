@@ -18,7 +18,7 @@ set(SOURCE_FILES
 	src/bsp/forcecrc32.h			src/bsp/forcecrc32.cpp
 	src/bsp/BspMerger.h				src/bsp/BspMerger.cpp
 	src/bsp/Bsp.h					src/bsp/Bsp.cpp
-	src/bsp/bsplimits.h
+	src/bsp/bsplimits.h				src/bsp/bsplimits.cpp
 	src/bsp/bsptypes.h				src/bsp/bsptypes.cpp
 	src/bsp/Entity.h				src/bsp/Entity.cpp
 	src/bsp/Keyvalue.h				src/bsp/Keyvalue.cpp
@@ -121,6 +121,7 @@ if(MSVC)
 	source_group("Source Files\\bsp" FILES	src/bsp/forcecrc32.cpp
 											src/bsp/BspMerger.cpp
 											src/bsp/Bsp.cpp
+											src/bsp/bsplimits.cpp
 											src/bsp/bsptypes.cpp
 											src/bsp/Entity.cpp
 											src/bsp/Keyvalue.cpp

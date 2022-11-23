@@ -126,6 +126,8 @@ void AppSettings::loadDefault()
 	passableEnts.clear();
 	playerOnlyTriggers.clear();
 	monsterOnlyTriggers.clear();
+
+	ResetBspLimits();
 }
 
 void AppSettings::reset()

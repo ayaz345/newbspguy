@@ -3109,12 +3109,13 @@ void Gui::drawSettings()
 	if (ImGui::Begin("Settings", &showSettingsWidget))
 	{
 		ImGuiContext& g = *GImGui;
-		const int settings_tabs = 6;
+		const int settings_tabs = 7;
 		static const char* tab_titles[settings_tabs] = {
 			"General",
 			"FGDs",
 			"Asset Paths",
 			"Optimizing",
+			"Limits",
 			"Rendering",
 			"Controls"
 		};
@@ -3220,6 +3221,7 @@ void Gui::drawSettings()
 			{
 				g_settings.reset();
 			}
+
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
@@ -3425,6 +3427,11 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 4)
 		{
+			ImGui::DragFloat("Movement speed", &app->moveSpeed, 0.1f, 0.1f, 1000, "%.1f");
+			ImGui::DragFloat("Rotation speed", &app->rotationSpeed, 0.01f, 0.1f, 100, "%.1f");
+		}
+		else if (settingsTab == 5)
+		{
 			ImGui::Text("Viewport:");
 			if (ImGui::Checkbox("VSync", &vsync))
 			{
@@ -3531,7 +3538,7 @@ void Gui::drawSettings()
 
 			ImGui::Columns(1);
 		}
-		else if (settingsTab == 5)
+		else if (settingsTab == 6)
 		{
 			ImGui::DragFloat("Movement speed", &app->moveSpeed, 0.1f, 0.1f, 1000, "%.1f");
 			ImGui::DragFloat("Rotation speed", &app->rotationSpeed, 0.01f, 0.1f, 100, "%.1f");

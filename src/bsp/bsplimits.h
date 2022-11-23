@@ -1,34 +1,37 @@
-#define MAX_MAP_HULLS	4
-#define MAX_MAP_COORD 32767 // stuff breaks past this point
+#pragma once
+#include <stdint.h>
 
-#define FLT_MAX_COORD 32767.f
-#define FLT_MIN_COORD -32767.f
-
-#define MAX_MAP_MODELS 4096
-#define MAX_MAP_PLANES 65535
-#define MAX_MAP_VERTS 65535
-#define MAX_MAP_NODES 32768
-#define MAX_MAP_TEXINFOS 32767
-#define MAX_MAP_FACES 65535 // This ought to be 32768, otherwise faces(in world) can become invisible. --vluzacn
-#define MAX_MAP_CLIPNODES 32767
-#define MAX_MAP_LEAVES 65536
-#define MAX_MAP_MARKSURFS 65536
-#define MAX_MAP_TEXDATA 0
-#define MAX_MAP_VISDATA (64 * ( 1024 * 1024 )) // 64 MB
-#define MAX_MAP_ENTS 8192
-#define MAX_MAP_SURFEDGES 512000
-#define MAX_MAP_EDGES 256000
-#define MAX_MAP_TEXTURES 4096
-#define MAX_MAP_LIGHTDATA (64 * ( 1024 * 1024 )) // 64 MB
-#define MAX_TEXTURE_DIMENSION 1024
 #define MAXTEXTURENAME 16
 #define MIPLEVELS 4
-#define MAX_TEXTURE_SIZE ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * sizeof(short) * 3) / 2)
+#define MAX_MAP_HULLS 4
+#define MAX_MAP_PLANES 65535
+#define MAX_MAP_TEXINFOS 32767  // Can be 65535 if unsigned short?
+#define MAX_MAP_MARKSURFS 65535
+#define MAX_MAP_VERTS 65535
+#define MAX_MAP_FACES 65535 // (unsgined short) This ought to be 32768, otherwise faces(in world) can become invisible. --vluzacn
+#define MAX_KEYS_PER_ENT 128
+#define MAXLIGHTMAPS 4
 
-#define MAX_KEYS_PER_ENT 64 // just guessing
-#define MAX_KEY_LEN 256 // not sure if this includes the null char
-#define MAX_VAL_LEN 4096 // not sure if this includes the null char
+extern unsigned int MAX_MAP_COORD; // stuff breaks past this point
 
-#define MAXLIGHTMAPS    4
+extern float FLT_MAX_COORD;
+extern float FLT_MIN_COORD;
 
+extern unsigned int MAX_MAP_MODELS;
+extern unsigned int MAX_MAP_NODES;
+extern unsigned int MAX_MAP_CLIPNODES;
+extern unsigned int MAX_MAP_LEAVES;
+extern unsigned int MAX_MAP_TEXDATA;
+extern unsigned int MAX_MAP_VISDATA; // 64 MB
+extern unsigned int MAX_MAP_ENTS;
+extern unsigned int MAX_MAP_SURFEDGES;
+extern unsigned int MAX_MAP_EDGES;
+extern unsigned int MAX_MAP_TEXTURES;
+extern unsigned int MAX_MAP_LIGHTDATA; // 64 MB
+extern unsigned int MAX_TEXTURE_DIMENSION;
+extern unsigned int MAX_TEXTURE_SIZE;
 
+extern unsigned int MAX_KEY_LEN; // not sure if this includes the null char
+extern unsigned int MAX_VAL_LEN; // not sure if this includes the null char
+
+extern void ResetBspLimits(); // reset all limits to default values

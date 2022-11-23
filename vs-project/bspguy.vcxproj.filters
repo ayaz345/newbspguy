@@ -19,6 +19,9 @@
     <ClCompile Include=".\..\src\bsp\Bsp.cpp">
       <Filter>Source Files\bsp</Filter>
     </ClCompile>
+    <ClCompile Include=".\..\src\bsp\bsplimits.cpp">
+      <Filter>Source Files\bsp</Filter>
+    </ClCompile>
     <ClCompile Include=".\..\src\bsp\bsptypes.cpp">
       <Filter>Source Files\bsp</Filter>
     </ClCompile>
