@@ -76,7 +76,7 @@ struct STRUCTREMAP
 	bool* visitedFaces;
 
 	STRUCTCOUNT count; // size of each array
-
+	STRUCTREMAP() = default;
 	STRUCTREMAP(Bsp* map);
 	~STRUCTREMAP();
 };

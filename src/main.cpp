@@ -358,7 +358,7 @@ int noclip(CommandLine& cli)
 		{
 			model = cli.getOptionInt("-model");
 
-			if (model < 0 || (unsigned int)model >= map->modelCount)
+			if (model < 0 || model >= map->modelCount)
 			{
 				logf("ERROR: model number must be 0 - %d\n", map->modelCount);
 				return 1;
@@ -465,7 +465,7 @@ int simplify(CommandLine& cli)
 
 		STRUCTCOUNT oldCounts(map);
 
-		if (modelIdx < 0 || (unsigned int)modelIdx >= map->modelCount)
+		if (modelIdx < 0 || modelIdx >= map->modelCount)
 		{
 			logf("ERROR: model number must be 0 - %d\n", map->modelCount);
 			return 1;
@@ -762,13 +762,11 @@ int main(int argc, char* argv[])
 	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 #endif
 
-#ifdef USE_FILESYSTEM
 	if (strlen(argv[0]))
 	{
 		fs::path ph = argv[0];
 		fs::current_path(ph.parent_path());
 	}
-#endif
 
 	g_settings_path = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() + "bspguy.cfg" : getConfigDir() + "bspguy.cfg";
 	g_config_dir = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() : getConfigDir();

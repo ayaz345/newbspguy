@@ -53,6 +53,7 @@ public:
 
 
 	bool is_model = false;
+	Bsp* parentMap = NULL;
 	void selectModelEnt();
 
 	int planeCount;
@@ -197,6 +198,11 @@ public:
 	int create_plane();
 	int create_model();
 	int create_texinfo();
+
+	void copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
+						std::vector<BSPEDGE>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
+						std::vector<BSPFACE>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE>& newNodes,
+						std::vector<BSPCLIPNODE>& newClipnodes);
 
 	int duplicate_model(int modelIdx);
 
