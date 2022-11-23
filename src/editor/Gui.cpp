@@ -3427,8 +3427,7 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 4)
 		{
-			ImGui::DragFloat("Movement speed", &app->moveSpeed, 0.1f, 0.1f, 1000, "%.1f");
-			ImGui::DragFloat("Rotation speed", &app->rotationSpeed, 0.01f, 0.1f, 100, "%.1f");
+			
 		}
 		else if (settingsTab == 5)
 		{
@@ -4043,9 +4042,9 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	ImGui::Dummy(ImVec2(0, 10));
 	ImGui::PushFont(consoleFontLarge);
 
-	float valWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.1f, FLT_MAX, FLT_MAX, " Clipnodes ").x;
-	float usageWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.1f, FLT_MAX, FLT_MAX, "  Usage   ").x;
-	float modelWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.1f, FLT_MAX, FLT_MAX, " Model ").x;
+	float valWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.2f, FLT_MAX, FLT_MAX, " Clipnodes ").x;
+	float usageWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.2f, FLT_MAX, FLT_MAX, "  Usage   ").x;
+	float modelWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.2f, FLT_MAX, FLT_MAX, " Model ").x;
 	float bigWidth = ImGui::GetWindowWidth() - (valWidth + usageWidth + modelWidth);
 	ImGui::Columns(4);
 	ImGui::SetColumnWidth(0, bigWidth);
