@@ -102,6 +102,7 @@ struct AppSettings
 
 	void loadDefault();
 	void load();
+	void reset();
 	void save();
 	void save(std::string path);
 };
@@ -153,7 +154,7 @@ public:
 	void postLoadFgds();
 	void reloadMaps();
 	void clearMaps();
-	bool saveSettings();
+	void saveSettings();
 	void loadSettings();
 
 

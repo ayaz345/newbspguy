@@ -145,16 +145,19 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 	if (byteShifts > 0)
 	{
 // TODO: detect overflows here too
-		static unsigned char temp[MAX_MAP_LEAVES / 8];
-
 		if (shift > 0)
 		{
 			int startByte = (offsetLeaf + bitShifts) / 8;
 			int moveSize = len - (startByte + byteShifts);
+			unsigned char* temp = new unsigned char[moveSize];
 
 			memcpy(temp, (unsigned char*)vis + startByte, moveSize);
+
 			memset((unsigned char*)vis + startByte, 0, byteShifts);
+
 			memcpy((unsigned char*)vis + startByte + byteShifts, temp, moveSize);
+
+			delete[] temp;
 		}
 		else
 		{
@@ -315,7 +318,6 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 	int64_t x = 0;
 	unsigned char* dest;
 	unsigned char* src;
-	unsigned char compressed[MAX_MAP_LEAVES / 8];
 	unsigned int g_bitbytes = ((numLeaves + 63) & ~63) >> 3;
 
 	unsigned char* vismap_p = output;
@@ -342,6 +344,9 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 		g_progress.tick();
 	}
 
+
+	unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES / 8];
+
 	for (int i = 0; i < iterLeaves; i++)
 	{
 		if (sharedRows[i] != i)
@@ -350,12 +355,12 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 			continue;
 		}
 
-		memset(&compressed, 0, sizeof(compressed));
+		memset(compressed, 0, sizeof(compressed));
 
 		src = uncompressed + i * g_bitbytes;
 
 		// Compress all leafs into global compression buffer
-		x = CompressVis(src, g_bitbytes, compressed, sizeof(compressed));
+		x = CompressVis(src, g_bitbytes, compressed, MAX_MAP_LEAVES / 8);
 
 		dest = vismap_p;
 		vismap_p += x;
@@ -368,8 +373,10 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 		leafs[i + 1].nVisOffset = (int)(dest - output);            // leaf 0 is a common solid
 
 		memcpy(dest, compressed, x);
+
 	}
 
+	delete[] compressed;
 	delete[] sharedRows;
 
 	return vismap_p - output;

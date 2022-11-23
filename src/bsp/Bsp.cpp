@@ -4324,7 +4324,7 @@ int Bsp::create_texinfo()
 	return texinfoCount - 1;
 }
 
-void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
+void Bsp::copy_bsp_model(int modelIdx, Bsp * targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 						 std::vector<BSPEDGE>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 						 std::vector<BSPFACE>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE>& newNodes,
 						 std::vector<BSPCLIPNODE>& newClipnodes)
@@ -4332,13 +4332,13 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, true);
 
-	remap = STRUCTREMAP(this);
+	remap = STRUCTREMAP(targetMap);
 
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
 		if (usage.planes[i])
 		{
-			remap.planes[i] = planeCount + (int)newPlanes.size();
+			remap.planes[i] = targetMap->planeCount + (int)newPlanes.size();
 			newPlanes.push_back(planes[i]);
 		}
 	}
@@ -4347,7 +4347,7 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	{
 		if (usage.verts[i])
 		{
-			remap.verts[i] = vertCount + (int)newVerts.size();
+			remap.verts[i] = targetMap->vertCount + (int)newVerts.size();
 			newVerts.push_back(verts[i]);
 		}
 	}
@@ -4356,7 +4356,7 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	{
 		if (usage.edges[i])
 		{
-			remap.edges[i] = edgeCount + (int)newEdges.size();
+			remap.edges[i] = targetMap->edgeCount + (int)newEdges.size();
 
 			BSPEDGE edge = edges[i];
 			for (int k = 0; k < 2; k++)
@@ -4369,7 +4369,7 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	{
 		if (usage.surfEdges[i])
 		{
-			remap.surfEdges[i] = surfedgeCount + (int)newSurfedges.size();
+			remap.surfEdges[i] = targetMap->surfedgeCount + (int)newSurfedges.size();
 
 			int surfedge = remap.edges[abs(surfedges[i])];
 			if (surfedges[i] < 0)
@@ -4382,7 +4382,7 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	{
 		if (usage.texInfo[i])
 		{
-			remap.texInfo[i] = texinfoCount + (int)newTexinfo.size();
+			remap.texInfo[i] = targetMap->texinfoCount + (int)newTexinfo.size();
 			newTexinfo.push_back(texinfos[i]);
 		}
 	}
@@ -4392,7 +4392,7 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	{
 		if (usage.faces[i])
 		{
-			remap.faces[i] = faceCount + (int)newFaces.size();
+			remap.faces[i] = targetMap->faceCount + (int)newFaces.size();
 
 			BSPFACE face = faces[i];
 			face.iFirstEdge = remap.surfEdges[face.iFirstEdge];
@@ -4426,7 +4426,7 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	{
 		if (usage.nodes[i])
 		{
-			remap.nodes[i] = nodeCount + (int)newNodes.size();
+			remap.nodes[i] = targetMap->nodeCount + (int)newNodes.size();
 			newNodes.push_back(nodes[i]);
 		}
 	}
@@ -4449,7 +4449,7 @@ void Bsp::copy_bsp_model(int modelIdx, STRUCTREMAP& remap, std::vector<BSPPLANE>
 	{
 		if (usage.clipnodes[i])
 		{
-			remap.clipnodes[i] = clipnodeCount + (int)newClipnodes.size();
+			remap.clipnodes[i] = targetMap->clipnodeCount + (int)newClipnodes.size();
 			newClipnodes.push_back(clipnodes[i]);
 		}
 	}
@@ -4482,7 +4482,7 @@ int Bsp::duplicate_model(int modelIdx)
 
 	STRUCTREMAP remap = STRUCTREMAP();
 
-	copy_bsp_model(modelIdx, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
+	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
 
 	if (newClipnodes.size())
 		append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE) * newClipnodes.size());

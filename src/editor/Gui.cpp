@@ -63,7 +63,7 @@ void Gui::init()
 
 
 	// ImFileDialog requires you to set the CreateTexture and DeleteTexture
-	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void*{
+	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void* {
 		GLuint tex;
 
 		glGenTextures(1, &tex);
@@ -1076,8 +1076,13 @@ void Gui::drawMenuBar()
 		}
 		if (ImGui::BeginMenu("Import", !app->isLoading))
 		{
+			if (ImGui::MenuItem("BSP model", NULL))
+			{
+				showImportMapWidget_Type = SHOW_IMPORT_MODEL_BSP;
+				showImportMapWidget = !showImportMapWidget;
+			}
 
-			if (ImGui::MenuItem(".bsp model as func_breakable", NULL))
+			if (ImGui::MenuItem(".bsp model path in func_breakable", NULL))
 			{
 				showImportMapWidget_Type = SHOW_IMPORT_MODEL;
 				showImportMapWidget = !showImportMapWidget;
@@ -1143,13 +1148,9 @@ void Gui::drawMenuBar()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem("Test"))
+		if (map && dirExists(g_settings.gamedir + "/svencoop_addon/maps/"))
 		{
-			if (!map || !dirExists(g_settings.gamedir + "/svencoop_addon/maps/"))
-			{
-				logf("Failed. No svencoop directory found.\n");
-			}
-			else
+			if (ImGui::MenuItem("Sven Test"))
 			{
 				std::string mapPath = g_settings.gamedir + "/svencoop_addon/maps/" + map->bsp_name + ".bsp";
 				std::string entPath = g_settings.gamedir + "/svencoop_addon/scripts/maps/bspguy/maps/" + map->bsp_name + ".ent";
@@ -1170,13 +1171,12 @@ void Gui::drawMenuBar()
 					logf("Check that the directories in the path exist, and that you have permission to write in them.\n");
 				}
 			}
-		}
-
-		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-		{
-			ImGui::BeginTooltip();
-			ImGui::TextUnformatted("Saves the .bsp and .ent file to your svencoop_addon folder.\n\nAI nodes will be stripped to skip node graph generation.\n");
-			ImGui::EndTooltip();
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Saves the .bsp and .ent file to your svencoop_addon folder.\n\nAI nodes will be stripped to skip node graph generation.\n");
+				ImGui::EndTooltip();
+			}
 		}
 
 		if (ImGui::MenuItem("Reload", 0, false, !app->isLoading))
@@ -3141,12 +3141,13 @@ void Gui::drawSettings()
 	if (ImGui::Begin("Settings", &showSettingsWidget))
 	{
 		ImGuiContext& g = *GImGui;
-		const int settings_tabs = 6;
+		const int settings_tabs = 7;
 		static const char* tab_titles[settings_tabs] = {
 			"General",
 			"FGDs",
 			"Asset Paths",
 			"Optimizing",
+			"Limits",
 			"Rendering",
 			"Controls"
 		};
@@ -3231,6 +3232,7 @@ void Gui::drawSettings()
 			}
 			ImGui::DragInt("Undo Levels", &app->undoLevels, 0.05f, 0, 64);
 			ImGui::Checkbox("Verbose Logging", &g_verbose);
+			ImGui::SameLine();
 			ImGui::Checkbox("Make map backup", &g_settings.backUpMap);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
@@ -3247,19 +3249,31 @@ void Gui::drawSettings()
 				ImGui::EndTooltip();
 			}
 
-            ImGui::Checkbox("Auto import entity file", &g_settings.autoImportEnt);
-            if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
-                ImGui::BeginTooltip();
-                ImGui::TextUnformatted("Automatically import an entity file when the map is opened.");
-                ImGui::EndTooltip();
-            }
+      ImGui::Checkbox("Auto import entity file", &g_settings.autoImportEnt);
+      if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+          ImGui::BeginTooltip();
+          ImGui::TextUnformatted("Automatically import an entity file when the map is opened.");
+          ImGui::EndTooltip();
+      }
 
-            ImGui::Checkbox("Same directory for entity file", &g_settings.sameDirForEnt);
-            if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
-                ImGui::BeginTooltip();
-                ImGui::TextUnformatted("Use the same directory as the bsp file to import and export the entity file.");
-                ImGui::EndTooltip();
-            }
+      ImGui::Checkbox("Same directory for entity file", &g_settings.sameDirForEnt);
+      if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+          ImGui::BeginTooltip();
+          ImGui::TextUnformatted("Use the same directory as the bsp file to import and export the entity file.");
+          ImGui::EndTooltip();
+      }
+      
+			if (ImGui::Button("RESET ALL SETTINGS"))
+			{
+				g_settings.reset();
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Warning! You want to return all settings to default values?!");
+				ImGui::EndTooltip();
+			}
 		}
 		else if (settingsTab == 1)
 		{
@@ -3459,6 +3473,10 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 4)
 		{
+			
+		}
+		else if (settingsTab == 5)
+		{
 			ImGui::Text("Viewport:");
 			if (ImGui::Checkbox("VSync", &vsync))
 			{
@@ -3565,7 +3583,7 @@ void Gui::drawSettings()
 
 			ImGui::Columns(1);
 		}
-		else if (settingsTab == 5)
+		else if (settingsTab == 6)
 		{
 			ImGui::DragFloat("Movement speed", &app->moveSpeed, 0.1f, 0.1f, 1000, "%.1f");
 			ImGui::DragFloat("Rotation speed", &app->rotationSpeed, 0.01f, 0.1f, 100, "%.1f");
@@ -3845,6 +3863,18 @@ void Gui::drawImportMapWidget()
 	static std::string mapPath;
 	const char* title = "Import .bsp model as func_breakable entity";
 
+	if (ifd::FileDialog::Instance().IsDone("BspOpenDialog"))
+	{
+		if (ifd::FileDialog::Instance().HasResult())
+		{
+			std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+			mapPath = res.string();
+			g_settings.lastdir = res.parent_path().string();
+		}
+		ifd::FileDialog::Instance().Close();
+	}
+
+
 	if (showImportMapWidget_Type == SHOW_IMPORT_OPEN)
 	{
 		title = "Open map";
@@ -3853,10 +3883,19 @@ void Gui::drawImportMapWidget()
 	{
 		title = "Add map to renderer";
 	}
+	else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
+	{
+		title = "Copy BSP model to current map";
+	}
 
 	if (ImGui::Begin(title, &showImportMapWidget))
 	{
 		ImGui::InputText(".bsp file", &mapPath);
+		ImGui::SameLine();
+		if (ImGui::Button("...##open_bsp_file1"))
+		{
+			ifd::FileDialog::Instance().Open("BspOpenDialog", "Open a map", "Map file (*.bsp){.bsp},.*", false, g_settings.lastdir);
+		}
 		if (ImGui::Button("Load", ImVec2(120, 0)))
 		{
 			fixupPath(mapPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
@@ -3872,6 +3911,72 @@ void Gui::drawImportMapWidget()
 				{
 					g_app->clearMaps();
 					g_app->addMap(new Bsp(mapPath));
+				}
+				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
+				{
+					Bsp* bspModel = new Bsp(mapPath);
+					Bsp* map = g_app->getSelectedMap();
+					std::vector<BSPPLANE> newPlanes;
+					std::vector<vec3> newVerts;
+					std::vector<BSPEDGE> newEdges;
+					std::vector<int> newSurfedges;
+					std::vector<BSPTEXTUREINFO> newTexinfo;
+					std::vector<BSPFACE> newFaces;
+					std::vector<COLOR3> newLightmaps;
+					std::vector<BSPNODE> newNodes;
+					std::vector<BSPCLIPNODE> newClipnodes;
+
+					STRUCTREMAP * remap = new STRUCTREMAP();
+
+					bspModel->copy_bsp_model(0, map, *remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
+
+					if (newClipnodes.size())
+						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE) * newClipnodes.size());
+					if (newEdges.size())
+						map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE) * newEdges.size());
+					if (newFaces.size())
+						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE) * newFaces.size());
+					if (newNodes.size())
+						map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE) * newNodes.size());
+					if (newPlanes.size())
+						map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
+					if (newSurfedges.size())
+						map->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
+					if (newTexinfo.size())
+						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
+					if (newVerts.size())
+						map->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
+					if (newLightmaps.size())
+						map->append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
+
+					int newModelIdx = map->create_model();
+					BSPMODEL& oldModel = bspModel->models[0];
+					BSPMODEL& newModel = map->models[newModelIdx];
+					memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
+
+					newModel.iFirstFace = remap->faces[oldModel.iFirstFace];
+					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap->nodes[oldModel.iHeadnodes[0]];
+					for (int i = 1; i < MAX_MAP_HULLS; i++)
+					{
+						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap->clipnodes[oldModel.iHeadnodes[i]];
+					}
+
+					newModel.nVisLeafs = 0;
+
+					map->ents.push_back(new Entity("func_wall"));
+					map->ents[map->ents.size()-1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
+
+					map->getBspRender()->updateLightmapInfos();
+					map->getBspRender()->calcFaceMaths();
+					map->getBspRender()->preRenderFaces();
+					map->getBspRender()->preRenderEnts();
+					map->getBspRender()->reloadLightmaps();
+					map->getBspRender()->addClipnodeModel(newModelIdx);
+					g_app->gui->refresh();
+
+					g_app->deselectObject();
+
+					delete bspModel;
 				}
 				else
 				{
@@ -4070,9 +4175,9 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	ImGui::Dummy(ImVec2(0, 10));
 	ImGui::PushFont(consoleFontLarge);
 
-	float valWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.1f, FLT_MAX, FLT_MAX, " Clipnodes ").x;
-	float usageWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.1f, FLT_MAX, FLT_MAX, "  Usage   ").x;
-	float modelWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.1f, FLT_MAX, FLT_MAX, " Model ").x;
+	float valWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.2f, FLT_MAX, FLT_MAX, " Clipnodes ").x;
+	float usageWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.2f, FLT_MAX, FLT_MAX, "  Usage   ").x;
+	float modelWidth = consoleFontLarge->CalcTextSizeA(fontSize * 1.2f, FLT_MAX, FLT_MAX, " Model ").x;
 	float bigWidth = ImGui::GetWindowWidth() - (valWidth + usageWidth + modelWidth);
 	ImGui::Columns(4);
 	ImGui::SetColumnWidth(0, bigWidth);
