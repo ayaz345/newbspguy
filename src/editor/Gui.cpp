@@ -63,7 +63,7 @@ void Gui::init()
 
 
 	// ImFileDialog requires you to set the CreateTexture and DeleteTexture
-	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void*{
+	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void* {
 		GLuint tex;
 
 		glGenTextures(1, &tex);
@@ -1116,13 +1116,9 @@ void Gui::drawMenuBar()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem("Test"))
+		if (map && dirExists(g_settings.gamedir + "/svencoop_addon/maps/"))
 		{
-			if (!map || !dirExists(g_settings.gamedir + "/svencoop_addon/maps/"))
-			{
-				logf("Failed. No svencoop directory found.\n");
-			}
-			else
+			if (ImGui::MenuItem("Sven Test"))
 			{
 				std::string mapPath = g_settings.gamedir + "/svencoop_addon/maps/" + map->bsp_name + ".bsp";
 				std::string entPath = g_settings.gamedir + "/svencoop_addon/scripts/maps/bspguy/maps/" + map->bsp_name + ".ent";
@@ -1143,13 +1139,12 @@ void Gui::drawMenuBar()
 					logf("Check that the directories in the path exist, and that you have permission to write in them.\n");
 				}
 			}
-		}
-
-		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-		{
-			ImGui::BeginTooltip();
-			ImGui::TextUnformatted("Saves the .bsp and .ent file to your svencoop_addon folder.\n\nAI nodes will be stripped to skip node graph generation.\n");
-			ImGui::EndTooltip();
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Saves the .bsp and .ent file to your svencoop_addon folder.\n\nAI nodes will be stripped to skip node graph generation.\n");
+				ImGui::EndTooltip();
+			}
 		}
 
 		if (ImGui::MenuItem("Reload", 0, false, !app->isLoading))
@@ -3204,6 +3199,7 @@ void Gui::drawSettings()
 			}
 			ImGui::DragInt("Undo Levels", &app->undoLevels, 0.05f, 0, 64);
 			ImGui::Checkbox("Verbose Logging", &g_verbose);
+			ImGui::SameLine();
 			ImGui::Checkbox("Make map backup", &g_settings.backUpMap);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
@@ -3217,6 +3213,17 @@ void Gui::drawSettings()
 			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Hack original map CRC after anything edited.");
+				ImGui::EndTooltip();
+			}
+
+			if (ImGui::Button("RESET ALL SETTINGS"))
+			{
+				g_settings.reset();
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Warning! You want to return all settings to default values?!");
 				ImGui::EndTooltip();
 			}
 		}

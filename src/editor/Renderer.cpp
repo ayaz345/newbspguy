@@ -128,6 +128,58 @@ void AppSettings::loadDefault()
 	monsterOnlyTriggers.clear();
 }
 
+void AppSettings::reset()
+{
+	loadDefault();
+
+	fgdPaths.clear();
+	fgdPaths.push_back("/moddir/GameDefinitionFile.fgd");
+
+	resPaths.clear();
+	resPaths.push_back("/moddir/");
+	resPaths.push_back("/moddir_addon/");
+
+	conditionalPointEntTriggers.clear();
+	conditionalPointEntTriggers.push_back("trigger_once");
+	conditionalPointEntTriggers.push_back("trigger_multiple");
+	conditionalPointEntTriggers.push_back("trigger_counter");
+	conditionalPointEntTriggers.push_back("trigger_gravity");
+	conditionalPointEntTriggers.push_back("trigger_teleport");
+
+	entsThatNeverNeedAnyHulls.clear();
+	entsThatNeverNeedAnyHulls.push_back("env_bubbles");
+	entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
+	entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
+	entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
+	entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
+	entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
+
+	entsThatNeverNeedCollision.clear();
+	entsThatNeverNeedCollision.push_back("func_illusionary");
+	entsThatNeverNeedCollision.push_back("func_mortar_field");
+
+	passableEnts.clear();
+	passableEnts.push_back("func_door");
+	passableEnts.push_back("func_door_rotating");
+	passableEnts.push_back("func_pendulum");
+	passableEnts.push_back("func_tracktrain");
+	passableEnts.push_back("func_train");
+	passableEnts.push_back("func_water");
+	passableEnts.push_back("momentary_door");
+
+	playerOnlyTriggers.clear();
+	playerOnlyTriggers.push_back("func_ladder");
+	playerOnlyTriggers.push_back("game_zone_player");
+	playerOnlyTriggers.push_back("player_respawn_zone");
+	playerOnlyTriggers.push_back("trigger_cdaudio");
+	playerOnlyTriggers.push_back("trigger_changelevel");
+	playerOnlyTriggers.push_back("trigger_transition");
+
+	monsterOnlyTriggers.clear();
+	monsterOnlyTriggers.push_back("func_monsterclip");
+	monsterOnlyTriggers.push_back("trigger_monsterjump");
+}
+
 void AppSettings::load()
 {
 	std::ifstream file(g_settings_path);
@@ -312,7 +364,6 @@ void AppSettings::load()
 		}
 #endif
 
-
 		// Restore default window height if invalid.
 		if (windowHeight <= 0 || windowWidth <= 0)
 		{
@@ -320,126 +371,14 @@ void AppSettings::load()
 			windowWidth = 800;
 		}
 
-
-		if (conditionalPointEntTriggers.empty())
-		{
-			conditionalPointEntTriggers.push_back("trigger_once");
-			conditionalPointEntTriggers.push_back("trigger_multiple");
-			conditionalPointEntTriggers.push_back("trigger_counter");
-			conditionalPointEntTriggers.push_back("trigger_gravity");
-			conditionalPointEntTriggers.push_back("trigger_teleport");
-		}
-
-		if (entsThatNeverNeedAnyHulls.empty())
-		{
-			entsThatNeverNeedAnyHulls.push_back("env_bubbles");
-			entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
-			entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
-			entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
-			entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
-			entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
-		}
-
-		if (entsThatNeverNeedCollision.empty())
-		{
-			entsThatNeverNeedCollision.push_back("func_illusionary");
-			entsThatNeverNeedCollision.push_back("func_mortar_field");
-		}
-
-		if (passableEnts.empty())
-		{
-			passableEnts.push_back("func_door");
-			passableEnts.push_back("func_door_rotating");
-			passableEnts.push_back("func_pendulum");
-			passableEnts.push_back("func_tracktrain");
-			passableEnts.push_back("func_train");
-			passableEnts.push_back("func_water");
-			passableEnts.push_back("momentary_door");
-		}
-
-		if (playerOnlyTriggers.empty())
-		{
-			playerOnlyTriggers.push_back("func_ladder");
-			playerOnlyTriggers.push_back("game_zone_player");
-			playerOnlyTriggers.push_back("player_respawn_zone");
-			playerOnlyTriggers.push_back("trigger_cdaudio");
-			playerOnlyTriggers.push_back("trigger_changelevel");
-			playerOnlyTriggers.push_back("trigger_transition");
-		}
-
-		if (monsterOnlyTriggers.empty())
-		{
-			monsterOnlyTriggers.push_back("func_monsterclip");
-			monsterOnlyTriggers.push_back("trigger_monsterjump");
-		}
-
-		if (fgdPaths.empty())
-		{
-			fgdPaths.push_back("/svencoop/sven-coop.fgd");
-		}
-
-		if (resPaths.empty())
-		{
-			resPaths.push_back("/svencoop/");
-			resPaths.push_back("/svencoop_addon/");
-			resPaths.push_back("/svencoop_downloads/");
-			resPaths.push_back("/svencoop_hd/");
-		}
 		if (lines_readed > 0)
 			g_settings.settingLoaded = true;
+		else 
+			logf("Failed to load user config: %s\n", g_settings_path.c_str());
 	}
 	else
 	{
-		g_settings.windowY = 0;
-		g_settings.windowX = 0;
-#ifdef WIN32
-		g_settings.windowY = 30;
-#endif
-		windowHeight = 600;
-		windowWidth = 800;
-
-		fgdPaths.push_back("/svencoop/sven-coop.fgd");
-
-		resPaths.push_back("/svencoop/");
-		resPaths.push_back("/svencoop_addon/");
-		resPaths.push_back("/svencoop_downloads/");
-		resPaths.push_back("/svencoop_hd/");
-
-		conditionalPointEntTriggers.push_back("trigger_once");
-		conditionalPointEntTriggers.push_back("trigger_multiple");
-		conditionalPointEntTriggers.push_back("trigger_counter");
-		conditionalPointEntTriggers.push_back("trigger_gravity");
-		conditionalPointEntTriggers.push_back("trigger_teleport");
-
-		entsThatNeverNeedAnyHulls.push_back("env_bubbles");
-		entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
-		entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
-		entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
-		entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
-		entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
-
-		entsThatNeverNeedCollision.push_back("func_illusionary");
-		entsThatNeverNeedCollision.push_back("func_mortar_field");
-
-		passableEnts.push_back("func_door");
-		passableEnts.push_back("func_door_rotating");
-		passableEnts.push_back("func_pendulum");
-		passableEnts.push_back("func_tracktrain");
-		passableEnts.push_back("func_train");
-		passableEnts.push_back("func_water");
-		passableEnts.push_back("momentary_door");
-
-		playerOnlyTriggers.push_back("func_ladder");
-		playerOnlyTriggers.push_back("game_zone_player");
-		playerOnlyTriggers.push_back("player_respawn_zone");
-		playerOnlyTriggers.push_back("trigger_cdaudio");
-		playerOnlyTriggers.push_back("trigger_changelevel");
-		playerOnlyTriggers.push_back("trigger_transition");
-
-		monsterOnlyTriggers.push_back("func_monsterclip");
-		monsterOnlyTriggers.push_back("trigger_monsterjump");
-
-
+		reset();
 		logf("Failed to open user config: %s\n", g_settings_path.c_str());
 	}
 }
@@ -530,20 +469,12 @@ void AppSettings::save(std::string path)
 
 void AppSettings::save()
 {
-
 	if (!dirExists(g_config_dir))
 	{
 		createDir(g_config_dir);
 	}
-
-	if (g_app->saveSettings())
-	{
-		save(g_settings_path);
-	}
-	else
-	{
-		logf("Settings can not be saved because not loaded\n");
-	}
+	g_app->saveSettings();
+	save(g_settings_path);
 }
 
 int g_scroll = 0;
@@ -995,7 +926,7 @@ void Renderer::reloadMaps()
 	logf("Reloaded maps\n");
 }
 
-bool Renderer::saveSettings()
+void Renderer::saveSettings()
 {
 	g_settings.debug_open = gui->showDebugWidget;
 	g_settings.keyvalue_open = gui->showKeyvalueWidget;
@@ -1015,7 +946,6 @@ bool Renderer::saveSettings()
 	g_settings.undoLevels = undoLevels;
 	g_settings.moveSpeed = moveSpeed;
 	g_settings.rotSpeed = rotationSpeed;
-	return true;
 }
 
 void Renderer::loadSettings()
@@ -1902,7 +1832,6 @@ void Renderer::pickObject()
 			mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo);
 		}
 	}
-
 
 	if (movingEnt && oldEntIdx != pickInfo.entIdx)
 	{
