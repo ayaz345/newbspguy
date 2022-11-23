@@ -3920,6 +3920,8 @@ void Gui::drawImportMapWidget()
 						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap->clipnodes[oldModel.iHeadnodes[i]];
 					}
 
+					newModel.nVisLeafs = 0;
+
 					map->ents.push_back(new Entity("func_wall"));
 					map->ents[map->ents.size()-1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 
