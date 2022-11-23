@@ -330,7 +330,7 @@ void AppSettings::load()
 			{
 				g_settings.autoImportEnt = atoi(val.c_str()) != 0;
 			}
-			else if (key == "same_dir_for_ent"
+			else if (key == "same_dir_for_ent")
 			{
 				g_settings.sameDirForEnt = atoi(val.c_str()) != 0;
 			}

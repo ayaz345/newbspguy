@@ -945,6 +945,7 @@ void Gui::drawMenuBar()
                     }
                     else {
                         entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
+						createDir(GetWorkDir());
                     }
                     
 					logf("Export entities: %s\n", entFilePath.c_str());
