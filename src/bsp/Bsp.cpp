@@ -4316,7 +4316,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp * targetMap, STRUCTREMAP& remap, std:
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, true);
 
-	remap = STRUCTREMAP(this);
+	remap = STRUCTREMAP(targetMap);
 
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{

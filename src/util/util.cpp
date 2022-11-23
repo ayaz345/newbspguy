@@ -609,6 +609,10 @@ std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes)
 
 	// https://math.stackexchange.com/questions/1883835/get-list-of-vertices-from-list-of-planes
 	size_t numPlanes = planes.size();
+
+	if (numPlanes < 2)
+		return intersectVerts;
+
 	for (size_t i = 0; i < numPlanes - 2; i++)
 	{
 		for (size_t j = i + 1; j < numPlanes - 1; j++)
