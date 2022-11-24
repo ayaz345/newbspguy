@@ -1908,8 +1908,6 @@ void Gui::drawDebugWidget()
 
 void Gui::drawKeyvalueEditor()
 {
-//ImGui::SetNextWindowBgAlpha(0.75f);
-
 	ImGui::SetNextWindowSize(ImVec2(610.f, 610.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
@@ -2524,7 +2522,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-			if (ImGui::Button((" X ##del" + std::to_string(i)).c_str()))
+			if (ImGui::Button((" X ##del" + ent->keyOrder[i]).c_str()))
 			{
 				ent->removeKeyvalue(ent->keyOrder[i]);
 				map->getBspRender()->refreshEnt(app->pickInfo.entIdx);

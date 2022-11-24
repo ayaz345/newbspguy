@@ -33,7 +33,7 @@ void Entity::addKeyvalue(const std::string& key, const std::string& value, bool 
 		keyvalues[key] = value;
 	dup = 1;
 
-	if (find(keyOrder.begin(), keyOrder.end(), key) == keyOrder.end())
+	if (std::find(keyOrder.begin(), keyOrder.end(), key) == keyOrder.end())
 	{
 		keyOrder.push_back(key);
 	}
@@ -42,7 +42,7 @@ void Entity::addKeyvalue(const std::string& key, const std::string& value, bool 
 		while (true)
 		{
 			std::string newKey = key + "#" + std::to_string(dup);
-			if (find(keyOrder.begin(), keyOrder.end(), newKey) == keyOrder.end())
+			if (std::find(keyOrder.begin(), keyOrder.end(), newKey) == keyOrder.end())
 			{
 				keyOrder.push_back(newKey);
 				break;
@@ -67,7 +67,7 @@ void Entity::removeKeyvalue(const std::string& key)
 {
 	if (!hasKey(key))
 		return;
-	keyOrder.erase(find(keyOrder.begin(), keyOrder.end(), key));
+	keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
 	keyvalues.erase(key);
 	cachedModelIdx = -2;
 	targetsCached = false;
@@ -119,7 +119,7 @@ void Entity::clearEmptyKeyvalues()
 
 bool Entity::hasKey(const std::string& key)
 {
-	return keyvalues.find(key) != keyvalues.end() && find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end();
+	return keyvalues.find(key) != keyvalues.end() && std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end();
 }
 
 int Entity::getBspModelIdx()
