@@ -3914,7 +3914,7 @@ void Gui::drawImportMapWidget()
 				{
 					Bsp* bspModel = new Bsp(mapPath);
 					Bsp* map = g_app->getSelectedMap();
-					
+
 					int FaceCount = map->faceCount, NodeCount = map->nodeCount, ClipNodeCount = map->clipnodeCount;
 
 					std::vector<BSPPLANE> newPlanes;
@@ -3927,7 +3927,7 @@ void Gui::drawImportMapWidget()
 					std::vector<BSPNODE> newNodes;
 					std::vector<BSPCLIPNODE> newClipnodes;
 
-					STRUCTREMAP * remap = new STRUCTREMAP();
+					STRUCTREMAP* remap = new STRUCTREMAP();
 
 					bspModel->copy_bsp_model(0, map, *remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
 
@@ -4281,9 +4281,9 @@ void Gui::drawEntityReport()
 		else
 		{
 			ImGui::BeginGroup();
-			const int MAX_FILTERS = 1;
-			static std::string keyFilter[MAX_FILTERS];
-			static std::string valueFilter[MAX_FILTERS];
+			static int MAX_FILTERS = 1;
+			static std::vector<std::string> keyFilter = std::vector<std::string>();
+			static std::vector<std::string> valueFilter = std::vector<std::string>();
 			static int lastSelect = -1;
 			static std::string classFilter = "(none)";
 			static std::string flagsFilter = "(none)";
@@ -4299,6 +4299,10 @@ void Gui::drawEntityReport()
 			if (filterNeeded)
 			{
 				visibleEnts.clear();
+				while (keyFilter.size() < MAX_FILTERS)
+					keyFilter.push_back(std::string());
+				while (valueFilter.size() < MAX_FILTERS)
+					valueFilter.push_back(std::string());
 
 				for (int i = 1; i < map->ents.size(); i++)
 				{
@@ -4366,7 +4370,7 @@ void Gui::drawEntityReport()
 								}
 							}
 						}
-						else if (valueFilter[k][0] != '\0')
+						else if(valueFilter[k].size())
 						{
 							std::string searchValue = trimSpaces(toLowerCase(valueFilter[k]));
 							bool foundMatch = false;
@@ -4578,12 +4582,16 @@ void Gui::drawEntityReport()
 
 			ImGui::Dummy(ImVec2(0, 8));
 			ImGui::Text("Keyvalue Filter");
-			ImGui::SameLine();
 
 			ImGuiStyle& style = ImGui::GetStyle();
 			float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
-			float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.5f;
+			float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.4f;
 			inputWidth -= smallFont->CalcTextSizeA(fontSize, FLT_MAX, FLT_MAX, " = ").x;
+
+			while (keyFilter.size() < MAX_FILTERS)
+				keyFilter.push_back(std::string());
+			while (valueFilter.size() < MAX_FILTERS)
+				valueFilter.push_back(std::string());
 
 			for (int i = 0; i < MAX_FILTERS; i++)
 			{
@@ -4592,12 +4600,34 @@ void Gui::drawEntityReport()
 				{
 					filterNeeded = true;
 				}
+
 				ImGui::SameLine();
 				ImGui::Text(" = "); ImGui::SameLine();
 				ImGui::SetNextItemWidth(inputWidth);
+
 				if (ImGui::InputText(("##Value" + std::to_string(i)).c_str(), &valueFilter[i]))
 				{
 					filterNeeded = true;
+				}
+
+				if (i == 0)
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("Add", ImVec2(100, 0)))
+					{
+						MAX_FILTERS++;
+						break;
+					}
+				}
+				if (i == 1)
+				{
+					ImGui::SameLine();
+					if (ImGui::Button("Del", ImVec2(100, 0)))
+					{
+						if (MAX_FILTERS > 1)
+							MAX_FILTERS--;
+						break;
+					}
 				}
 			}
 
