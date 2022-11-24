@@ -151,21 +151,21 @@ Bsp::Bsp(std::string fpath)
 
 	logf("(CRC \"%u\")\n", reverse_bits(originCrc32));
 
-    std::string entFilePath;
-    if (g_settings.sameDirForEnt) {
-        entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
-    }
-    else {
-        entFilePath = GetWorkDir() + (this->bsp_name + ".ent");
-    }
+	std::string entFilePath;
+	if (g_settings.sameDirForEnt) {
+		entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
+	}
+	else {
+		entFilePath = GetWorkDir() + (this->bsp_name + ".ent");
+	}
 
-    if (g_settings.autoImportEnt && fileExists(entFilePath)) {
-        logf("Import entities from: %s\n", entFilePath.c_str());
+	if (g_settings.autoImportEnt && fileExists(entFilePath)) {
+		logf("Import entities from: %s\n", entFilePath.c_str());
 
-        int len;
-        char* newlump = loadFile(entFilePath, len);
-        replace_lump(LUMP_ENTITIES, newlump, len);
-    }
+		int len;
+		char* newlump = loadFile(entFilePath, len);
+		replace_lump(LUMP_ENTITIES, newlump, len);
+	}
 
 	load_ents();
 	update_lump_pointers();
@@ -2258,7 +2258,7 @@ int Bsp::lightmap_count(int faceIdx)
 	int lightmapCount = 0;
 	for (int k = 0; k < 4; k++)
 	{
-		lightmapCount += face.nStyles[k] != 255;
+		lightmapCount += face.nStyles[k] != 255 ? 1 : 0;
 	}
 
 	return lightmapCount;
@@ -4324,7 +4324,7 @@ int Bsp::create_texinfo()
 	return texinfoCount - 1;
 }
 
-void Bsp::copy_bsp_model(int modelIdx, Bsp * targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
+void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
 						 std::vector<BSPEDGE>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
 						 std::vector<BSPFACE>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE>& newNodes,
 						 std::vector<BSPCLIPNODE>& newClipnodes)
@@ -4332,7 +4332,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp * targetMap, STRUCTREMAP& remap, std:
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, true);
 
-	remap = STRUCTREMAP(targetMap);
+	remap = STRUCTREMAP(this);
 
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
@@ -4415,7 +4415,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp * targetMap, STRUCTREMAP& remap, std:
 				}
 			}
 
-			face.nLightmapOffset = lightmapCount != 0 ? lightDataLength + lightmapAppendSz : -1;
+			face.nLightmapOffset = lightmapCount != 0 ? targetMap->lightDataLength + lightmapAppendSz : -1;
 			newFaces.push_back(face);
 
 			lightmapAppendSz += lightmapSz * sizeof(COLOR3);
@@ -4430,6 +4430,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp * targetMap, STRUCTREMAP& remap, std:
 			newNodes.push_back(nodes[i]);
 		}
 	}
+
 	for (size_t i = 0; i < newNodes.size(); i++)
 	{
 		BSPNODE& node = newNodes[i];
@@ -4453,6 +4454,7 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp * targetMap, STRUCTREMAP& remap, std:
 			newClipnodes.push_back(clipnodes[i]);
 		}
 	}
+
 	for (size_t i = 0; i < newClipnodes.size(); i++)
 	{
 		BSPCLIPNODE& clipnode = newClipnodes[i];

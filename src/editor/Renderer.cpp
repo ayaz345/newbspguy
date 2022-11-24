@@ -111,8 +111,8 @@ void AppSettings::loadDefault()
 	vsync = true;
 	backUpMap = true;
 	preserveCrc32 = false;
-    autoImportEnt = false;
-    sameDirForEnt = false;
+	autoImportEnt = false;
+	sameDirForEnt = false;
 
 	moveSpeed = 4.0f;
 	fov = 75.0f;
@@ -385,7 +385,7 @@ void AppSettings::load()
 
 		if (lines_readed > 0)
 			g_settings.settingLoaded = true;
-		else 
+		else
 			logf("Failed to load user config: %s\n", g_settings_path.c_str());
 	}
 	else
@@ -473,8 +473,8 @@ void AppSettings::save(std::string path)
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
-    file << "auto_import_ent" << g_settings.autoImportEnt << std::endl;
-    file << "same_dir_for_ent" << g_settings.sameDirForEnt << std::endl;
+	file << "auto_import_ent" << g_settings.autoImportEnt << std::endl;
+	file << "same_dir_for_ent" << g_settings.sameDirForEnt << std::endl;
 
 	file.flush();
 
@@ -1974,43 +1974,47 @@ bool Renderer::transformAxisControls()
 			if (transformTarget == TRANSFORM_VERTEX)
 			{
 				moveSelectedVerts(delta);
+				if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+				{
+					pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
+				}
 			}
 			else if (transformTarget == TRANSFORM_OBJECT)
 			{
 				if (moveOrigin || ent->getBspModelIdx() < 0)
 				{
-					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
-					{
-						vec3 offset = getEntOffset(map, ent);
-						vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
-						vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
+					vec3 offset = getEntOffset(map, ent);
+					vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
+					vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
-						ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
-						map->getBspRender()->refreshEnt(pickInfo.entIdx);
-						updateEntConnectionPositions();
+					ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
+					map->getBspRender()->refreshEnt(pickInfo.entIdx);
+					updateEntConnectionPositions();
+					if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+					{
 						pushEntityUndoState("Move Entity");
 					}
 				}
 				else
 				{
-					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+					map->move(delta, ent->getBspModelIdx(), true);
+					map->getBspRender()->refreshEnt(pickInfo.entIdx);
+					map->getBspRender()->refreshModel(ent->getBspModelIdx());
+					updateEntConnectionPositions();
+					if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
 					{
-						map->move(delta, ent->getBspModelIdx(), true);
-						map->getBspRender()->refreshEnt(pickInfo.entIdx);
-						map->getBspRender()->refreshModel(ent->getBspModelIdx());
-						updateEntConnectionPositions();
 						pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
 					}
 				}
 			}
 			else if (transformTarget == TRANSFORM_ORIGIN)
 			{
-				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+				transformedOrigin = (oldOrigin + delta);
+				transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
+				map->getBspRender()->refreshEnt(pickInfo.entIdx);
+				updateEntConnectionPositions();
+				if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
 				{
-					transformedOrigin = (oldOrigin + delta);
-					transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
-					map->getBspRender()->refreshEnt(pickInfo.entIdx);
-					updateEntConnectionPositions();
 					pushEntityUndoState("Move Origin");
 				}
 			}
@@ -2020,20 +2024,20 @@ bool Renderer::transformAxisControls()
 		{
 			if (ent->isBspModel() && abs(delta.length()) >= EPSILON)
 			{
-				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
-				{
-					vec3 scaleDirs[6]{
-						vec3(1, 0, 0),
-						vec3(0, 1, 0),
-						vec3(0, 0, 1),
-						vec3(-1, 0, 0),
-						vec3(0, -1, 0),
-						vec3(0, 0, -1),
-					};
+				vec3 scaleDirs[6]{
+					vec3(1, 0, 0),
+					vec3(0, 1, 0),
+					vec3(0, 0, 1),
+					vec3(-1, 0, 0),
+					vec3(0, -1, 0),
+					vec3(0, 0, -1),
+				};
 
-					scaleSelectedObject(delta, scaleDirs[draggingAxis]);
-					map->getBspRender()->refreshModel(ent->getBspModelIdx());
-					pushModelUndoState("Move Model", EDIT_MODEL_LUMPS);
+				scaleSelectedObject(delta, scaleDirs[draggingAxis]);
+				map->getBspRender()->refreshModel(ent->getBspModelIdx());
+				if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+				{
+					pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
 				}
 			}
 		}

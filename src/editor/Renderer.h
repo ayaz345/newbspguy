@@ -85,8 +85,8 @@ struct AppSettings
 	bool backUpMap;
 
 	bool preserveCrc32;
-    bool autoImportEnt;
-    bool sameDirForEnt;
+	bool autoImportEnt;
+	bool sameDirForEnt;
 
 	std::vector<std::string> fgdPaths;
 	std::vector<std::string> resPaths;

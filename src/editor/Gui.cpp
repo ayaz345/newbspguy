@@ -933,21 +933,21 @@ void Gui::drawMenuBar()
 			{
 				if (map)
 				{
-                    std::string entFilePath;
-                    if (g_settings.sameDirForEnt) {
-                        std::string bspFilePath = map->bsp_path;
-                        if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
-                            entFilePath = bspFilePath + ".ent";
-                        }
-                        else {
-                            entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
-                        }
-                    }
-                    else {
-                        entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
+					std::string entFilePath;
+					if (g_settings.sameDirForEnt) {
+						std::string bspFilePath = map->bsp_path;
+						if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
+							entFilePath = bspFilePath + ".ent";
+						}
+						else {
+							entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
+						}
+					}
+					else {
+						entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
 						createDir(GetWorkDir());
-                    }
-                    
+					}
+
 					logf("Export entities: %s\n", entFilePath.c_str());
 					std::ofstream entFile(entFilePath, std::ios::trunc);
 					map->update_ent_lump();
@@ -1093,19 +1093,19 @@ void Gui::drawMenuBar()
 			{
 				if (map)
 				{
-                    std::string entFilePath;
-                    if (g_settings.sameDirForEnt) {
-                        std::string bspFilePath = map->bsp_path;
-                        if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
-                            entFilePath = bspFilePath + ".ent";
-                        }
-                        else {
-                            entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
-                        }
-                    }
-                    else {
-                        entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
-                    }
+					std::string entFilePath;
+					if (g_settings.sameDirForEnt) {
+						std::string bspFilePath = map->bsp_path;
+						if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
+							entFilePath = bspFilePath + ".ent";
+						}
+						else {
+							entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
+						}
+					}
+					else {
+						entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
+					}
 
 					logf("Import entities from: %s\n", entFilePath.c_str());
 					if (fileExists(entFilePath))
@@ -2521,7 +2521,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			ImGui::NextColumn();
 		}
 		{
-
 			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
@@ -3250,20 +3249,20 @@ void Gui::drawSettings()
 				ImGui::EndTooltip();
 			}
 
-      ImGui::Checkbox("Auto import entity file", &g_settings.autoImportEnt);
-      if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
-          ImGui::BeginTooltip();
-          ImGui::TextUnformatted("Automatically import an entity file when the map is opened.");
-          ImGui::EndTooltip();
-      }
+			ImGui::Checkbox("Auto import entity file", &g_settings.autoImportEnt);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Automatically import an entity file when the map is opened.");
+				ImGui::EndTooltip();
+			}
 
-      ImGui::Checkbox("Same directory for entity file", &g_settings.sameDirForEnt);
-      if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
-          ImGui::BeginTooltip();
-          ImGui::TextUnformatted("Use the same directory as the bsp file to import and export the entity file.");
-          ImGui::EndTooltip();
-      }
-      
+			ImGui::Checkbox("Same directory for entity file", &g_settings.sameDirForEnt);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Use the same directory as the bsp file to import and export the entity file.");
+				ImGui::EndTooltip();
+			}
+
 			if (ImGui::Button("RESET ALL SETTINGS"))
 			{
 				g_settings.reset();
@@ -3474,7 +3473,7 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 4)
 		{
-			
+
 		}
 		else if (settingsTab == 5)
 		{
@@ -3917,6 +3916,9 @@ void Gui::drawImportMapWidget()
 				{
 					Bsp* bspModel = new Bsp(mapPath);
 					Bsp* map = g_app->getSelectedMap();
+					
+					int FaceCount = map->faceCount, NodeCount = map->nodeCount, ClipNodeCount = map->clipnodeCount;
+
 					std::vector<BSPPLANE> newPlanes;
 					std::vector<vec3> newVerts;
 					std::vector<BSPEDGE> newEdges;
@@ -3935,16 +3937,16 @@ void Gui::drawImportMapWidget()
 						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE) * newClipnodes.size());
 					if (newEdges.size())
 						map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE) * newEdges.size());
-					if (newFaces.size())
-						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE) * newFaces.size());
+					/*if (newFaces.size())
+						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE) * newFaces.size());*/
 					if (newNodes.size())
 						map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE) * newNodes.size());
-					if (newPlanes.size())
-						map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
+					/*if (newPlanes.size())
+						map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());*/
 					if (newSurfedges.size())
 						map->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
-					if (newTexinfo.size())
-						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
+				/*	if (newTexinfo.size())
+						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());*/
 					if (newVerts.size())
 						map->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
 					if (newLightmaps.size())
@@ -3955,17 +3957,26 @@ void Gui::drawImportMapWidget()
 					BSPMODEL& newModel = map->models[newModelIdx];
 					memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
 
-					newModel.iFirstFace = remap->faces[oldModel.iFirstFace];
-					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap->nodes[oldModel.iHeadnodes[0]];
+					//newModel.iFirstFace += FaceCount;
+					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : oldModel.iHeadnodes[0] += NodeCount;
 					for (int i = 1; i < MAX_MAP_HULLS; i++)
 					{
-						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap->clipnodes[oldModel.iHeadnodes[i]];
+						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : oldModel.iHeadnodes[i] += ClipNodeCount;
 					}
 
 					newModel.nVisLeafs = 0;
 
+					BspMerger merger;
+					merger.merge_textures(*map, *bspModel);
+					merger.merge_texinfo(*map, *bspModel);
+					merger.merge_planes(*map, *bspModel);
+					merger.merge_faces(*map, *bspModel);
+
 					map->ents.push_back(new Entity("func_wall"));
-					map->ents[map->ents.size()-1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
+					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
+					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", "0 0 0");
+					map->update_ent_lump();
+					app->updateEnts();
 
 					map->getBspRender()->updateLightmapInfos();
 					map->getBspRender()->calcFaceMaths();

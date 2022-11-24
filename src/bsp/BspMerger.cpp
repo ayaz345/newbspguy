@@ -904,12 +904,11 @@ int BspMerger::force_unique_ent_names_per_map(Bsp* mergedMap)
 	return renameCount;
 }
 
-bool BspMerger::merge(Bsp& mapA, Bsp& mapB)
+bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 {
 // TODO: Create a new map and store result there. Don't break mapA.
-
 	BSPPLANE separationPlane = separate(mapA, mapB);
-	if (separationPlane.nType == -1)
+	if (separationPlane.nType == -1 && !modelMerge)
 	{
 		logf("No separating axis found. The maps overlap and can't be merged.\n");
 		return false;
@@ -927,7 +926,6 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB)
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
-
 		if (i == LUMP_VISIBILITY || i == LUMP_LIGHTING)
 		{
 			continue; // always merge
@@ -935,20 +933,23 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB)
 
 		if (!mapA.lumps[i] && !mapB.lumps[i])
 		{
-//logf << "Skipping " << g_lump_names[i] << " lump (missing from both maps)\n";
+
 		}
 		else if (!mapA.lumps[i] && mapB.lumps[i])
 		{
-			logf("Replacing %s lump\n", g_lump_names[i]);
-			mapA.bsp_header.lump[i].nLength = mapB.bsp_header.lump[i].nLength;
-			mapA.lumps[i] = new unsigned char[mapB.bsp_header.lump[i].nLength];
-			memcpy(mapA.lumps[i], mapB.lumps[i], mapB.bsp_header.lump[i].nLength);
-
-			// process the lump here (TODO: faster to just copy wtv needs copying)
-			switch (i)
+			if (!modelMerge)
 			{
-				case LUMP_ENTITIES:
-					mapA.load_ents(); break;
+				logf("Replacing %s lump\n", g_lump_names[i]);
+				mapA.bsp_header.lump[i].nLength = mapB.bsp_header.lump[i].nLength;
+				mapA.lumps[i] = new unsigned char[mapB.bsp_header.lump[i].nLength];
+				memcpy(mapA.lumps[i], mapB.lumps[i], mapB.bsp_header.lump[i].nLength);
+
+				// process the lump here (TODO: faster to just copy wtv needs copying)
+				switch (i)
+				{
+					case LUMP_ENTITIES:
+						mapA.load_ents(); break;
+				}
 			}
 		}
 		else if (!mapB.lumps[i])
@@ -962,7 +963,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB)
 	}
 
 	// base structures (they don't reference any other structures)
-	if (shouldMerge[LUMP_ENTITIES])
+	if (shouldMerge[LUMP_ENTITIES] && !modelMerge)
 		merge_ents(mapA, mapB);
 	if (shouldMerge[LUMP_PLANES])
 		merge_planes(mapA, mapB);
@@ -996,7 +997,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB)
 		merge_clipnodes(mapA, mapB);
 	}
 
-	if (shouldMerge[LUMP_MODELS])
+	if (shouldMerge[LUMP_MODELS] && !modelMerge)
 		merge_models(mapA, mapB);
 
 	merge_lighting(mapA, mapB);
@@ -1510,6 +1511,11 @@ void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB)
 
 void BspMerger::merge_marksurfs(Bsp& mapA, Bsp& mapB)
 {
+	if (thisFaceCount == 0)
+		thisFaceCount = mapA.faceCount;
+	if (otherFaceCount == 0)
+		otherFaceCount = mapB.faceCount;
+
 	thisMarkSurfCount = mapA.marksurfCount;
 	int totalSurfCount = thisMarkSurfCount + mapB.marksurfCount;
 
@@ -1779,6 +1785,11 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 		logf("Invalid leaf count.\n");
 		return;
 	}
+	if (thisWorldLeafCount == 0)
+		thisWorldLeafCount = mapA.leafCount;
+	if (otherWorldLeafCount == 0)
+		otherWorldLeafCount = mapB.leafCount;
+
 	BSPLEAF* allLeaves = mapA.leaves; // combined with mapB's leaves earlier in merge_leaves
 
 	int thisVisLeaves = thisLeafCount - 1; // VIS ignores the shared solid leaf 0
@@ -1801,12 +1812,12 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	decompress_vis_lump(allLeaves, mapA.visdata, decompressedVis,
 						thisWorldLeafCount, thisVisLeaves, totalVisLeaves);
 
-					// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
+	// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
 	unsigned char* decompressedOtherVis = decompressedVis + thisWorldLeafCount * newVisRowSize;
 	decompress_vis_lump(allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
 						otherWorldLeafCount, otherLeafCount, totalVisLeaves);
 
-					// shift mapB's world leaves after mapA's world leaves
+	// shift mapB's world leaves after mapA's world leaves
 
 
 	for (int i = 0; i < otherWorldLeafCount; i++)
@@ -1906,6 +1917,9 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 
 void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separationPlane)
 {
+	if (separationPlane.nType == -1)
+		return;
+
 	BSPMODEL& thisWorld = mapA.models[0];
 	BSPMODEL& otherWorld = mapB.models[0];
 
@@ -1923,11 +1937,13 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 
 	// write separating plane
 
-	BSPPLANE* newThisPlanes = new BSPPLANE[mapA.planeCount + 1];
-	memcpy(newThisPlanes, mapA.planes, mapA.planeCount * sizeof(BSPPLANE));
-	newThisPlanes[mapA.planeCount] = separationPlane;
-	mapA.replace_lump(LUMP_PLANES, newThisPlanes, (mapA.planeCount + 1) * sizeof(BSPPLANE));
-
+	if (separationPlane.nType != -1)
+	{
+		BSPPLANE* newThisPlanes = new BSPPLANE[mapA.planeCount + 1];
+		memcpy(newThisPlanes, mapA.planes, mapA.planeCount * sizeof(BSPPLANE));
+		newThisPlanes[mapA.planeCount] = separationPlane;
+		mapA.replace_lump(LUMP_PLANES, newThisPlanes, (mapA.planeCount + 1) * sizeof(BSPPLANE));
+	}
 	int separationPlaneIdx = mapA.planeCount - 1;
 
 
@@ -1941,12 +1957,14 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 			0, // first face
 			0  // n faces (none since this plane is in the void)
 		};
-
-		if (swapNodeChildren)
+		if (separationPlane.nType != -1)
 		{
-			short temp = headNode.iChildren[0];
-			headNode.iChildren[0] = headNode.iChildren[1];
-			headNode.iChildren[1] = temp;
+			if (swapNodeChildren)
+			{
+				short temp = headNode.iChildren[0];
+				headNode.iChildren[0] = headNode.iChildren[1];
+				headNode.iChildren[1] = temp;
+			}
 		}
 
 		BSPNODE* newThisNodes = new BSPNODE[mapA.nodeCount + 1];
@@ -1982,12 +2000,14 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 				newHeadNodes[i].iChildren[1] = CONTENTS_EMPTY;
 			}
 
-
-			if (swapNodeChildren)
+			if (separationPlane.nType != -1)
 			{
-				short temp = newHeadNodes[i].iChildren[0];
-				newHeadNodes[i].iChildren[0] = newHeadNodes[i].iChildren[1];
-				newHeadNodes[i].iChildren[1] = temp;
+				if (swapNodeChildren)
+				{
+					short temp = newHeadNodes[i].iChildren[0];
+					newHeadNodes[i].iChildren[0] = newHeadNodes[i].iChildren[1];
+					newHeadNodes[i].iChildren[1] = temp;
+				}
 			}
 		}
 

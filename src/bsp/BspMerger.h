@@ -26,14 +26,12 @@ public:
 	// noscript - don't add support for the bspguy map script (worse performance + buggy, but simpler)
 	Bsp* merge(std::vector<Bsp*> maps, const vec3& gap, const std::string& output_name, bool noripent, bool noscript);
 
-private:
-	int merge_ops = 0;
 
 	// wrapper around BSP data merging for nicer console output
 	void merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultName);
 
 	// merge BSP data
-	bool merge(Bsp& mapA, Bsp& mapB);
+	bool merge(Bsp& mapA, Bsp& mapB, bool modelMerge = false);
 
 	std::vector<std::vector<std::vector<MAPBLOCK>>> separate(std::vector<Bsp*>& maps, const vec3& gap);
 
@@ -77,17 +75,18 @@ private:
 	// remapped leaf indexes for mapA's submodel leaves
 	std::vector<int> modelLeafRemap;
 
-	int thisLeafCount;
-	int otherLeafCount;
-	int thisFaceCount;
-	int thisWorldFaceCount;
-	int otherFaceCount;
-	int thisNodeCount;
-	int thisClipnodeCount;
-	int thisWorldLeafCount; // excludes solid leaf 0
-	int otherWorldLeafCount; // excluding solid leaf 0
-	int thisSurfEdgeCount;
-	int thisMarkSurfCount;
-	int thisEdgeCount;
-	int thisVertCount;
+	int merge_ops = 0;
+	int thisLeafCount = 0;
+	int otherLeafCount = 0;
+	int thisFaceCount = 0;
+	int thisWorldFaceCount = 0;
+	int otherFaceCount = 0;
+	int thisNodeCount = 0;
+	int thisClipnodeCount = 0;
+	int thisWorldLeafCount = 0; // excludes solid leaf 0
+	int otherWorldLeafCount = 0; // excluding solid leaf 0
+	int thisSurfEdgeCount = 0;
+	int thisMarkSurfCount = 0;
+	int thisEdgeCount = 0;
+	int thisVertCount = 0;
 };
