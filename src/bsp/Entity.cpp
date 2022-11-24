@@ -9,7 +9,7 @@ Entity::Entity(const std::string& classname)
 	addKeyvalue("classname", classname);
 }
 
-void Entity::addKeyvalue(const std::string& key, const std::string& value, bool multisupport)
+void Entity::addKeyvalue(const std::string key, const std::string value, bool multisupport)
 {
 	int dup = 1;
 	if (keyvalues.find(key) == keyvalues.end())
@@ -63,7 +63,7 @@ void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
 	addKeyvalue(key, value);
 }
 
-void Entity::removeKeyvalue(const std::string& key)
+void Entity::removeKeyvalue(const std::string key)
 {
 	if (!hasKey(key))
 		return;
@@ -117,7 +117,7 @@ void Entity::clearEmptyKeyvalues()
 	targetsCached = false;
 }
 
-bool Entity::hasKey(const std::string& key)
+bool Entity::hasKey(const std::string key)
 {
 	return keyvalues.find(key) != keyvalues.end() && std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end();
 }

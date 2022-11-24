@@ -18,8 +18,8 @@ public:
 	Entity(const std::string& classname);
 	~Entity(void) = default;
 
-	void addKeyvalue(const std::string& key, const std::string& value, bool multisupport = false);
-	void removeKeyvalue(const std::string& key);
+	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
+	void removeKeyvalue(const std::string key);
 	bool renameKey(int idx, const std::string& newName);
 	void clearAllKeyvalues();
 	void clearEmptyKeyvalues();
@@ -34,7 +34,7 @@ public:
 
 	vec3 getOrigin();
 
-	bool hasKey(const std::string& key);
+	bool hasKey(const std::string key);
 
 	std::vector<std::string> getTargets();
 
