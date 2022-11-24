@@ -94,14 +94,15 @@ struct RenderClipnodes
 
 struct PickInfo
 {
-	int entIdx;
+	std::vector<int> entIdx;
 	int modelIdx;
 	int faceIdx;
 	float bestDist;
 	PickInfo()
 	{
+		entIdx.push_back(-1);
 		bestDist = 0.0f;
-		entIdx = modelIdx = faceIdx = -1;
+		modelIdx = faceIdx = -1;
 	}
 };
 
@@ -119,11 +120,11 @@ public:
 	BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* fullBrightBspShader, ShaderProgram* colorShader, PointEntRenderer* pointEntRenderer);
 	~BspRenderer();
 
-	void render(int highlightEnt, bool highlightAlwaysOnTop, int clipnodeHull);
+	void render(std::vector<int> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull);
 
 	void drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly);
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
-	void drawPointEntities(int highlightEnt);
+	void drawPointEntities(std::vector<int> highlightEnts);
 
 	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp ** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);

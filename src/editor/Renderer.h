@@ -351,7 +351,7 @@ private:
 	vec3 getCentroid(std::vector<TransformVert>& hullVerts);
 	void deselectObject(); // keep map selected but unselect all objects
 	void deselectFaces();
-	void selectEnt(Bsp* map, int entIdx);
+	void selectEnt(Bsp* map, int entIdx, bool add = false);
 	void goToEnt(Bsp* map, int entIdx);
 	void goToCoords(float x, float y, float z);
 	void ungrabEnt();

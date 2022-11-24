@@ -443,9 +443,9 @@ void Gui::draw3dContextMenus()
 
 	Bsp* map = app->getSelectedMap();
 
-	if (map && app->originHovered && app->pickInfo.entIdx >= 0)
+	if (map && app->originHovered && app->pickInfo.entIdx[0] >= 0)
 	{
-		Entity* ent = map->ents[app->pickInfo.entIdx];
+		Entity* ent = map->ents[app->pickInfo.entIdx[0]];
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
 			if (ImGui::MenuItem("Center", ""))
@@ -1220,9 +1220,9 @@ void Gui::drawMenuBar()
 		std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
 		bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
 		bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
-		bool entSelected = app->pickInfo.entIdx >= 0;
+		bool entSelected = app->pickInfo.entIdx[0] >= 0;
 		bool mapSelected = map;
-		bool nonWorldspawnEntSelected = entSelected && app->pickInfo.entIdx != 0;
+		bool nonWorldspawnEntSelected = entSelected && app->pickInfo.entIdx[0] != 0;
 
 		if (ImGui::MenuItem(undoTitle.c_str(), "Ctrl+Z", false, canUndo))
 		{
@@ -1755,9 +1755,9 @@ void Gui::drawDebugWidget()
 
 				if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					if (app->pickInfo.entIdx)
+					if (app->pickInfo.entIdx[0])
 					{
-						ImGui::Text("Entity ID: %d", app->pickInfo.entIdx);
+						ImGui::Text("Entity ID: %d", app->pickInfo.entIdx[0]);
 					}
 
 					if (app->pickInfo.modelIdx > 0)
@@ -1888,7 +1888,7 @@ void Gui::drawDebugWidget()
 			bool isScalingObject = g_app->transformMode == TRANSFORM_SCALE && g_app->transformTarget == TRANSFORM_OBJECT;
 			bool isMovingOrigin = g_app->transformMode == TRANSFORM_MOVE && g_app->transformTarget == TRANSFORM_ORIGIN && g_app->originSelected;
 			bool isTransformingValid = !(g_app->modelUsesSharedStructures && (g_app->transformMode != TRANSFORM_MOVE || g_app->transformTarget == TRANSFORM_VERTEX)) && (g_app->isTransformableSolid || isScalingObject);
-			bool isTransformingWorld = g_app->pickInfo.entIdx == 0 && g_app->transformTarget != TRANSFORM_OBJECT;
+			bool isTransformingWorld = g_app->pickInfo.entIdx[0] == 0 && g_app->transformTarget != TRANSFORM_OBJECT;
 
 			ImGui::Text("isScalingObject %d", isScalingObject);
 			ImGui::Text("isMovingOrigin %d", isMovingOrigin);
@@ -1914,11 +1914,11 @@ void Gui::drawKeyvalueEditor()
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
 	if (ImGui::Begin("Keyvalue Editor", &showKeyvalueWidget, 0))
 	{
-		if (app->pickInfo.entIdx >= 0 && app->fgd
+		if (app->pickInfo.entIdx[0] >= 0 && app->fgd
 			&& !app->isLoading && !app->isModelsReloading && !app->reloading)
 		{
 			Bsp* map = app->getSelectedMap();
-			Entity* ent = map->ents[app->pickInfo.entIdx];
+			Entity* ent = map->ents[app->pickInfo.entIdx[0]];
 			std::string cname = ent->keyvalues["classname"];
 			FgdClass* fgdClass = app->fgd->getFgdClass(cname);
 
@@ -1974,7 +1974,7 @@ void Gui::drawKeyvalueEditor()
 							if (ImGui::MenuItem(group.classes[k]->name.c_str()))
 							{
 								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
-								map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
+								map->getBspRender()->refreshEnt(app->pickInfo.entIdx[0]);
 								app->pushEntityUndoState("Change Class");
 							}
 						}
@@ -2016,7 +2016,7 @@ void Gui::drawKeyvalueEditor()
 		}
 		else
 		{
-			if (!app->pickInfo.entIdx)
+			if (!app->pickInfo.entIdx[0])
 				ImGui::Text("No entity selected");
 			else
 				ImGui::Text("No fgd loaded");
@@ -2106,7 +2106,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 
 			inputData[i].key = key;
 			inputData[i].defaultValue = keyvalue.defaultValue;
-			inputData[i].entIdx = app->pickInfo.entIdx;
+			inputData[i].entIdx = app->pickInfo.entIdx[0];
 			inputData[i].entRef = ent;
 			inputData[i].bspRenderer = map->getBspRender();
 
@@ -2142,7 +2142,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 						if (ImGui::Selectable(choice.name.c_str(), selected))
 						{
 							ent->setOrAddKeyvalue(key, choice.svalue);
-							map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
+							map->getBspRender()->refreshEnt(app->pickInfo.entIdx[0]);
 							app->updateEntConnections();
 							app->pushEntityUndoState("Edit Keyvalue");
 						}
@@ -2456,7 +2456,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			bool invalidKey = lastPickCount == app->pickCount;
 
 			keyIds[i].idx = i;
-			keyIds[i].entIdx = app->pickInfo.entIdx;
+			keyIds[i].entIdx = app->pickInfo.entIdx[0];
 			keyIds[i].entRef = ent;
 			keyIds[i].bspRenderer = map->getBspRender();
 
@@ -2483,7 +2483,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 		}
 		{
 			valueIds[i].idx = i;
-			valueIds[i].entIdx = app->pickInfo.entIdx;
+			valueIds[i].entIdx = app->pickInfo.entIdx[0];
 			valueIds[i].entRef = ent;
 			valueIds[i].bspRenderer = map->getBspRender();
 
@@ -2526,7 +2526,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			if (ImGui::Button((" X ##del" + ent->keyOrder[i]).c_str()))
 			{
 				ent->removeKeyvalue(ent->keyOrder[i]);
-				map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
+				map->getBspRender()->refreshEnt(app->pickInfo.entIdx[0]);
 				if (ent->keyOrder[i] == "model")
 					map->getBspRender()->preRenderEnts();
 				g_app->updateEntConnections();
@@ -2559,7 +2559,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 		if (!ent->hasKey(keyName))
 		{
 			ent->addKeyvalue(keyName, "");
-			map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
+			map->getBspRender()->refreshEnt(app->pickInfo.entIdx[0]);
 			app->updateEntConnections();
 			app->pushEntityUndoState("Add Keyvalue");
 			keyName = "";
@@ -2628,10 +2628,10 @@ void Gui::drawTransformWidget()
 	bool transformingEnt = false;
 	Entity* ent = NULL;
 	Bsp* map = app->getSelectedMap();
-	if (map && app->pickInfo.entIdx >= 0)
+	if (map && app->pickInfo.entIdx[0] >= 0)
 	{
-		ent = map->ents[app->pickInfo.entIdx];
-		transformingEnt = app->pickInfo.entIdx > 0;
+		ent = map->ents[app->pickInfo.entIdx[0]];
+		transformingEnt = app->pickInfo.entIdx[0] > 0;
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(440.f, 380.f), ImGuiCond_FirstUseEver);
@@ -2968,7 +2968,7 @@ void Gui::drawTransformWidget()
 						}
 
 						ent->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString(!app->gridSnappingEnabled));
-						map->getBspRender()->refreshEnt(app->pickInfo.entIdx);
+						map->getBspRender()->refreshEnt(app->pickInfo.entIdx[0]);
 						app->updateEntConnectionPositions();
 					}
 					else if (app->transformTarget == TRANSFORM_ORIGIN)
@@ -4210,7 +4210,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	ImGui::SetColumnWidth(2, valWidth);
 	ImGui::SetColumnWidth(3, usageWidth);
 
-	int selected = app->pickInfo.entIdx;
+	int selected = app->pickInfo.entIdx[0];
 
 	for (int i = 0; i < limitModels[sortMode].size(); i++)
 	{
@@ -4229,7 +4229,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 			if (entIdx < map->ents.size())
 			{
 				Entity* ent = map->ents[entIdx];
-				app->pickInfo.entIdx = entIdx;
+				app->pickInfo.entIdx[0] = entIdx;
 				app->pickInfo.modelIdx = ent->getBspModelIdx();
 				// map should already be valid if limits are showing
 
@@ -4421,6 +4421,14 @@ void Gui::drawEntityReport()
 						{
 							selectedItems[i] = !selectedItems[i];
 							lastSelect = i;
+							g_app->pickInfo.entIdx.clear();
+							for (int k = 0; k < selectedItems.size(); k++)
+							{
+								if (selectedItems[k])
+								{
+									g_app->selectEnt(map, visibleEnts[k], true);
+								}
+							}
 						}
 						else if (expected_key_mod_flags & ImGuiModFlags_Shift)
 						{
@@ -4435,6 +4443,16 @@ void Gui::drawEntityReport()
 								selectedItems[lastSelect] = true;
 								selectedItems[i] = true;
 							}
+
+
+							g_app->pickInfo.entIdx.clear();
+							for (int k = 0; k < selectedItems.size(); k++)
+							{
+								if (selectedItems[k])
+								{
+									g_app->selectEnt(map, visibleEnts[k], true);
+								}
+							}
 						}
 						else
 						{
@@ -4442,14 +4460,14 @@ void Gui::drawEntityReport()
 								selectedItems[k] = false;
 							selectedItems[i] = true;
 							lastSelect = i;
+							g_app->pickInfo.entIdx.clear();
+							g_app->selectEnt(map, entIdx, true);
+							if (ImGui::IsMouseDoubleClicked(0))
+							{
+								app->goToEnt(map, entIdx);
+							}
 						}
 
-						if (ImGui::IsMouseDoubleClicked(0))
-						{
-							app->goToEnt(map, entIdx);
-						}
-
-						g_app->selectEnt(map, entIdx);
 					}
 
 					if (selectedItems[i] && ImGui::IsItemHovered() && ImGui::IsMouseReleased(1))

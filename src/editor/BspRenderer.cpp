@@ -1497,7 +1497,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 }
 ShaderProgram* activeShader; vec3 renderOffset;
 
-void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipnodeHull)
+void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull)
 {
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
@@ -1513,19 +1513,22 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
-	if (highlightEnt > 0 && !highlightAlwaysOnTop)
+	if (highlightEnts.size() && !highlightAlwaysOnTop)
 	{
-		if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+		for (int highlightEnt : highlightEnts)
 		{
-			activeShader->pushMatrix(MAT_MODEL);
-			*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
-			activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-			activeShader->updateMatrixes();
+			if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+			{
+				activeShader->pushMatrix(MAT_MODEL);
+				*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
+				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				activeShader->updateMatrixes();
 
-			drawModel(&renderEnts[highlightEnt], false, true, true);
-			drawModel(&renderEnts[highlightEnt], true, true, true);
+				drawModel(&renderEnts[highlightEnt], false, true, true);
+				drawModel(&renderEnts[highlightEnt], true, true, true);
 
-			activeShader->popMatrix(MAT_MODEL);
+				activeShader->popMatrix(MAT_MODEL);
+			}
 		}
 	}
 
@@ -1544,7 +1547,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				activeShader->updateMatrixes();
 
-				drawModel(&renderEnts[i], drawTransparentFaces, i == highlightEnt, false);
+				drawModel(&renderEnts[i], drawTransparentFaces, std::find(highlightEnts.begin(), highlightEnts.end(), i) != highlightEnts.end(), false);
 
 				activeShader->popMatrix(MAT_MODEL);
 			}
@@ -1552,7 +1555,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 
 		if ((g_render_flags & RENDER_POINT_ENTS) && pass == 0)
 		{
-			drawPointEntities(highlightEnt);
+			drawPointEntities(highlightEnts);
 			activeShader->bind();
 		}
 	}
@@ -1581,7 +1584,7 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 					colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 					colorShader->updateMatrixes();
 
-					bool hightlighted = highlightEnt == i;
+					bool hightlighted = std::find(highlightEnts.begin(), highlightEnts.end(), i) != highlightEnts.end();
 
 					if (hightlighted)
 					{
@@ -1601,23 +1604,26 @@ void BspRenderer::render(int highlightEnt, bool highlightAlwaysOnTop, int clipno
 		}
 	}
 
-	if (highlightEnt > 0 && highlightAlwaysOnTop)
+	if (highlightEnts.size() && highlightAlwaysOnTop)
 	{
 		activeShader->bind();
 
-		if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+		for (int highlightEnt : highlightEnts)
 		{
-			activeShader->pushMatrix(MAT_MODEL);
-			*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
-			activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-			activeShader->updateMatrixes();
+			if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+			{
+				activeShader->pushMatrix(MAT_MODEL);
+				*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
+				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+				activeShader->updateMatrixes();
 
-			glDisable(GL_DEPTH_TEST);
-			drawModel(&renderEnts[highlightEnt], false, true, true);
-			drawModel(&renderEnts[highlightEnt], true, true, true);
-			glEnable(GL_DEPTH_TEST);
+				glDisable(GL_DEPTH_TEST);
+				drawModel(&renderEnts[highlightEnt], false, true, true);
+				drawModel(&renderEnts[highlightEnt], true, true, true);
+				glEnable(GL_DEPTH_TEST);
 
-			activeShader->popMatrix(MAT_MODEL);
+				activeShader->popMatrix(MAT_MODEL);
+			}
 		}
 	}
 
@@ -1787,7 +1793,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 	}
 }
 
-void BspRenderer::drawPointEntities(int highlightEnt)
+void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 {
 	renderOffset = mapOffset.flip();
 
@@ -1801,9 +1807,8 @@ void BspRenderer::drawPointEntities(int highlightEnt)
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
 
-		if (highlightEnt == i)
+		if (std::find(highlightEnts.begin(),highlightEnts.end(), i) != highlightEnts.end())
 		{
-
 			*colorShader->modelMat = renderEnts[i].modelMat;
 			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
@@ -1836,14 +1841,13 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 		return foundBetterPick;
 	}
 	start -= mapOffset;
-
 	
 
 	if (pickModelPoly(start, dir, vec3(0, 0, 0), 0, hullIdx, tempPickInfo))
 	{
 		if (*tmpMap || (*tmpMap && map && *tmpMap == map))
 		{
-			tempPickInfo.entIdx = 0;
+			tempPickInfo.entIdx[0] = 0;
 			tempPickInfo.modelIdx = 0;
 			*tmpMap = map;
 			foundBetterPick = true;
@@ -1878,7 +1882,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			{
 				if (!*tmpMap || (*tmpMap && map && *tmpMap == map))
 				{
-					tempPickInfo.entIdx = i;
+					tempPickInfo.entIdx[0] = i;
 					tempPickInfo.modelIdx = renderEnts[i].modelIdx;
 					*tmpMap = map;
 					foundBetterPick = true;
@@ -1893,7 +1897,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			{
 				if (!*tmpMap || (*tmpMap && map && *tmpMap == map))
 				{
-					tempPickInfo.entIdx = i;
+					tempPickInfo.entIdx[0] = i;
 					tempPickInfo.modelIdx = -1;
 					tempPickInfo.faceIdx = -1;
 					*tmpMap = map;
