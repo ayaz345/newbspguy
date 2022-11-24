@@ -654,7 +654,7 @@ void Gui::draw3dContextMenus()
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading))
+				if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && app->pickInfo.modelIdx >= 0))
 				{
 					DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", app->pickInfo);
 					command->execute();
@@ -666,7 +666,7 @@ void Gui::draw3dContextMenus()
 					ImGui::TextUnformatted("Create a copy of this BSP model and assign to this entity.\n\nThis lets you edit the model for this entity without affecting others.");
 					ImGui::EndTooltip();
 				}
-				if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading))
+				if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && app->pickInfo.modelIdx >= 0))
 				{
 					if (app->pickInfo.modelIdx)
 					{
