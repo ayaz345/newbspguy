@@ -493,6 +493,16 @@ void Fgd::processClassInheritance()
 				}
 			}
 
+			std::vector<KeyvalueChoice> oldchoices;
+			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			{
+				if (classes[i]->keyvalues[c].iType == FGD_KEY_FLAGS)
+				{
+					oldchoices = classes[i]->keyvalues[c].choices;
+				}
+			}
+
+
 			classes[i]->keyvalues = std::move(newKeyvalues);
 
 			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
@@ -500,6 +510,17 @@ void Fgd::processClassInheritance()
 				if (classes[i]->keyvalues[c].iType == FGD_KEY_FLAGS)
 				{
 					classes[i]->keyvalues[c].choices = newSpawnflags;
+
+					for (auto& choise : classes[i]->keyvalues[c].choices)
+					{
+						for (auto choiseOld : oldchoices)
+						{
+							if (choise.ivalue == choiseOld.ivalue)
+							{
+								choise = choiseOld;
+							}
+						}
+					}
 				}
 			}
 		}

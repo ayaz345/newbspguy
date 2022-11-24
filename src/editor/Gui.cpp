@@ -4370,7 +4370,7 @@ void Gui::drawEntityReport()
 								}
 							}
 						}
-						else if(valueFilter[k].size() && valueFilter[k][0] != '\0')
+						else if (valueFilter[k].size() && valueFilter[k][0] != '\0')
 						{
 							std::string searchValue = trimSpaces(toLowerCase(valueFilter[k]));
 							bool foundMatch = false;
@@ -4548,6 +4548,7 @@ void Gui::drawEntityReport()
 					sort(usedClasses.begin(), usedClasses.end());
 
 				}
+
 				for (int k = 0; k < usedClasses.size(); k++)
 				{
 					bool selected = usedClasses[k] == classFilter;
