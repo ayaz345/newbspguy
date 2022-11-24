@@ -171,6 +171,8 @@ public:
 
 	std::vector<int> selectedFaces;
 private:
+	Bsp* SelectedMap = NULL;
+
 	GLFWwindow* window;
 	ShaderProgram* bspShader;
 	ShaderProgram* fullBrightBspShader;
@@ -341,7 +343,7 @@ private:
 	void cutEnt();
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin);
-	void deleteEnt();
+	void deleteEnt(int entIdx = 0);
 	void scaleSelectedObject(float x, float y, float z);
 	void scaleSelectedObject(vec3 dir, const vec3& fromDir);
 	void scaleSelectedVerts(float x, float y, float z);

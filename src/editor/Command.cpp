@@ -113,7 +113,7 @@ DeleteEntityCommand::DeleteEntityCommand(std::string desc, PickInfo& pickInfo)
 {
 	this->entIdx = pickInfo.entIdx;
 	this->entData = new Entity();
-	*this->entData = *pickInfo.ent;
+	*this->entData = *(g_app->getSelectedMap()->ents[entIdx]);
 	this->allowedDuringLoad = true;
 }
 
@@ -486,7 +486,7 @@ EditBspModelCommand::EditBspModelCommand(std::string desc, PickInfo& pickInfo, L
 	this->newLumps = newLumps;
 	this->allowedDuringLoad = false;
 	this->oldOrigin = oldOrigin;
-	this->newOrigin = pickInfo.ent->getOrigin();
+	this->newOrigin = (g_app->getSelectedMap()->ents[entIdx])->getOrigin();
 }
 
 EditBspModelCommand::~EditBspModelCommand()

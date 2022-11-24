@@ -103,7 +103,6 @@ void Bsp::selectModelEnt()
 				{
 					g_app->clearSelection();
 					g_app->selectMap(map);
-					g_app->pickInfo.ent = map->ents[n];
 					g_app->pickInfo.entIdx = n;
 					return;
 				}

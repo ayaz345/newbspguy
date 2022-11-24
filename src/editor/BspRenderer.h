@@ -98,14 +98,10 @@ struct PickInfo
 	int modelIdx;
 	int faceIdx;
 	float bestDist;
-	Entity* ent;
-	Bsp* map;
 	PickInfo()
 	{
 		bestDist = 0.0f;
 		entIdx = modelIdx = faceIdx = -1;
-		ent = NULL;
-		map = NULL;
 	}
 };
 
@@ -129,7 +125,7 @@ public:
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
 	void drawPointEntities(int highlightEnt);
 
-	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo);
+	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp ** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 

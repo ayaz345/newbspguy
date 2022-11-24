@@ -1025,7 +1025,7 @@ void Renderer::loadFgds()
 void Renderer::drawModelVerts()
 {
 	Bsp* map = g_app->getSelectedMap();
-	if (!modelVertBuff || modelVerts.empty() || !map)
+	if (!modelVertBuff || modelVerts.empty() || !map || pickInfo.entIdx < 0)
 		return;
 	glClear(GL_DEPTH_BUFFER_BIT);
 
@@ -1150,7 +1150,7 @@ void Renderer::drawModelOrigin()
 void Renderer::drawTransformAxes()
 {
 	glClear(GL_DEPTH_BUFFER_BIT);
-	updateDragAxes(dragDelta);
+	updateDragAxes();
 	glDisable(GL_CULL_FACE);
 	if (transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT)
 	{
@@ -1231,8 +1231,6 @@ void Renderer::controls()
 
 		moveGrabbedEnt();
 
-		globalShortcutControls();
-
 		vertexEditControls();
 
 		cameraContextMenus();
@@ -1246,6 +1244,11 @@ void Renderer::controls()
 		cameraPickingControls();
 
 		shortcutControls();
+	}
+
+	if (!gui->imgui_io->WantTextInput)
+	{
+		globalShortcutControls();
 	}
 
 	oldLeftMouse = curLeftMouse;
@@ -1397,10 +1400,12 @@ void Renderer::cameraPickingControls()
 				}
 				invalidSolid = !map->vertex_manipulation_sync(pickInfo.modelIdx, modelVerts, false, true);
 				gui->reloadLimits();
-
-				int modelIdx = pickInfo.ent->getBspModelIdx();
-				if (modelIdx >= 0)
-					map->getBspRender()->refreshModel(modelIdx);
+				if (pickInfo.entIdx >= 0)
+				{
+					int modelIdx = map->ents[pickInfo.entIdx]->getBspModelIdx();
+					if (modelIdx >= 0)
+						map->getBspRender()->refreshModel(modelIdx);
+				}
 			}
 
 			pickObject();
@@ -1414,10 +1419,15 @@ void Renderer::cameraPickingControls()
 		{
 			draggingAxis = -1;
 			applyTransform();
+			
 
-			if (pickInfo.ent && undoEntityState->getOrigin() != pickInfo.ent->getOrigin())
+			if (pickInfo.entIdx >= 0)
 			{
-				pushEntityUndoState("Move Entity");
+				Entity* ent = SelectedMap->ents[pickInfo.entIdx];
+				if (ent && undoEntityState->getOrigin() != ent->getOrigin())
+				{
+					pushEntityUndoState("Move Entity");
+				}
 			}
 		}
 	}
@@ -1582,7 +1592,8 @@ void Renderer::cameraObjectHovering()
 		PickInfo vertPick = PickInfo();
 		vertPick.bestDist = FLT_MAX_COORD;
 
-		vec3 entOrigin = pickInfo.ent->getOrigin();
+		Entity* ent = SelectedMap->ents[pickInfo.entIdx];
+		vec3 entOrigin = ent->getOrigin();
 
 		hoverEdge = -1;
 		if (!(anyVertSelected && !anyEdgeSelected))
@@ -1684,14 +1695,15 @@ void Renderer::cameraContextMenus()
 
 		Bsp* map = getSelectedMap();
 
-		map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick);
+		map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
 
 		if (tempPick.entIdx < 0)
 		{
 			for (int i = 0; i < mapRenderers.size(); i++)
 			{
-				if (getSelectedMap() == mapRenderers[i]->map->parentMap && mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick) && tempPick.entIdx > 0)
+				if (getSelectedMap() == mapRenderers[i]->map->parentMap && mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map) && tempPick.entIdx > 0)
 				{
+					selectMap(map);
 					break;
 				}
 			}
@@ -1711,7 +1723,7 @@ void Renderer::cameraContextMenus()
 void Renderer::moveGrabbedEnt()
 {
 // grabbing
-	if (movingEnt && pickInfo.ent)
+	if (movingEnt && pickInfo.entIdx)
 	{
 		if (g_scroll != oldScroll)
 		{
@@ -1821,7 +1833,12 @@ void Renderer::pickObject()
 {
 	if (!getSelectedMap())
 		return;
-	bool pointEntWasSelected = pickInfo.ent && !pickInfo.ent->isBspModel();
+	bool pointEntWasSelected = pickInfo.entIdx >= 0;
+	if (pointEntWasSelected)
+	{
+		Entity* ent = SelectedMap->ents[pickInfo.entIdx];
+		pointEntWasSelected = ent && !ent->isBspModel();
+	}
 	int oldSelectedEntIdx = pickInfo.entIdx;
 
 	Bsp* map = getSelectedMap();
@@ -1836,16 +1853,18 @@ void Renderer::pickObject()
 	pickInfo.bestDist = FLT_MAX_COORD;
 
 	map->getBspRender()->preRenderEnts();
-	map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo);
+	map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo, &map);
 
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
 		if (map == mapRenderers[i]->map->parentMap)
 		{
 			mapRenderers[i]->preRenderEnts();
-			mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo);
+			mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, pickInfo,&map);
 		}
 	}
+
+	selectMap(map);
 
 	if (movingEnt && oldEntIdx != pickInfo.entIdx)
 	{
@@ -1911,9 +1930,9 @@ void Renderer::pickObject()
 
 	updateEntConnections();
 
-	if (pickInfo.map && pickInfo.ent)
+	if (SelectedMap && pickInfo.entIdx)
 	{
-		selectEnt(pickInfo.map, pickInfo.entIdx);
+		selectEnt(SelectedMap, pickInfo.entIdx);
 	}
 }
 
@@ -1940,7 +1959,7 @@ bool Renderer::transformAxisControls()
 
 	if (showDragAxes && !movingEnt && draggingAxis >= 0)
 	{
-		Entity* ent = pickInfo.ent;
+		Entity* ent = map->ents[pickInfo.entIdx];
 
 		activeAxes.model[draggingAxis].setColor(activeAxes.hoverColor[draggingAxis]);
 
@@ -2124,12 +2143,12 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir)
 Bsp* Renderer::getSelectedMap()
 {
 // auto select if one map
-	if (!pickInfo.map && mapRenderers.size() == 1)
+	if (!SelectedMap && mapRenderers.size() == 1)
 	{
-		pickInfo.map = mapRenderers[0]->map;
+		SelectedMap = mapRenderers[0]->map;
 	}
 
-	return pickInfo.map;
+	return SelectedMap;
 }
 
 int Renderer::getSelectedMapId()
@@ -2152,21 +2171,21 @@ void Renderer::selectMapId(int id)
 		BspRenderer* s = mapRenderers[i];
 		if (s->map)
 		{
-			pickInfo.map = s->map;
+			SelectedMap = s->map;
 			return;
 		}
 	}
-	pickInfo.map = NULL;
+	SelectedMap = NULL;
 }
 
 void Renderer::selectMap(Bsp* map)
 {
-	pickInfo.map = map;
+	SelectedMap = map;
 }
 
 void Renderer::deselectMap(Bsp* map)
 {
-	pickInfo.map = NULL;
+	SelectedMap = NULL;
 }
 
 void Renderer::clearSelection()
@@ -2436,8 +2455,7 @@ void Renderer::updateDragAxes(vec3 delta)
 	Entity* ent = NULL;
 	vec3 mapOffset;
 
-	if (map && map->getBspRender() && pickInfo.entIdx >= 0 &&
-		pickInfo.entIdx < map->ents.size())
+	if (map && map->getBspRender() && pickInfo.entIdx >= 0)
 	{
 		ent = map->ents[pickInfo.entIdx];
 		mapOffset = map->getBspRender()->mapOffset;
@@ -2706,9 +2724,12 @@ void Renderer::updateModelVerts()
 		delete modelOriginBuff;
 	}
 
-	if (pickInfo.ent)
+
+	Entity* ent = map->ents[pickInfo.entIdx];
+
+	if (ent)
 	{
-		transformedOrigin = oldOrigin = pickInfo.ent->getOrigin();
+		transformedOrigin = oldOrigin = ent->getOrigin();
 	}
 
 	modelOriginBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &modelOriginCube, 6 * 6, GL_TRIANGLES);
@@ -2772,9 +2793,10 @@ void Renderer::updateSelectionSize()
 		}
 		selectionSize = maxs - mins;
 	}
-	else if (pickInfo.ent)
+	else if (pickInfo.entIdx >= 0)
 	{
-		EntCube* cube = pointEntRenderer->getEntCube(pickInfo.ent);
+		Entity* ent = map->ents[pickInfo.entIdx];
+		EntCube* cube = pointEntRenderer->getEntCube(ent);
 		if (cube)
 			selectionSize = cube->maxs - cube->mins;
 	}
@@ -2797,21 +2819,22 @@ void Renderer::updateEntConnections()
 		return;
 	}
 
-	if (map && pickInfo.ent)
+	if (map && pickInfo.entIdx >= 0)
 	{
-		std::vector<std::string> targetNames = pickInfo.ent->getTargets();
+		Entity* ent = map->ents[pickInfo.entIdx];
+		std::vector<std::string> targetNames = ent->getTargets();
 		std::vector<Entity*> targets;
 		std::vector<Entity*> callers;
 		std::vector<Entity*> callerAndTarget; // both a target and a caller
 		std::string thisName;
-		if (pickInfo.ent->hasKey("targetname"))
+		if (ent->hasKey("targetname"))
 		{
-			thisName = pickInfo.ent->keyvalues["targetname"];
+			thisName = ent->keyvalues["targetname"];
 		}
 
 		for (int k = 0; k < map->ents.size(); k++)
 		{
-			Entity* ent = map->ents[k];
+			ent = map->ents[k];
 
 			if (k == pickInfo.entIdx)
 				continue;
@@ -2860,7 +2883,7 @@ void Renderer::updateEntConnections()
 		const COLOR4 callerColor = {0, 255, 255, 255};
 		const COLOR4 bothColor = {0, 255, 0, 255};
 
-		vec3 srcPos = getEntOrigin(map, pickInfo.ent).flip();
+		vec3 srcPos = getEntOrigin(map, ent).flip();
 		int idx = 0;
 		int cidx = 0;
 		float s = 1.5f;
@@ -2897,9 +2920,10 @@ void Renderer::updateEntConnections()
 
 void Renderer::updateEntConnectionPositions()
 {
-	if (entConnections && pickInfo.ent)
+	if (entConnections && pickInfo.entIdx)
 	{
-		vec3 pos = getEntOrigin(getSelectedMap(), pickInfo.ent).flip();
+		Entity* ent = SelectedMap->ents[pickInfo.entIdx];
+		vec3 pos = getEntOrigin(getSelectedMap(), ent).flip();
 
 		cVert* verts = (cVert*)entConnections->data;
 		for (int i = 0; i < entConnections->numVerts; i += 2)
@@ -3225,10 +3249,11 @@ void Renderer::moveSelectedVerts(const vec3& delta)
 	}
 
 	Bsp* map = getSelectedMap();
-	if (map)
+	if (map && pickInfo.entIdx >= 0)
 	{
+		Entity* ent = SelectedMap->ents[pickInfo.entIdx];
 		invalidSolid = !map->vertex_manipulation_sync(pickInfo.modelIdx, modelVerts, true, false);
-		map->getBspRender()->refreshModel(pickInfo.ent->getBspModelIdx());
+		map->getBspRender()->refreshModel(ent->getBspModelIdx());
 	}
 }
 
@@ -3253,6 +3278,12 @@ bool Renderer::splitModelFace()
 		logf("Exactly 2 edges must be selected before splitting a face\n");
 		return false;
 	}
+	if (pickInfo.entIdx < 0)
+	{
+		logf("No selected entity\n");
+		return false;
+	}
+	Entity* ent = map->ents[pickInfo.entIdx];
 
 	HullEdge& edge1 = modelEdges[selectedEdges[0]];
 	HullEdge& edge2 = modelEdges[selectedEdges[1]];
@@ -3283,7 +3314,9 @@ bool Renderer::splitModelFace()
 	};
 
 	std::vector<int> modelPlanes;
-	BSPMODEL& tmodel = map->models[pickInfo.ent->getBspModelIdx()];
+
+
+	BSPMODEL& tmodel = map->models[ent->getBspModelIdx()];
 	map->getNodePlanes(tmodel.iHeadnodes[0], modelPlanes);
 
 	// find the plane being split
@@ -3360,7 +3393,7 @@ bool Renderer::splitModelFace()
 
 	// create a new model from the new set of planes
 	std::vector<TransformVert> newHullVerts;
-	if (!map->getModelPlaneIntersectVerts(pickInfo.ent->getBspModelIdx(), modelPlanes, newHullVerts))
+	if (!map->getModelPlaneIntersectVerts(ent->getBspModelIdx(), modelPlanes, newHullVerts))
 	{
 		logf("Can't split here because the model would not be convex\n");
 		return false;
@@ -3398,7 +3431,7 @@ bool Renderer::splitModelFace()
 
 	// copy textures/UVs from the old model
 	{
-		BSPMODEL& oldModel = map->models[pickInfo.ent->getBspModelIdx()];
+		BSPMODEL& oldModel = map->models[ent->getBspModelIdx()];
 		for (int i = 0; i < newSolid.faces.size(); i++)
 		{
 			Face& solidFace = newSolid.faces[i];
@@ -3424,7 +3457,7 @@ bool Renderer::splitModelFace()
 		}
 	}
 
-	int modelIdx = map->create_solid(newSolid, pickInfo.ent->getBspModelIdx());
+	int modelIdx = map->create_solid(newSolid, ent->getBspModelIdx());
 
 	for (int i = 0; i < modelVerts.size(); i++)
 	{
@@ -3488,10 +3521,16 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 		}
 	}
 	Bsp* map = getSelectedMap();
-
-	invalidSolid = !map->vertex_manipulation_sync(pickInfo.modelIdx, modelVerts, true, false);
-	map->getBspRender()->refreshModel(pickInfo.ent->getBspModelIdx());
-	updateSelectionSize();
+	if (map)
+	{
+		invalidSolid = !map->vertex_manipulation_sync(pickInfo.modelIdx, modelVerts, true, false);
+		if (pickInfo.entIdx >= 0)
+		{
+			Entity* ent = map->ents[pickInfo.entIdx];
+			map->getBspRender()->refreshModel(ent->getBspModelIdx());
+		}
+		updateSelectionSize();
+	}
 }
 
 vec3 Renderer::getEdgeControlPoint(std::vector<TransformVert>& hullVerts, HullEdge& edge)
@@ -3606,10 +3645,16 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 	selectEnt(map, map->ents.size() > 1 ? ((int)map->ents.size() - 1) : 0);
 }
 
-void Renderer::deleteEnt()
+void Renderer::deleteEnt(int entIdx)
 {
-	if (pickInfo.entIdx <= 0)
+	if (pickInfo.entIdx <= 0 && entIdx <= 0)
 		return;
+	PickInfo tmpPickInfo = pickInfo;
+
+	if (entIdx > 0 && SelectedMap)
+	{
+		tmpPickInfo.entIdx = entIdx;
+	}
 
 	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", pickInfo);
 	deleteCommand->execute();
@@ -3618,7 +3663,6 @@ void Renderer::deleteEnt()
 
 void Renderer::deselectObject()
 {
-	pickInfo.ent = NULL;
 	pickInfo.entIdx = -1;
 	pickInfo.faceIdx = -1;
 	pickInfo.modelIdx = -1;
@@ -3645,13 +3689,18 @@ void Renderer::deselectFaces()
 
 void Renderer::selectEnt(Bsp* map, int entIdx)
 {
+	Entity* ent = NULL;
+	if (pickInfo.entIdx >= 0)
+	{
+		ent = map->ents[pickInfo.entIdx];
+	}
 	pickInfo.entIdx = entIdx;
-	pickInfo.ent = map->ents[entIdx];
-	pickInfo.modelIdx = pickInfo.ent->getBspModelIdx();
+	pickInfo.modelIdx = ent ? ent->getBspModelIdx() : -1;
 	updateSelectionSize();
 	updateEntConnections();
-	updateEntityState(pickInfo.ent);
-	if (pickInfo.ent->isBspModel())
+	
+	updateEntityState(ent);
+	if (ent && ent->isBspModel())
 		saveLumpState(map, 0xffffffff, true);
 	pickCount++; // force transform window update
 }
@@ -3665,6 +3714,9 @@ void Renderer::goToCoords(float x, float y, float z)
 
 void Renderer::goToEnt(Bsp* map, int entIdx)
 {
+	if (entIdx < 0)
+		return;
+
 	Entity* ent = map->ents[entIdx];
 
 	vec3 size;
@@ -3695,6 +3747,9 @@ void Renderer::ungrabEnt()
 
 void Renderer::updateEntityState(Entity* ent)
 {
+	if (!ent)
+		return;
+
 	if (!undoEntityState)
 	{
 		undoEntityState = new Entity();
@@ -3719,27 +3774,35 @@ void Renderer::saveLumpState(Bsp* map, int targetLumps, bool deleteOldState)
 
 void Renderer::pushEntityUndoState(const std::string& actionDesc)
 {
-	if (!pickInfo.ent)
+	if (!pickInfo.entIdx)
 	{
 		logf("Invalid entity undo state push\n");
 		return;
 	}
 
+	Entity* ent = SelectedMap->ents[pickInfo.entIdx];
+
+	if (!ent)
+	{
+		logf("Invalid entity undo state push 2\n");
+		return;
+	}
+
 	bool anythingToUndo = true;
-	if (undoEntityState->keyOrder.size() == pickInfo.ent->keyOrder.size())
+	if (undoEntityState->keyOrder.size() == ent->keyOrder.size())
 	{
 		bool keyvaluesDifferent = false;
 		for (int i = 0; i < undoEntityState->keyOrder.size(); i++)
 		{
 			std::string oldKey = undoEntityState->keyOrder[i];
-			std::string newKey = pickInfo.ent->keyOrder[i];
+			std::string newKey = ent->keyOrder[i];
 			if (oldKey != newKey)
 			{
 				keyvaluesDifferent = true;
 				break;
 			}
 			std::string oldVal = undoEntityState->keyvalues[oldKey];
-			std::string newVal = pickInfo.ent->keyvalues[oldKey];
+			std::string newVal = ent->keyvalues[oldKey];
 			if (oldVal != newVal)
 			{
 				keyvaluesDifferent = true;
@@ -3755,8 +3818,8 @@ void Renderer::pushEntityUndoState(const std::string& actionDesc)
 		return; // nothing to undo
 	}
 
-	pushUndoCommand(new EditEntityCommand(actionDesc, pickInfo, undoEntityState, pickInfo.ent));
-	updateEntityState(pickInfo.ent);
+	pushUndoCommand(new EditEntityCommand(actionDesc, pickInfo, undoEntityState, ent));
+	updateEntityState(ent);
 }
 
 void Renderer::pushModelUndoState(const std::string& actionDesc, int targetLumps)
@@ -3765,13 +3828,14 @@ void Renderer::pushModelUndoState(const std::string& actionDesc, int targetLumps
 
 	if (pickInfo.modelIdx <= 0)
 		pickInfo.modelIdx = 0;
-	// 	if (pickInfo.ent <= 0)
-	// 		pickInfo.ent = 0;
+	if (pickInfo.entIdx <= 0)
+		pickInfo.entIdx = 0;
 	if (!map)
 	{
 		logf("Impossible, no map, ent or model idx\n");
 		return;
 	}
+	Entity* ent = map->ents[pickInfo.entIdx];
 
 	LumpState newLumps = map->duplicate_lumps(targetLumps);
 
@@ -3813,7 +3877,7 @@ void Renderer::pushModelUndoState(const std::string& actionDesc, int targetLumps
 	saveLumpState(map, 0xffffffff, false);
 
 	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
-	updateEntityState(pickInfo.ent);
+	updateEntityState(ent);
 }
 
 void Renderer::pushUndoCommand(Command* cmd)

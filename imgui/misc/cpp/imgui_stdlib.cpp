@@ -24,11 +24,10 @@ static int InputTextCallback(ImGuiInputTextCallbackData* data)
         std::string* str = user_data->Str;
         if (data->BufTextLen > 0)
         {
-            IM_ASSERT(data->Buf == str->c_str());
             str->resize(data->BufTextLen);
             data->Buf = (char*)str->c_str();
         }
-        else
+        else if (data->Buf == str->c_str())
         {
             str->clear();
         }

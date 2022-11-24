@@ -1827,7 +1827,7 @@ void BspRenderer::drawPointEntities(int highlightEnt)
 	colorShader->popMatrix(MAT_MODEL);
 }
 
-bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& tempPickInfo)
+bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& tempPickInfo, Bsp** tmpMap)
 {
 	bool foundBetterPick = false;
 
@@ -1837,15 +1837,15 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 	}
 	start -= mapOffset;
 
+	
 
 	if (pickModelPoly(start, dir, vec3(0, 0, 0), 0, hullIdx, tempPickInfo))
 	{
-		if (tempPickInfo.map || (tempPickInfo.map && map && tempPickInfo.map == map))
+		if (*tmpMap || (*tmpMap && map && *tmpMap == map))
 		{
 			tempPickInfo.entIdx = 0;
 			tempPickInfo.modelIdx = 0;
-			tempPickInfo.map = map;
-			tempPickInfo.ent = map->ents[0];
+			*tmpMap = map;
 			foundBetterPick = true;
 		}
 	}
@@ -1876,12 +1876,11 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 
 			if (pickModelPoly(start, dir, renderEnts[i].offset, renderEnts[i].modelIdx, hullIdx, tempPickInfo))
 			{
-				if (!tempPickInfo.map || (tempPickInfo.map && map && tempPickInfo.map == map))
+				if (!*tmpMap || (*tmpMap && map && *tmpMap == map))
 				{
 					tempPickInfo.entIdx = i;
 					tempPickInfo.modelIdx = renderEnts[i].modelIdx;
-					tempPickInfo.map = map;
-					tempPickInfo.ent = map->ents[i];
+					*tmpMap = map;
 					foundBetterPick = true;
 				}
 			}
@@ -1892,13 +1891,12 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			vec3 maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
 			if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
 			{
-				if (!tempPickInfo.map || (tempPickInfo.map && map && tempPickInfo.map == map))
+				if (!*tmpMap || (*tmpMap && map && *tmpMap == map))
 				{
 					tempPickInfo.entIdx = i;
 					tempPickInfo.modelIdx = -1;
 					tempPickInfo.faceIdx = -1;
-					tempPickInfo.map = map;
-					tempPickInfo.ent = map->ents[i];
+					*tmpMap = map;
 					foundBetterPick = true;
 				}
 			};

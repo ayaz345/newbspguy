@@ -443,20 +443,21 @@ void Gui::draw3dContextMenus()
 
 	Bsp* map = app->getSelectedMap();
 
-	if (map && app->originHovered)
+	if (map && app->originHovered && app->pickInfo.entIdx >= 0)
 	{
+		Entity* ent = map->ents[app->pickInfo.entIdx];
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
 			if (ImGui::MenuItem("Center", ""))
 			{
-				app->transformedOrigin = app->getEntOrigin(map, app->pickInfo.ent);
+				app->transformedOrigin = app->getEntOrigin(map, ent);
 				app->applyTransform();
 				app->pickCount++; // force gui refresh
 			}
 
-			if (app->pickInfo.ent && ImGui::BeginMenu("Align"))
+			if (ent && ImGui::BeginMenu("Align"))
 			{
-				BSPMODEL& model = map->models[app->pickInfo.ent->getBspModelIdx()];
+				BSPMODEL& model = map->models[ent->getBspModelIdx()];
 
 				if (ImGui::MenuItem("Top"))
 				{
@@ -1219,7 +1220,7 @@ void Gui::drawMenuBar()
 		std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
 		bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
 		bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
-		bool entSelected = app->pickInfo.ent;
+		bool entSelected = app->pickInfo.entIdx >= 0;
 		bool mapSelected = map;
 		bool nonWorldspawnEntSelected = entSelected && app->pickInfo.entIdx != 0;
 
@@ -1913,11 +1914,11 @@ void Gui::drawKeyvalueEditor()
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
 	if (ImGui::Begin("Keyvalue Editor", &showKeyvalueWidget, 0))
 	{
-		if (app->pickInfo.ent && app->fgd
+		if (app->pickInfo.entIdx >= 0 && app->fgd
 			&& !app->isLoading && !app->isModelsReloading && !app->reloading)
 		{
 			Bsp* map = app->getSelectedMap();
-			Entity* ent = app->pickInfo.ent;
+			Entity* ent = map->ents[app->pickInfo.entIdx];
 			std::string cname = ent->keyvalues["classname"];
 			FgdClass* fgdClass = app->fgd->getFgdClass(cname);
 
@@ -2015,7 +2016,7 @@ void Gui::drawKeyvalueEditor()
 		}
 		else
 		{
-			if (!app->pickInfo.ent)
+			if (!app->pickInfo.entIdx)
 				ImGui::Text("No entity selected");
 			else
 				ImGui::Text("No fgd loaded");
@@ -2627,9 +2628,9 @@ void Gui::drawTransformWidget()
 	bool transformingEnt = false;
 	Entity* ent = NULL;
 	Bsp* map = app->getSelectedMap();
-	if (map)
+	if (map && app->pickInfo.entIdx >= 0)
 	{
-		ent = app->pickInfo.ent;
+		ent = map->ents[app->pickInfo.entIdx];
 		transformingEnt = app->pickInfo.entIdx > 0;
 	}
 
@@ -4228,9 +4229,8 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 			if (entIdx < map->ents.size())
 			{
 				Entity* ent = map->ents[entIdx];
-				app->pickInfo.ent = ent;
 				app->pickInfo.entIdx = entIdx;
-				app->pickInfo.modelIdx = map->ents[entIdx]->getBspModelIdx();
+				app->pickInfo.modelIdx = ent->getBspModelIdx();
 				// map should already be valid if limits are showing
 
 				if (ImGui::IsMouseDoubleClicked(0))
@@ -4337,7 +4337,7 @@ void Gui::drawEntityReport()
 
 					for (int k = 0; k < MAX_FILTERS; k++)
 					{
-						if (keyFilter[k].size())
+						if (keyFilter[k].size() && keyFilter[k][0] != '\0')
 						{
 							std::string searchKey = trimSpaces(toLowerCase(keyFilter[k]));
 
@@ -4370,7 +4370,7 @@ void Gui::drawEntityReport()
 								}
 							}
 						}
-						else if(valueFilter[k].size())
+						else if(valueFilter[k].size() && valueFilter[k][0] != '\0')
 						{
 							std::string searchValue = trimSpaces(toLowerCase(valueFilter[k]));
 							bool foundMatch = false;
@@ -4476,14 +4476,10 @@ void Gui::drawEntityReport()
 					{
 						if (selectedEnts.find(i) != selectedEnts.end())
 						{
-							delete map->ents[i];
-						}
-						else
-						{
-							newEnts.push_back(map->ents[i]);
+							app->deleteEnt(i);
 						}
 					}
-					map->ents = std::move(newEnts);
+
 					app->deselectObject();
 					map->getBspRender()->preRenderEnts();
 					reloadLimits();
