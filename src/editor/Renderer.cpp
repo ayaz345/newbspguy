@@ -1724,7 +1724,7 @@ void Renderer::cameraContextMenus()
 void Renderer::moveGrabbedEnt()
 {
 // grabbing
-	if (movingEnt && pickInfo.entIdx[0])
+	if (movingEnt && pickInfo.entIdx[0] >= 0)
 	{
 		if (g_scroll != oldScroll)
 		{
@@ -2726,10 +2726,11 @@ void Renderer::updateModelVerts()
 	}
 
 
-	Entity* ent = map->ents[pickInfo.entIdx[0]];
+	Entity* ent = NULL;
 
-	if (ent)
+	if (pickInfo.entIdx[0] >= 0)
 	{
+		ent = map->ents[pickInfo.entIdx[0]];
 		transformedOrigin = oldOrigin = ent->getOrigin();
 	}
 
@@ -2823,11 +2824,13 @@ void Renderer::updateEntConnections()
 	if (map && pickInfo.entIdx[0] >= 0)
 	{
 		Entity* ent = map->ents[pickInfo.entIdx[0]];
+
 		std::vector<std::string> targetNames = ent->getTargets();
 		std::vector<Entity*> targets;
 		std::vector<Entity*> callers;
 		std::vector<Entity*> callerAndTarget; // both a target and a caller
 		std::string thisName;
+
 		if (ent->hasKey("targetname"))
 		{
 			thisName = ent->keyvalues["targetname"];
@@ -2835,15 +2838,15 @@ void Renderer::updateEntConnections()
 
 		for (int k = 0; k < map->ents.size(); k++)
 		{
-			ent = map->ents[k];
+			Entity* tEnt = map->ents[k];
 
 			if (k == pickInfo.entIdx[0])
 				continue;
 
 			bool isTarget = false;
-			if (ent->hasKey("targetname"))
+			if (tEnt->hasKey("targetname"))
 			{
-				std::string tname = ent->keyvalues["targetname"];
+				std::string tname = tEnt->keyvalues["targetname"];
 				for (int i = 0; i < targetNames.size(); i++)
 				{
 					if (tname == targetNames[i])
@@ -2854,19 +2857,19 @@ void Renderer::updateEntConnections()
 				}
 			}
 
-			bool isCaller = thisName.length() && ent->hasTarget(thisName);
+			bool isCaller = thisName.length() && tEnt->hasTarget(thisName);
 
 			if (isTarget && isCaller)
 			{
-				callerAndTarget.push_back(ent);
+				callerAndTarget.push_back(tEnt);
 			}
 			else if (isTarget)
 			{
-				targets.push_back(ent);
+				targets.push_back(tEnt);
 			}
 			else if (isCaller)
 			{
-				callers.push_back(ent);
+				callers.push_back(tEnt);
 			}
 		}
 
