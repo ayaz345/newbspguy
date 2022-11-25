@@ -167,7 +167,7 @@ public:
 	int getSelectedMapId();
 	void selectMapId(int id);
 	void selectMap(Bsp* map);
-	void deselectMap(Bsp* map);
+	void deselectMap();
 	void clearSelection();
 	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
 

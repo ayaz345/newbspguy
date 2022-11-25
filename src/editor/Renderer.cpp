@@ -2236,7 +2236,7 @@ void Renderer::selectMap(Bsp* map)
 	SelectedMap = map;
 }
 
-void Renderer::deselectMap(Bsp* map)
+void Renderer::deselectMap()
 {
 	SelectedMap = NULL;
 }
@@ -2892,7 +2892,7 @@ void Renderer::updateEntConnections()
 		{
 			Entity* tEnt = map->ents[k];
 
-			if (k == pickInfo.entIdx[0])
+			if (tEnt == ent)
 				continue;
 
 			bool isTarget = false;
@@ -2932,8 +2932,8 @@ void Renderer::updateEntConnections()
 
 		size_t numVerts = targets.size() * 2 + callers.size() * 2 + callerAndTarget.size() * 2;
 		size_t numPoints = callers.size() + targets.size() + callerAndTarget.size();
-		cVert* lines = new cVert[numVerts];
-		cCube* points = new cCube[numPoints];
+		cVert* lines = new cVert[numVerts + 3];
+		cCube* points = new cCube[numPoints + 3];
 
 		const COLOR4 targetColor = {255, 255, 0, 255};
 		const COLOR4 callerColor = {0, 255, 255, 255};
