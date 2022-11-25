@@ -24,6 +24,8 @@ struct mat4x4
 
 	void rotateZ(float r);
 
+	void rotate(float x, float y, float z);
+
 	// converts row-major matrix to column-major (for OpenGL)
 	mat4x4 transpose();
 

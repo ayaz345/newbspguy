@@ -124,6 +124,68 @@ void mat4x4::rotateZ(float r)
 	mult(rmat);
 }
 
+void mat4x4::rotate(float roll,float yaw, float pitch)
+{
+	float tmp_ch = cosf(-yaw);
+	float tmp_sh = sinf(-yaw);
+	float tmp_cp = cosf(-pitch);
+	float tmp_sp = sinf(-pitch);
+	float tmp_cb = cosf(roll);
+	float tmp_sb = sinf(roll);
+
+	float rmat[16] = {0};
+
+	rmat[0 * 4 + 0] = tmp_ch * tmp_cb + tmp_sh * tmp_sp * tmp_sb;
+	rmat[0 * 4 + 1] = tmp_sb * tmp_cp;
+	rmat[0 * 4 + 2] = -tmp_sh * tmp_cb + tmp_ch * tmp_sp * tmp_sb;
+	rmat[0 * 4 + 3] = 0.0;
+	rmat[1 * 4 + 0] = -tmp_ch * tmp_sb + tmp_sh * tmp_sp * tmp_cb;
+	rmat[1 * 4 + 1] = tmp_cb * tmp_cp;
+	rmat[1 * 4 + 2] = tmp_sb * tmp_sh + tmp_ch * tmp_sp * tmp_cb;
+	rmat[1 * 4 + 3] = 0.0;
+	rmat[2 * 4 + 0] = tmp_sh * tmp_cp;
+	rmat[2 * 4 + 1] = -tmp_sp;
+	rmat[2 * 4 + 2] = tmp_ch * tmp_cp;
+	rmat[2 * 4 + 3] = 0.0;
+	rmat[3 * 4 + 0] = 0.0;
+	rmat[3 * 4 + 1] = 0.0;
+	rmat[3 * 4 + 2] = 0.0;
+	rmat[3 * 4 + 3] = 1.0;
+
+	mult(rmat);
+}
+/*
+void mat4x4::rotate(float x, float y, float z)
+{
+	float c1 = cosf(z);
+	float c2 = cosf(y);
+	float c3 = cosf(-x);
+	float s1 = sinf(z);
+	float s2 = sinf(y);
+	float s3 = sinf(-x);
+
+	float rmat[16] = {0};
+
+	rmat[0 * 4 + 0] = c2 * c3;
+	rmat[0 * 4 + 1] = -c1 * s3 + s1 * s2 * c3;
+	rmat[0 * 4 + 2] = s1 * s3 + c1 * s2 * c3;
+	rmat[0 * 4 + 3] = 0.0;
+	rmat[1 * 4 + 0] = c2 * s3;
+	rmat[1 * 4 + 1] = c1 * c3 + s1 * s2 * s3;
+	rmat[1 * 4 + 2] = -s1 * c3 + c1 * s2 * s3;
+	rmat[1 * 4 + 3] = 0.0;
+	rmat[2 * 4 + 0] = -s2;
+	rmat[2 * 4 + 1] = s1 * c2;
+	rmat[2 * 4 + 2] = c1 * c2;
+	rmat[2 * 4 + 3] = 0.0;
+	rmat[3 * 4 + 0] = 0.0;
+	rmat[3 * 4 + 1] = 0.0;
+	rmat[3 * 4 + 2] = 0.0;
+	rmat[3 * 4 + 3] = 1.0;
+
+	mult(rmat);
+}*/
+
 mat4x4 worldToLocalTransform(const vec3& local_x, const vec3& local_y, const vec3& local_z)
 {
 	const vec3 world_x(1, 0, 0);
