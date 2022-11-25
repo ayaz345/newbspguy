@@ -100,6 +100,7 @@ struct PickInfo
 	float bestDist;
 	PickInfo()
 	{
+		entIdx.clear();
 		entIdx.push_back(-1);
 		bestDist = 0.0f;
 		modelIdx = faceIdx = -1;

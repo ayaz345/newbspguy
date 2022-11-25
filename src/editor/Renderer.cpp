@@ -129,6 +129,8 @@ void AppSettings::loadDefault()
 	playerOnlyTriggers.clear();
 	monsterOnlyTriggers.clear();
 
+	entListReload = true;
+
 	ResetBspLimits();
 }
 
@@ -334,6 +336,10 @@ void AppSettings::load()
 			{
 				g_settings.sameDirForEnt = atoi(val.c_str()) != 0;
 			}
+			else if (key == "reload_ent_list")
+			{
+				entListReload = atoi(val.c_str()) != 0;
+			}
 			else if (key == "optimizer_cond_ents")
 			{
 				conditionalPointEntTriggers.push_back(val);
@@ -393,6 +399,50 @@ void AppSettings::load()
 		reset();
 		logf("Failed to open user config: %s\n", g_settings_path.c_str());
 	}
+
+	if (entListReload)
+	{
+		conditionalPointEntTriggers.clear();
+		conditionalPointEntTriggers.push_back("trigger_once");
+		conditionalPointEntTriggers.push_back("trigger_multiple");
+		conditionalPointEntTriggers.push_back("trigger_counter");
+		conditionalPointEntTriggers.push_back("trigger_gravity");
+		conditionalPointEntTriggers.push_back("trigger_teleport");
+
+		entsThatNeverNeedAnyHulls.clear();
+		entsThatNeverNeedAnyHulls.push_back("env_bubbles");
+		entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
+		entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
+		entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
+		entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
+		entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
+
+		entsThatNeverNeedCollision.clear();
+		entsThatNeverNeedCollision.push_back("func_illusionary");
+		entsThatNeverNeedCollision.push_back("func_mortar_field");
+
+		passableEnts.clear();
+		passableEnts.push_back("func_door");
+		passableEnts.push_back("func_door_rotating");
+		passableEnts.push_back("func_pendulum");
+		passableEnts.push_back("func_tracktrain");
+		passableEnts.push_back("func_train");
+		passableEnts.push_back("func_water");
+		passableEnts.push_back("momentary_door");
+
+		playerOnlyTriggers.clear();
+		playerOnlyTriggers.push_back("func_ladder");
+		playerOnlyTriggers.push_back("game_zone_player");
+		playerOnlyTriggers.push_back("player_respawn_zone");
+		playerOnlyTriggers.push_back("trigger_cdaudio");
+		playerOnlyTriggers.push_back("trigger_changelevel");
+		playerOnlyTriggers.push_back("trigger_transition");
+
+		monsterOnlyTriggers.clear();
+		monsterOnlyTriggers.push_back("func_monsterclip");
+		monsterOnlyTriggers.push_back("trigger_monsterjump");
+	}
+	entListReload = false;
 }
 
 void AppSettings::save(std::string path)
@@ -421,6 +471,7 @@ void AppSettings::save(std::string path)
 	file << "gamedir=" << g_settings.gamedir << std::endl;
 	file << "workingdir=" << g_settings.workingdir << std::endl;
 	file << "lastdir=" << g_settings.lastdir << std::endl;
+
 	for (int i = 0; i < fgdPaths.size(); i++)
 	{
 		file << "fgd=" << g_settings.fgdPaths[i] << std::endl;
@@ -473,8 +524,9 @@ void AppSettings::save(std::string path)
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
-	file << "auto_import_ent" << g_settings.autoImportEnt << std::endl;
-	file << "same_dir_for_ent" << g_settings.sameDirForEnt << std::endl;
+	file << "auto_import_ent=" << g_settings.autoImportEnt << std::endl;
+	file << "same_dir_for_ent=" << g_settings.sameDirForEnt << std::endl;
+	file << "reload_ent_list=" << g_settings.entListReload << std::endl;
 
 	file.flush();
 
@@ -1593,7 +1645,7 @@ void Renderer::cameraObjectHovering()
 		PickInfo vertPick = PickInfo();
 		vertPick.bestDist = FLT_MAX_COORD;
 
-		Entity* ent = SelectedMap->ents[pickInfo.entIdx[0]];
+		Entity* ent = map->ents[pickInfo.entIdx[0]];
 		vec3 entOrigin = ent->getOrigin();
 
 		hoverEdge = -1;
@@ -2924,7 +2976,7 @@ void Renderer::updateEntConnections()
 
 void Renderer::updateEntConnectionPositions()
 {
-	if (entConnections && pickInfo.entIdx[0])
+	if (entConnections && pickInfo.entIdx[0] >= 0)
 	{
 		Entity* ent = SelectedMap->ents[pickInfo.entIdx[0]];
 		vec3 pos = getEntOrigin(getSelectedMap(), ent).flip();
@@ -3255,7 +3307,7 @@ void Renderer::moveSelectedVerts(const vec3& delta)
 	Bsp* map = getSelectedMap();
 	if (map && pickInfo.entIdx[0] >= 0)
 	{
-		Entity* ent = SelectedMap->ents[pickInfo.entIdx[0]];
+		Entity* ent = map->ents[pickInfo.entIdx[0]];
 		invalidSolid = !map->vertex_manipulation_sync(pickInfo.modelIdx, modelVerts, true, false);
 		map->getBspRender()->refreshModel(ent->getBspModelIdx());
 	}
@@ -3535,6 +3587,10 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 		}
 		updateSelectionSize();
 	}
+	else
+	{
+		logf("No map selected!\n");
+	}
 }
 
 vec3 Renderer::getEdgeControlPoint(std::vector<TransformVert>& hullVerts, HullEdge& edge)
@@ -3657,10 +3713,11 @@ void Renderer::deleteEnt(int entIdx)
 
 	if (entIdx > 0 && SelectedMap)
 	{
-		tmpPickInfo.entIdx[0] = entIdx;
+		tmpPickInfo.entIdx.clear();
+		tmpPickInfo.entIdx.push_back(entIdx);
 	}
 
-	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", pickInfo);
+	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", tmpPickInfo);
 	deleteCommand->execute();
 	pushUndoCommand(deleteCommand);
 }
@@ -3785,7 +3842,7 @@ void Renderer::saveLumpState(Bsp* map, int targetLumps, bool deleteOldState)
 
 void Renderer::pushEntityUndoState(const std::string& actionDesc)
 {
-	if (!pickInfo.entIdx[0])
+	if (pickInfo.entIdx[0] < 0)
 	{
 		logf("Invalid entity undo state push\n");
 		return;

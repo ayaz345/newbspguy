@@ -88,6 +88,8 @@ struct AppSettings
 	bool autoImportEnt;
 	bool sameDirForEnt;
 
+	bool entListReload;
+
 	std::vector<std::string> fgdPaths;
 	std::vector<std::string> resPaths;
 
