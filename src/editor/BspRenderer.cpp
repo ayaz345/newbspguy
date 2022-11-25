@@ -864,6 +864,8 @@ void BspRenderer::loadClipnodes()
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
 {
+	if (!map)
+		return;
 	BSPMODEL& model = map->models[modelIdx];
 	RenderClipnodes* renderClip = &renderClipnodes[modelIdx];
 
@@ -1052,7 +1054,8 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 
 		renderClip->wireframeClipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
 		renderClip->wireframeClipnodeBuffer[i]->ownData = true;
-
+		if (!this->map)
+			return;
 		renderClip->faceMaths[i] = std::move(tfaceMaths);
 	}
 }
@@ -1329,6 +1332,7 @@ BspRenderer::~BspRenderer()
 	delete blueTex;
 	delete missingTex;
 	delete map;
+	map = NULL;
 }
 
 void BspRenderer::ReuploadTextures()
@@ -1633,6 +1637,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly)
 {
 	int modelIdx = ent ? ent->modelIdx : 0;
+
 	if (modelIdx < 0 || modelIdx >= numRenderModels)
 	{
 		return;

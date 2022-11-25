@@ -40,6 +40,6 @@ Keyvalues::Keyvalues(void)
 
 Keyvalues::Keyvalues(std::string key, std::string value)
 {
-	this->keys.push_back(key);
-	this->values.push_back(value);
+	keys.push_back(key);
+	values.push_back(value);
 }

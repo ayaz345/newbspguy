@@ -121,7 +121,7 @@ bool start_viewer(const char* map)
 	{
 		map = "";
 	}
-	Renderer renderer;
+	Renderer renderer = Renderer();
 	renderer.addMap(new Bsp(map));
 	renderer.reloadBspModels();
 	hideConsoleWindow();

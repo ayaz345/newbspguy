@@ -947,8 +947,12 @@ void Gui::drawMenuBar()
 			filterNeeded = true;
 			if (map)
 			{
-				this->app->clearMaps();
-				app->pickInfo = PickInfo();
+				app->clearSelection();
+				app->deselectMap();
+				app->clearMaps();
+				ImGui::EndMenu();
+				ImGui::EndMainMenuBar();
+				return;
 			}
 		}
 
@@ -1236,9 +1240,22 @@ void Gui::drawMenuBar()
 		ImGui::Separator();
 		if (ImGui::MenuItem("Exit", NULL))
 		{
+			if (fileSize(g_settings_path) == 0)
+			{
+				g_settings.save();
+				glfwTerminate();
+				std::exit(0);
+			}
 			g_settings.save();
-			glfwTerminate();
-			std::exit(0);
+			if (fileSize(g_settings_path) == 0)
+			{
+				logf("Save settings fatal error!\n");
+			}
+			else
+			{
+				glfwTerminate();
+				std::exit(0);
+			}
 		}
 		ImGui::EndMenu();
 	}
@@ -2698,6 +2715,8 @@ void Gui::drawTransformWidget()
 	static float last_fx, last_fy, last_fz;
 	static float sx, sy, sz;
 
+	static bool shouldUpdateUi = true;
+
 	static int lastPickCount = -1;
 	static int lastVertPickCount = -1;
 	static bool oldSnappingEnabled = app->gridSnappingEnabled;
@@ -2714,12 +2733,20 @@ void Gui::drawTransformWidget()
 		{
 			ImGuiStyle& style = ImGui::GetStyle();
 
-			bool shouldUpdateUi = lastPickCount != app->pickCount ||
-				app->draggingAxis != -1 ||
-				app->movingEnt ||
-				oldSnappingEnabled != app->gridSnappingEnabled ||
-				lastVertPickCount != app->vertPickCount ||
-				oldTransformTarget != app->transformTarget;
+			if (!shouldUpdateUi)
+			{
+				shouldUpdateUi = lastPickCount != app->pickCount ||
+					app->draggingAxis != -1 ||
+					app->movingEnt ||
+					oldSnappingEnabled != app->gridSnappingEnabled ||
+					lastVertPickCount != app->vertPickCount ||
+					oldTransformTarget != app->transformTarget;
+			}
+
+			if (shouldUpdateUi)
+			{
+				shouldUpdateUi = true;
+			}
 
 			TransformAxes& activeAxes = *(app->transformMode == TRANSFORM_SCALE ? &app->scaleAxes : &app->moveAxes);
 
@@ -2753,6 +2780,7 @@ void Gui::drawTransformWidget()
 					z = fz = 0.f;
 				}
 				sx = sy = sz = 1;
+				shouldUpdateUi = false;
 			}
 
 			oldTransformTarget = app->transformTarget;
@@ -2774,68 +2802,35 @@ void Gui::drawTransformWidget()
 			ImGui::Text("Move");
 			ImGui::PushItemWidth(inputWidth);
 
-			if (app->gridSnappingEnabled)
+			if (ImGui::DragFloat("##xpos", &x, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "X: %.2f" : "X: %.0f"))
 			{
-				if (ImGui::DragFloat("##xpos", &x, 0.1f, 0, 0, "X: %d"))
-				{
-					originChanged = true;
-				}
-				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-					guiHoverAxis = 0;
-				if (ImGui::IsItemActive())
-					inputsAreDragging = true;
-				ImGui::SameLine();
-
-				if (ImGui::DragFloat("##ypos", &y, 0.1f, 0, 0, "Y: %d"))
-				{
-					originChanged = true;
-				}
-				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-					guiHoverAxis = 1;
-				if (ImGui::IsItemActive())
-					inputsAreDragging = true;
-				ImGui::SameLine();
-
-				if (ImGui::DragFloat("##zpos", &z, 0.1f, 0, 0, "Z: %d"))
-				{
-					originChanged = true;
-				}
-				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-					guiHoverAxis = 2;
-				if (ImGui::IsItemActive())
-					inputsAreDragging = true;
+				originChanged = true;
 			}
-			else
+			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+				guiHoverAxis = 0;
+			if (ImGui::IsItemActive())
+				inputsAreDragging = true;
+			ImGui::SameLine();
+
+			if (ImGui::DragFloat("##ypos", &y, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "Y: %.2f" : "Y: %.0f"))
 			{
-				if (ImGui::DragFloat("##xpos", &fx, 0.1f, 0, 0, "X: %.2f"))
-				{
-					originChanged = true;
-				}
-				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-					guiHoverAxis = 0;
-				if (ImGui::IsItemActive())
-					inputsAreDragging = true;
-				ImGui::SameLine();
-
-				if (ImGui::DragFloat("##ypos", &fy, 0.1f, 0, 0, "Y: %.2f"))
-				{
-					originChanged = true;
-				}
-				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-					guiHoverAxis = 1;
-				if (ImGui::IsItemActive())
-					inputsAreDragging = true;
-				ImGui::SameLine();
-
-				if (ImGui::DragFloat("##zpos", &fz, 0.1f, 0, 0, "Z: %.2f"))
-				{
-					originChanged = true;
-				}
-				if (ImGui::IsItemHovered() || ImGui::IsItemActive())
-					guiHoverAxis = 2;
-				if (ImGui::IsItemActive())
-					inputsAreDragging = true;
+				originChanged = true;
 			}
+			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+				guiHoverAxis = 1;
+			if (ImGui::IsItemActive())
+				inputsAreDragging = true;
+			ImGui::SameLine();
+
+			if (ImGui::DragFloat("##zpos", &z, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "X: %.2f" : "X: %.0f"))
+			{
+				originChanged = true;
+			}
+			if (ImGui::IsItemHovered() || ImGui::IsItemActive())
+				guiHoverAxis = 2;
+			if (ImGui::IsItemActive())
+				inputsAreDragging = true;
+
 
 			ImGui::PopItemWidth();
 
@@ -2875,7 +2870,7 @@ void Gui::drawTransformWidget()
 
 			if (inputsWereDragged && !inputsAreDragging)
 			{
-				if (app->undoEntityState->getOrigin() != ent->getOrigin())
+				if (app->undoEntityState.getOrigin() != ent->getOrigin())
 				{
 					app->pushEntityUndoState("Move Entity");
 				}

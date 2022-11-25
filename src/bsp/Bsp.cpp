@@ -72,8 +72,8 @@ void Bsp::init_empty_bsp()
 	add_texture("WHITETEX", (unsigned char*)imageData, 64, 64);
 	create_solid(mins, maxs, 0);
 
-	this->models[0].iHeadnodes[0] = this->models[0].iHeadnodes[1] =
-		this->models[0].iHeadnodes[2] = this->models[0].iHeadnodes[3] = -1;
+	models[0].iHeadnodes[0] = models[0].iHeadnodes[1] =
+		models[0].iHeadnodes[2] = models[0].iHeadnodes[3] = -1;
 
 	update_lump_pointers();
 	update_ent_lump();
@@ -113,7 +113,7 @@ void Bsp::selectModelEnt()
 
 Bsp::Bsp()
 {
-	this->init_empty_bsp();
+	init_empty_bsp();
 }
 
 Bsp::Bsp(std::string fpath)
@@ -121,7 +121,7 @@ Bsp::Bsp(std::string fpath)
 	if (fpath.empty())
 	{
 		fpath = "newmap.bsp";
-		this->init_empty_bsp();
+		init_empty_bsp();
 		return;
 	}
 	if (!fileExists(fpath))
@@ -131,8 +131,8 @@ Bsp::Bsp(std::string fpath)
 			fpath = fpath + ".bsp";
 		}
 	}
-	this->bsp_path = fpath;
-	this->bsp_name = stripExt(basename(fpath));
+	bsp_path = fpath;
+	bsp_name = stripExt(basename(fpath));
 
 	bsp_valid = false;
 
@@ -155,7 +155,7 @@ Bsp::Bsp(std::string fpath)
 		entFilePath = fpath.substr(0, fpath.size() - 4) + ".ent";
 	}
 	else {
-		entFilePath = GetWorkDir() + (this->bsp_name + ".ent");
+		entFilePath = GetWorkDir() + (bsp_name + ".ent");
 	}
 
 	if (g_settings.autoImportEnt && fileExists(entFilePath)) {

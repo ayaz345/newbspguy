@@ -36,36 +36,32 @@ BspRenderer* Command::getBspRenderer()
 //
 // Edit entity
 //
-EditEntityCommand::EditEntityCommand(std::string desc, PickInfo& pickInfo, Entity* oldEntData, Entity* newEntData)
+EditEntityCommand::EditEntityCommand(std::string desc, PickInfo& pickInfo, Entity oldEntData, Entity newEntData)
 	: Command(desc, g_app->getSelectedMapId())
 {
 	this->entIdx = pickInfo.selectedEnts[0];
-	this->oldEntData = new Entity();
-	this->newEntData = new Entity();
-	*this->oldEntData = *oldEntData;
-	*this->newEntData = *newEntData;
+	this->oldEntData = Entity();
+	this->newEntData = Entity();
+	this->oldEntData = oldEntData;
+	this->newEntData = newEntData;
 	this->allowedDuringLoad = true;
 }
 
 EditEntityCommand::~EditEntityCommand()
 {
-	if (oldEntData)
-		delete oldEntData;
-	if (newEntData)
-		delete newEntData;
 }
 
 void EditEntityCommand::execute()
 {
 	Entity* target = getEnt();
-	*target = *newEntData;
+	*target = newEntData;
 	refresh();
 }
 
 void EditEntityCommand::undo()
 {
 	Entity* target = getEnt();
-	*target = *oldEntData;
+	*target = oldEntData;
 	refresh();
 }
 
@@ -101,7 +97,7 @@ void EditEntityCommand::refresh()
 
 size_t EditEntityCommand::memoryUsage()
 {
-	return sizeof(EditEntityCommand) + oldEntData->getMemoryUsage() + newEntData->getMemoryUsage();
+	return sizeof(EditEntityCommand) + oldEntData.getMemoryUsage() + newEntData.getMemoryUsage();
 }
 
 

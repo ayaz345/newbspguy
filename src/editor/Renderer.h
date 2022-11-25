@@ -294,7 +294,7 @@ private:
 	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
 	std::vector<Command*> undoHistory;
 	std::vector<Command*> redoHistory;
-	Entity* undoEntityState = NULL;
+	Entity undoEntityState = Entity();
 	LumpState undoLumpState = LumpState();
 	vec3 undoEntOrigin;
 

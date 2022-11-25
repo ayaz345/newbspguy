@@ -641,6 +641,7 @@ Renderer::Renderer()
 
 	memset(&undoLumpState, 0, sizeof(LumpState));
 
+	undoEntityState = Entity();
 	//cameraOrigin = vec3(51, 427, 234);
 	//cameraAngles = vec3(41, 0, -170);
 }
@@ -649,6 +650,7 @@ Renderer::~Renderer()
 {
 	glfwTerminate();
 }
+
 void Renderer::renderLoop()
 {
 	glEnable(GL_DEPTH_TEST);
@@ -745,6 +747,7 @@ void Renderer::renderLoop()
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 		setupView();
+
 		glEnable(GL_CULL_FACE);
 		glEnable(GL_DEPTH_TEST);
 
@@ -1486,7 +1489,7 @@ void Renderer::cameraPickingControls()
 			if (pickInfo.selectedEnts[0] >= 0)
 			{
 				Entity* ent = SelectedMap->ents[pickInfo.selectedEnts[0]];
-				if (ent && undoEntityState->getOrigin() != ent->getOrigin())
+				if (ent && undoEntityState.getOrigin() != ent->getOrigin())
 				{
 					pushEntityUndoState("Move Entity");
 				}
@@ -1827,7 +1830,7 @@ void Renderer::moveGrabbedEnt()
 		vec3 newOrigin = (tmpOrigin + delta) - offset;
 		vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
-		transformedOrigin = this->oldOrigin = rounded;
+		transformedOrigin = oldOrigin = rounded;
 
 		ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
 		map->getBspRender()->refreshEnt(pickInfo.selectedEnts[0]);
@@ -2423,6 +2426,13 @@ void Renderer::addMap(Bsp* map)
 	{
 		clearSelection();
 		selectMap(map);
+		if (map->ents.size())
+			pickInfo.selectedEnts[0] = 0;
+
+
+		/*
+		* TODO: save camera pos
+		*/
 	}
 
 	BspRenderer* mapRenderer = new BspRenderer(map, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
@@ -2436,18 +2446,6 @@ void Renderer::addMap(Bsp* map)
 	{
 		clearSelection();
 		selectMap(map);
-		/*
-		* TODO: move camera to center of map
-		// Move camera to first entity with origin
-		for(auto const & ent : map->ents)
-		{
-			if (ent->getOrigin() != vec3())
-			{
-				cameraOrigin = ent->getOrigin();
-				break;
-			}
-		}
-		*/
 	}
 }
 
@@ -3884,11 +3882,7 @@ void Renderer::updateEntityState(Entity* ent)
 	if (!ent)
 		return;
 
-	if (!undoEntityState)
-	{
-		undoEntityState = new Entity();
-	}
-	*undoEntityState = *ent;
+	undoEntityState = *ent;
 	undoEntOrigin = ent->getOrigin();
 }
 
@@ -3923,19 +3917,19 @@ void Renderer::pushEntityUndoState(const std::string& actionDesc)
 	}
 
 	bool anythingToUndo = true;
-	if (undoEntityState->keyOrder.size() == ent->keyOrder.size())
+	if (undoEntityState.keyOrder.size() == ent->keyOrder.size())
 	{
 		bool keyvaluesDifferent = false;
-		for (int i = 0; i < undoEntityState->keyOrder.size(); i++)
+		for (int i = 0; i < undoEntityState.keyOrder.size(); i++)
 		{
-			std::string oldKey = undoEntityState->keyOrder[i];
+			std::string oldKey = undoEntityState.keyOrder[i];
 			std::string newKey = ent->keyOrder[i];
 			if (oldKey != newKey)
 			{
 				keyvaluesDifferent = true;
 				break;
 			}
-			std::string oldVal = undoEntityState->keyvalues[oldKey];
+			std::string oldVal = undoEntityState.keyvalues[oldKey];
 			std::string newVal = ent->keyvalues[oldKey];
 			if (oldVal != newVal)
 			{
@@ -3952,7 +3946,7 @@ void Renderer::pushEntityUndoState(const std::string& actionDesc)
 		return; // nothing to undo
 	}
 
-	pushUndoCommand(new EditEntityCommand(actionDesc, pickInfo, undoEntityState, ent));
+	pushUndoCommand(new EditEntityCommand(actionDesc, pickInfo, undoEntityState, *ent));
 	updateEntityState(ent);
 }
 

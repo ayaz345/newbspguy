@@ -167,15 +167,15 @@ void VertexBuffer::bindAttributes(bool hideErrors)
 
 void VertexBuffer::setData(const void* _data, GLsizei _numVerts)
 {
-	this->data = (unsigned char*)_data;
-	this->numVerts = _numVerts;
+	data = (unsigned char*)_data;
+	numVerts = _numVerts;
 }
 
 void VertexBuffer::setData(const void* _data, GLsizei _numVerts, int _primitive)
 {
-	this->data = (unsigned char*)_data;
-	this->numVerts = _numVerts;
-	this->primitive = _primitive;
+	data = (unsigned char*)_data;
+	numVerts = _numVerts;
+	primitive = _primitive;
 }
 
 void VertexBuffer::upload()
