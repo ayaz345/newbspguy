@@ -1133,7 +1133,7 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 {
 	if (!map->ents[entIdx]->hasKey("classname"))
 	{
-		renderEnts[entIdx].modelMat.rotate(angles.y, angles.x, angles.z);
+		renderEnts[entIdx].modelMat.rotate(angles.y, -angles.x, angles.z);
 		return;
 	}
 	if (map->ents[entIdx]->keyvalues["classname"] == "func_breakable")
@@ -1154,7 +1154,7 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		}
 		else
 		{
-			renderEnts[entIdx].modelMat.rotate(angles.y, angles.x, angles.z);
+			renderEnts[entIdx].modelMat.rotate(angles.y, -angles.x, angles.z);
 		}
 	}
 	else
@@ -1163,7 +1163,7 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		//renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 		//renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
 		
-		renderEnts[entIdx].modelMat.rotate(angles.y, angles.x, angles.z);
+		renderEnts[entIdx].modelMat.rotate(angles.y, -angles.x, angles.z);
 		/*renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));*/
