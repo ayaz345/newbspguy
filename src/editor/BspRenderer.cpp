@@ -1275,7 +1275,7 @@ void BspRenderer::refreshFace(int faceIdx)
 	}
 	if (allVerts.size() == 0)
 	{
-		allVerts.push_back(vec3());
+		allVerts.emplace_back(vec3());
 	}
 	vec3 plane_x = (v1 - allVerts[0]).normalize(1.0f);
 	vec3 plane_y = crossProduct(planeNormal, plane_x).normalize(1.0f);
@@ -1840,20 +1840,20 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 	{
 		return foundBetterPick;
 	}
+
+	int sz = (int)map->ents.size();
+
 	start -= mapOffset;
 	
-
 	if (pickModelPoly(start, dir, vec3(0, 0, 0), 0, hullIdx, tempPickInfo))
 	{
-		if (*tmpMap || (*tmpMap && map && *tmpMap == map))
+		if (*tmpMap || *tmpMap == map)
 		{
 			tempPickInfo.entIdx[0] = 0;
-			tempPickInfo.modelIdx = 0;
 			*tmpMap = map;
 			foundBetterPick = true;
 		}
 	}
-	int sz = (int)map->ents.size();
 
 	for (int i = 0; i < sz; i++)
 	{
@@ -1880,10 +1880,9 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 
 			if (pickModelPoly(start, dir, renderEnts[i].offset, renderEnts[i].modelIdx, hullIdx, tempPickInfo))
 			{
-				if (!*tmpMap || (*tmpMap && map && *tmpMap == map))
+				if (!*tmpMap || *tmpMap == map)
 				{
 					tempPickInfo.entIdx[0] = i;
-					tempPickInfo.modelIdx = renderEnts[i].modelIdx;
 					*tmpMap = map;
 					foundBetterPick = true;
 				}
@@ -1895,10 +1894,9 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			vec3 maxs = renderEnts[i].offset + renderEnts[i].pointEntCube->maxs;
 			if (pickAABB(start, dir, mins, maxs, tempPickInfo.bestDist))
 			{
-				if (!*tmpMap || (*tmpMap && map && *tmpMap == map))
+				if (!*tmpMap || *tmpMap == map)
 				{
 					tempPickInfo.entIdx[0] = i;
-					tempPickInfo.modelIdx = -1;
 					tempPickInfo.faceIdx = -1;
 					*tmpMap = map;
 					foundBetterPick = true;

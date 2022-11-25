@@ -1630,6 +1630,8 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 
 STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes)
 {
+	if (!modelCount)
+		return STRUCTCOUNT();
 // marks which structures should not be moved
 	STRUCTUSAGE usedStructures(this);
 
@@ -1767,10 +1769,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes)
 		}
 	}
 
-	if (modelCount > 0)
-	{
-		delete[] usedModels;
-	}
+	delete[] usedModels;
 	return removeCount;
 }
 
@@ -2263,7 +2262,7 @@ int Bsp::lightmap_count(int faceIdx)
 	return lightmapCount;
 }
 
-void Bsp::write(std::string path)
+void Bsp::write(const std::string & path)
 {
 	// calculate lump offsets
 	int offset = sizeof(BSPHEADER);
@@ -4481,7 +4480,7 @@ int Bsp::duplicate_model(int modelIdx)
 	std::vector<BSPNODE> newNodes;
 	std::vector<BSPCLIPNODE> newClipnodes;
 
-	STRUCTREMAP remap = STRUCTREMAP();
+	STRUCTREMAP remap;
 
 	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
 
@@ -4936,7 +4935,7 @@ bool Bsp::isModelHasFaceIdx(const BSPMODEL& mdl, int faceid)
 	return true;
 }
 
-void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
+void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int iscale)
 {
 	if (!createDir(path))
 	{
@@ -5012,7 +5011,7 @@ void Bsp::ExportToObjWIP(std::string path, ExportObjOrder order, int iscale)
 				entIds.push_back(0);
 			}
 
-			materialid = std::string();
+			materialid.clear();
 			for (int m = 0; m < matnames.size(); m++)
 			{
 				if (matnames[m] == tex->szName)
@@ -5199,7 +5198,7 @@ struct ENTDATA
 	std::vector<std::string> vecdata;
 };
 
-void Bsp::ExportToMapWIP(std::string path)
+void Bsp::ExportToMapWIP(const std::string& path)
 {
 	if (!createDir(path))
 	{

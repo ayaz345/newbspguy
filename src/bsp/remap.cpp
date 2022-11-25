@@ -86,6 +86,10 @@ void print_stat_mem(int indent, int bytes, const char* data)
 		return;
 	for (int i = 0; i < indent; i++)
 		logf("    ");
+	if (bytes == 0)
+	{
+		return;
+	}
 	logf("%s %.2f KB of %s\n", bytes > 0 ? "Deleted" : "Added", abs(bytes) / 1024.0f, data);
 }
 

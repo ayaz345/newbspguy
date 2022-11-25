@@ -115,7 +115,7 @@ bool writeFile(const std::string& fileName, const std::string& data)
 	{
 		return false;
 	}
-	file.write(data.c_str(), strlen(data.c_str()));
+	file.write(data.c_str(), data.length());
 	return true;
 }
 

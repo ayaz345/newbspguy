@@ -522,105 +522,109 @@ void Gui::draw3dContextMenus()
 				app->deleteEnt();
 			}
 			ImGui::Separator();
-			if (map && app->pickInfo.modelIdx > 0)
+			if (map && app->pickInfo.entIdx[0] >= 0)
 			{
-				BSPMODEL& model = map->models[app->pickInfo.modelIdx];
-
-				if (ImGui::BeginMenu("Create Hull", !app->invalidSolid && app->isTransformableSolid))
+				Entity* ent = map->ents[app->pickInfo.entIdx[0]];
+				int modelIdx = ent->getBspModelIdx();
+				if (modelIdx >= 0)
 				{
-					if (ImGui::MenuItem("Clipnodes"))
-					{
-						map->regenerate_clipnodes(app->pickInfo.modelIdx, -1);
-						checkValidHulls();
-						logf("Regenerated hulls 1-3 on model %d\n", app->pickInfo.modelIdx);
-					}
+					BSPMODEL& model = map->models[modelIdx];
 
-					ImGui::Separator();
-
-					for (int i = 1; i < MAX_MAP_HULLS; i++)
+					if (ImGui::BeginMenu("Create Hull", !app->invalidSolid && app->isTransformableSolid))
 					{
-						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
+						if (ImGui::MenuItem("Clipnodes"))
 						{
-							map->regenerate_clipnodes(app->pickInfo.modelIdx, i);
+							map->regenerate_clipnodes(modelIdx, -1);
 							checkValidHulls();
-							logf("Regenerated hull %d on model %d\n", i, app->pickInfo.modelIdx);
+							logf("Regenerated hulls 1-3 on model %d\n", modelIdx);
 						}
-					}
-					ImGui::EndMenu();
-				}
 
-				if (ImGui::BeginMenu("Delete Hull", !app->isLoading))
-				{
-					if (ImGui::MenuItem("All Hulls"))
-					{
-						map->delete_hull(0, app->pickInfo.modelIdx, -1);
-						map->delete_hull(1, app->pickInfo.modelIdx, -1);
-						map->delete_hull(2, app->pickInfo.modelIdx, -1);
-						map->delete_hull(3, app->pickInfo.modelIdx, -1);
-						map->getBspRender()->refreshModel(app->pickInfo.modelIdx);
-						checkValidHulls();
-						logf("Deleted all hulls on model %d\n", app->pickInfo.modelIdx);
-					}
-					if (ImGui::MenuItem("Clipnodes"))
-					{
-						map->delete_hull(1, app->pickInfo.modelIdx, -1);
-						map->delete_hull(2, app->pickInfo.modelIdx, -1);
-						map->delete_hull(3, app->pickInfo.modelIdx, -1);
-						map->getBspRender()->refreshModelClipnodes(app->pickInfo.modelIdx);
-						checkValidHulls();
-						logf("Deleted hulls 1-3 on model %d\n", app->pickInfo.modelIdx);
-					}
+						ImGui::Separator();
 
-					ImGui::Separator();
-
-					for (int i = 0; i < MAX_MAP_HULLS; i++)
-					{
-						bool isHullValid = model.iHeadnodes[i] >= 0;
-
-						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
+						for (int i = 1; i < MAX_MAP_HULLS; i++)
 						{
-							map->delete_hull(i, app->pickInfo.modelIdx, -1);
-							checkValidHulls();
-							if (i == 0)
-								map->getBspRender()->refreshModel(app->pickInfo.modelIdx);
-							else
-								map->getBspRender()->refreshModelClipnodes(app->pickInfo.modelIdx);
-							logf("Deleted hull %d on model %d\n", i, app->pickInfo.modelIdx);
+							if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
+							{
+								map->regenerate_clipnodes(modelIdx, i);
+								checkValidHulls();
+								logf("Regenerated hull %d on model %d\n", i, modelIdx);
+							}
 						}
+						ImGui::EndMenu();
 					}
 
-					ImGui::EndMenu();
-				}
+					if (ImGui::BeginMenu("Delete Hull", !app->isLoading))
+					{
+						if (ImGui::MenuItem("All Hulls"))
+						{
+							map->delete_hull(0, modelIdx, -1);
+							map->delete_hull(1, modelIdx, -1);
+							map->delete_hull(2, modelIdx, -1);
+							map->delete_hull(3, modelIdx, -1);
+							map->getBspRender()->refreshModel(modelIdx);
+							checkValidHulls();
+							logf("Deleted all hulls on model %d\n", modelIdx);
+						}
+						if (ImGui::MenuItem("Clipnodes"))
+						{
+							map->delete_hull(1, modelIdx, -1);
+							map->delete_hull(2, modelIdx, -1);
+							map->delete_hull(3, modelIdx, -1);
+							map->getBspRender()->refreshModelClipnodes(modelIdx);
+							checkValidHulls();
+							logf("Deleted hulls 1-3 on model %d\n", modelIdx);
+						}
 
+						ImGui::Separator();
+
+						for (int i = 0; i < MAX_MAP_HULLS; i++)
+						{
+							bool isHullValid = model.iHeadnodes[i] >= 0;
+
+							if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
+							{
+								map->delete_hull(i, modelIdx, -1);
+								checkValidHulls();
+								if (i == 0)
+									map->getBspRender()->refreshModel(modelIdx);
+								else
+									map->getBspRender()->refreshModelClipnodes(modelIdx);
+								logf("Deleted hull %d on model %d\n", i, modelIdx);
+							}
+						}
+
+						ImGui::EndMenu();
+					}
+				}
 				if (ImGui::BeginMenu("Simplify Hull", !app->isLoading))
 				{
 					if (ImGui::MenuItem("Clipnodes"))
 					{
-						map->simplify_model_collision(app->pickInfo.modelIdx, 1);
-						map->simplify_model_collision(app->pickInfo.modelIdx, 2);
-						map->simplify_model_collision(app->pickInfo.modelIdx, 3);
-						map->getBspRender()->refreshModelClipnodes(app->pickInfo.modelIdx);
-						logf("Replaced hulls 1-3 on model %d with a box-shaped hull\n", app->pickInfo.modelIdx);
+						map->simplify_model_collision(modelIdx, 1);
+						map->simplify_model_collision(modelIdx, 2);
+						map->simplify_model_collision(modelIdx, 3);
+						map->getBspRender()->refreshModelClipnodes(modelIdx);
+						logf("Replaced hulls 1-3 on model %d with a box-shaped hull\n", modelIdx);
 					}
 
 					ImGui::Separator();
 
 					for (int i = 1; i < MAX_MAP_HULLS; i++)
 					{
-						bool isHullValid = model.iHeadnodes[i] >= 0;
+						bool isHullValid = map->models[modelIdx].iHeadnodes[i] >= 0;
 
 						if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
 						{
-							map->simplify_model_collision(app->pickInfo.modelIdx, 1);
-							map->getBspRender()->refreshModelClipnodes(app->pickInfo.modelIdx);
-							logf("Replaced hull %d on model %d with a box-shaped hull\n", i, app->pickInfo.modelIdx);
+							map->simplify_model_collision(modelIdx, 1);
+							map->getBspRender()->refreshModelClipnodes(modelIdx);
+							logf("Replaced hull %d on model %d with a box-shaped hull\n", i, modelIdx);
 						}
 					}
 
 					ImGui::EndMenu();
 				}
 
-				bool canRedirect = model.iHeadnodes[1] != model.iHeadnodes[2] || model.iHeadnodes[1] != model.iHeadnodes[3];
+				bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] || map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
 
 				if (ImGui::BeginMenu("Redirect Hull", canRedirect && !app->isLoading))
 				{
@@ -634,14 +638,14 @@ void Gui::draw3dContextMenus()
 								if (i == k)
 									continue;
 
-								bool isHullValid = model.iHeadnodes[k] >= 0 && model.iHeadnodes[k] != model.iHeadnodes[i];
+								bool isHullValid = map->models[modelIdx].iHeadnodes[k] >= 0 && map->models[modelIdx].iHeadnodes[k] != map->models[modelIdx].iHeadnodes[i];
 
 								if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
 								{
-									model.iHeadnodes[i] = model.iHeadnodes[k];
-									map->getBspRender()->refreshModelClipnodes(app->pickInfo.modelIdx);
+									map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
+									map->getBspRender()->refreshModelClipnodes(modelIdx);
 									checkValidHulls();
-									logf("Redirected hull %d to hull %d on model %d\n", i, k, app->pickInfo.modelIdx);
+									logf("Redirected hull %d to hull %d on model %d\n", i, k, modelIdx);
 								}
 							}
 
@@ -654,7 +658,7 @@ void Gui::draw3dContextMenus()
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && app->pickInfo.modelIdx >= 0))
+				if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && modelIdx >= 0))
 				{
 					DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", app->pickInfo);
 					command->execute();
@@ -666,17 +670,17 @@ void Gui::draw3dContextMenus()
 					ImGui::TextUnformatted("Create a copy of this BSP model and assign to this entity.\n\nThis lets you edit the model for this entity without affecting others.");
 					ImGui::EndTooltip();
 				}
-				if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && app->pickInfo.modelIdx >= 0))
+				if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && modelIdx >= 0))
 				{
-					if (app->pickInfo.modelIdx)
+					if (modelIdx)
 					{
-						ExportModel(map, app->pickInfo.modelIdx, 0);
+						ExportModel(map, modelIdx, 0);
 					}
 				}
 				/*if (ImGui::MenuItem("Export .bsp WATER(true collision)", 0, false, !app->isLoading)) {
-					if (app->pickInfo.modelIdx)
+					if (modelIdx)
 					{
-						ExportModel(map, app->pickInfo.modelIdx, 2);
+						ExportModel(map, modelIdx, 2);
 					}
 				}*/
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1061,9 +1065,16 @@ void Gui::drawMenuBar()
 				{
 					if (ImGui::BeginMenu((std::string("Map ") + map->bsp_name + ".bsp").c_str()))
 					{
+						int modelIdx = -1;
+
+						if (app->pickInfo.entIdx[0] >= 0)
+						{
+							modelIdx = map->ents[app->pickInfo.entIdx[0]]->getBspModelIdx();
+						}
+
 						for (int i = 0; i < map->modelCount; i++)
 						{
-							if (ImGui::MenuItem(("Export Model" + std::to_string(i) + ".bsp").c_str(), NULL, app->pickInfo.modelIdx == i))
+							if (ImGui::MenuItem(("Export Model" + std::to_string(i) + ".bsp").c_str(), NULL, modelIdx == i))
 							{
 								ExportModel(map, i, 0);
 							}
@@ -1557,18 +1568,22 @@ void Gui::drawToolbar()
 
 void Gui::FaceSelectePressed()
 {
-	if (app->pickInfo.modelIdx > 0 && app->pickMode == PICK_FACE)
+	if (app->pickInfo.entIdx[0] >= 0 && app->pickMode == PICK_FACE)
 	{
 		Bsp* map = app->getSelectedMap();
 		if (map)
 		{
-			BspRenderer* mapRenderer = map->getBspRender();
-			BSPMODEL& model = map->models[app->pickInfo.modelIdx];
-			for (int i = 0; i < model.nFaces; i++)
+			int modelIdx = map->ents[app->pickInfo.entIdx[0]]->getBspModelIdx();
+			if (modelIdx >= 0)
 			{
-				int faceIdx = model.iFirstFace + i;
-				mapRenderer->highlightFace(faceIdx, true);
-				app->selectedFaces.push_back(faceIdx);
+				BspRenderer* mapRenderer = map->getBspRender();
+				BSPMODEL& model = map->models[modelIdx];
+				for (int i = 0; i < model.nFaces; i++)
+				{
+					int faceIdx = model.iFirstFace + i;
+					mapRenderer->highlightFace(faceIdx, true);
+					app->selectedFaces.push_back(faceIdx);
+				}
 			}
 		}
 	}
@@ -1755,12 +1770,20 @@ void Gui::drawDebugWidget()
 
 				if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
 				{
-					if (app->pickInfo.entIdx[0])
+					if (app->pickInfo.entIdx.size())
 					{
 						ImGui::Text("Entity ID: %d", app->pickInfo.entIdx[0]);
 					}
 
-					if (app->pickInfo.modelIdx > 0)
+					int modelIdx = -1;
+
+					if (app->pickInfo.entIdx[0] >= 0)
+					{
+						modelIdx = map->ents[app->pickInfo.entIdx[0]]->getBspModelIdx();
+					}
+
+
+					if (modelIdx > 0)
 					{
 						ImGui::Checkbox("Debug clipnodes", &app->debugClipnodes);
 						ImGui::SliderInt("Clipnode", &app->debugInt, 0, app->debugIntMax);
@@ -1773,10 +1796,10 @@ void Gui::drawDebugWidget()
 					{
 						BSPFACE& face = map->faces[app->pickInfo.faceIdx];
 
-						if (app->pickInfo.modelIdx > 0)
+						if (modelIdx > 0)
 						{
-							BSPMODEL& model = map->models[app->pickInfo.modelIdx];
-							ImGui::Text("Model ID: %d", app->pickInfo.modelIdx);
+							BSPMODEL& model = map->models[modelIdx];
+							ImGui::Text("Model ID: %d", modelIdx);
 
 							ImGui::Text("Model polies: %d", model.nFaces);
 						}
@@ -1813,15 +1836,22 @@ void Gui::drawDebugWidget()
 				}
 			}
 		}
+		int modelIdx = -1;
+
+		if (map && app->pickInfo.entIdx[0] >= 0)
+		{
+			modelIdx = map->ents[app->pickInfo.entIdx[0]]->getBspModelIdx();
+		}
 
 		std::string bspTreeTitle = "BSP Tree";
-		if (app->pickInfo.modelIdx >= 0)
+		if (modelIdx >= 0)
 		{
-			bspTreeTitle += " (Model " + std::to_string(app->pickInfo.modelIdx) + ")";
+			bspTreeTitle += " (Model " + std::to_string(modelIdx) + ")";
 		}
+
 		if (ImGui::CollapsingHeader((bspTreeTitle + "##bsptree").c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			if (app->pickInfo.modelIdx >= 0)
+			if (modelIdx >= 0)
 			{
 				if (!map)
 				{
@@ -1843,7 +1873,7 @@ void Gui::drawDebugWidget()
 						std::vector<int> nodeBranch;
 						int leafIdx;
 						int childIdx = -1;
-						int headNode = map->models[app->pickInfo.modelIdx].iHeadnodes[i];
+						int headNode = map->models[modelIdx].iHeadnodes[i];
 						int contents = map->pointContents(headNode, localCamera, i, nodeBranch, leafIdx, childIdx);
 
 						ImGui::PushStyleColor(ImGuiCol_Text, hullColors[i]);
@@ -4230,7 +4260,6 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 			{
 				Entity* ent = map->ents[entIdx];
 				app->pickInfo.entIdx[0] = entIdx;
-				app->pickInfo.modelIdx = ent->getBspModelIdx();
 				// map should already be valid if limits are showing
 
 				if (ImGui::IsMouseDoubleClicked(0))

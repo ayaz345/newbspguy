@@ -95,7 +95,6 @@ struct RenderClipnodes
 struct PickInfo
 {
 	std::vector<int> entIdx;
-	int modelIdx;
 	int faceIdx;
 	float bestDist;
 	PickInfo()
@@ -103,7 +102,7 @@ struct PickInfo
 		entIdx.clear();
 		entIdx.push_back(-1);
 		bestDist = 0.0f;
-		modelIdx = faceIdx = -1;
+		faceIdx = -1;
 	}
 };
 

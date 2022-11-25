@@ -1937,13 +1937,11 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 
 	// write separating plane
 
-	if (separationPlane.nType != -1)
-	{
-		BSPPLANE* newThisPlanes = new BSPPLANE[mapA.planeCount + 1];
-		memcpy(newThisPlanes, mapA.planes, mapA.planeCount * sizeof(BSPPLANE));
-		newThisPlanes[mapA.planeCount] = separationPlane;
-		mapA.replace_lump(LUMP_PLANES, newThisPlanes, (mapA.planeCount + 1) * sizeof(BSPPLANE));
-	}
+	BSPPLANE* newThisPlanes = new BSPPLANE[mapA.planeCount + 1];
+	memcpy(newThisPlanes, mapA.planes, mapA.planeCount * sizeof(BSPPLANE));
+	newThisPlanes[mapA.planeCount] = separationPlane;
+	mapA.replace_lump(LUMP_PLANES, newThisPlanes, (mapA.planeCount + 1) * sizeof(BSPPLANE));
+	
 	int separationPlaneIdx = mapA.planeCount - 1;
 
 
@@ -1957,14 +1955,12 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 			0, // first face
 			0  // n faces (none since this plane is in the void)
 		};
-		if (separationPlane.nType != -1)
+
+		if (swapNodeChildren)
 		{
-			if (swapNodeChildren)
-			{
-				short temp = headNode.iChildren[0];
-				headNode.iChildren[0] = headNode.iChildren[1];
-				headNode.iChildren[1] = temp;
-			}
+			short temp = headNode.iChildren[0];
+			headNode.iChildren[0] = headNode.iChildren[1];
+			headNode.iChildren[1] = temp;
 		}
 
 		BSPNODE* newThisNodes = new BSPNODE[mapA.nodeCount + 1];
@@ -2000,14 +1996,11 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 				newHeadNodes[i].iChildren[1] = CONTENTS_EMPTY;
 			}
 
-			if (separationPlane.nType != -1)
+			if (swapNodeChildren)
 			{
-				if (swapNodeChildren)
-				{
-					short temp = newHeadNodes[i].iChildren[0];
-					newHeadNodes[i].iChildren[0] = newHeadNodes[i].iChildren[1];
-					newHeadNodes[i].iChildren[1] = temp;
-				}
+				short temp = newHeadNodes[i].iChildren[0];
+				newHeadNodes[i].iChildren[0] = newHeadNodes[i].iChildren[1];
+				newHeadNodes[i].iChildren[1] = temp;
 			}
 		}
 

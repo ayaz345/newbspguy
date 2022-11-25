@@ -83,7 +83,7 @@ public:
 	bool move(vec3 offset, int modelIdx = 0, bool onlyModel = false);
 
 	void move_texinfo(int idx, vec3 offset);
-	void write(std::string path);
+	void write(const std::string & path);
 
 	void print_info(bool perModelStats, int perModelLimit, int sortMode);
 	void print_model_hull(int modelIdx, int hull);
@@ -234,9 +234,9 @@ public:
 
 	BspRenderer* getBspRender();
 
-	void ExportToObjWIP(std::string path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1);
+	void ExportToObjWIP(const std::string & path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1);
 
-	void ExportToMapWIP(std::string path);
+	void ExportToMapWIP(const std::string & path);
 
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 

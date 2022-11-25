@@ -355,7 +355,7 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 			continue;
 		}
 
-		memset(compressed, 0, sizeof(compressed));
+		memset(compressed, 0, MAX_MAP_LEAVES / 8);
 
 		src = uncompressed + i * g_bitbytes;
 
