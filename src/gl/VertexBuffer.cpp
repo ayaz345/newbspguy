@@ -54,8 +54,6 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const voi
 	addAttributes(attFlags);
 	setData(dat, numVerts, primitive);
 	vboId = 0xFFFFFFFF;
-
-	//glGenQueries(1, &drawQuery);
 }
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive)
@@ -66,7 +64,6 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primi
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
-//	glGenQueries(1, &drawQuery);
 }
 
 VertexBuffer::~VertexBuffer()
@@ -76,8 +73,6 @@ VertexBuffer::~VertexBuffer()
 	{
 		delete[] data;
 	}
-	//glDeleteQueries(1, &drawQuery);
-	//drawQuery = -1;
 }
 
 void VertexBuffer::addAttributes(int attFlags)
@@ -202,6 +197,7 @@ void VertexBuffer::upload()
 		{
 			continue;
 		}
+		glBindBuffer(GL_ARRAY_BUFFER, vboId);
 		glEnableVertexAttribArray(a.handle);
 		glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
 	}
@@ -262,11 +258,15 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 			glDisableVertexAttribArray(a.handle);
 		}
 
-		if (vboId != 0xFFFFFFFF)
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, 0);
-		}
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
 
+		for (int i = 0; i < attribs.size(); i++)
+		{
+			VertexAttr& a = attribs[i];
+			if (a.handle == -1)
+				continue;
+			glDisableVertexAttribArray(a.handle);
+		}
 	}
 }
 
