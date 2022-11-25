@@ -1162,7 +1162,8 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		//renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
 		//renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 		//renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat.rotate(angles.x * (PI / 180.0), angles.y * (PI / 180.0f), angles.z * (PI / 180.0f));
+		
+		renderEnts[entIdx].modelMat.rotate(angles.y, -angles.x, angles.z);
 		/*renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));*/
@@ -1191,27 +1192,34 @@ void BspRenderer::refreshEnt(int entIdx)
 
 	if (ent->hasKey("angle") && (!ent->hasKey("angles") || ent->keyvalues["angles"].size() == 0))
 	{
+		//YawAngle
 		float y = atof(ent->keyvalues["angle"].c_str());
 
 		vec3 angles;
 
 		if (y >= 0.0f)
 		{
-			angles.x = 0.0f;
 			angles.y = y;
 		}
 		else if ((int)y == -1)
 		{
 			angles.x = -90.0f;
 			angles.y = 0.0f;
+			angles.z = 0.0f;
 		}
-		else
+		else if ((int)y == -2)
 		{
 			angles.x = 90.0f;
 			angles.y = 0.0f;
+			angles.z = 0.0f;
+		}
+		else
+		{
+			angles.x = 0.0f;
+			angles.y = 0.0f;
+			angles.z = 0.0f;
 		}
 
-		angles.z = 0.0f;
 		setRenderAngles(entIdx, angles);
 	}
 

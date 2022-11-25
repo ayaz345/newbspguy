@@ -124,6 +124,39 @@ void mat4x4::rotateZ(float r)
 	mult(rmat);
 }
 
+void mat4x4::rotate(float pitch, float yaw, float roll)
+{
+	float angle;
+	float sr, sp, sy, cr, cp, cy;
+
+	angle = yaw * (PI * 2 / 360);
+	sy = sin(angle);
+	cy = cos(angle);
+	angle = pitch * (PI * 2 / 360);
+	sp = sin(angle);
+	cp = cos(angle);
+	angle = roll * (PI * 2 / 360);
+	sr = sin(angle);
+	cr = cos(angle);
+	float mat[16] = {0};
+	mat[0* 4 + 0] = cp * cy;
+	mat[1* 4 + 0] = cp * sy;
+	mat[2* 4 + 0] = -sp;
+	mat[0* 4 + 1] = sr * sp * cy + cr * -sy;
+	mat[1* 4 + 1] = sr * sp * sy + cr * cy;
+	mat[2* 4 + 1] = sr * cp;
+	mat[0* 4 + 2] = (cr * sp * cy + -sr * -sy);
+	mat[1* 4 + 2] = (cr * sp * sy + -sr * cy);
+	mat[2* 4 + 2] = cr * cp;
+	mat[0* 4 + 3] = 0.0;
+	mat[1* 4 + 3] = 0.0;
+	mat[2* 4 + 3] = 0.0;
+	mat[3 * 4 + 0] = 0.0;
+	mat[3 * 4 + 1] = 0.0;
+	mat[3 * 4 + 2] = 0.0;
+	mat[3 * 4 + 3] = 1.0;
+	mult(mat);
+}/*
 void mat4x4::rotate(float roll,float yaw, float pitch)
 {
 	float tmp_ch = cosf(-yaw);
@@ -153,7 +186,7 @@ void mat4x4::rotate(float roll,float yaw, float pitch)
 	rmat[3 * 4 + 3] = 1.0;
 
 	mult(rmat);
-}
+}*/
 /*
 void mat4x4::rotate(float x, float y, float z)
 {

@@ -323,6 +323,7 @@ vec3 parseVector(const std::string& s)
 bool IsEntNotSupportAngles(std::string& entname)
 {
 	if (entname == "func_wall" ||
+		entname == "func_wall_toggle" ||
 		entname == "func_illusionary" ||
 		entname == "spark_shower" ||
 		entname == "func_plat" ||
