@@ -1133,13 +1133,13 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 {
 	if (!map->ents[entIdx]->hasKey("classname"))
 	{
-		renderEnts[entIdx].modelMat.rotate(angles.x * (PI / 180.0), angles.y * (PI / 180.0f), angles.z * (PI / 180.0f));
+		renderEnts[entIdx].modelMat.rotate(angles.y, -angles.x, angles.z);
 		return;
 	}
 	if (map->ents[entIdx]->keyvalues["classname"] == "func_breakable")
 	{
 		// based at cs 1.6 gamedll
-		renderEnts[entIdx].modelMat.rotate(angles.x * (PI / 180.0), 0, angles.z * (PI / 180.0f));
+		renderEnts[entIdx].modelMat.rotate(0, -angles.x, angles.z);
 	}
 	else if (IsEntNotSupportAngles(map->ents[entIdx]->keyvalues["classname"]))
 	{
@@ -1150,11 +1150,11 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		// based at cs 1.6 gamedll
 		if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
 		{
-			renderEnts[entIdx].modelMat.rotate(angles.y * (PI / 180.0), 0, angles.z * (PI / 180.0f));
+			renderEnts[entIdx].modelMat.rotate(angles.y, 0, angles.z);
 		}
 		else
 		{
-			renderEnts[entIdx].modelMat.rotate(angles.x * (PI / 180.0), angles.y * (PI / 180.0f), angles.z * (PI / 180.0f));
+			renderEnts[entIdx].modelMat.rotate(angles.y, -angles.x, angles.z);
 		}
 	}
 	else
