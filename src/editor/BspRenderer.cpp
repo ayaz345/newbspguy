@@ -1849,7 +1849,8 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 	{
 		if (*tmpMap || *tmpMap == map)
 		{
-			tempPickInfo.entIdx[0] = 0;
+			tempPickInfo.selectedEnts.clear();
+			tempPickInfo.selectedEnts.push_back(0);
 			*tmpMap = map;
 			foundBetterPick = true;
 		}
@@ -1882,7 +1883,8 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			{
 				if (!*tmpMap || *tmpMap == map)
 				{
-					tempPickInfo.entIdx[0] = i;
+					tempPickInfo.selectedEnts.clear();
+					tempPickInfo.selectedEnts.push_back(i);
 					*tmpMap = map;
 					foundBetterPick = true;
 				}
@@ -1896,8 +1898,8 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			{
 				if (!*tmpMap || *tmpMap == map)
 				{
-					tempPickInfo.entIdx[0] = i;
-					tempPickInfo.faceIdx = -1;
+					tempPickInfo.selectedEnts.clear();
+					tempPickInfo.selectedEnts.push_back(i);
 					*tmpMap = map;
 					foundBetterPick = true;
 				}
@@ -1908,7 +1910,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 	return foundBetterPick;
 }
 
-bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo)
+bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& tempPickInfo)
 {
 	if (map->modelCount <= 0)
 		return false;
@@ -1934,12 +1936,13 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 			}
 		}
 
-		float t = pickInfo.bestDist;
+		float t = tempPickInfo.bestDist;
 		if (pickFaceMath(start, dir, faceMath, t))
 		{
 			foundBetterPick = true;
-			pickInfo.bestDist = t;
-			pickInfo.faceIdx = model.iFirstFace + k;
+			tempPickInfo.bestDist = t;
+			tempPickInfo.selectedFaces.clear();
+			tempPickInfo.selectedFaces.push_back(model.iFirstFace + k);
 		}
 	}
 
@@ -1958,12 +1961,12 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 		{
 			FaceMath& faceMath = renderClipnodes[modelIdx].faceMaths[hullIdx][i];
 
-			float t = pickInfo.bestDist;
+			float t = tempPickInfo.bestDist;
 			if (pickFaceMath(start, dir, faceMath, t))
 			{
 				foundBetterPick = true;
-				pickInfo.bestDist = t;
-				pickInfo.faceIdx = -1;
+				tempPickInfo.bestDist = t;
+				tempPickInfo.selectedFaces.clear();
 			}
 		}
 	}

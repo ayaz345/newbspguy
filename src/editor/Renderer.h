@@ -170,8 +170,6 @@ public:
 	void deselectMap();
 	void clearSelection();
 	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
-
-	std::vector<int> selectedFaces;
 private:
 	Bsp* SelectedMap = NULL;
 

@@ -146,6 +146,7 @@ private:
 	ModelInfo calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val, unsigned int max, bool isMem);
 	void checkValidHulls();
 	void reloadLimits();
+	void ExportOneBigLightmap(Bsp* map);
 
 	void clearLog();
 	void addLog(const char* s);

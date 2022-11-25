@@ -94,15 +94,16 @@ struct RenderClipnodes
 
 struct PickInfo
 {
-	std::vector<int> entIdx;
-	int faceIdx;
+	std::vector<int> selectedEnts;
+	std::vector<int> selectedFaces;
+
 	float bestDist;
 	PickInfo()
 	{
-		entIdx.clear();
-		entIdx.push_back(-1);
+		selectedEnts.clear();
+		selectedEnts.push_back(-1);
+		selectedFaces.clear();
 		bestDist = 0.0f;
-		faceIdx = -1;
 	}
 };
 
