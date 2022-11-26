@@ -1244,7 +1244,18 @@ void Renderer::drawEntConnections()
 
 void Renderer::controls()
 {
-	canControl = !gui->imgui_io->WantCaptureKeyboard && !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
+	static bool blockMoving = false;
+
+	oldLeftMouse = curLeftMouse;
+	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+	oldRightMouse = curRightMouse;
+	curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+
+	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
+	{
+		oldPressed[i] = pressed[i];
+		oldReleased[i] = released[i];
+	}
 
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
 	{
@@ -1258,15 +1269,24 @@ void Renderer::controls()
 	anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
 	anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
 
+	canControl = !gui->imgui_io->WantCaptureKeyboard && !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
 
-	if (canControl)
+
+	if (blockMoving)
 	{
-		if (anyCtrlPressed && (oldPressed[GLFW_KEY_A] || pressed[GLFW_KEY_A]) && released[GLFW_KEY_A]
+		if (!anyCtrlPressed || !pressed[GLFW_KEY_A])
+			blockMoving = false;
+	}
+
+	if (canControl && !blockMoving)
+	{
+		if (anyCtrlPressed && !oldPressed[GLFW_KEY_A] && pressed[GLFW_KEY_A]
 			&& pickMode == PICK_FACE && pickInfo.selectedFaces.size() == 1)
 		{
 			Bsp* map = SelectedMap;
 			if (map)
 			{
+				blockMoving = true;
 				BSPFACE& selface = map->faces[pickInfo.selectedFaces[0]];
 				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
 				deselectFaces();
@@ -1290,7 +1310,6 @@ void Renderer::controls()
 
 		cameraOrigin += getMoveDir() * (float)frameTimeScale;
 
-
 		moveGrabbedEnt();
 
 		vertexEditControls();
@@ -1311,17 +1330,6 @@ void Renderer::controls()
 	if (!gui->imgui_io->WantTextInput)
 	{
 		globalShortcutControls();
-	}
-
-	oldLeftMouse = curLeftMouse;
-	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	oldRightMouse = curRightMouse;
-	curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-
-	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
-	{
-		oldPressed[i] = pressed[i];
-		oldReleased[i] = released[i];
 	}
 
 	oldScroll = g_scroll;

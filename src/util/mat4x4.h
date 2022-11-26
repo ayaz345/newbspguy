@@ -5,7 +5,7 @@
 // A row-major 4x4 matrix for use in OpenGL shader programs
 struct mat4x4
 {
-	float m[16];
+	float m[16] = {0.0f};
 
 	void loadIdentity();
 
