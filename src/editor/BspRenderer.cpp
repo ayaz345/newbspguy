@@ -1208,7 +1208,7 @@ void BspRenderer::refreshEnt(int entIdx)
 		{
 			float y = atof(ent->keyvalues["angle"].c_str());
 
-			if (y >= 0.0f || ent->isBspModel())
+			if (y >= 0.0f)
 			{
 				renderEnts[entIdx].angles.y = y;
 			}
