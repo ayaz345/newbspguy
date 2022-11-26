@@ -2481,6 +2481,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 	float startY = 0;
 	for (int i = 0; i < ent->keyOrder.size() && i < MAX_KEYS_PER_ENT; i++)
 	{
+
 		const char* item = dragIds[i];
 
 		{
@@ -2567,19 +2568,22 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			ImGui::InputText(("##val" + std::to_string(i) + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[ent->keyOrder[i]], ImGuiInputTextFlags_CallbackAlways,
 							 TextChangeCallback::keyValueChanged, &valueIds[i]);
 
-			if (ent->keyOrder[i].find("angles") != std::string::npos)
+			if (ent->keyOrder[i] == "angles" || 
+				ent->keyOrder[i] == "angle")
 			{
-				ImGui::SetNextItemWidth(inputWidth);
 				if (IsEntNotSupportAngles(ent->keyvalues["classname"]))
 				{
+					ImGui::SetNextItemWidth(inputWidth);
 					ImGui::TextUnformatted("ANGLES NOT SUPPORTED");
 				}
 				else if (ent->keyvalues["classname"] == "env_sprite")
 				{
+					ImGui::SetNextItemWidth(inputWidth);
 					ImGui::TextUnformatted("ANGLES PARTIALLY SUPPORT");
 				}
 				else if (ent->keyvalues["classname"] == "func_breakable")
 				{
+					ImGui::SetNextItemWidth(inputWidth);
 					ImGui::TextUnformatted("ANGLES Y NOT SUPPORT");
 				}
 			}
@@ -2592,14 +2596,15 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			ImGui::NextColumn();
 		}
 		{
+			std::string keyOrdname = ent->keyOrder[i];
 			ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
 			ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
-			if (ImGui::Button((" X ##del" + ent->keyOrder[i]).c_str()))
+			if (ImGui::Button((" X ##delorder" + keyOrdname).c_str()))
 			{
-				ent->removeKeyvalue(ent->keyOrder[i]);
+				ent->removeKeyvalue(keyOrdname);
 				map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
-				if (ent->keyOrder[i] == "model")
+				if (keyOrdname == "model")
 					map->getBspRender()->preRenderEnts();
 				app->updateEntConnections();
 				app->pushEntityUndoState("Delete Keyvalue");
@@ -2612,6 +2617,8 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 	if (!keyDragging && wasKeyDragging)
 	{
 		app->pushEntityUndoState("Move Keyvalue");
+		if (app->pickInfo.selectedEnts[0] >= 0)
+		map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
 	}
 
 	wasKeyDragging = keyDragging;

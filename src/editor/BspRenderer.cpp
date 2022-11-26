@@ -1196,42 +1196,43 @@ void BspRenderer::refreshEnt(int entIdx)
 		renderEnts[entIdx].offset = origin;
 	}
 
-	if (ent->hasKey("angles"))
+	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
 	{
-		rotateAngles = true;
-		renderEnts[entIdx].angles = parseVector(ent->keyvalues["angles"]);
-	}
-
-	if (ent->hasKey("angle") && (!ent->hasKey("angles") || ent->keyvalues["angles"].size() == 0))
-	{
-		float y = atof(ent->keyvalues["angle"].c_str());
-
-		vec3 angles;
-
-		if (y >= 0.0f)
+		if (ent->keyOrder[i] == "angles")
 		{
-			angles.y = y;
-		}
-		else if ((int)y == -1)
-		{
-			angles.x = -90.0f;
-			angles.y = 0.0f;
-			angles.z = 0.0f;
-		}
-		else if ((int)y == -2)
-		{
-			angles.x = 90.0f;
-			angles.y = 0.0f;
-			angles.z = 0.0f;
-		}
-		else
-		{
-			angles.x = 0.0f;
-			angles.y = 0.0f;
-			angles.z = 0.0f;
+			rotateAngles = true;
+			renderEnts[entIdx].angles = parseVector(ent->keyvalues["angles"]);
 		}
 
-		renderEnts[entIdx].angles = angles;
+		if (ent->keyOrder[i] == "angle")
+		{
+			float y = atof(ent->keyvalues["angle"].c_str());
+
+			if (y >= 0.0f || ent->isBspModel())
+			{
+				renderEnts[entIdx].angles.y = y;
+			}
+			else if ((int)y == -1)
+			{
+				renderEnts[entIdx].angles.x = -90.0f;
+				renderEnts[entIdx].angles.y = 0.0f;
+				renderEnts[entIdx].angles.z = 0.0f;
+			}
+			else if ((int)y == -2)
+			{
+				renderEnts[entIdx].angles.x = 90.0f;
+				renderEnts[entIdx].angles.y = 0.0f;
+				renderEnts[entIdx].angles.z = 0.0f;
+			}
+			else
+			{
+				renderEnts[entIdx].angles.x = 0.0f;
+				renderEnts[entIdx].angles.y = 0.0f;
+				renderEnts[entIdx].angles.z = 0.0f;
+			}
+
+			rotateAngles = true;
+		}
 	}
 
 	if (rotateAngles)
