@@ -1218,15 +1218,9 @@ void BspRenderer::refreshEnt(int entIdx)
 				renderEnts[entIdx].angles.y = 0.0f;
 				renderEnts[entIdx].angles.z = 0.0f;
 			}
-			else if ((int)y == -2)
+			else if ((int)y <= -2)
 			{
 				renderEnts[entIdx].angles.x = 90.0f;
-				renderEnts[entIdx].angles.y = 0.0f;
-				renderEnts[entIdx].angles.z = 0.0f;
-			}
-			else
-			{
-				renderEnts[entIdx].angles.x = 0.0f;
 				renderEnts[entIdx].angles.y = 0.0f;
 				renderEnts[entIdx].angles.z = 0.0f;
 			}
