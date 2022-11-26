@@ -1,21 +1,20 @@
 #pragma once
 #include <GL/glew.h>
-
 #include <vector>
 #include "ShaderProgram.h"
 #include "util.h"
 
 // Combinable flags for setting common vertex attributes
-#define TEX_2B   (1 << 0)   // 2D unsigned char texture coordinates
+#define TEX_2B   (1 << 0)   // 2D byte texture coordinates
 #define TEX_2S   (1 << 1)   // 2D short texture coordinates
 #define TEX_2F   (1 << 2)   // 2D float texture coordinates
-#define COLOR_3B (1 << 3)   // RGB unsigned char color values
+#define COLOR_3B (1 << 3)   // RGB byte color values
 #define COLOR_3F (1 << 4)   // RGB float color values
-#define COLOR_4B (1 << 5)   // RGBA unsigned char color values
+#define COLOR_4B (1 << 5)   // RGBA byte color values
 #define COLOR_4F (1 << 6)   // RGBA float color values
-#define NORM_3B  (1 << 7)   // 3D unsigned char normal coordinates
+#define NORM_3B  (1 << 7)   // 3D byte normal coordinates
 #define NORM_3F  (1 << 8)   // 3D float normal coordinates
-#define POS_2B   (1 << 9)   // 2D unsigned char position coordinates
+#define POS_2B   (1 << 9)   // 2D byte position coordinates
 #define POS_2S   (1 << 10)  // 2D short position coordinates
 #define POS_2I   (1 << 11)  // 2D integer position coordinates
 #define POS_2F   (1 << 12)  // 2D float position coordinates
@@ -38,13 +37,10 @@ struct VertexAttr
 	int valueType;  // Ex: GL_FLOAT
 	int handle;     // location in shader program (-1 indicates invalid attribute)
 	int size;       // size of the attribute in bytes
-	int normalized; // GL_TRUE/GL_FALSE Ex: unsigned char color values are normalized (0-255 = 0.0-1.0)
+	int normalized; // GL_TRUE/GL_FALSE Ex: byte color values are normalized (0-255 = 0.0-1.0)
 	const char* varName;
 
-	VertexAttr() : handle(-1)
-	{
-		numValues = valueType = handle = size = normalized = 0; varName = "";
-	}
+	VertexAttr() : handle(-1) {}
 
 	VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName);
 };
@@ -55,25 +51,26 @@ public:
 	unsigned char* data = NULL;
 	std::vector<VertexAttr> attribs;
 	int elementSize;
-	GLsizei numVerts;
+	int numVerts;
 	int primitive;
 	bool ownData = false; // set to true if buffer should delete data on destruction
 
 	// Specify which common attributes to use. They will be located in the
 	// shader program. If passing data, note that data is not copied, but referenced
-	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive);
-	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, GLsizei numVerts, int primitive);
+	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive = 0);
+	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, int numVerts, int primitive = 0);
 	~VertexBuffer();
 
 	// Note: Data is not copied into the class - don't delete your data.
 	//       Data will be deleted when the buffer is destroyed.
-	void setData(const void* data, GLsizei numVerts, int primitive);
-	void setData(const void* data, GLsizei numVerts);
+	void setData(const void* data, int numVerts);
 
 	void upload();
 	void deleteBuffer();
 	void setShader(ShaderProgram* program, bool hideErrors = false);
-	void drawRange(GLint start, GLsizei end);
+
+	void drawRange(int primitive, int start, int end);
+	void draw(int primitive);
 	void drawFull();
 
 	void addAttribute(int numValues, int valueType, int normalized, const char* varName);
@@ -81,16 +78,10 @@ public:
 	void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
 
 private:
-	bool needDrawChecked = true;
-	bool needDraw = true;
-	vec3 camOrigin, camAngles;
-	double drawTime = 0.0;
 	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
-	unsigned int vboId = 0xFFFFFFFF;
-
+	unsigned int vboId = (unsigned int)-1;
 	bool attributesBound = false;
-	GLuint drawQuery = 0xFFFFFFFF;
+
 	// add attributes according to the attribute flags
 	void addAttributes(int attFlags);
 };
-

@@ -1,7 +1,6 @@
 #include "VertexBuffer.h"
 #include "util.h"
 #include <string.h>
-#include "Renderer.h"
 
 VertexAttr commonAttr[VBUF_FLAGBITS] =
 {
@@ -22,8 +21,8 @@ VertexAttr commonAttr[VBUF_FLAGBITS] =
 	VertexAttr(3, GL_FLOAT,         -1, GL_FALSE, ""), // POS_3F
 };
 
-VertexAttr::VertexAttr(int numValues, int valueType, int vhandle, int normalized, const char* varName)
-	: numValues(numValues), valueType(valueType), handle(vhandle), normalized(normalized), varName(varName)
+VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName)
+	: numValues(numValues), valueType(valueType), handle(handle), normalized(normalized), varName(varName)
 {
 	switch (valueType)
 	{
@@ -47,30 +46,30 @@ VertexAttr::VertexAttr(int numValues, int valueType, int vhandle, int normalized
 	}
 }
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, GLsizei numVerts, int primitive)
+
+
+VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, int numVerts, int primitive)
 {
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
-	setData(dat, numVerts, primitive);
-	vboId = 0xFFFFFFFF;
+	setData(dat, numVerts);
+	vboId = (unsigned int)-1;
 }
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive)
 {
 	numVerts = 0;
 	data = NULL;
-	vboId = 0xFFFFFFFF;
+	vboId = (unsigned int)-1;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
 }
 
-VertexBuffer::~VertexBuffer()
-{
+VertexBuffer::~VertexBuffer() {
 	deleteBuffer();
-	if (ownData)
-	{
+	if (ownData) {
 		delete[] data;
 	}
 }
@@ -86,8 +85,10 @@ void VertexBuffer::addAttributes(int attFlags)
 				commonAttr[i].handle = shaderProgram->vposID;
 			else if (i >= VBUF_COLOR_START)
 				commonAttr[i].handle = shaderProgram->vcolorID;
-			else
+			else if (i >= VBUF_TEX_START)
 				commonAttr[i].handle = shaderProgram->vtexID;
+			else
+				logf("Unused vertex buffer flag bit %d", i);
 
 			attribs.push_back(commonAttr[i]);
 			elementSize += commonAttr[i].size;
@@ -95,16 +96,14 @@ void VertexBuffer::addAttributes(int attFlags)
 	}
 }
 
-void VertexBuffer::addAttribute(int numValues, int valueType, int normalized, const char* varName)
-{
+void VertexBuffer::addAttribute(int numValues, int valueType, int normalized, const char* varName) {
 	VertexAttr attribute(numValues, valueType, -1, normalized, varName);
 
 	attribs.push_back(attribute);
 	elementSize += attribute.size;
 }
 
-void VertexBuffer::addAttribute(int type, const char* varName)
-{
+void VertexBuffer::addAttribute(int type, const char* varName) {
 
 	int idx = 0;
 	while (type >>= 1) // unroll for more speed...
@@ -112,8 +111,7 @@ void VertexBuffer::addAttribute(int type, const char* varName)
 		idx++;
 	}
 
-	if (idx >= VBUF_FLAGBITS)
-	{
+	if (idx >= VBUF_FLAGBITS) {
 		logf("Invalid attribute type\n");
 		return;
 	}
@@ -126,28 +124,24 @@ void VertexBuffer::addAttribute(int type, const char* varName)
 	elementSize += attribute.size;
 }
 
-void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors)
-{
+void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 	shaderProgram = program;
 	attributesBound = false;
 	for (int i = 0; i < attribs.size(); i++)
 	{
-		if (attribs[i].varName[0] != '\0')
-		{
+		if (strlen(attribs[i].varName) > 0) {
 			attribs[i].handle = -1;
 		}
 	}
 
 	bindAttributes(hideErrors);
-	if (vboId != 0xFFFFFFFF)
-	{
+	if (vboId != -1) {
 		deleteBuffer();
 		upload();
 	}
 }
 
-void VertexBuffer::bindAttributes(bool hideErrors)
-{
+void VertexBuffer::bindAttributes(bool hideErrors) {
 	if (attributesBound)
 		return;
 
@@ -165,21 +159,13 @@ void VertexBuffer::bindAttributes(bool hideErrors)
 	attributesBound = true;
 }
 
-void VertexBuffer::setData(const void* _data, GLsizei _numVerts)
+void VertexBuffer::setData(const void* _data, int _numVerts)
 {
 	data = (unsigned char*)_data;
 	numVerts = _numVerts;
 }
 
-void VertexBuffer::setData(const void* _data, GLsizei _numVerts, int _primitive)
-{
-	data = (unsigned char*)_data;
-	numVerts = _numVerts;
-	primitive = _primitive;
-}
-
-void VertexBuffer::upload()
-{
+void VertexBuffer::upload() {
 	shaderProgram->bind();
 	bindAttributes();
 
@@ -187,14 +173,13 @@ void VertexBuffer::upload()
 	glBindBuffer(GL_ARRAY_BUFFER, vboId);
 	glBufferData(GL_ARRAY_BUFFER, elementSize * numVerts, data, GL_STATIC_DRAW);
 
-	size_t offset = 0;
+	int offset = 0;
 	for (int i = 0; i < attribs.size(); i++)
 	{
 		VertexAttr& a = attribs[i];
-		void* ptr = (void*)offset;
+		void* ptr = ((char*)0) + offset;
 		offset += a.size;
-		if (a.handle == -1)
-		{
+		if (a.handle == -1) {
 			continue;
 		}
 		glBindBuffer(GL_ARRAY_BUFFER, vboId);
@@ -205,37 +190,24 @@ void VertexBuffer::upload()
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
-void VertexBuffer::deleteBuffer()
-{
-	if (vboId != 0xFFFFFFFF)
+void VertexBuffer::deleteBuffer() {
+	if (vboId != (unsigned int)-1)
 		glDeleteBuffers(1, &vboId);
-	vboId = 0xFFFFFFFF;
+	vboId = (unsigned int)-1;
 }
 
-void VertexBuffer::drawRange(GLint start, GLsizei end)
+void VertexBuffer::drawRange(int _primitive, int start, int end)
 {
-	if (start < 0 || start > numVerts)
-		logf("Invalid start index: %d\n", start);
-	else if (end > numVerts || end < 0)
-		logf("Invalid end index: %d\n", end);
-	else if (end - start <= 0)
-		logf("Invalid draw range: %d -> %d\n", start, end);
-	else
+	shaderProgram->bind();
+	bindAttributes();
+
+	char* offsetPtr = (char*)data;
+	if (vboId != (unsigned int)-1) {
+		glBindBuffer(GL_ARRAY_BUFFER, vboId);
+		offsetPtr = NULL;
+	}
 	{
-		char* offsetPtr = (char*)data;
-
-		shaderProgram->bind();
-		bindAttributes();
-
-		if (vboId != 0xFFFFFFFF)
-		{
-			glBindBuffer(GL_ARRAY_BUFFER, vboId);
-			offsetPtr = NULL;
-		}
-
 		int offset = 0;
-
-		// Drop FPS below: FIXME
 		for (int i = 0; i < attribs.size(); i++)
 		{
 			VertexAttr& a = attribs[i];
@@ -246,31 +218,36 @@ void VertexBuffer::drawRange(GLint start, GLsizei end)
 			glEnableVertexAttribArray(a.handle);
 			glVertexAttribPointer(a.handle, a.numValues, a.valueType, a.normalized != 0, elementSize, ptr);
 		}
-		// Drop FPS above 
-
-		glDrawArrays(primitive, start, end - start);
-
-		for (int i = 0; i < attribs.size(); i++)
-		{
-			VertexAttr& a = attribs[i];
-			if (a.handle == -1)
-				continue;
-			glDisableVertexAttribArray(a.handle);
-		}
-
-		glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-		for (int i = 0; i < attribs.size(); i++)
-		{
-			VertexAttr& a = attribs[i];
-			if (a.handle == -1)
-				continue;
-			glDisableVertexAttribArray(a.handle);
-		}
 	}
+
+	if (start < 0 || start > numVerts)
+		logf("Invalid start index: %d\n", start);
+	else if (end > numVerts || end < 0)
+		logf("Invalid end index: %d\n", end);
+	else if (end - start <= 0)
+		logf("Invalid draw range: %d -> %d\n", start, end);
+	else
+		glDrawArrays(_primitive, start, end - start);
+
+	if (vboId != (unsigned int)-1) {
+		glBindBuffer(GL_ARRAY_BUFFER, 0);
+	}
+
+	for (int i = 0; i < attribs.size(); i++)
+	{
+		VertexAttr& a = attribs[i];
+		if (a.handle == -1)
+			continue;
+		glDisableVertexAttribArray(a.handle);
+	}
+}
+
+void VertexBuffer::draw(int _primitive)
+{
+	drawRange(_primitive, 0, numVerts);
 }
 
 void VertexBuffer::drawFull()
 {
-	return drawRange(0, numVerts);
+	drawRange(primitive, 0, numVerts);
 }
