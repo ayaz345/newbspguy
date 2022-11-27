@@ -2568,7 +2568,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			ImGui::InputText(("##val" + std::to_string(i) + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[ent->keyOrder[i]], ImGuiInputTextFlags_CallbackAlways,
 							 TextChangeCallback::keyValueChanged, &valueIds[i]);
 
-			if (ent->keyOrder[i] == "angles" || 
+			if (ent->keyOrder[i] == "angles" ||
 				ent->keyOrder[i] == "angle")
 			{
 				if (IsEntNotSupportAngles(ent->keyvalues["classname"]))
@@ -2618,7 +2618,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 	{
 		app->pushEntityUndoState("Move Keyvalue");
 		if (app->pickInfo.selectedEnts[0] >= 0)
-		map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
+			map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
 	}
 
 	wasKeyDragging = keyDragging;
@@ -5461,38 +5461,38 @@ void Gui::drawLightMapTool()
 				map->getBspRender()->reloadLightmaps();
 			}
 			ImGui::Separator();
-		}
-		ImGui::Text("WARNING! SAVE MAP\nBEFORE NEXT ACTION!");
-		ImGui::Separator();
-		if (ImGui::Button("Export ALL", ImVec2(125, 0)))
-		{
-			logf("Export lightmaps to png files...\n");
-			createDir(GetWorkDir());
-			//for (int z = 0; z < map->faceCount; z++)
-			//{
-			//	lightmaps = 0;
-			//	ExportLightmaps(map->faces[z], z, map);
-			//}
-			ExportOneBigLightmap(map);
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("Import ALL", ImVec2(125, 0)))
-		{
-			logf("Import lightmaps from png files...\n");
-			//for (int z = 0; z < map->faceCount; z++)
-			//{
-			//	lightmaps = 0;
-			//	ImportLightmaps(map->faces[z], z, map);
-			//}
 
-			ImportOneBigLightmapFile(map);
-			map->getBspRender()->reloadLightmaps();
+			ImGui::Text("WARNING! SAVE MAP\nBEFORE NEXT ACTION!");
+			ImGui::Separator();
+			if (ImGui::Button("Export ALL", ImVec2(125, 0)))
+			{
+				logf("Export lightmaps to png files...\n");
+				createDir(GetWorkDir());
+				//for (int z = 0; z < map->faceCount; z++)
+				//{
+				//	lightmaps = 0;
+				//	ExportLightmaps(map->faces[z], z, map);
+				//}
+				ExportOneBigLightmap(map);
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Import ALL", ImVec2(125, 0)))
+			{
+				logf("Import lightmaps from png files...\n");
+				//for (int z = 0; z < map->faceCount; z++)
+				//{
+				//	lightmaps = 0;
+				//	ImportLightmaps(map->faces[z], z, map);
+				//}
+
+				ImportOneBigLightmapFile(map);
+				map->getBspRender()->reloadLightmaps();
+			}
 		}
 		else
 		{
 			ImGui::Text("No face selected");
 		}
-
 	}
 	ImGui::End();
 }

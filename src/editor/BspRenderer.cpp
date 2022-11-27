@@ -1169,7 +1169,6 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 	}
 	else
 	{
-
 		for (const auto& prefix : g_settings.entsNegativePitchPrefix)
 		{
 			if (entClassName.starts_with(prefix))
@@ -1199,7 +1198,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	renderEnts[entIdx].angles = vec3(0, 0, 0);
 	renderEnts[entIdx].pointEntCube = pointEntRenderer->getEntCube(ent);
 
-	bool rotateAngles = false;
+	bool setAngles = false;
 
 	if (ent->hasKey("origin"))
 	{
@@ -1213,11 +1212,12 @@ void BspRenderer::refreshEnt(int entIdx)
 	{
 		if (ent->keyOrder[i] == "angles")
 		{
-			rotateAngles = true;
+			setAngles = true;
 			renderEnts[entIdx].angles = parseVector(ent->keyvalues["angles"]);
 		}
 		if (ent->keyOrder[i] == "angle")
 		{
+			setAngles = true;
 			float y = atof(ent->keyvalues["angle"].c_str());
 
 			if (y >= 0.0f)
@@ -1237,11 +1237,10 @@ void BspRenderer::refreshEnt(int entIdx)
 				renderEnts[entIdx].angles.z = 0.0f;
 			}
 
-			rotateAngles = true;
 		}
 	}
 
-	if (rotateAngles)
+	if (setAngles)
 	{
 		setRenderAngles(entIdx, renderEnts[entIdx].angles);
 	}
