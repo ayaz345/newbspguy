@@ -4330,8 +4330,6 @@ void Bsp::copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::
 	STRUCTUSAGE usage(this);
 	mark_model_structures(modelIdx, &usage, true);
 
-	remap = STRUCTREMAP(this);
-
 	for (unsigned int i = 0; i < usage.count.planes; i++)
 	{
 		if (usage.planes[i])
@@ -4480,7 +4478,7 @@ int Bsp::duplicate_model(int modelIdx)
 	std::vector<BSPNODE> newNodes;
 	std::vector<BSPCLIPNODE> newClipnodes;
 
-	STRUCTREMAP remap;
+	STRUCTREMAP remap(this);
 
 	copy_bsp_model(modelIdx, this, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
 

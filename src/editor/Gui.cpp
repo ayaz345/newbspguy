@@ -4021,9 +4021,9 @@ void Gui::drawImportMapWidget()
 					std::vector<BSPNODE> newNodes;
 					std::vector<BSPCLIPNODE> newClipnodes;
 
-					STRUCTREMAP* remap = new STRUCTREMAP();
+					STRUCTREMAP remap(map);
 
-					bspModel->copy_bsp_model(0, map, *remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
+					bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
 
 					if (newClipnodes.size())
 						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE) * newClipnodes.size());
