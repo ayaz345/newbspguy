@@ -1177,7 +1177,7 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 				renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 				renderEnts[entIdx].modelMat.rotateZ((angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-				break;
+				return;
 			}
 		}
 
