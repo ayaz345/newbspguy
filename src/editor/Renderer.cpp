@@ -189,6 +189,7 @@ void AppSettings::reset()
 	entsNegativePitchPrefix.clear();
 
 	entsNegativePitchPrefix.push_back("ammo_");
+	entsNegativePitchPrefix.push_back("env_sprite");
 	entsNegativePitchPrefix.push_back("cycler");
 	entsNegativePitchPrefix.push_back("item_");
 	entsNegativePitchPrefix.push_back("monster_");
