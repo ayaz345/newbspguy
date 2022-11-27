@@ -122,7 +122,7 @@
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <DebugInformationFormat>
       </DebugInformationFormat>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
       <SDLCheck>false</SDLCheck>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
@@ -191,7 +191,7 @@
     <ClInclude Include=".\..\src\bsp\Bsp.h" />
     <ClCompile Include=".\..\src\bsp\Bsp.cpp" />
     <ClInclude Include=".\..\src\bsp\bsplimits.h" />
-	<ClCompile Include=".\..\src\bsp\bsplimits.cpp" />
+    <ClCompile Include=".\..\src\bsp\bsplimits.cpp" />
     <ClInclude Include=".\..\src\bsp\bsptypes.h" />
     <ClCompile Include=".\..\src\bsp\bsptypes.cpp" />
     <ClInclude Include=".\..\src\bsp\Entity.h" />
