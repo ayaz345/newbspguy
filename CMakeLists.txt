@@ -7,13 +7,13 @@ set(USE_MSVC_RUNTIME_LIBRARY_DLL OFF CACHE BOOL "" FORCE)
 
 project(bspguy LANGUAGES CXX)
 
-set(SOURCE_FILES 
+set(SOURCE_FILES
 	src/main.cpp
-	
+
 	# command line
 	src/cli/CommandLine.h			src/cli/CommandLine.cpp
 	src/cli/ProgressMeter.h			src/cli/ProgressMeter.cpp
-	
+
 	# BSP and related structures
 	src/bsp/forcecrc32.h			src/bsp/forcecrc32.cpp
 	src/bsp/BspMerger.h				src/bsp/BspMerger.cpp
@@ -24,12 +24,12 @@ set(SOURCE_FILES
 	src/bsp/Keyvalue.h				src/bsp/Keyvalue.cpp
 	src/bsp/Wad.h					src/bsp/Wad.cpp
 	src/bsp/remap.h					src/bsp/remap.cpp
-	
+
 	# Math and stuff
 	src/util/util.h					src/util/util.cpp
 	src/util/vectors.h				src/util/vectors.cpp
 	src/util/mat4x4.h				src/util/mat4x4.cpp
-	
+
 	# OpenGL rendering
 	src/gl/shaders.h				src/gl/shaders.cpp
 	src/gl/primitives.h				src/gl/primitives.cpp
@@ -38,7 +38,7 @@ set(SOURCE_FILES
 	src/gl/VertexBuffer.h			src/gl/VertexBuffer.cpp
 	src/gl/Texture.h				src/gl/Texture.cpp
 	src/editor/LightmapNode.h		src/editor/LightmapNode.cpp
-	
+
 	# 3D editor
 	src/editor/Renderer.h			src/editor/Renderer.cpp
 	src/editor/Gui.h				src/editor/Gui.cpp
@@ -47,12 +47,12 @@ set(SOURCE_FILES
 	src/editor/Fgd.h				src/editor/Fgd.cpp
 	src/editor/Clipper.h			src/editor/Clipper.cpp
 	src/editor/Command.h			src/editor/Command.cpp
-	
+
 	# map compiler code
 	src/qtools/rad.h				src/qtools/rad.cpp
 	src/qtools/vis.h				src/qtools/vis.cpp
 	src/qtools/winding.h			src/qtools/winding.cpp
-	
+
 	# library files
 	imgui/imgui.cpp
 	imgui/imgui_tables.cpp
@@ -63,11 +63,11 @@ set(SOURCE_FILES
 	imgui/misc/cpp/imgui_stdlib.cpp
 	src/util/lodepng.h
 	src/util/lodepng.cpp
-	
+
 	# OPENFILEDIALOG
 	src/filedialog/stb_image.h
 	src/filedialog/ImFileDialog.h	src/filedialog/ImFileDialog.cpp
-	
+
 )
 
 include_directories(src)
@@ -93,12 +93,12 @@ add_definitions(-DNDEBUG)
 
 if(MSVC)
 	add_subdirectory(glfw)
-	
+
 	# compile using the static runtime
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /wd4244 /wd4018")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /wd4244 /wd4018 /W0")
-	
+
 	# Disable C++ exceptions
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT bspguy)
 
@@ -107,7 +107,7 @@ if(MSVC)
 	elseif(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/Win32/glew32s.lib)
 	endif()
-	
+
 	source_group("Header Files\\bsp" FILES	src/bsp/forcecrc32.h
 											src/bsp/BspMerger.h
 											src/bsp/Bsp.h
@@ -117,7 +117,7 @@ if(MSVC)
 											src/bsp/Keyvalue.h
 											src/bsp/Wad.h
 											src/bsp/remap.h)
-											
+
 	source_group("Source Files\\bsp" FILES	src/bsp/forcecrc32.cpp
 											src/bsp/BspMerger.cpp
 											src/bsp/Bsp.cpp
@@ -127,27 +127,27 @@ if(MSVC)
 											src/bsp/Keyvalue.cpp
 											src/bsp/Wad.cpp
 											src/bsp/remap.cpp)
-	
+
 	source_group("Header Files\\cli" FILES	src/cli/CommandLine.h
 											src/cli/ProgressMeter.h)
-											
+
 	source_group("Source Files\\cli" FILES	src/cli/CommandLine.cpp
 											src/cli/ProgressMeter.cpp)
-	
+
 	source_group("Header Files\\gl" FILES	src/gl/Shader.h
 											src/gl/ShaderProgram.h
 											src/gl/VertexBuffer.h
 											src/gl/Texture.h
 											src/gl/primitives.h
 											src/gl/shaders.h)
-											
+
 	source_group("Source Files\\gl" FILES	src/gl/Shader.cpp
 											src/gl/ShaderProgram.cpp
 											src/gl/VertexBuffer.cpp
 											src/gl/Texture.cpp
 											src/gl/primitives.cpp
 											src/gl/shaders.cpp)
-											
+
 	source_group("Header Files\\editor" FILES	src/editor/BspRenderer.h
 												src/editor/LightmapNode.h
 												src/editor/Renderer.h
@@ -156,7 +156,7 @@ if(MSVC)
 												src/editor/PointEntRenderer.h
 												src/editor/Command.h
 												src/editor/Clipper.h)
-											
+
 	source_group("Source Files\\editor" FILES	src/editor/BspRenderer.cpp
 												src/editor/LightmapNode.cpp
 												src/editor/Renderer.cpp
@@ -165,25 +165,25 @@ if(MSVC)
 												src/editor/PointEntRenderer.cpp
 												src/editor/Command.cpp
 												src/editor/Clipper.cpp)
-											
+
 	source_group("Header Files\\qtools" FILES	src/qtools/rad.h
 												src/qtools/vis.h
 												src/qtools/winding.h)
-												
+
 	source_group("Source Files\\qtools" FILES	src/qtools/rad.cpp
 												src/qtools/vis.cpp
 												src/qtools/winding.cpp)
-												
+
 	source_group("Header Files\\util" FILES		src/util/util.h
 												src/util/vectors.h
 												src/util/mat4x4.h)
-												
+
 	source_group("Source Files\\util" FILES		src/util/util.cpp
 												src/util/vectors.cpp
 												src/util/mat4x4.cpp)
-	
+
 	source_group("Header Files\\util\\lib" FILES	src/util/lodepng.h)
-	
+
 	source_group("Source Files\\util\\lib" FILES	imgui/imgui.cpp
 													imgui/imgui_tables.cpp
 													imgui/imgui_widgets.cpp
@@ -192,21 +192,21 @@ if(MSVC)
 													imgui/backends/imgui_impl_opengl3.cpp
 													imgui/misc/cpp/imgui_stdlib.cpp
 													src/util/lodepng.cpp)
-													
-	source_group("Header Files\\filedialog" FILES	
+
+	source_group("Header Files\\filedialog" FILES
 													src/filedialog/stb_image.h
 													src/filedialog/ImFileDialog.h)
-	
+
 	source_group("Source Files\\filedialog" FILES	src/filedialog/ImFileDialog.c)
 	add_definitions(-DUSE_FILESYSTEM)
 	add_definitions(-DNOMINMAX)
 else()
 	target_link_libraries(${PROJECT_NAME} GL GLU X11 Xxf86vm Xrandr pthread Xi GLEW stdc++fs)
 	if (CMAKE_VERSION VERSION_GREATER_EQUAL "3.1")
-		set (CMAKE_CXX_STANDARD 17)
+		set (CMAKE_CXX_STANDARD 20)
 		set (CMAKE_CXX_STANDARD_REQUIRED ON)
 	endif ()
-	set(CMAKE_CXX_FLAGS "-Wall -std=c++17")
+	set(CMAKE_CXX_FLAGS "-Wall -std=c++2a")
 	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
 	set(CMAKE_CXX_FLAGS_RELEASE "-Os -fno-exceptions -w -Wfatal-errors")
 endif()
