@@ -189,9 +189,9 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 
 	maxDims += gap;
 
-	float maxMapsPerRow = (MAX_MAP_COORD * 2.0f) / maxDims.x;
-	float maxMapsPerCol = (MAX_MAP_COORD * 2.0f) / maxDims.y;
-	float maxMapsPerLayer = (MAX_MAP_COORD * 2.0f) / maxDims.z;
+	float maxMapsPerRow = (FLT_MAX_COORD * 2.0f) / maxDims.x;
+	float maxMapsPerCol = (FLT_MAX_COORD * 2.0f) / maxDims.y;
+	float maxMapsPerLayer = (FLT_MAX_COORD * 2.0f) / maxDims.z;
 
 	float idealMapsPerAxis = (float)floor(pow(maps.size(), 1 / 3.0f));
 

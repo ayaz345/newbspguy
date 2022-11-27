@@ -2088,7 +2088,7 @@ void Gui::drawKeyvalueEditor()
 		}
 		else
 		{
-			if (!app->pickInfo.selectedEnts[0])
+			if (app->pickInfo.selectedEnts[0] < 0)
 				ImGui::Text("No entity selected");
 			else
 				ImGui::Text("No fgd loaded");
@@ -3529,6 +3529,42 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 4)
 		{
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			static unsigned int vis_data_count = MAX_MAP_VISDATA / (1024 * 1024);
+			static unsigned int light_data_count = MAX_MAP_LIGHTDATA / (1024 * 1024);
+
+			ImGui::DragFloat("MAX FLOAT COORDINATES", &FLT_MAX_COORD, 64.f, 512.f, 2147483647.f, "%.0f");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP MODELS", (int*)&MAX_MAP_MODELS, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP ENTITIES", (int*)&MAX_MAP_ENTS, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP TEXTURES", (int*)&MAX_MAP_TEXTURES, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP NODES", (int*)&MAX_MAP_NODES, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP CLIPNODES", (int*)&MAX_MAP_CLIPNODES, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP LEAVES", (int*)&MAX_MAP_LEAVES, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			if (ImGui::DragInt("MAX MAP VISDATA", (int*)&vis_data_count, 4, 128, 2147483647, "%uMB"))
+			{
+				MAX_MAP_VISDATA = vis_data_count * (1024 * 1024);
+			}
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP EDGES", (int*)&MAX_MAP_EDGES, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::DragInt("MAX MAP SURFEDGES", (int*)&MAX_MAP_SURFEDGES, 4, 128, 2147483647, "%u");
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			if (ImGui::DragInt("MAX MAP LIGHTDATA", (int*)&light_data_count, 4, 128, 2147483647, "%uMB"))
+			{
+				MAX_MAP_LIGHTDATA = light_data_count * (1024 * 1024);
+			}
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			if (ImGui::DragInt("MAX MAP TEXTURE DIMENSION", (int*)&MAX_TEXTURE_DIMENSION, 4, 32, 1048576, "%u"))
+			{
+				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
+			}
 
 		}
 		else if (settingsTab == 5)
@@ -3539,7 +3575,7 @@ void Gui::drawSettings()
 				glfwSwapInterval(vsync ? 1 : 0);
 			}
 			ImGui::DragFloat("Field of View", &app->fov, 0.1f, 1.0f, 150.0f, "%.1f degrees");
-			ImGui::DragFloat("Back Clipping plane", &app->zFar, 10.0f, FLT_MIN_COORD, FLT_MAX_COORD, "%.0f", ImGuiSliderFlags_Logarithmic);
+			ImGui::DragFloat("Back Clipping plane", &app->zFar, 10.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f", ImGuiSliderFlags_Logarithmic);
 			ImGui::Separator();
 
 			bool renderTextures = g_render_flags & RENDER_TEXTURES;

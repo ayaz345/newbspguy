@@ -1138,19 +1138,20 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
 		return;
 	}
+	std::string entClassName = map->ents[entIdx]->keyvalues["classname"];
 	// based at cs 1.6 gamedll
-	if (map->ents[entIdx]->keyvalues["classname"] == "func_breakable")
+	if (entClassName == "func_breakable")
 	{
 		renderEnts[entIdx].angles.y = 0.0f;
 		renderEnts[entIdx].modelMat.rotateY(0.0f);
 		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
 	}
-	else if (IsEntNotSupportAngles(map->ents[entIdx]->keyvalues["classname"]))
+	else if (IsEntNotSupportAngles(entClassName))
 	{
 		renderEnts[entIdx].angles = vec3();
 	}
-	else if (map->ents[entIdx]->keyvalues["classname"] == "env_sprite")
+	else if (entClassName == "env_sprite")
 	{
 		if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
 		{
@@ -1168,6 +1169,18 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 	}
 	else
 	{
+
+		for (const auto& prefix : g_settings.entsNegativePitchPrefix)
+		{
+			if (entClassName.starts_with(prefix))
+			{
+				renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat.rotateZ((angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
+				break;
+			}
+		}
+
 		renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
@@ -1203,7 +1216,6 @@ void BspRenderer::refreshEnt(int entIdx)
 			rotateAngles = true;
 			renderEnts[entIdx].angles = parseVector(ent->keyvalues["angles"]);
 		}
-
 		if (ent->keyOrder[i] == "angle")
 		{
 			float y = atof(ent->keyvalues["angle"].c_str());

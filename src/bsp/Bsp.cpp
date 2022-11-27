@@ -267,7 +267,7 @@ void Bsp::get_bounding_box(vec3& mins, vec3& maxs)
 void Bsp::get_model_vertex_bounds(int modelIdx, vec3& mins, vec3& maxs)
 {
 	mins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	maxs = vec3(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+	maxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
 	BSPMODEL& model = models[modelIdx];
 	/*auto verts = getModelVerts(modelIdx);
@@ -878,12 +878,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel)
 
 	target.nMins += offset;
 	target.nMaxs += offset;
-	if (abs(target.nMins.x) > MAX_MAP_COORD ||
-		abs(target.nMins.y) > MAX_MAP_COORD ||
-		abs(target.nMins.z) > MAX_MAP_COORD ||
-		abs(target.nMaxs.x) > MAX_MAP_COORD ||
-		abs(target.nMaxs.y) > MAX_MAP_COORD ||
-		abs(target.nMaxs.z) > MAX_MAP_COORD)
+	if (abs(target.nMins.x) > FLT_MAX_COORD ||
+		abs(target.nMins.y) > FLT_MAX_COORD ||
+		abs(target.nMins.z) > FLT_MAX_COORD ||
+		abs(target.nMaxs.x) > FLT_MAX_COORD ||
+		abs(target.nMaxs.y) > FLT_MAX_COORD ||
+		abs(target.nMaxs.z) > FLT_MAX_COORD)
 	{
 		logf("\nWARNING: Model moved past safe world boundary!\n");
 	}
@@ -901,12 +901,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel)
 
 		BSPNODE& node = nodes[i];
 
-		if (abs((float)node.nMins[0] + offset.x) > MAX_MAP_COORD ||
-			abs((float)node.nMaxs[0] + offset.x) > MAX_MAP_COORD ||
-			abs((float)node.nMins[1] + offset.y) > MAX_MAP_COORD ||
-			abs((float)node.nMaxs[1] + offset.y) > MAX_MAP_COORD ||
-			abs((float)node.nMins[2] + offset.z) > MAX_MAP_COORD ||
-			abs((float)node.nMaxs[2] + offset.z) > MAX_MAP_COORD)
+		if (abs((float)node.nMins[0] + offset.x) > FLT_MAX_COORD ||
+			abs((float)node.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
+			abs((float)node.nMins[1] + offset.y) > FLT_MAX_COORD ||
+			abs((float)node.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
+			abs((float)node.nMins[2] + offset.z) > FLT_MAX_COORD ||
+			abs((float)node.nMaxs[2] + offset.z) > FLT_MAX_COORD)
 		{
 			logf("\nWARNING: Bounding box for node moved past safe world boundary!\n");
 		}
@@ -927,12 +927,12 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel)
 
 		BSPLEAF& leaf = leaves[i];
 
-		if (abs((float)leaf.nMins[0] + offset.x) > MAX_MAP_COORD ||
-			abs((float)leaf.nMaxs[0] + offset.x) > MAX_MAP_COORD ||
-			abs((float)leaf.nMins[1] + offset.y) > MAX_MAP_COORD ||
-			abs((float)leaf.nMaxs[1] + offset.y) > MAX_MAP_COORD ||
-			abs((float)leaf.nMins[2] + offset.z) > MAX_MAP_COORD ||
-			abs((float)leaf.nMaxs[2] + offset.z) > MAX_MAP_COORD)
+		if (abs((float)leaf.nMins[0] + offset.x) > FLT_MAX_COORD ||
+			abs((float)leaf.nMaxs[0] + offset.x) > FLT_MAX_COORD ||
+			abs((float)leaf.nMins[1] + offset.y) > FLT_MAX_COORD ||
+			abs((float)leaf.nMaxs[1] + offset.y) > FLT_MAX_COORD ||
+			abs((float)leaf.nMins[2] + offset.z) > FLT_MAX_COORD ||
+			abs((float)leaf.nMaxs[2] + offset.z) > FLT_MAX_COORD)
 		{
 			logf("\nWARNING: Bounding box for leaf moved past safe world boundary!\n");
 		}
@@ -955,9 +955,9 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel)
 
 		vert += offset;
 
-		if (abs(vert.x) > MAX_MAP_COORD ||
-			abs(vert.y) > MAX_MAP_COORD ||
-			abs(vert.z) > MAX_MAP_COORD)
+		if (abs(vert.x) > FLT_MAX_COORD ||
+			abs(vert.y) > FLT_MAX_COORD ||
+			abs(vert.z) > FLT_MAX_COORD)
 		{
 			logf("\nWARNING: Vertex moved past safe world boundary!\n");
 		}
@@ -973,8 +973,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel)
 		BSPPLANE& plane = planes[i];
 		vec3 newPlaneOri = offset + (plane.vNormal * plane.fDist);
 
-		if (abs(newPlaneOri.x) > MAX_MAP_COORD || abs(newPlaneOri.y) > MAX_MAP_COORD ||
-			abs(newPlaneOri.z) > MAX_MAP_COORD)
+		if (abs(newPlaneOri.x) > FLT_MAX_COORD || abs(newPlaneOri.y) > FLT_MAX_COORD ||
+			abs(newPlaneOri.z) > FLT_MAX_COORD)
 		{
 			logf("\nWARNING: Plane origin moved past safe world boundary!\n");
 		}
@@ -3956,7 +3956,7 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 	targetModel->iFirstFace = startFace;
 	targetModel->nFaces = 6;
 
-	targetModel->nMaxs = vec3(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+	targetModel->nMaxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	targetModel->nMins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	for (int i = 0; i < 8; i++)
 	{
@@ -4146,7 +4146,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 	targetModel->iFirstFace = startFace;
 	targetModel->nFaces = (int)solid.faces.size();
 
-	targetModel->nMaxs = vec3(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+	targetModel->nMaxs = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	targetModel->nMins = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
 	for (int i = 0; i < solid.hullVerts.size(); i++)
 	{
@@ -4263,7 +4263,7 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 	}
 
 	vec3 vertMin(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 vertMax(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+	vec3 vertMax(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	get_model_vertex_bounds(modelIdx, vertMin, vertMax);
 
 	create_clipnode_box(vertMin, vertMax, &model, hullIdx, true);

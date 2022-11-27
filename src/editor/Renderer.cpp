@@ -128,6 +128,7 @@ void AppSettings::loadDefault()
 	passableEnts.clear();
 	playerOnlyTriggers.clear();
 	monsterOnlyTriggers.clear();
+	entsNegativePitchPrefix.clear();
 
 	entListReload = true;
 
@@ -184,6 +185,16 @@ void AppSettings::reset()
 	monsterOnlyTriggers.clear();
 	monsterOnlyTriggers.push_back("func_monsterclip");
 	monsterOnlyTriggers.push_back("trigger_monsterjump");
+
+	entsNegativePitchPrefix.clear();
+
+	entsNegativePitchPrefix.push_back("ammo_");
+	entsNegativePitchPrefix.push_back("cycler");
+	entsNegativePitchPrefix.push_back("item_");
+	entsNegativePitchPrefix.push_back("monster_");
+	entsNegativePitchPrefix.push_back("weaponbox");
+	entsNegativePitchPrefix.push_back("worlditems");
+	entsNegativePitchPrefix.push_back("xen_");
 }
 
 void AppSettings::load()
@@ -336,9 +347,58 @@ void AppSettings::load()
 			{
 				g_settings.sameDirForEnt = atoi(val.c_str()) != 0;
 			}
-			else if (key == "reload_ent_list")
+			else if (key == "reload_ents_list")
 			{
 				entListReload = atoi(val.c_str()) != 0;
+			}
+			else if (key == "FLT_MAX_COORD")
+			{
+				FLT_MAX_COORD = atof(val.c_str());
+			}
+			else if (key == "MAX_MAP_MODELS")
+			{
+				MAX_MAP_MODELS = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_NODES")
+			{
+				MAX_MAP_NODES = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_CLIPNODES")
+			{
+				MAX_MAP_CLIPNODES = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_LEAVES")
+			{
+				MAX_MAP_LEAVES = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_VISDATA")
+			{
+				MAX_MAP_VISDATA = atoi(val.c_str()) * (1024 * 1024);
+			}
+			else if (key == "MAX_MAP_ENTS")
+			{
+				MAX_MAP_ENTS = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_SURFEDGES")
+			{
+				MAX_MAP_SURFEDGES = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_EDGES")
+			{
+				MAX_MAP_EDGES = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_TEXTURES")
+			{
+				MAX_MAP_TEXTURES = atoi(val.c_str());
+			}
+			else if (key == "MAX_MAP_LIGHTDATA")
+			{
+				MAX_MAP_LIGHTDATA = atoi(val.c_str()) * (1024*1024);
+			}
+			else if (key == "MAX_TEXTURE_DIMENSION")
+			{
+				MAX_TEXTURE_DIMENSION = atoi(val.c_str());
+				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 			}
 			else if (key == "optimizer_cond_ents")
 			{
@@ -441,6 +501,15 @@ void AppSettings::load()
 		monsterOnlyTriggers.clear();
 		monsterOnlyTriggers.push_back("func_monsterclip");
 		monsterOnlyTriggers.push_back("trigger_monsterjump");
+
+		entsNegativePitchPrefix.clear();
+		entsNegativePitchPrefix.push_back("ammo_");
+		entsNegativePitchPrefix.push_back("cycler");
+		entsNegativePitchPrefix.push_back("item_");
+		entsNegativePitchPrefix.push_back("monster_");
+		entsNegativePitchPrefix.push_back("weaponbox");
+		entsNegativePitchPrefix.push_back("worlditems");
+		entsNegativePitchPrefix.push_back("xen_");
 	}
 	entListReload = false;
 }
@@ -484,32 +553,37 @@ void AppSettings::save(std::string path)
 
 	for (int i = 0; i < conditionalPointEntTriggers.size(); i++)
 	{
-		file << "optimizer_cond_ents=" << g_settings.conditionalPointEntTriggers[i] << std::endl;
+		file << "optimizer_cond_ents=" << conditionalPointEntTriggers[i] << std::endl;
 	}
 
 	for (int i = 0; i < entsThatNeverNeedAnyHulls.size(); i++)
 	{
-		file << "optimizer_no_hulls_ents=" << g_settings.entsThatNeverNeedAnyHulls[i] << std::endl;
+		file << "optimizer_no_hulls_ents=" << entsThatNeverNeedAnyHulls[i] << std::endl;
 	}
 
 	for (int i = 0; i < entsThatNeverNeedCollision.size(); i++)
 	{
-		file << "optimizer_no_collision_ents=" << g_settings.entsThatNeverNeedCollision[i] << std::endl;
+		file << "optimizer_no_collision_ents=" << entsThatNeverNeedCollision[i] << std::endl;
 	}
 
 	for (int i = 0; i < passableEnts.size(); i++)
 	{
-		file << "optimizer_passable_ents=" << g_settings.passableEnts[i] << std::endl;
+		file << "optimizer_passable_ents=" << passableEnts[i] << std::endl;
 	}
 
 	for (int i = 0; i < playerOnlyTriggers.size(); i++)
 	{
-		file << "optimizer_player_hull_ents=" << g_settings.playerOnlyTriggers[i] << std::endl;
+		file << "optimizer_player_hull_ents=" << playerOnlyTriggers[i] << std::endl;
 	}
 
 	for (int i = 0; i < monsterOnlyTriggers.size(); i++)
 	{
-		file << "optimizer_monster_hull_ents=" << g_settings.monsterOnlyTriggers[i] << std::endl;
+		file << "optimizer_monster_hull_ents=" << monsterOnlyTriggers[i] << std::endl;
+	}
+
+	for (int i = 0; i < entsNegativePitchPrefix.size(); i++)
+	{
+		file << "negative_pitch_ents=" << entsNegativePitchPrefix[i] << std::endl;
 	}
 
 	file << "vsync=" << g_settings.vsync << std::endl;
@@ -527,6 +601,19 @@ void AppSettings::save(std::string path)
 	file << "auto_import_ent=" << g_settings.autoImportEnt << std::endl;
 	file << "same_dir_for_ent=" << g_settings.sameDirForEnt << std::endl;
 	file << "reload_ent_list=" << g_settings.entListReload << std::endl;
+
+	file << "FLT_MAX_COORD=" << FLT_MAX_COORD << std::endl;
+	file << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << std::endl;
+	file << "MAX_MAP_NODES=" << MAX_MAP_NODES << std::endl;
+	file << "MAX_MAP_CLIPNODES=" << MAX_MAP_CLIPNODES << std::endl;
+	file << "MAX_MAP_LEAVES=" << MAX_MAP_LEAVES << std::endl;
+	file << "MAX_MAP_VISDATA=" << MAX_MAP_VISDATA / (1024*1024) << std::endl;
+	file << "MAX_MAP_ENTS=" << MAX_MAP_ENTS << std::endl;
+	file << "MAX_MAP_SURFEDGES=" << MAX_MAP_SURFEDGES << std::endl;
+	file << "MAX_MAP_EDGES=" << MAX_MAP_EDGES << std::endl;
+	file << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << std::endl;
+	file << "MAX_MAP_LIGHTDATA=" << MAX_MAP_LIGHTDATA / (1024 * 1024) << std::endl;
+	file << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << std::endl;
 
 	file.flush();
 
@@ -888,13 +975,11 @@ void Renderer::renderLoop()
 			}
 		}
 
-		if (pickInfo.selectedEnts[0] == 0)
+		if (pickInfo.selectedEnts[0] <= 0)
 		{
 			if (map && map->is_model)
 			{
 				map->selectModelEnt();
-				if (pickInfo.selectedEnts[0] == 0)
-					pickInfo.selectedEnts[0] = -1;
 			}
 		}
 		if (modelIdx > 0 && pickMode == PICK_OBJECT)
@@ -2619,7 +2704,7 @@ void Renderer::updateDragAxes(vec3 delta)
 		{
 			vec3 entOrigin = ent ? ent->getOrigin() : vec3();
 			vec3 min(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-			vec3 max(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+			vec3 max(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 			int selectTotal = 0;
 			for (int i = 0; i < modelVerts.size(); i++)
 			{
@@ -3196,7 +3281,7 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 	bool scaleFromOrigin = abs(fromDir.x) < EPSILON && abs(fromDir.y) < EPSILON && abs(fromDir.z) < EPSILON;
 
 	vec3 minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 maxDist = vec3(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+	vec3 maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
 	for (int i = 0; i < modelVerts.size(); i++)
 	{
@@ -3279,7 +3364,7 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 		return;
 
 	minDist = vec3(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	maxDist = vec3(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+	maxDist = vec3(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 
 	for (int i = 0; i < modelFaceVerts.size(); i++)
 	{
@@ -3559,7 +3644,7 @@ bool Renderer::splitModelFace()
 		{
 			Face& solidFace = newSolid.faces[i];
 			BSPFACE* bestMatch = NULL;
-			float bestdot = FLT_MIN_COORD;
+			float bestdot = -FLT_MAX_COORD;
 			for (int k = 0; k < oldModel.nFaces; k++)
 			{
 				BSPFACE& bspface = map->faces[oldModel.iFirstFace + k];
@@ -3609,7 +3694,7 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	vec3 fromOrigin = activeAxes.origin;
 
 	vec3 min(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);
-	vec3 max(FLT_MIN_COORD, FLT_MIN_COORD, FLT_MIN_COORD);
+	vec3 max(-FLT_MAX_COORD, -FLT_MAX_COORD, -FLT_MAX_COORD);
 	int selectTotal = 0;
 	for (int i = 0; i < modelVerts.size(); i++)
 	{

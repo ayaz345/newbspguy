@@ -12,16 +12,12 @@
 #define MAX_KEYS_PER_ENT 128
 #define MAXLIGHTMAPS 4
 
-extern unsigned int MAX_MAP_COORD; // stuff breaks past this point
-
 extern float FLT_MAX_COORD;
-extern float FLT_MIN_COORD;
 
 extern unsigned int MAX_MAP_MODELS;
 extern unsigned int MAX_MAP_NODES;
 extern unsigned int MAX_MAP_CLIPNODES;
 extern unsigned int MAX_MAP_LEAVES;
-extern unsigned int MAX_MAP_TEXDATA;
 extern unsigned int MAX_MAP_VISDATA; // 64 MB
 extern unsigned int MAX_MAP_ENTS;
 extern unsigned int MAX_MAP_SURFEDGES;

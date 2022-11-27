@@ -101,6 +101,7 @@ struct AppSettings
 	std::vector<std::string> passableEnts;
 	std::vector<std::string> playerOnlyTriggers;
 	std::vector<std::string> monsterOnlyTriggers;
+	std::vector<std::string> entsNegativePitchPrefix;
 
 	void loadDefault();
 	void load();
