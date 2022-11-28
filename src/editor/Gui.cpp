@@ -2238,7 +2238,6 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 							}
 							return 1;
 						}
-
 						InputData* linputData = (InputData*)data->UserData;
 						Entity* ent = linputData->entRef;
 
@@ -2255,14 +2254,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 						}
 						if (newVal.empty())
 						{
-							if (linputData->defaultValue.length())
-							{
-								ent->setOrAddKeyvalue(linputData->key, linputData->defaultValue);
-							}
-							else
-							{
-								ent->removeKeyvalue(linputData->key);
-							}
+							ent->setOrAddKeyvalue(linputData->key, linputData->defaultValue);
 						}
 						else
 						{
@@ -4577,7 +4569,7 @@ void Gui::drawEntityReport()
 					std::set<int> selectedEnts;
 					for (int i = 0; i < selectedItems.size(); i++)
 					{
-						if (selectedItems[i])
+						if (selectedItems[i] && !selectedEnts.count(visibleEnts[i]))
 							selectedEnts.insert(visibleEnts[i]);
 					}
 
@@ -5905,9 +5897,11 @@ void Gui::drawTextureTool()
 
 				if ((textureChanged || toggledFlags || updatedFaceVec) && validTexture)
 				{
+					int modelIdx = map->get_model_from_face(faceIdx);
 					if (textureChanged)
 						texinfo->iMiptex = newMiptex;
-					modelRefreshes.insert(map->get_model_from_face(faceIdx));
+					if (modelIdx >= 0 && !modelRefreshes.count(modelIdx))
+						modelRefreshes.insert(modelIdx);
 				}
 
 				mapRenderer->updateFaceUVs(faceIdx);

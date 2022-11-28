@@ -926,7 +926,7 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 					for (int v = 0; v < 2; v++)
 					{
 						int vertIdx = mesh.edges[mesh.faces[n].edges[k]].verts[v];
-						if (!mesh.verts[vertIdx].visible)
+						if (!mesh.verts[vertIdx].visible || uniqueFaceVerts.count(vertIdx))
 						{
 							continue;
 						}

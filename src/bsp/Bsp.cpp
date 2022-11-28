@@ -332,7 +332,7 @@ std::vector<TransformVert> Bsp::getModelVerts(int modelIdx)
 			BSPEDGE& edge = edges[abs(edgeIdx)];
 			int vertIdx = edgeIdx >= 0 ? edge.iVertex[1] : edge.iVertex[0];
 
-			if (visited.find(vertIdx) == visited.end())
+			if (!visited.count(vertIdx))
 			{
 				TransformVert vert = TransformVert();
 				vert.startPos = vert.undoPos = vert.pos = verts[vertIdx];
@@ -653,10 +653,10 @@ std::vector<ScalableTexinfo> Bsp::getScalableTexinfos(int modelIdx)
 		BSPFACE& face = faces[model.iFirstFace + k];
 		int texinfoIdx = face.iTextureInfo;
 
-		if (visitedTexinfos.find(texinfoIdx) != visitedTexinfos.end())
+		if (!visitedTexinfos.count(texinfoIdx))
 		{
-			continue;
 			//texinfoIdx = face.iTextureInfo = addTextureInfo(texinfos[texinfoIdx]);
+			continue;
 		}
 		visitedTexinfos.insert(texinfoIdx);
 
@@ -686,7 +686,8 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		for (int k = 0; k < hullVerts[i].iPlanes.size(); k++)
 		{
 			int iPlane = hullVerts[i].iPlanes[k];
-			affectedPlanes.insert(hullVerts[i].iPlanes[k]);
+			if (!affectedPlanes.count(hullVerts[i].iPlanes[k]))
+				affectedPlanes.insert(hullVerts[i].iPlanes[k]);
 			planeVerts[iPlane].push_back(hullVerts[i].pos);
 		}
 		allVertPos.push_back(hullVerts[i].pos);
@@ -2262,7 +2263,7 @@ int Bsp::lightmap_count(int faceIdx)
 	return lightmapCount;
 }
 
-void Bsp::write(const std::string & path)
+void Bsp::write(const std::string& path)
 {
 	// calculate lump offsets
 	int offset = sizeof(BSPHEADER);
@@ -4962,7 +4963,6 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 
 		std::string groupname = std::string();
 
-		//std::set<BSPMIPTEX*> texture_list;
 		BspRenderer* bsprend = getBspRender();
 
 		bsprend->reload();

@@ -851,7 +851,7 @@ void Renderer::renderLoop()
 			std::vector<int> highlightEnt;
 
 			Bsp* curMap = mapRenderers[i]->map;
-			if (!curMap)
+			if (!curMap || !curMap->bsp_name.size())
 				continue;
 
 			if (map == curMap && pickMode == PICK_OBJECT)
@@ -880,14 +880,14 @@ void Renderer::renderLoop()
 							for (int s = 0; s < (int)anotherMap->ents.size(); s++)
 							{
 								Entity* tmpEnt = anotherMap->ents[s];
-								if (tmpEnt->hasKey("model"))
+								if (tmpEnt && tmpEnt->hasKey("model"))
 								{
 									if (!modelidskip.count(s))
 									{
 										if (basename(tmpEnt->keyvalues["model"]) == basename(curMap->bsp_path))
 										{
-											curMap->ents[0]->setOrAddKeyvalue("origin", (tmpEnt->getOrigin() + anotherMapOrigin).toKeyvalueString());
 											modelidskip.insert(s);
+											curMap->ents[0]->setOrAddKeyvalue("origin", (tmpEnt->getOrigin() + anotherMapOrigin).toKeyvalueString());
 											break;
 										}
 									}
