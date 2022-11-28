@@ -2239,20 +2239,26 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 							return 1;
 						}
 						InputData* linputData = (InputData*)data->UserData;
+						if (!data->Buf || !linputData->key.length())
+							return 0;
+						static std::string lastVal = std::string();
+
 						Entity* ent = linputData->entRef;
+
 
 						std::string newVal = data->Buf;
 
 						bool needReloadModel = false;
 
-						if (!g_app->reloading && !g_app->isModelsReloading && linputData->key == "model")
+						if (newVal != lastVal && !g_app->reloading && !g_app->isModelsReloading && linputData->key == "model")
 						{
 							if (ent->hasKey("model") && ent->keyvalues["model"] != newVal)
 							{
 								needReloadModel = true;
 							}
 						}
-						if (newVal.empty())
+
+						if (!newVal.length())
 						{
 							ent->setOrAddKeyvalue(linputData->key, linputData->defaultValue);
 						}
@@ -2261,11 +2267,15 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 							ent->setOrAddKeyvalue(linputData->key, newVal);
 						}
 
-						linputData->bspRenderer->refreshEnt(linputData->entIdx);
-						if (needReloadModel)
-							g_app->reloadBspModels();
-						g_app->updateEntConnections();
+						if (newVal != lastVal || needReloadModel)
+						{
+							linputData->bspRenderer->refreshEnt(linputData->entIdx);
+							if (needReloadModel)
+								g_app->reloadBspModels();
+							g_app->updateEntConnections();
+						}
 
+						lastVal = newVal;
 						return 1;
 					}
 				};
