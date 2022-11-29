@@ -2171,6 +2171,7 @@ bool Renderer::transformAxisControls()
 		{
 			dragPoint = snapToGrid(dragPoint);
 		}
+
 		vec3 delta = dragPoint - axisDragStart;
 		if (delta.IsZero())
 			return false;
@@ -2205,38 +2206,39 @@ bool Renderer::transformAxisControls()
 			{
 				if (moveOrigin || ent->getBspModelIdx() < 0)
 				{
-					vec3 offset = getEntOffset(map, ent);
-
-					/*for (int tmpEntIdx : pickInfo.selectedEnts)
+					for (int tmpEntIdx : pickInfo.selectedEnts)
 					{
 						if (tmpEntIdx < 0)
 							continue;
 
 						Entity* tmpEnt = map->ents[tmpEntIdx];
 						if (!tmpEnt)
-							continue;*/
+							continue;
 
-						vec3 offset2 = offset/* + (tmpEnt->getOrigin() - ent->getOrigin())*/;
+						vec3 offset = tmpEnt->getOrigin() + delta;
 
-						vec3 newOrigin = (axisDragEntOriginStart + delta) - offset2;
-						vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
+						vec3 rounded = gridSnappingEnabled ? snapToGrid(offset) : offset;
 
-						ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
-						map->getBspRender()->refreshEnt(entIdx);
+						axisDragStart = rounded;
+
+						tmpEnt->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
+						map->getBspRender()->refreshEnt(tmpEntIdx);
 
 						updateEntConnectionPositions();
-					//}
+					}
 
-					//for (int tmpEntIdx : pickInfo.selectedEnts)
-				//	{
+					for (int tmpEntIdx : pickInfo.selectedEnts)
+					{
 						if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 						{
-							pushEntityUndoState("Move Entity", entIdx);
+							pushEntityUndoState("Move Entity", tmpEntIdx);
 						}
-					//}
+					}
 				}
 				else
 				{
+					axisDragStart += delta;
+
 					map->move(delta, ent->getBspModelIdx(), true);
 					map->getBspRender()->refreshEnt(entIdx);
 					map->getBspRender()->refreshModel(ent->getBspModelIdx());
