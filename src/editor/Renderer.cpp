@@ -1419,8 +1419,8 @@ void Renderer::controls()
 	{
 		if (canControlOld)
 		{
-			curLeftMouse = false;
-			oldLeftMouse = true;
+			curLeftMouse = GLFW_RELEASE;
+			oldLeftMouse = GLFW_PRESS;
 			cameraPickingControls();
 		}
 	}
