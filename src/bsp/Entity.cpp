@@ -11,6 +11,8 @@ Entity::Entity(const std::string& classname)
 
 void Entity::addKeyvalue(const std::string key, const std::string value, bool multisupport)
 {
+	if (!strlen(key))
+		return;
 	int dup = 1;
 	if (keyvalues.find(key) == keyvalues.end())
 	{
@@ -31,8 +33,8 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 	}
 	else
 		keyvalues[key] = value;
-	dup = 1;
 
+	dup = 1;
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) == keyOrder.end())
 	{
 		keyOrder.push_back(key);

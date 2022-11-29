@@ -848,7 +848,7 @@ void Renderer::renderLoop()
 		std::set<int> modelidskip;
 		for (size_t i = 0; i < mapRenderers.size(); i++)
 		{
-			std::vector<int> highlightEnt;
+			std::vector<int> highlightEnts;
 
 			Bsp* curMap = mapRenderers[i]->map;
 			if (!curMap || !curMap->bsp_name.size())
@@ -856,7 +856,7 @@ void Renderer::renderLoop()
 
 			if (map == curMap && pickMode == PICK_OBJECT)
 			{
-				highlightEnt = pickInfo.selectedEnts;
+				highlightEnts = pickInfo.selectedEnts;
 			}
 
 			if (selectedMap && getSelectedMap() != curMap && !curMap->is_model)
@@ -898,7 +898,7 @@ void Renderer::renderLoop()
 				}
 			}
 
-			mapRenderers[i]->render(highlightEnt, transformTarget == TRANSFORM_VERTEX, clipnodeRenderHull);
+			mapRenderers[i]->render(highlightEnts, transformTarget == TRANSFORM_VERTEX, clipnodeRenderHull);
 
 
 			if (!mapRenderers[i]->isFinishedLoading())

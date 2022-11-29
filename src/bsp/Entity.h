@@ -16,7 +16,14 @@ public:
 
 	Entity(void) = default;
 	Entity(const std::string& classname);
-	~Entity(void) = default;
+	~Entity(void)
+	{
+		cachedTargets.clear();
+		keyOrder.clear();
+		keyvalues.clear();
+		cachedModelIdx = 0;
+		targetsCached = false;
+	}
 
 	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
 	void removeKeyvalue(const std::string key);

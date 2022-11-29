@@ -131,9 +131,13 @@ void DeleteEntityCommand::execute()
 
 	g_app->deselectObject();
 
-	delete map->ents[entIdx];
+	Entity* ent = map->ents[entIdx];
+
 	map->ents.erase(map->ents.begin() + entIdx);
+
 	refresh();
+
+	delete ent;
 }
 
 void DeleteEntityCommand::undo()

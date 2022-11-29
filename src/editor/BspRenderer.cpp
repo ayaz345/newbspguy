@@ -1536,9 +1536,11 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
 	if (highlightEnts.size() && !highlightAlwaysOnTop)
 	{
+		activeShader->bind();
+
 		for (int highlightEnt : highlightEnts)
 		{
-			if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+			if (highlightEnt > 0 && renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 			{
 				activeShader->pushMatrix(MAT_MODEL);
 				*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
@@ -1631,7 +1633,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 
 		for (int highlightEnt : highlightEnts)
 		{
-			if (renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
+			if (highlightEnt > 0 && renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 			{
 				activeShader->pushMatrix(MAT_MODEL);
 				*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
