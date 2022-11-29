@@ -1499,5 +1499,5 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 // For issue when string.size > 0 but string length is zero ("\0\0\0" string for example)
 size_t strlen(std::string str)
 {
-	return str.size() ? std::strlen(str.c_str()) : 0;
+	return str.size() ? strlen(str.c_str()) : 0;
 }
