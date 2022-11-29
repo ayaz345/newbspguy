@@ -511,7 +511,7 @@ void EditBspModelCommand::undo()
 	map->replace_lumps(oldLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
 	g_app->undoEntOrigin = oldOrigin;
-
+	map->getBspRender()->reload();
 	refresh();
 }
 
