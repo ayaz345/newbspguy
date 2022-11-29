@@ -2206,17 +2206,34 @@ bool Renderer::transformAxisControls()
 				if (moveOrigin || ent->getBspModelIdx() < 0)
 				{
 					vec3 offset = getEntOffset(map, ent);
-					vec3 newOrigin = (axisDragEntOriginStart + delta) - offset;
-					vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
 
-					ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
-					map->getBspRender()->refreshEnt(entIdx);
-					updateEntConnectionPositions();
-
-					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+					/*for (int tmpEntIdx : pickInfo.selectedEnts)
 					{
-						pushEntityUndoState("Move Entity");
-					}
+						if (tmpEntIdx < 0)
+							continue;
+
+						Entity* tmpEnt = map->ents[tmpEntIdx];
+						if (!tmpEnt)
+							continue;*/
+
+						vec3 offset2 = offset/* + (tmpEnt->getOrigin() - ent->getOrigin())*/;
+
+						vec3 newOrigin = (axisDragEntOriginStart + delta) - offset2;
+						vec3 rounded = gridSnappingEnabled ? snapToGrid(newOrigin) : newOrigin;
+
+						ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
+						map->getBspRender()->refreshEnt(entIdx);
+
+						updateEntConnectionPositions();
+					//}
+
+					//for (int tmpEntIdx : pickInfo.selectedEnts)
+				//	{
+						if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
+						{
+							pushEntityUndoState("Move Entity", entIdx);
+						}
+					//}
 				}
 				else
 				{
@@ -2238,7 +2255,7 @@ bool Renderer::transformAxisControls()
 				updateEntConnectionPositions();
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
-					pushEntityUndoState("Move Origin");
+					pushEntityUndoState("Move Origin", pickInfo.GetSelectedEnt());
 				}
 			}
 
@@ -3988,7 +4005,7 @@ void Renderer::ungrabEnt()
 	{
 		return;
 	}
-	pushEntityUndoState("Move Entity");
+	pushEntityUndoState("Move Entity", pickInfo.GetSelectedEnt());
 
 	movingEnt = false;
 }
@@ -4016,15 +4033,15 @@ void Renderer::saveLumpState(Bsp* map, int targetLumps, bool deleteOldState)
 	undoLumpState = map->duplicate_lumps(targetLumps);
 }
 
-void Renderer::pushEntityUndoState(const std::string& actionDesc)
+void Renderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 {
-	if (pickInfo.GetSelectedEnt() < 0)
+	if (entIdx < 0)
 	{
 		logf("Invalid entity undo state push[No ent id]\n");
 		return;
 	}
 
-	Entity* ent = SelectedMap->ents[pickInfo.GetSelectedEnt()];
+	Entity* ent = SelectedMap->ents[entIdx];
 
 	if (!ent)
 	{

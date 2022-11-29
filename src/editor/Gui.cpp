@@ -2034,7 +2034,7 @@ void Gui::drawKeyvalueEditor()
 
 				std::vector<FgdGroup>* targetGroup = &app->fgd->pointEntGroups;
 
-				if (ent->hasKey("model"))
+				if (ent->hasKey("model") && ent->keyvalues["model"].starts_with('*'))
 				{
 					targetGroup = &app->fgd->solidEntGroups;
 				}
@@ -2051,7 +2051,7 @@ void Gui::drawKeyvalueEditor()
 							{
 								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
 								map->getBspRender()->refreshEnt(entIdx);
-								app->pushEntityUndoState("Change Class");
+								app->pushEntityUndoState("Change Class", entIdx);
 							}
 						}
 
@@ -2226,7 +2226,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 							ent->setOrAddKeyvalue(key, choice.svalue);
 							map->getBspRender()->refreshEnt(entIdx);
 							app->updateEntConnections();
-							app->pushEntityUndoState("Edit Keyvalue");
+							app->pushEntityUndoState("Edit Keyvalue", entIdx);
 						}
 					}
 
@@ -2363,7 +2363,7 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 			else
 				ent->removeKeyvalue("spawnflags");
 
-			app->pushEntityUndoState(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag");
+			app->pushEntityUndoState(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", entIdx);
 		}
 	}
 
@@ -2632,7 +2632,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 				if (keyOrdname == "model")
 					map->getBspRender()->preRenderEnts();
 				app->updateEntConnections();
-				app->pushEntityUndoState("Delete Keyvalue");
+				app->pushEntityUndoState("Delete Keyvalue",entIdx);
 			}
 			ImGui::PopStyleColor(3);
 			ImGui::NextColumn();
@@ -2641,7 +2641,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 	if (!keyDragging && wasKeyDragging)
 	{
-		app->pushEntityUndoState("Move Keyvalue");
+		app->pushEntityUndoState("Move Keyvalue",entIdx);
 		map->getBspRender()->refreshEnt(entIdx);
 	}
 
@@ -2664,7 +2664,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			ent->addKeyvalue(keyName, "");
 			map->getBspRender()->refreshEnt(entIdx);
 			app->updateEntConnections();
-			app->pushEntityUndoState("Add Keyvalue");
+			app->pushEntityUndoState("Add Keyvalue",entIdx);
 			keyName = "";
 		}
 	}
@@ -2904,7 +2904,7 @@ void Gui::drawTransformWidget()
 			{
 				if (app->undoEntityState.getOrigin() != ent->getOrigin())
 				{
-					app->pushEntityUndoState("Move Entity");
+					app->pushEntityUndoState("Move Entity",entIdx);
 				}
 
 				if (transformingEnt)

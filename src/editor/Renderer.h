@@ -357,7 +357,7 @@ private:
 	void goToCoords(float x, float y, float z);
 	void ungrabEnt();
 
-	void pushEntityUndoState(const std::string& actionDesc);
+	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
 	void pushUndoCommand(Command* cmd);
 	void undo();
 	void redo();
