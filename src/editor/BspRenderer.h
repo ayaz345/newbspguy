@@ -101,9 +101,39 @@ struct PickInfo
 	PickInfo()
 	{
 		selectedEnts.clear();
-		selectedEnts.push_back(-1);
 		selectedFaces.clear();
 		bestDist = 0.0f;
+	}
+
+	int GetSelectedEnt()
+	{
+		if (selectedEnts.size())
+			return selectedEnts[0];
+		return -1;
+	}
+
+	void AddSelectedEnt(int entIdx)
+	{
+		selectedEnts.push_back(entIdx);
+	}
+
+	void SetSelectedEnt(int entIdx)
+	{
+		selectedEnts.clear();
+		AddSelectedEnt(entIdx);
+	}
+
+	void DelSelectedEnt(int entIdx)
+	{
+		if (IsSelectedEnt(entIdx))
+		{
+			selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), entIdx));
+		}
+	}
+
+	bool IsSelectedEnt(int entIdx)
+	{
+		return std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
 	}
 };
 
@@ -127,7 +157,7 @@ public:
 	void drawModelClipnodes(int modelIdx, bool highlight, int hullIdx);
 	void drawPointEntities(std::vector<int> highlightEnts);
 
-	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp ** map);
+	bool pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& pickInfo, Bsp** map);
 	bool pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& pickInfo);
 	bool pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist);
 

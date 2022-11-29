@@ -55,7 +55,7 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 	targetsCached = false;
 }
 
-void Entity::setOrAddKeyvalue(const std::string& key, const std::string& value)
+void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
 {
 	cachedModelIdx = -2;
 	targetsCached = false;

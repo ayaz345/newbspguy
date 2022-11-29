@@ -27,10 +27,6 @@ static int InputTextCallback(ImGuiInputTextCallbackData* data)
             str->resize(data->BufTextLen);
             data->Buf = (char*)str->c_str();
         }
-        else if (data->Buf == str->c_str())
-        {
-            str->clear();
-        }
     }
     else if (user_data->ChainCallback)
     {

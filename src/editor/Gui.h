@@ -37,6 +37,8 @@ class Renderer;
 #define SHOW_IMPORT_MODEL 3
 #define SHOW_IMPORT_MODEL_BSP 3
 
+extern bool filterNeeded;
+
 class Gui
 {
 	friend class Renderer;
@@ -126,9 +128,9 @@ private:
 	void drawStatusMessage();
 	void drawDebugWidget();
 	void drawKeyvalueEditor();
-	void drawKeyvalueEditor_SmartEditTab(Entity* ent);
-	void drawKeyvalueEditor_FlagsTab(Entity* ent);
-	void drawKeyvalueEditor_RawEditTab(Entity* ent);
+	void drawKeyvalueEditor_SmartEditTab(int entIdx);
+	void drawKeyvalueEditor_FlagsTab(int entIdx);
+	void drawKeyvalueEditor_RawEditTab(int entIdx);
 	void drawGOTOWidget();
 	void drawTransformWidget();
 	void drawLog();

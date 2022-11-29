@@ -115,7 +115,7 @@ bool writeFile(const std::string& fileName, const std::string& data)
 	{
 		return false;
 	}
-	file.write(data.c_str(), data.length());
+	file.write(data.c_str(), strlen(data));
 	return true;
 }
 
@@ -177,9 +177,9 @@ std::vector<std::string> splitStringIgnoringQuotes(std::string s, const std::str
 		return split;
 
 	size_t delimitLen = delimitter.length();
+
 	while (s.size())
 	{
-
 		bool foundUnquotedDelimitter = false;
 		size_t searchOffset = 0;
 		while (!foundUnquotedDelimitter && searchOffset < s.size())
@@ -1493,6 +1493,11 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 		return retval;
 	}
 
-
 	return retval;
+}
+
+// For issue when string.size > 0 but string length is zero ("\0\0\0" string for example)
+size_t strlen(std::string str)
+{
+	return str.size() ? std::strlen(str.c_str()) : 0;
 }

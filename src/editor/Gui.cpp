@@ -28,7 +28,7 @@
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
 
-static bool filterNeeded = true;
+bool filterNeeded = true;
 
 std::string iniPath;
 
@@ -462,10 +462,11 @@ void Gui::draw3dContextMenus()
 	ImGuiContext& g = *GImGui;
 
 	Bsp* map = app->getSelectedMap();
+	int entIdx = app->pickInfo.GetSelectedEnt();
 
-	if (map && app->originHovered && app->pickInfo.selectedEnts[0] >= 0)
+	if (map && app->originHovered && entIdx >= 0)
 	{
-		Entity* ent = map->ents[app->pickInfo.selectedEnts[0]];
+		Entity* ent = map->ents[entIdx];
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
 		{
 			if (ImGui::MenuItem("Center", ""))
@@ -542,9 +543,9 @@ void Gui::draw3dContextMenus()
 				app->deleteEnt();
 			}
 			ImGui::Separator();
-			if (map && app->pickInfo.selectedEnts[0] >= 0)
+			if (map && entIdx >= 0)
 			{
-				Entity* ent = map->ents[app->pickInfo.selectedEnts[0]];
+				Entity* ent = map->ents[entIdx];
 				int modelIdx = ent->getBspModelIdx();
 				if (modelIdx >= 0)
 				{
@@ -722,12 +723,12 @@ void Gui::draw3dContextMenus()
 			}
 			if (ImGui::MenuItem("Transform", "Ctrl+M"))
 			{
-				showTransformWidget = !showTransformWidget;
+				showTransformWidget = true;
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Properties", "Alt+Enter"))
 			{
-				showKeyvalueWidget = !showKeyvalueWidget;
+				showKeyvalueWidget = true;
 			}
 
 
@@ -1091,9 +1092,9 @@ void Gui::drawMenuBar()
 					{
 						int modelIdx = -1;
 
-						if (app->pickInfo.selectedEnts[0] >= 0)
+						if (app->pickInfo.GetSelectedEnt() >= 0)
 						{
-							modelIdx = map->ents[app->pickInfo.selectedEnts[0]]->getBspModelIdx();
+							modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
 						}
 
 						for (int i = 0; i < map->modelCount; i++)
@@ -1268,9 +1269,9 @@ void Gui::drawMenuBar()
 		std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
 		bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
 		bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
-		bool entSelected = app->pickInfo.selectedEnts[0] >= 0;
+		bool entSelected = app->pickInfo.GetSelectedEnt() >= 0;
 		bool mapSelected = map;
-		bool nonWorldspawnEntSelected = entSelected && app->pickInfo.selectedEnts[0] != 0;
+		bool nonWorldspawnEntSelected = entSelected && app->pickInfo.GetSelectedEnt() != 0;
 
 		if (ImGui::MenuItem(undoTitle.c_str(), "Ctrl+Z", false, canUndo))
 		{
@@ -1605,12 +1606,12 @@ void Gui::drawToolbar()
 
 void Gui::FaceSelectePressed()
 {
-	if (app->pickInfo.selectedEnts[0] >= 0 && app->pickMode == PICK_FACE)
+	if (app->pickInfo.GetSelectedEnt() >= 0 && app->pickMode == PICK_FACE)
 	{
 		Bsp* map = app->getSelectedMap();
 		if (map)
 		{
-			int modelIdx = map->ents[app->pickInfo.selectedEnts[0]]->getBspModelIdx();
+			int modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
 			if (modelIdx >= 0)
 			{
 				BspRenderer* mapRenderer = map->getBspRender();
@@ -1786,6 +1787,10 @@ void Gui::drawDebugWidget()
 	ImGui::SetNextWindowBgAlpha(0.75f);
 
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight * 1.0f));
+
+	Bsp* map = app->getSelectedMap();
+	int entIdx = app->pickInfo.GetSelectedEnt();
+
 	if (ImGui::Begin("Debug info", &showDebugWidget))
 	{
 
@@ -1797,9 +1802,6 @@ void Gui::drawDebugWidget()
 			ImGui::Text("Selected faces: %u", (unsigned int)app->pickInfo.selectedFaces.size());
 			ImGui::Text("PickMode: %i", app->pickMode);
 		}
-
-		Bsp* map = app->getSelectedMap();
-
 		if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			if (!map)
@@ -1814,14 +1816,14 @@ void Gui::drawDebugWidget()
 				{
 					if (app->pickInfo.selectedEnts.size())
 					{
-						ImGui::Text("Entity ID: %d", app->pickInfo.selectedEnts[0]);
+						ImGui::Text("Entity ID: %d", entIdx);
 					}
 
 					int modelIdx = -1;
 
-					if (app->pickInfo.selectedEnts[0] >= 0)
+					if (entIdx >= 0)
 					{
-						modelIdx = map->ents[app->pickInfo.selectedEnts[0]]->getBspModelIdx();
+						modelIdx = map->ents[entIdx]->getBspModelIdx();
 					}
 
 
@@ -1880,9 +1882,9 @@ void Gui::drawDebugWidget()
 		}
 		int modelIdx = -1;
 
-		if (map && app->pickInfo.selectedEnts[0] >= 0)
+		if (map && entIdx >= 0)
 		{
-			modelIdx = map->ents[app->pickInfo.selectedEnts[0]]->getBspModelIdx();
+			modelIdx = map->ents[entIdx]->getBspModelIdx();
 		}
 
 		std::string bspTreeTitle = "BSP Tree";
@@ -1960,7 +1962,7 @@ void Gui::drawDebugWidget()
 			bool isScalingObject = app->transformMode == TRANSFORM_SCALE && app->transformTarget == TRANSFORM_OBJECT;
 			bool isMovingOrigin = app->transformMode == TRANSFORM_MOVE && app->transformTarget == TRANSFORM_ORIGIN && app->originSelected;
 			bool isTransformingValid = !(app->modelUsesSharedStructures && (app->transformMode != TRANSFORM_MOVE || app->transformTarget == TRANSFORM_VERTEX)) && (app->isTransformableSolid || isScalingObject);
-			bool isTransformingWorld = app->pickInfo.selectedEnts[0] == 0 && app->transformTarget != TRANSFORM_OBJECT;
+			bool isTransformingWorld = entIdx == 0 && app->transformTarget != TRANSFORM_OBJECT;
 
 			ImGui::Text("isScalingObject %d", isScalingObject);
 			ImGui::Text("isMovingOrigin %d", isMovingOrigin);
@@ -1986,11 +1988,13 @@ void Gui::drawKeyvalueEditor()
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
 	if (ImGui::Begin("Keyvalue Editor", &showKeyvalueWidget, 0))
 	{
-		if (app->pickInfo.selectedEnts[0] >= 0 && app->fgd
+		int entIdx = app->pickInfo.GetSelectedEnt();
+		if (entIdx >= 0 && app->fgd
 			&& !app->isLoading && !app->isModelsReloading && !app->reloading)
 		{
 			Bsp* map = app->getSelectedMap();
-			Entity* ent = map->ents[app->pickInfo.selectedEnts[0]];
+
+			Entity* ent = map->ents[entIdx];
 			std::string cname = ent->keyvalues["classname"];
 			FgdClass* fgdClass = app->fgd->getFgdClass(cname);
 
@@ -2046,7 +2050,7 @@ void Gui::drawKeyvalueEditor()
 							if (ImGui::MenuItem(group.classes[k]->name.c_str()))
 							{
 								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
-								map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
+								map->getBspRender()->refreshEnt(entIdx);
 								app->pushEntityUndoState("Change Class");
 							}
 						}
@@ -2065,21 +2069,21 @@ void Gui::drawKeyvalueEditor()
 				if (ImGui::BeginTabItem("Attributes"))
 				{
 					ImGui::Dummy(ImVec2(0, 10));
-					drawKeyvalueEditor_SmartEditTab(ent);
+					drawKeyvalueEditor_SmartEditTab(entIdx);
 					ImGui::EndTabItem();
 				}
 
 				if (ImGui::BeginTabItem("Flags"))
 				{
 					ImGui::Dummy(ImVec2(0, 10));
-					drawKeyvalueEditor_FlagsTab(ent);
+					drawKeyvalueEditor_FlagsTab(entIdx);
 					ImGui::EndTabItem();
 				}
 
 				if (ImGui::BeginTabItem("Raw Edit"))
 				{
 					ImGui::Dummy(ImVec2(0, 10));
-					drawKeyvalueEditor_RawEditTab(ent);
+					drawKeyvalueEditor_RawEditTab(entIdx);
 					ImGui::EndTabItem();
 				}
 			}
@@ -2088,7 +2092,7 @@ void Gui::drawKeyvalueEditor()
 		}
 		else
 		{
-			if (app->pickInfo.selectedEnts[0] < 0)
+			if (entIdx < 0)
 				ImGui::Text("No entity selected");
 			else
 				ImGui::Text("No fgd loaded");
@@ -2098,12 +2102,16 @@ void Gui::drawKeyvalueEditor()
 	ImGui::End();
 }
 
-void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
+void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 {
+	static std::string lastVal = std::string();
 	Bsp* map = app->getSelectedMap();
-	if (!map)
+	if (!map || entIdx < 0)
+	{
+		ImGui::Text("No entity selected");
 		return;
-
+	}
+	Entity* ent = map->ents[entIdx];
 	std::string cname = ent->keyvalues["classname"];
 	FgdClass* fgdClass = app->fgd->getFgdClass(cname);
 	ImGuiStyle& style = ImGui::GetStyle();
@@ -2150,7 +2158,8 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 			{
 				KeyvalueDef keyvalue = KeyvalueDef();
 				keyvalue.name = "model";
-				keyvalue.description = "Model";
+				keyvalue.defaultValue =
+					keyvalue.description = "Model";
 				keyvalue.iType = FGD_KEY_STRING;
 				fgdClass->keyvalues.push_back(keyvalue);
 			}
@@ -2167,10 +2176,11 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 			std::string value = ent->keyvalues[key];
 			std::string niceName = keyvalue.description;
 
-			if (value.empty() && keyvalue.defaultValue.length())
+			if (!strlen(value) && strlen(keyvalue.defaultValue))
 			{
 				value = keyvalue.defaultValue;
 			}
+
 			if (niceName.size() >= MAX_KEY_LEN)
 				niceName = niceName.substr(0, MAX_KEY_LEN - 1);
 			if (value.size() >= MAX_VAL_LEN)
@@ -2178,7 +2188,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 
 			inputData[i].key = key;
 			inputData[i].defaultValue = keyvalue.defaultValue;
-			inputData[i].entIdx = app->pickInfo.selectedEnts[0];
+			inputData[i].entIdx = entIdx;
 			inputData[i].entRef = ent;
 			inputData[i].bspRenderer = map->getBspRender();
 
@@ -2204,7 +2214,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 					}
 				}
 
-				if (ImGui::BeginCombo(("##val" + std::to_string(i)).c_str(), selectedValue.c_str()))
+				if (ImGui::BeginCombo(("##comboval" + std::to_string(i)).c_str(), selectedValue.c_str()))
 				{
 					for (int k = 0; k < keyvalue.choices.size(); k++)
 					{
@@ -2214,7 +2224,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 						if (ImGui::Selectable(choice.name.c_str(), selected))
 						{
 							ent->setOrAddKeyvalue(key, choice.svalue);
-							map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
+							map->getBspRender()->refreshEnt(entIdx);
 							app->updateEntConnections();
 							app->pushEntityUndoState("Edit Keyvalue");
 						}
@@ -2239,9 +2249,8 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 							return 1;
 						}
 						InputData* linputData = (InputData*)data->UserData;
-						if (!data->Buf || !linputData->key.length())
+						if (!data->Buf || !strlen(linputData->key))
 							return 0;
-						static std::string lastVal = std::string();
 
 						Entity* ent = linputData->entRef;
 
@@ -2258,7 +2267,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 							}
 						}
 
-						if (!newVal.length())
+						if (!strlen(newVal))
 						{
 							ent->setOrAddKeyvalue(linputData->key, linputData->defaultValue);
 						}
@@ -2282,13 +2291,13 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 
 				if (keyvalue.iType == FGD_KEY_INTEGER)
 				{
-					ImGui::InputText(("##val" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[key.c_str()],
+					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()],
 									 ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackAlways,
 									 InputChangeCallback::keyValueChanged, &inputData[i]);
 				}
 				else
 				{
-					ImGui::InputText(("##val" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[key.c_str()],
+					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()],
 									 ImGuiInputTextFlags_CallbackAlways, InputChangeCallback::keyValueChanged, &inputData[i]);
 				}
 
@@ -2306,8 +2315,17 @@ void Gui::drawKeyvalueEditor_SmartEditTab(Entity* ent)
 	ImGui::EndChild();
 }
 
-void Gui::drawKeyvalueEditor_FlagsTab(Entity* ent)
+void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 {
+	Bsp* map = app->getSelectedMap();
+	if (!map || entIdx < 0)
+	{
+		ImGui::Text("No entity selected");
+		return;
+	}
+
+	Entity* ent = map->ents[entIdx];
+
 	ImGui::BeginChild("FlagsWindow");
 
 	unsigned int spawnflags = strtoul(ent->keyvalues["spawnflags"].c_str(), NULL, 10);
@@ -2355,8 +2373,16 @@ void Gui::drawKeyvalueEditor_FlagsTab(Entity* ent)
 	ImGui::EndChild();
 }
 
-void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
+void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 {
+	Bsp* map = app->getSelectedMap();
+	if (!map || entIdx < 0)
+	{
+		ImGui::Text("No entity selected");
+		return;
+	}
+
+	Entity* ent = map->ents[entIdx];
 	ImGuiStyle& style = ImGui::GetStyle();
 
 	ImGui::Columns(4, "keyvalcols", false);
@@ -2478,8 +2504,6 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 	static bool wasKeyDragging = false;
 	bool keyDragging = false;
 
-	Bsp* map = app->getSelectedMap();
-
 	float startY = 0;
 	for (int i = 0; i < ent->keyOrder.size() && i < MAX_KEYS_PER_ENT; i++)
 	{
@@ -2531,7 +2555,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			bool invalidKey = lastPickCount == app->pickCount;
 
 			keyIds[i].idx = i;
-			keyIds[i].entIdx = app->pickInfo.selectedEnts[0];
+			keyIds[i].entIdx = app->pickInfo.GetSelectedEnt();
 			keyIds[i].entRef = ent;
 			keyIds[i].bspRenderer = map->getBspRender();
 
@@ -2558,7 +2582,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 		}
 		{
 			valueIds[i].idx = i;
-			valueIds[i].entIdx = app->pickInfo.selectedEnts[0];
+			valueIds[i].entIdx = app->pickInfo.GetSelectedEnt();
 			valueIds[i].entRef = ent;
 			valueIds[i].bspRenderer = map->getBspRender();
 
@@ -2605,7 +2629,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 			if (ImGui::Button((" X ##delorder" + keyOrdname).c_str()))
 			{
 				ent->removeKeyvalue(keyOrdname);
-				map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
+				map->getBspRender()->refreshEnt(entIdx);
 				if (keyOrdname == "model")
 					map->getBspRender()->preRenderEnts();
 				app->updateEntConnections();
@@ -2619,8 +2643,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 	if (!keyDragging && wasKeyDragging)
 	{
 		app->pushEntityUndoState("Move Keyvalue");
-		if (app->pickInfo.selectedEnts[0] >= 0)
-			map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
+		map->getBspRender()->refreshEnt(entIdx);
 	}
 
 	wasKeyDragging = keyDragging;
@@ -2640,7 +2663,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(Entity* ent)
 		if (!ent->hasKey(keyName))
 		{
 			ent->addKeyvalue(keyName, "");
-			map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
+			map->getBspRender()->refreshEnt(entIdx);
 			app->updateEntConnections();
 			app->pushEntityUndoState("Add Keyvalue");
 			keyName = "";
@@ -2705,14 +2728,15 @@ void Gui::drawGOTOWidget()
 }
 void Gui::drawTransformWidget()
 {
-
 	bool transformingEnt = false;
 	Entity* ent = NULL;
+	int entIdx = app->pickInfo.GetSelectedEnt();
 	Bsp* map = app->getSelectedMap();
-	if (map && app->pickInfo.selectedEnts[0] >= 0)
+
+	if (map && entIdx >= 0)
 	{
-		ent = map->ents[app->pickInfo.selectedEnts[0]];
-		transformingEnt = app->pickInfo.selectedEnts[0] > 0;
+		ent = map->ents[entIdx];
+		transformingEnt = entIdx > 0;
 	}
 
 	ImGui::SetNextWindowSize(ImVec2(440.f, 380.f), ImGuiCond_FirstUseEver);
@@ -3027,7 +3051,7 @@ void Gui::drawTransformWidget()
 						}
 
 						ent->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString(!app->gridSnappingEnabled));
-						map->getBspRender()->refreshEnt(app->pickInfo.selectedEnts[0]);
+						map->getBspRender()->refreshEnt(entIdx);
 						app->updateEntConnectionPositions();
 					}
 					else if (app->transformTarget == TRANSFORM_ORIGIN)
@@ -4305,7 +4329,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	ImGui::SetColumnWidth(2, valWidth);
 	ImGui::SetColumnWidth(3, usageWidth);
 
-	int selected = app->pickInfo.selectedEnts[0];
+	int selected = app->pickInfo.GetSelectedEnt() >= 0;
 
 	for (int i = 0; i < limitModels[sortMode].size(); i++)
 	{
@@ -4323,7 +4347,7 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 			int entIdx = modelInfos[i].entIdx;
 			if (entIdx < map->ents.size())
 			{
-				app->pickInfo.selectedEnts[0] = entIdx;
+				app->pickInfo.SetSelectedEnt(entIdx);
 				// map should already be valid if limits are showing
 
 				if (ImGui::IsMouseDoubleClicked(0))
@@ -4492,8 +4516,11 @@ void Gui::drawEntityReport()
 				selectedItems.clear();
 				selectedItems.resize(visibleEnts.size());
 				for (int k = 0; k < selectedItems.size(); k++)
-					selectedItems[k] = false;
+				{
+					selectedItems[k] = app->pickInfo.IsSelectedEnt(visibleEnts[k]);
+				}
 			}
+
 			filterNeeded = false;
 
 			ImGuiListClipper clipper;
@@ -4508,7 +4535,7 @@ void Gui::drawEntityReport()
 					Entity* ent = map->ents[entIdx];
 					std::string cname = ent->hasKey("classname") ? ent->keyvalues["classname"] : "";
 
-					if (cname.length() && ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick))
+					if (cname.size() && ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick))
 					{
 						if (expected_key_mod_flags & ImGuiModFlags_Ctrl)
 						{

@@ -170,3 +170,5 @@ void VectorTransform(const vec3& in1, const float in2[3][4], vec3& out);
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
 vec3 AxisFromTextureAngle(float angle, bool x, int type);
+
+size_t strlen(std::string str);

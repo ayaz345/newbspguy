@@ -24,7 +24,7 @@ public:
 	void clearAllKeyvalues();
 	void clearEmptyKeyvalues();
 
-	void setOrAddKeyvalue(const std::string& key, const std::string& value);
+	void setOrAddKeyvalue(const std::string key, const std::string value);
 
 	// returns -1 for invalid idx
 	int getBspModelIdx();
