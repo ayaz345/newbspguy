@@ -1332,6 +1332,7 @@ void Renderer::drawEntConnections()
 void Renderer::controls()
 {
 	static bool blockMoving = false;
+	static bool canControlOld = true;
 
 	oldLeftMouse = curLeftMouse;
 	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
@@ -1356,6 +1357,7 @@ void Renderer::controls()
 	anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
 	anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
 
+	canControlOld = canControl;
 	canControl = !gui->imgui_io->WantCaptureKeyboard && !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
 
 
@@ -1412,6 +1414,15 @@ void Renderer::controls()
 		cameraPickingControls();
 
 		shortcutControls();
+	}
+	else
+	{
+		if (canControlOld)
+		{
+			curLeftMouse = false;
+			oldLeftMouse = true;
+			cameraPickingControls();
+		}
 	}
 
 	if (!gui->imgui_io->WantTextInput)
@@ -1580,16 +1591,6 @@ void Renderer::cameraPickingControls()
 		{
 			draggingAxis = -1;
 			applyTransform();
-
-
-			if (entIdx >= 0)
-			{
-				Entity* ent = SelectedMap->ents[entIdx];
-				if (ent && undoEntityState.getOrigin() != ent->getOrigin())
-				{
-					pushEntityUndoState("Move Entity");
-				}
-			}
 		}
 	}
 }
@@ -2195,7 +2196,7 @@ bool Renderer::transformAxisControls()
 			if (transformTarget == TRANSFORM_VERTEX)
 			{
 				moveSelectedVerts(delta);
-				if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
 					pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
 				}
@@ -2211,7 +2212,8 @@ bool Renderer::transformAxisControls()
 					ent->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
 					map->getBspRender()->refreshEnt(entIdx);
 					updateEntConnectionPositions();
-					if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+
+					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
 						pushEntityUndoState("Move Entity");
 					}
@@ -2222,7 +2224,7 @@ bool Renderer::transformAxisControls()
 					map->getBspRender()->refreshEnt(entIdx);
 					map->getBspRender()->refreshModel(ent->getBspModelIdx());
 					updateEntConnectionPositions();
-					if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
 						pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
 					}
@@ -2234,7 +2236,7 @@ bool Renderer::transformAxisControls()
 				transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
 				map->getBspRender()->refreshEnt(entIdx);
 				updateEntConnectionPositions();
-				if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
 					pushEntityUndoState("Move Origin");
 				}
@@ -2256,7 +2258,7 @@ bool Renderer::transformAxisControls()
 
 				scaleSelectedObject(delta, scaleDirs[draggingAxis]);
 				map->getBspRender()->refreshModel(ent->getBspModelIdx());
-				if (curLeftMouse == GLFW_PRESS && oldLeftMouse != GLFW_PRESS)
+				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
 					pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
 				}
@@ -4018,7 +4020,7 @@ void Renderer::pushEntityUndoState(const std::string& actionDesc)
 {
 	if (pickInfo.GetSelectedEnt() < 0)
 	{
-		logf("Invalid entity undo state push\n");
+		logf("Invalid entity undo state push[No ent id]\n");
 		return;
 	}
 
@@ -4026,7 +4028,7 @@ void Renderer::pushEntityUndoState(const std::string& actionDesc)
 
 	if (!ent)
 	{
-		logf("Invalid entity undo state push 2\n");
+		logf("Invalid entity undo state push[No ent]\n");
 		return;
 	}
 
@@ -4057,6 +4059,7 @@ void Renderer::pushEntityUndoState(const std::string& actionDesc)
 
 	if (!anythingToUndo)
 	{
+		logf("Invalid entity undo state push[No changes]\n");
 		return; // nothing to undo
 	}
 
