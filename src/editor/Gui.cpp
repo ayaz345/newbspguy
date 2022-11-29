@@ -2292,13 +2292,12 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				if (keyvalue.iType == FGD_KEY_INTEGER)
 				{
 					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()],
-									 ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackAlways,
+									 ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackEdit,
 									 InputChangeCallback::keyValueChanged, &inputData[i]);
 				}
 				else
 				{
-					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()],
-									 ImGuiInputTextFlags_CallbackAlways, InputChangeCallback::keyValueChanged, &inputData[i]);
+					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()], ImGuiInputTextFlags_CallbackEdit, InputChangeCallback::keyValueChanged, &inputData[i]);
 				}
 
 
@@ -2569,7 +2568,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			}
 
 			ImGui::SetNextItemWidth(inputWidth);
-			ImGui::InputText(("##key" + std::to_string(i) + "_" + std::to_string(app->pickCount)).c_str(), &ent->keyOrder[i], ImGuiInputTextFlags_CallbackAlways,
+			ImGui::InputText(("##key" + std::to_string(i)).c_str(), &ent->keyOrder[i], ImGuiInputTextFlags_CallbackEdit,
 							 TextChangeCallback::keyNameChanged, &keyIds[i]);
 
 
@@ -2591,7 +2590,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 				ImGui::PushStyleColor(ImGuiCol_FrameBg, dragColor);
 			}
 			ImGui::SetNextItemWidth(inputWidth);
-			ImGui::InputText(("##val" + std::to_string(i) + std::to_string(app->pickCount)).c_str(), &ent->keyvalues[ent->keyOrder[i]], ImGuiInputTextFlags_CallbackAlways,
+			ImGui::InputText(("##val" + std::to_string(i)).c_str(), &ent->keyvalues[ent->keyOrder[i]], ImGuiInputTextFlags_CallbackEdit,
 							 TextChangeCallback::keyValueChanged, &valueIds[i]);
 
 			if (ent->keyOrder[i] == "angles" ||

@@ -3891,6 +3891,7 @@ void Renderer::deleteEnt(int entIdx)
 
 void Renderer::deselectObject()
 {
+	filterNeeded = true;
 	pickInfo.selectedEnts.clear();
 	pickInfo.selectedFaces.clear();
 	isTransformableSolid = true;

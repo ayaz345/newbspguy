@@ -67,10 +67,12 @@ void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
 
 void Entity::removeKeyvalue(const std::string key)
 {
-	if (!hasKey(key))
+	if (!strlen(key))
 		return;
-	keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
-	keyvalues.erase(key);
+	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
+		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
+	if (keyvalues.find(key) != keyvalues.end())
+		keyvalues.erase(key);
 	cachedModelIdx = -2;
 	targetsCached = false;
 }
