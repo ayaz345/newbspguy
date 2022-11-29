@@ -2034,7 +2034,14 @@ void Gui::drawKeyvalueEditor()
 
 				std::vector<FgdGroup>* targetGroup = &app->fgd->pointEntGroups;
 
-				if (ent->hasKey("model") && ent->keyvalues["model"].starts_with('*'))
+				if (fgdClass)
+				{
+					if (fgdClass->classType == FGD_CLASS_TYPES::FGD_CLASS_SOLID)
+					{
+						targetGroup = &app->fgd->solidEntGroups;
+					}
+				}
+				else if (ent->hasKey("model") && ent->keyvalues["model"].starts_with('*'))
 				{
 					targetGroup = &app->fgd->solidEntGroups;
 				}
