@@ -10,6 +10,7 @@ namespace fs = std::filesystem;
 #include <fstream>
 #include <cmath>
 #include <thread>
+#include <mutex>
 #include "ProgressMeter.h"
 #include "bsptypes.h"
 
