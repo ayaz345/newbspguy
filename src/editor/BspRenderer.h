@@ -8,6 +8,7 @@
 #include "PointEntRenderer.h"
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
+#include <future>
 
 #define LIGHTMAP_ATLAS_SIZE 512
 

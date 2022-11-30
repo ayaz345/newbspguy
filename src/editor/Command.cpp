@@ -193,6 +193,8 @@ void CreateEntityCommand::execute()
 	Entity* newEnt = new Entity();
 	*newEnt = *entData;
 	map->ents.push_back(newEnt);
+	map->update_ent_lump();
+	g_app->updateEnts();
 	refresh();
 }
 

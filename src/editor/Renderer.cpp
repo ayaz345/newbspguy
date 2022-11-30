@@ -803,9 +803,6 @@ void Renderer::renderLoop()
 
 	while (!glfwWindowShouldClose(window))
 	{
-		g_time = glfwGetTime();
-		g_frame_counter++;
-
 		Bsp* map = SelectedMap;
 		if (g_time - lastTitleTime > 0.5)
 		{
@@ -815,6 +812,14 @@ void Renderer::renderLoop()
 				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + map->bsp_path).c_str());
 			}
 		}
+
+		g_time = glfwGetTime();
+		g_frame_counter++;
+
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		mousePos = vec2((float)xpos, (float)ypos);
+
 		glfwPollEvents();
 
 		double frameDelta = g_time - lastFrameTime;
@@ -1392,10 +1397,6 @@ void Renderer::controls()
 			}
 		}
 
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-
-		mousePos = vec2((float)xpos, (float)ypos);
 
 		cameraOrigin += getMoveDir() * (float)frameTimeScale;
 
@@ -1405,7 +1406,7 @@ void Renderer::controls()
 
 		cameraContextMenus();
 
-		cameraRotationControls(mousePos);
+		cameraRotationControls();
 
 		makeVectors(cameraAngles, cameraForward, cameraRight, cameraUp);
 
@@ -1703,7 +1704,7 @@ void Renderer::applyTransform(bool forceUpdate)
 	}
 }
 
-void Renderer::cameraRotationControls(vec2 mousePos)
+void Renderer::cameraRotationControls()
 {
 // camera rotation
 	if (draggingAxis == -1 && curRightMouse == GLFW_PRESS)
@@ -3867,7 +3868,6 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 		logf("Select a map before pasting an ent\n");
 		return;
 	}
-
 
 	Entity insertEnt;
 	insertEnt = *copiedEnt;

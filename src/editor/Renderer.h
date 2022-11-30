@@ -1,4 +1,3 @@
-
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -304,7 +303,7 @@ private:
 	void controls();
 	void cameraPickingControls();
 	void vertexEditControls();
-	void cameraRotationControls(vec2 mousePos);
+	void cameraRotationControls();
 	void cameraObjectHovering();
 	void cameraContextMenus(); // right clicking on ents and things
 	void moveGrabbedEnt(); // translates the grabbed ent

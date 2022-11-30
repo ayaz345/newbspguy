@@ -197,7 +197,6 @@ void Gui::draw()
 		}
 	}
 
-
 	draw3dContextMenus();
 
 	// Rendering
@@ -526,8 +525,41 @@ void Gui::draw3dContextMenus()
 
 		return;
 	}
+	if (app->pickMode == PICK_FACE)
+	{
+		if (map && ImGui::BeginPopup("face_context"))
+		{
+			if (ImGui::MenuItem("Copy texture", "Ctrl+C"))
+			{
+				copyTexture();
+			}
+			if (ImGui::MenuItem("Paste texture", "Ctrl+V", false, copiedMiptex >= 0 && copiedMiptex < map->textureCount))
+			{
+				pasteTexture();
+			}
 
-	if (app->pickMode == PICK_OBJECT)
+			ImGui::Separator();
+
+			if (ImGui::MenuItem("Copy lightmap", "(WIP)"))
+			{
+				copyLightmap();
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Only works for faces with matching sizes/extents,\nand the lightmap might get shifted.");
+				ImGui::EndTooltip();
+			}
+
+			if (ImGui::MenuItem("Paste lightmap", "", false, copiedLightmapFace >= 0 && copiedLightmapFace < map->faceCount))
+			{
+				pasteLightmap();
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+	else /*if (app->pickMode == PICK_OBJECT)*/
 	{
 		if (ImGui::BeginPopup("ent_context"))
 		{
@@ -539,12 +571,36 @@ void Gui::draw3dContextMenus()
 			{
 				app->copyEnt();
 			}
+
+			if (app->copiedEnt)
+			{
+				if (ImGui::MenuItem("Paste", "Ctrl+V", false, app->copiedEnt))
+				{
+					app->pasteEnt(false);
+				}
+				if (ImGui::MenuItem("Paste at original origin", 0, false, app->copiedEnt))
+				{
+					app->pasteEnt(true);
+				}
+			}
+
 			if (ImGui::MenuItem("Delete", "Del"))
 			{
-				app->deleteEnt();
+				if (app->pickInfo.selectedEnts.size() > 0)
+				{
+					std::set<int> entList;
+
+					entList.insert_range(app->pickInfo.selectedEnts);
+
+					for (auto rit = entList.rbegin(); rit != entList.rend(); ++rit)
+					{
+						app->deleteEnt(*rit);
+					}
+				}
 			}
+
 			ImGui::Separator();
-			if (map && entIdx >= 0)
+			if (map && entIdx >= 0 && entIdx < map->ents.size())
 			{
 				Entity* ent = map->ents[entIdx];
 				int modelIdx = ent->getBspModelIdx();
@@ -750,40 +806,7 @@ void Gui::draw3dContextMenus()
 			ImGui::EndPopup();
 		}
 	}
-	else if (app->pickMode == PICK_FACE)
-	{
-		if (map && ImGui::BeginPopup("face_context"))
-		{
-			if (ImGui::MenuItem("Copy texture", "Ctrl+C"))
-			{
-				copyTexture();
-			}
-			if (ImGui::MenuItem("Paste texture", "Ctrl+V", false, copiedMiptex >= 0 && copiedMiptex < map->textureCount))
-			{
-				pasteTexture();
-			}
-
-			ImGui::Separator();
-
-			if (ImGui::MenuItem("Copy lightmap", "(WIP)"))
-			{
-				copyLightmap();
-			}
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-			{
-				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Only works for faces with matching sizes/extents,\nand the lightmap might get shifted.");
-				ImGui::EndTooltip();
-			}
-
-			if (ImGui::MenuItem("Paste lightmap", "", false, copiedLightmapFace >= 0 && copiedLightmapFace < map->faceCount))
-			{
-				pasteLightmap();
-			}
-
-			ImGui::EndPopup();
-		}
-	}
+	
 }
 
 bool ExportWad(Bsp* map)
@@ -2112,7 +2135,6 @@ void Gui::drawKeyvalueEditor()
 
 void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 {
-	std::string lastVal = std::string();
 	Bsp* map = app->getSelectedMap();
 	if (!map || entIdx < 0)
 	{
@@ -4592,41 +4614,16 @@ void Gui::drawEntityReport()
 						}
 
 					}
-
 					if (selectedItems[i] && ImGui::IsItemHovered() && ImGui::IsMouseReleased(1))
 					{
-						ImGui::OpenPopup("ent_report_context");
+						ImGui::OpenPopup("ent_context");
 					}
 				}
 			}
+
+			draw3dContextMenus();
+
 			clipper.End();
-			if (ImGui::BeginPopup("ent_report_context"))
-			{
-				if (ImGui::MenuItem("Delete"))
-				{
-					std::set<int> selectedEnts;
-					for (int i = 0; i < selectedItems.size(); i++)
-					{
-						if (selectedItems[i] && !selectedEnts.count(visibleEnts[i]))
-							selectedEnts.insert(visibleEnts[i]);
-					}
-
-					for (int i = 0; i < map->ents.size(); i++)
-					{
-						if (selectedEnts.find(i) != selectedEnts.end())
-						{
-							app->deleteEnt(i);
-						}
-					}
-
-					app->deselectObject();
-					map->getBspRender()->preRenderEnts();
-					reloadLimits();
-					filterNeeded = true;
-				}
-
-				ImGui::EndPopup();
-			}
 
 			ImGui::EndChild();
 
