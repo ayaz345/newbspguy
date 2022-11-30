@@ -78,6 +78,7 @@ void Gui::init()
 
 		return (void*)(uint64_t)tex;
 	};
+
 	ifd::FileDialog::Instance().DeleteTexture = [](void* tex){
 		GLuint texID = (GLuint)((uintptr_t)tex);
 		glDeleteTextures(1, &texID);
@@ -647,7 +648,7 @@ void Gui::draw3dContextMenus()
 
 				bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] || map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
 
-				if (ImGui::BeginMenu("Redirect Hull", canRedirect && !app->isLoading))
+				if (ImGui::BeginMenu("Redirect Hull", canRedirect && !app->isLoading && modelIdx >= 0))
 				{
 					for (int i = 1; i < MAX_MAP_HULLS; i++)
 					{
@@ -2111,7 +2112,7 @@ void Gui::drawKeyvalueEditor()
 
 void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 {
-	static std::string lastVal = std::string();
+	std::string lastVal = std::string();
 	Bsp* map = app->getSelectedMap();
 	if (!map || entIdx < 0)
 	{
@@ -2266,7 +2267,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 						bool needReloadModel = false;
 
-						if (newVal != lastVal && !g_app->reloading && !g_app->isModelsReloading && linputData->key == "model")
+						if (!g_app->reloading && !g_app->isModelsReloading && linputData->key == "model")
 						{
 							if (ent->hasKey("model") && ent->keyvalues["model"] != newVal)
 							{
@@ -2283,15 +2284,11 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 							ent->setOrAddKeyvalue(linputData->key, newVal);
 						}
 
-						if (newVal != lastVal || needReloadModel)
-						{
-							linputData->bspRenderer->refreshEnt(linputData->entIdx);
-							if (needReloadModel)
-								g_app->reloadBspModels();
-							g_app->updateEntConnections();
-						}
+						linputData->bspRenderer->refreshEnt(linputData->entIdx);
+						if (needReloadModel)
+							g_app->reloadBspModels();
+						g_app->updateEntConnections();
 
-						lastVal = newVal;
 						return 1;
 					}
 				};
@@ -4607,8 +4604,6 @@ void Gui::drawEntityReport()
 			{
 				if (ImGui::MenuItem("Delete"))
 				{
-					std::vector<Entity*> newEnts;
-
 					std::set<int> selectedEnts;
 					for (int i = 0; i < selectedItems.size(); i++)
 					{

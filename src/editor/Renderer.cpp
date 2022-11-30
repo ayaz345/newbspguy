@@ -16,7 +16,7 @@ std::string g_config_dir = "";
 
 Renderer* g_app = NULL;
 
-
+vec2 mousePos;
 vec3 cameraOrigin;
 vec3 cameraAngles;
 
@@ -1395,7 +1395,7 @@ void Renderer::controls()
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 
-		vec2 mousePos((float)xpos, (float)ypos);
+		mousePos = vec2((float)xpos, (float)ypos);
 
 		cameraOrigin += getMoveDir() * (float)frameTimeScale;
 
@@ -2215,13 +2215,13 @@ bool Renderer::transformAxisControls()
 						if (!tmpEnt)
 							continue;
 
-						vec3 offset = tmpEnt->getOrigin() + delta;
+						vec3 offset = getEntOrigin(map,tmpEnt) + delta;
 
 						vec3 rounded = gridSnappingEnabled ? snapToGrid(offset) : offset;
 
 						axisDragStart = rounded;
 
-						tmpEnt->setOrAddKeyvalue("origin", rounded.toKeyvalueString(!gridSnappingEnabled));
+						tmpEnt->setOrAddKeyvalue("origin", (rounded - getEntOffset(map, tmpEnt)).toKeyvalueString(!gridSnappingEnabled));
 						map->getBspRender()->refreshEnt(tmpEntIdx);
 
 						updateEntConnectionPositions();

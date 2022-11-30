@@ -1636,7 +1636,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes)
 // marks which structures should not be moved
 	STRUCTUSAGE usedStructures(this);
 
-	bool* usedModels = new bool[modelCount];
+	bool* usedModels = new bool[modelCount + 1];
 	memset(usedModels, 0, sizeof(bool) * modelCount);
 	usedModels[0] = true; // never delete worldspawn
 	for (int i = 0; i < (int)ents.size(); i++)

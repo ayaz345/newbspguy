@@ -117,6 +117,7 @@ class Renderer;
 extern AppSettings g_settings;
 extern Renderer* g_app;
 
+extern vec2 mousePos;
 extern vec3 cameraOrigin;
 extern vec3 cameraAngles;
 

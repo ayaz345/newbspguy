@@ -237,7 +237,7 @@ DuplicateBspModelCommand::DuplicateBspModelCommand(std::string desc, PickInfo& p
 
 	this->oldModelIdx = modelIdx;
 	this->newModelIdx = -1;
-	this->entIdx = entIdx;
+	this->entIdx = tmpentIdx;
 	this->initialized = false;
 	this->allowedDuringLoad = false;
 	memset(&oldLumps, 0, sizeof(LumpState));
@@ -468,13 +468,26 @@ int CreateBspModelCommand::addDefaultTexture()
 EditBspModelCommand::EditBspModelCommand(std::string desc, PickInfo& pickInfo, LumpState oldLumps, LumpState newLumps,
 										 vec3 oldOrigin) : Command(desc, g_app->getSelectedMapId())
 {
-	this->modelIdx = modelIdx;
-	this->entIdx = pickInfo.GetSelectedEnt();
+
 	this->oldLumps = oldLumps;
 	this->newLumps = newLumps;
 	this->allowedDuringLoad = false;
 	this->oldOrigin = oldOrigin;
-	this->newOrigin = (g_app->getSelectedMap()->ents[entIdx])->getOrigin();
+
+	int tmpentIdx = pickInfo.GetSelectedEnt();
+	this->entIdx = tmpentIdx;
+
+	Bsp* map = g_app->getSelectedMap();
+	if (map && tmpentIdx >= 0)
+	{
+		this->modelIdx = map->ents[tmpentIdx]->getBspModelIdx();
+		this->newOrigin = map->ents[tmpentIdx]->getOrigin();
+	}
+	else
+	{
+		this->modelIdx = -1;
+		this->newOrigin = this->oldOrigin;
+	}
 }
 
 EditBspModelCommand::~EditBspModelCommand()
