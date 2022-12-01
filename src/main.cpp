@@ -115,7 +115,14 @@ bool start_viewer(const char* map)
 {
 	if (map && map[0] != '\0' && !fileExists(map))
 	{
-		return false;
+		if (std::string("empty") != map && std::string("editor") != map)
+		{
+			return false;
+		}
+		else
+		{
+			map = "";
+		}
 	}
 	if (!map)
 	{
@@ -234,7 +241,7 @@ int merge_maps(CommandLine& cli)
 		logf("\n");
 	}
 
-	vec3 gap = cli.hasOption("-gap") ? cli.getOptionVector("-gap") : vec3(0, 0, 0);
+	vec3 gap = cli.hasOption("-gap") ? cli.getOptionVector("-gap") : vec3();
 
 	std::string output_name = cli.hasOption("-o") ? cli.getOption("-o") : cli.bspfile;
 

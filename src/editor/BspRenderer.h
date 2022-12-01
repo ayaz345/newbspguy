@@ -58,6 +58,7 @@ struct RenderEnt
 	vec3 angles; // support angles
 	int modelIdx; // -1 = point entity
 	EntCube* pointEntCube;
+	bool needAngles = false;
 };
 
 struct RenderGroup
@@ -245,5 +246,5 @@ public:
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
 	void updateEntityState(Entity* ent);
-	void saveLumpState(Bsp* map, int targetLumps, bool deleteOldState);
+	void saveLumpState(int targetLumps, bool deleteOldState);
 };

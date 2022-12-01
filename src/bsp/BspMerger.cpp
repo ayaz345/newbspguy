@@ -141,14 +141,14 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 
 	std::vector<std::vector<std::vector<MAPBLOCK>>> orderedBlocks;
 
-	vec3 maxDims = vec3(0, 0, 0);
+	vec3 maxDims = vec3();
 	for (int i = 0; i < maps.size(); i++)
 	{
 		MAPBLOCK block;
 		maps[i]->get_bounding_box(block.mins, block.maxs);
 
 		block.size = block.maxs - block.mins;
-		block.offset = vec3(0, 0, 0);
+		block.offset = vec3();
 		block.map = maps[i];
 
 

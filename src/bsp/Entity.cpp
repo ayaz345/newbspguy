@@ -184,7 +184,7 @@ bool Entity::isBspModel()
 
 vec3 Entity::getOrigin()
 {
-	return hasKey("origin") ? parseVector(keyvalues["origin"]) : vec3(0, 0, 0);
+	return hasKey("origin") ? parseVector(keyvalues["origin"]) : vec3();
 }
 
 // TODO: maybe store this in a text file or something

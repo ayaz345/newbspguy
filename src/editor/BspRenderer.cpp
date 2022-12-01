@@ -1058,8 +1058,7 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 
 		renderClip->wireframeClipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
 		renderClip->wireframeClipnodeBuffer[i]->ownData = true;
-		if (!this->map)
-			return;
+	
 		renderClip->faceMaths[i] = std::move(tfaceMaths);
 	}
 }
@@ -1140,54 +1139,66 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
 		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-		return;
-	}
-	std::string entClassName = map->ents[entIdx]->keyvalues["classname"];
-	// based at cs 1.6 gamedll
-	if (entClassName == "func_breakable")
-	{
-		renderEnts[entIdx].angles.y = 0.0f;
-		renderEnts[entIdx].modelMat.rotateY(0.0f);
-		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-	}
-	else if (IsEntNotSupportAngles(entClassName))
-	{
-		renderEnts[entIdx].angles = vec3();
-	}
-	else if (entClassName == "env_sprite")
-	{
-		if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
-		{
-			renderEnts[entIdx].angles.z = 0.0f;
-			renderEnts[entIdx].modelMat.rotateY(0.0);
-			renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
-			renderEnts[entIdx].modelMat.rotateX((angles.y * (PI / 180.0f)));
-		}
-		else
-		{
-			renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
-			renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
-			renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-		}
+
+		renderEnts[entIdx].needAngles = false;
 	}
 	else
 	{
-		for (const auto& prefix : g_settings.entsNegativePitchPrefix)
+		std::string entClassName = map->ents[entIdx]->keyvalues["classname"];
+		// based at cs 1.6 gamedll
+		if (entClassName == "func_breakable")
 		{
-			if (entClassName.starts_with(prefix))
+			renderEnts[entIdx].angles.y = 0.0f;
+			renderEnts[entIdx].modelMat.rotateY(0.0f);
+			renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
+			renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
+		}
+		else if (IsEntNotSupportAngles(entClassName))
+		{
+			renderEnts[entIdx].angles = vec3();
+		}
+		else if (entClassName == "env_sprite")
+		{
+			if (abs(angles.y) >= EPSILON && abs(angles.z) < EPSILON)
+			{
+				renderEnts[entIdx].angles.z = 0.0f;
+				renderEnts[entIdx].modelMat.rotateY(0.0);
+				renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat.rotateX((angles.y * (PI / 180.0f)));
+			}
+			else
 			{
 				renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMat.rotateZ((angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-				return;
 			}
 		}
+		else
+		{
+			bool foundAngles = false;
+			for (const auto& prefix : g_settings.entsNegativePitchPrefix)
+			{
+				if (entClassName.starts_with(prefix))
+				{
+					renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat.rotateZ((angles.x * (PI / 180.0f)));
+					renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
+					foundAngles = true;
+					break;
+				}
+			}
+			if (!foundAngles)
+			{
+				renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
+			}
+		}
+	}
 
-		renderEnts[entIdx].modelMat.rotateY((angles.y * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat.rotateZ(-(angles.x * (PI / 180.0f)));
-		renderEnts[entIdx].modelMat.rotateX((angles.z * (PI / 180.0f)));
-		//renderEnts[entIdx].modelMat.rotate(angles.y, -angles.x, angles.z);
+	if (renderEnts[entIdx].angles != vec3())
+	{
+		renderEnts[entIdx].needAngles = true;
 	}
 }
 
@@ -1198,8 +1209,9 @@ void BspRenderer::refreshEnt(int entIdx)
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
 	renderEnts[entIdx].modelMat.loadIdentity();
 	renderEnts[entIdx].modelMatOrigin.loadIdentity();
-	renderEnts[entIdx].offset = vec3(0, 0, 0);
-	renderEnts[entIdx].angles = vec3(0, 0, 0);
+	renderEnts[entIdx].offset = vec3();
+	renderEnts[entIdx].angles = vec3();
+	renderEnts[entIdx].needAngles = false;
 	renderEnts[entIdx].pointEntCube = pointEntRenderer->getEntCube(ent);
 
 	bool setAngles = false;
@@ -1711,7 +1723,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			continue;
 		}
 
-		if (ent && ent->angles != vec3())
+		if (ent && ent->needAngles)
 		{
 			activeShader->pushMatrix(MAT_MODEL);
 			*activeShader->modelMat = ent->modelMatOrigin;
@@ -1785,7 +1797,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 		rgroup.buffer->drawFull();
 
-		if (ent && ent->angles != vec3())
+		if (ent && ent->needAngles)
 		{
 			for (int s = 0; s < MAXLIGHTMAPS; s++)
 			{
@@ -1879,7 +1891,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 
 	start -= mapOffset;
 
-	if (pickModelPoly(start, dir, vec3(0, 0, 0), 0, hullIdx, tempPickInfo))
+	if (pickModelPoly(start, dir, vec3(), 0, hullIdx, tempPickInfo))
 	{
 		if (*tmpMap || *tmpMap == map)
 		{
@@ -2078,7 +2090,7 @@ void BspRenderer::updateEntityState(Entity* ent)
 	undoEntOrigin = ent->getOrigin();
 }
 
-void BspRenderer::saveLumpState(Bsp* map, int targetLumps, bool deleteOldState)
+void BspRenderer::saveLumpState(int targetLumps, bool deleteOldState)
 {
 	if (deleteOldState)
 	{
@@ -2190,7 +2202,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, int targetLu
 
 	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, g_app->pickInfo, undoLumpState, newLumps, undoEntOrigin);
 	pushUndoCommand(editCommand);
-	saveLumpState(map, 0xffffffff, false);
+	saveLumpState(0xffffffff, false);
 
 	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
 	updateEntityState(ent);

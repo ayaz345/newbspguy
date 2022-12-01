@@ -180,7 +180,7 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 vec3 vec3::normalize(float length)
 {
 	if (abs(x) < EPSILON && abs(y) < EPSILON && abs(z) < EPSILON)
-		return vec3(0, 0, 0);
+		return vec3();
 	float d = length / sqrt((x * x) + (y * y) + (z * z));
 	return vec3(x * d, y * d, z * d);
 }
@@ -362,7 +362,7 @@ float vec2::length()
 vec2 vec2::normalize(float length)
 {
 	if (abs(x) < EPSILON && abs(y) < EPSILON)
-		return vec2(0, 0);
+		return vec2();
 	float d = length / sqrt((x * x) + (y * y));
 	return vec2(x * d, y * d);
 }

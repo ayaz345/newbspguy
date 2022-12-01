@@ -559,7 +559,7 @@ void EditBspModelCommand::refresh()
 	renderer->refreshModel(modelIdx);
 	renderer->refreshEnt(entIdx);
 	g_app->gui->refresh();
-	renderer->saveLumpState(map, 0xffffff, true);
+	renderer->saveLumpState(0xffffff, true);
 	renderer->updateEntityState(ent);
 
 	if (g_app->pickInfo.GetSelectedEnt() == entIdx)
@@ -636,7 +636,7 @@ void CleanMapCommand::refresh()
 	renderer->reload();
 	g_app->deselectObject();
 	g_app->gui->refresh();
-	renderer->saveLumpState(map, 0xffffffff, true);
+	renderer->saveLumpState( 0xffffffff, true);
 }
 
 size_t CleanMapCommand::memoryUsage()
@@ -715,7 +715,7 @@ void OptimizeMapCommand::refresh()
 	renderer->reload();
 	g_app->deselectObject();
 	g_app->gui->refresh();
-	renderer->saveLumpState(map, 0xffffffff, true);
+	renderer->saveLumpState(0xffffffff, true);
 }
 
 size_t OptimizeMapCommand::memoryUsage()

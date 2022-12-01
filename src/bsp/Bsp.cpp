@@ -59,7 +59,7 @@ void Bsp::init_empty_bsp()
 	ent->setOrAddKeyvalue("classname", "worldspawn");
 	ents.push_back(ent);
 
-
+	create_leaf(CONTENTS_EMPTY);
 	update_lump_pointers();
 	update_ent_lump();
 /*/
@@ -1808,7 +1808,7 @@ bool Bsp::has_hull2_ents()
 			if (!ents[i]->keyvalues["maxhullsize"].empty())
 				maxhull = parseVector(ents[i]->keyvalues["maxhullsize"]);
 
-			if (minhull == vec3(0, 0, 0) && maxhull == vec3(0, 0, 0))
+			if (minhull == vec3() && maxhull == vec3())
 			{
 // monster is using its default hull size
 				if (largeMonsters.find(cname) != largeMonsters.end())

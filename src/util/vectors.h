@@ -5,7 +5,7 @@
 struct vec3
 {
 	float x, y, z;
-	vec3() : x(), y(), z()
+	vec3() : x(0), y(0), z(0)
 	{}
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
 	{}
@@ -85,7 +85,7 @@ bool operator!=(const vec3& v1, const vec3& v2);
 struct vec2
 {
 	float x, y;
-	vec2() : x(), y()
+	vec2() : x(0), y(0)
 	{}
 	vec2(float x, float y) : x(x), y(y)
 	{}

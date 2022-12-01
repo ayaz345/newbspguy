@@ -355,7 +355,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 
 	tmpMap->ents.clear();
 
-	tmpEnt->setOrAddKeyvalue("origin", vec3(0, 0, 0).toKeyvalueString());
+	tmpEnt->setOrAddKeyvalue("origin", vec3().toKeyvalueString());
 	tmpEnt->setOrAddKeyvalue("compiler", g_version_string);
 	tmpEnt->setOrAddKeyvalue("message", "bsp model");
 	tmpMap->ents.push_back(tmpEnt);
@@ -962,7 +962,7 @@ void Gui::drawMenuBar()
 		}
 
 
-		if (ImGui::MenuItem("Close All"))
+		if (ImGui::MenuItem("Close All", NULL, false, !app->isLoading))
 		{
 			filterNeeded = true;
 			if (map)
@@ -1375,7 +1375,7 @@ void Gui::drawMenuBar()
 		if (ImGui::MenuItem("Clean", 0, false, !app->isLoading && map))
 		{
 			CleanMapCommand* command = new CleanMapCommand("Clean " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
-			rend->saveLumpState(map, 0xffffffff, false);
+			rend->saveLumpState(0xffffffff, false);
 			command->execute();
 			rend->pushUndoCommand(command);
 		}
@@ -1383,7 +1383,7 @@ void Gui::drawMenuBar()
 		if (ImGui::MenuItem("Optimize", 0, false, !app->isLoading && map))
 		{
 			OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
-			rend->saveLumpState(map, 0xffffffff, false);
+			rend->saveLumpState(0xffffffff, false);
 			command->execute();
 			rend->pushUndoCommand(command);
 		}
@@ -2464,7 +2464,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 					g_app->reloadBspModels();
 					inputData->bspRenderer->preRenderEnts();
 					if (g_app->SelectedMap)
-						g_app->SelectedMap->getBspRender()->saveLumpState(inputData->bspRenderer->map, 0xffffffff, false);
+						g_app->SelectedMap->getBspRender()->saveLumpState(0xffffffff, false);
 				}
 				g_app->updateEntConnections();
 			}
@@ -2487,7 +2487,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 					g_app->reloadBspModels();
 					inputData->bspRenderer->preRenderEnts();
 					if (g_app->SelectedMap)
-						g_app->SelectedMap->getBspRender()->saveLumpState(inputData->bspRenderer->map, 0xffffffff, false);
+						g_app->SelectedMap->getBspRender()->saveLumpState(0xffffffff, false);
 				}
 				g_app->updateEntConnections();
 			}
@@ -4023,7 +4023,6 @@ void Gui::drawImportMapWidget()
 
 	if (ImGui::Begin(title, &showImportMapWidget))
 	{
-
 		if (ifd::FileDialog::Instance().IsDone("BspOpenDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
@@ -4114,8 +4113,8 @@ void Gui::drawImportMapWidget()
 							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
 							for (unsigned int i = 0; i < map->textureCount; i++)
 							{
-								int texOffset = ((int*)map->textures)[i + 1];
-								BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + texOffset));
+								int tex2Offset = ((int*)map->textures)[i + 1];
+								BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + tex2Offset));
 								if (strcmp(tex.szName, tex2.szName) == 0)
 								{
 									newMiptex = i;
@@ -4144,7 +4143,6 @@ void Gui::drawImportMapWidget()
 										}
 
 										texinfo.iMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
-
 
 										delete[] imageData;
 										delete wadTex;
@@ -4181,21 +4179,16 @@ void Gui::drawImportMapWidget()
 					}
 					newModel.nVisLeafs = 0; 
 
+					app->deselectObject();
+
 					map->ents.push_back(new Entity("func_wall"));
 					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
 					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("origin", "0 0 0");
 					map->update_ent_lump();
 					app->updateEnts();
-
-					map->getBspRender()->updateLightmapInfos();
-					map->getBspRender()->calcFaceMaths();
-					map->getBspRender()->preRenderFaces();
-					map->getBspRender()->preRenderEnts();
-					map->getBspRender()->reloadLightmaps();
-					map->getBspRender()->addClipnodeModel(newModelIdx);
-					app->gui->refresh();
-
-					app->deselectObject();
+					
+					map->getBspRender()->reload();
+					map->getBspRender()->ReuploadTextures();
 
 					delete bspModel;
 				}
@@ -5906,7 +5899,7 @@ void Gui::drawTextureTool()
 		{
 			unsigned int newMiptex = 0;
 			app->pickCount++;
-			map->getBspRender()->saveLumpState(map, 0xffffffff, false);
+			map->getBspRender()->saveLumpState(0xffffffff, false);
 			if (textureChanged)
 			{
 				validTexture = false;

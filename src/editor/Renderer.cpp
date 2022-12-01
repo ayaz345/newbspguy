@@ -1067,7 +1067,6 @@ void Renderer::clearMaps()
 	}
 	mapRenderers.clear();
 	clearSelection();
-
 	logf("Cleared map list\n");
 }
 
@@ -2639,7 +2638,7 @@ void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane
 
 vec3 Renderer::getEntOrigin(Bsp* map, Entity* ent)
 {
-	vec3 origin = ent->hasKey("origin") ? parseVector(ent->keyvalues["origin"]) : vec3(0, 0, 0);
+	vec3 origin = ent->hasKey("origin") ? parseVector(ent->keyvalues["origin"]) : vec3();
 	return origin + getEntOffset(map, ent);
 }
 
@@ -2650,7 +2649,7 @@ vec3 Renderer::getEntOffset(Bsp* map, Entity* ent)
 		BSPMODEL& tmodel = map->models[ent->getBspModelIdx()];
 		return tmodel.nMins + (tmodel.nMaxs - tmodel.nMins) * 0.5f;
 	}
-	return vec3(0, 0, 0);
+	return vec3();
 }
 
 void Renderer::updateDragAxes(vec3 delta)
@@ -3995,7 +3994,7 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 
 	map->getBspRender()->updateEntityState(ent);
 	if (ent && ent->isBspModel())
-		map->getBspRender()->saveLumpState(map, 0xffffffff, true);
+		map->getBspRender()->saveLumpState(0xffffffff, true);
 	pickCount++; // force transform window update
 }
 
