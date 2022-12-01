@@ -12,6 +12,8 @@
 
 #define LIGHTMAP_ATLAS_SIZE 512
 
+class Command;
+
 enum RenderFlags
 {
 	RENDER_TEXTURES = 1,
@@ -100,42 +102,16 @@ struct PickInfo
 
 	float bestDist;
 	PickInfo()
-	{
-		selectedEnts.clear();
-		selectedFaces.clear();
-		bestDist = 0.0f;
-	}
+	PickInfo();
 
-	int GetSelectedEnt()
-	{
-		if (selectedEnts.size())
-			return selectedEnts[0];
-		return -1;
-	}
+	int GetSelectedEnt();
+	void AddSelectedEnt(int entIdx);
 
-	void AddSelectedEnt(int entIdx)
-	{
-		selectedEnts.push_back(entIdx);
-	}
+	void SetSelectedEnt(int entIdx);
 
-	void SetSelectedEnt(int entIdx)
-	{
-		selectedEnts.clear();
-		AddSelectedEnt(entIdx);
-	}
+	void DelSelectedEnt(int entIdx);
 
-	void DelSelectedEnt(int entIdx)
-	{
-		if (IsSelectedEnt(entIdx))
-		{
-			selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), entIdx));
-		}
-	}
-
-	bool IsSelectedEnt(int entIdx)
-	{
-		return std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
-	}
+	bool IsSelectedEnt(int entIdx);
 };
 
 class BspRenderer
@@ -252,4 +228,22 @@ public:
 	void deleteFaceMaths();
 	void delayLoadData();
 	int getBestClipnodeHull(int modelIdx);
+
+	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
+	std::vector<Command*> undoHistory;
+	std::vector<Command*> redoHistory;
+	Entity undoEntityState = Entity();
+	LumpState undoLumpState = LumpState();
+	vec3 undoEntOrigin;
+
+	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
+	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
+	void pushUndoCommand(Command* cmd);
+	void undo();
+	void redo();
+	void clearUndoCommands();
+	void clearRedoCommands();
+	void calcUndoMemoryUsage();
+	void updateEntityState(Entity* ent);
+	void saveLumpState(Bsp* map, int targetLumps, bool deleteOldState);
 };

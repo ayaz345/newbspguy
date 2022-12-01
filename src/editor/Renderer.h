@@ -1,3 +1,5 @@
+#pragma once
+
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -160,7 +162,9 @@ public:
 	void saveSettings();
 	void loadSettings();
 
-
+	bool reloading = false;
+	bool isLoading = false;
+	bool reloadingGameDir = false;
 
 	PickInfo pickInfo = PickInfo();
 	BspRenderer* getMapContainingCamera();
@@ -170,7 +174,7 @@ public:
 	void selectMap(Bsp* map);
 	void deselectMap();
 	void clearSelection();
-	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
+	void updateEnts();
 private:
 	Bsp* SelectedMap = NULL;
 
@@ -182,9 +186,6 @@ private:
 	PointEntRenderer* swapPointEntRenderer = NULL;
 
 	static std::future<void> fgdFuture;
-	bool reloading = false;
-	bool reloadingGameDir = false;
-	bool isLoading = false;
 
 	Fgd* fgd = NULL;
 
@@ -228,7 +229,7 @@ private:
 	bool textureLock = false;
 	bool moveOrigin = true;
 	bool invalidSolid = false;
-	bool isTransformableSolid = true;
+	bool isTransformableSolid = false;
 	bool canTransform = false;
 	bool anyEdgeSelected = false;
 	bool anyVertSelected = false;
@@ -291,14 +292,6 @@ private:
 	bool debugNodes = false;
 	int clipnodeRenderHull = -1;
 
-	int undoLevels = 64;
-	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
-	std::vector<Command*> undoHistory;
-	std::vector<Command*> redoHistory;
-	Entity undoEntityState = Entity();
-	LumpState undoLumpState = LumpState();
-	vec3 undoEntOrigin;
-
 	vec3 getMoveDir();
 	void controls();
 	void cameraPickingControls();
@@ -345,6 +338,7 @@ private:
 	void copyEnt();
 	void pasteEnt(bool noModifyOrigin);
 	void deleteEnt(int entIdx = 0);
+	void deleteEnts();
 	void scaleSelectedObject(float x, float y, float z);
 	void scaleSelectedObject(vec3 dir, const vec3& fromDir);
 	void scaleSelectedVerts(float x, float y, float z);
@@ -356,17 +350,5 @@ private:
 	void goToEnt(Bsp* map, int entIdx);
 	void goToCoords(float x, float y, float z);
 	void ungrabEnt();
-
-	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
-	void pushUndoCommand(Command* cmd);
-	void undo();
-	void redo();
-	void clearUndoCommands();
-	void clearRedoCommands();
-	void calcUndoMemoryUsage();
-	void updateEnts();
-	void updateEntityState(Entity* ent);
-	void saveLumpState(Bsp* map, int targetLumps, bool deleteOldState);
-
 	void loadFgds();
 };

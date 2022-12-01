@@ -94,19 +94,20 @@ void Bsp::selectModelEnt()
 		if (!mapRender)
 			continue;
 		Bsp* map = mapRender->map;
-		if (map && map != this)
+		if (map && map == this->parentMap)
 		{
+			g_app->clearSelection();
+			g_app->selectMap(map);
 			vec3 worldOrigin = map->ents[0]->getOrigin();
 			for (int n = 1; n < map->ents.size(); n++)
 			{
 				if (map->ents[n]->hasKey("model") && (map->ents[n]->getOrigin() + worldOrigin) == ents[0]->getOrigin())
 				{
-					g_app->clearSelection();
-					g_app->selectMap(map);
 					g_app->pickInfo.SetSelectedEnt(n);
 					return;
 				}
 			}
+			return;
 		}
 	}
 }

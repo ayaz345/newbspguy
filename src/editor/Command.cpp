@@ -1,9 +1,9 @@
 #include <string.h>
 #include "Command.h"
-#include "Renderer.h"
 #include "Gui.h"
 #include <lodepng.h>
 #include "icons/aaatrigger.h"
+
 
 Command::Command(std::string _desc, int _mapIdx)
 {
@@ -90,7 +90,7 @@ void EditEntityCommand::refresh()
 	{
 		renderer->refreshPointEnt(entIdx);
 	}
-	g_app->updateEntityState(ent);
+	renderer->updateEntityState(ent);
 	g_app->pickCount++; // force GUI update
 	g_app->updateModelVerts();
 }
@@ -153,11 +153,20 @@ void DeleteEntityCommand::undo()
 	g_app->pickInfo.SetSelectedEnt(entIdx);
 
 	refresh();
+
+	if (newEnt->hasKey("model") &&
+		toLowerCase(newEnt->keyvalues["model"]).find(".bsp") != std::string::npos)
+	{
+		g_app->reloadBspModels();
+	}
 }
 
 void DeleteEntityCommand::refresh()
 {
 	BspRenderer* renderer = getBspRenderer();
+	if (!renderer)
+		return;
+
 	renderer->preRenderEnts();
 	g_app->gui->refresh();
 }
@@ -189,6 +198,8 @@ CreateEntityCommand::~CreateEntityCommand()
 void CreateEntityCommand::execute()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 
 	Entity* newEnt = new Entity();
 	*newEnt = *entData;
@@ -201,6 +212,8 @@ void CreateEntityCommand::execute()
 void CreateEntityCommand::undo()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 
 	g_app->deselectObject();
 
@@ -211,7 +224,10 @@ void CreateEntityCommand::undo()
 
 void CreateEntityCommand::refresh()
 {
-	BspRenderer* renderer = getBspRenderer();
+	BspRenderer* renderer = getBspRenderer(); 
+	if (!renderer)
+		return;
+
 	renderer->preRenderEnts();
 	g_app->gui->refresh();
 }
@@ -512,7 +528,7 @@ void EditBspModelCommand::execute()
 
 	map->replace_lumps(newLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
-	g_app->undoEntOrigin = newOrigin;
+	map->getBspRender()->undoEntOrigin = newOrigin;
 
 	refresh();
 }
@@ -525,7 +541,7 @@ void EditBspModelCommand::undo()
 
 	map->replace_lumps(oldLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
-	g_app->undoEntOrigin = oldOrigin;
+	map->getBspRender()->undoEntOrigin = oldOrigin;
 	map->getBspRender()->reload();
 	refresh();
 }
@@ -533,6 +549,8 @@ void EditBspModelCommand::undo()
 void EditBspModelCommand::refresh()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 	BspRenderer* renderer = getBspRenderer();
 	Entity* ent = map->ents[entIdx];
 
@@ -541,8 +559,8 @@ void EditBspModelCommand::refresh()
 	renderer->refreshModel(modelIdx);
 	renderer->refreshEnt(entIdx);
 	g_app->gui->refresh();
-	g_app->saveLumpState(map, 0xffffff, true);
-	g_app->updateEntityState(ent);
+	renderer->saveLumpState(map, 0xffffff, true);
+	renderer->updateEntityState(ent);
 
 	if (g_app->pickInfo.GetSelectedEnt() == entIdx)
 	{
@@ -585,6 +603,9 @@ CleanMapCommand::~CleanMapCommand()
 void CleanMapCommand::execute()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
+
 	BspRenderer* renderer = getBspRenderer();
 	if (!map || !renderer)
 		return;
@@ -597,6 +618,8 @@ void CleanMapCommand::execute()
 void CleanMapCommand::undo()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 
 	map->replace_lumps(oldLumps);
 
@@ -606,12 +629,14 @@ void CleanMapCommand::undo()
 void CleanMapCommand::refresh()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 	BspRenderer* renderer = getBspRenderer();
 
 	renderer->reload();
 	g_app->deselectObject();
 	g_app->gui->refresh();
-	g_app->saveLumpState(map, 0xffffffff, true);
+	renderer->saveLumpState(map, 0xffffffff, true);
 }
 
 size_t CleanMapCommand::memoryUsage()
@@ -671,6 +696,8 @@ void OptimizeMapCommand::execute()
 void OptimizeMapCommand::undo()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
 
 	map->replace_lumps(oldLumps);
 
@@ -680,12 +707,15 @@ void OptimizeMapCommand::undo()
 void OptimizeMapCommand::refresh()
 {
 	Bsp* map = getBsp();
+	if (!map)
+		return;
+
 	BspRenderer* renderer = getBspRenderer();
 
 	renderer->reload();
 	g_app->deselectObject();
 	g_app->gui->refresh();
-	g_app->saveLumpState(map, 0xffffffff, true);
+	renderer->saveLumpState(map, 0xffffffff, true);
 }
 
 size_t OptimizeMapCommand::memoryUsage()

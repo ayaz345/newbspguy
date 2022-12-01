@@ -7,7 +7,7 @@
 #include "lodepng.h"
 #include "Renderer.h"
 #include "Clipper.h"
-
+#include "Command.h"
 #include "icons/missing.h"
 
 BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _fullBrightBspShader,
@@ -84,6 +84,10 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	{
 		map->ents[i]->getTargets();
 	}
+
+	memset(&undoLumpState, 0, sizeof(LumpState));
+
+	undoEntityState = Entity();
 }
 
 void BspRenderer::loadTextures()
@@ -1312,6 +1316,9 @@ void BspRenderer::refreshFace(int faceIdx)
 
 BspRenderer::~BspRenderer()
 {
+	clearUndoCommands();
+	clearRedoCommands();
+
 	if (lightmapFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
 		texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
 		clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
@@ -1350,6 +1357,7 @@ BspRenderer::~BspRenderer()
 	delete missingTex;
 	delete map;
 	map = NULL;
+
 }
 
 void BspRenderer::ReuploadTextures()
@@ -2058,4 +2066,260 @@ int BspRenderer::getBestClipnodeHull(int modelIdx)
 	}
 
 	return -1;
+}
+
+
+void BspRenderer::updateEntityState(Entity* ent)
+{
+	if (!ent)
+		return;
+
+	undoEntityState = *ent;
+	undoEntOrigin = ent->getOrigin();
+}
+
+void BspRenderer::saveLumpState(Bsp* map, int targetLumps, bool deleteOldState)
+{
+	if (deleteOldState)
+	{
+		for (int i = 0; i < HEADER_LUMPS; i++)
+		{
+			if (undoLumpState.lumps[i])
+				delete[] undoLumpState.lumps[i];
+		}
+	}
+
+	undoLumpState = map->duplicate_lumps(targetLumps);
+}
+
+void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
+{
+	if (entIdx < 0)
+	{
+		logf("Invalid entity undo state push[No ent id]\n");
+		return;
+	}
+
+	Entity* ent = map->ents[entIdx];
+
+	if (!ent)
+	{
+		logf("Invalid entity undo state push[No ent]\n");
+		return;
+	}
+
+	bool anythingToUndo = true;
+	if (undoEntityState.keyOrder.size() == ent->keyOrder.size())
+	{
+		bool keyvaluesDifferent = false;
+		for (int i = 0; i < undoEntityState.keyOrder.size(); i++)
+		{
+			std::string oldKey = undoEntityState.keyOrder[i];
+			std::string newKey = ent->keyOrder[i];
+			if (oldKey != newKey)
+			{
+				keyvaluesDifferent = true;
+				break;
+			}
+			std::string oldVal = undoEntityState.keyvalues[oldKey];
+			std::string newVal = ent->keyvalues[oldKey];
+			if (oldVal != newVal)
+			{
+				keyvaluesDifferent = true;
+				break;
+			}
+		}
+
+		anythingToUndo = keyvaluesDifferent;
+	}
+
+	if (!anythingToUndo)
+	{
+		logf("Invalid entity undo state push[No changes]\n");
+		return; // nothing to undo
+	}
+
+	pushUndoCommand(new EditEntityCommand(actionDesc, g_app->pickInfo, undoEntityState, *ent));
+	updateEntityState(ent);
+}
+
+void BspRenderer::pushModelUndoState(const std::string& actionDesc, int targetLumps)
+{
+	if (!map || g_app->pickInfo.GetSelectedEnt() < 0)
+	{
+		logf("Impossible, no map, ent or model idx\n");
+		return;
+	}
+	int entIdx = g_app->pickInfo.GetSelectedEnt();
+	Entity* ent = map->ents[entIdx];
+
+	LumpState newLumps = map->duplicate_lumps(targetLumps);
+
+	bool differences[HEADER_LUMPS] = {false};
+
+	bool anyDifference = false;
+	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
+		if (newLumps.lumps[i] && undoLumpState.lumps[i])
+		{
+			if (newLumps.lumpLen[i] != undoLumpState.lumpLen[i] || memcmp(newLumps.lumps[i], undoLumpState.lumps[i], newLumps.lumpLen[i]) != 0)
+			{
+				anyDifference = true;
+				differences[i] = true;
+			}
+		}
+	}
+
+	if (!anyDifference)
+	{
+		logf("No differences detected\n");
+		return;
+	}
+
+	// delete lumps that have no differences to save space
+	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
+		if (!differences[i])
+		{
+			delete[] undoLumpState.lumps[i];
+			delete[] newLumps.lumps[i];
+			undoLumpState.lumps[i] = newLumps.lumps[i] = NULL;
+			undoLumpState.lumpLen[i] = newLumps.lumpLen[i] = 0;
+		}
+	}
+
+	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, g_app->pickInfo, undoLumpState, newLumps, undoEntOrigin);
+	pushUndoCommand(editCommand);
+	saveLumpState(map, 0xffffffff, false);
+
+	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
+	updateEntityState(ent);
+}
+
+void BspRenderer::pushUndoCommand(Command* cmd)
+{
+	undoHistory.push_back(cmd);
+	clearRedoCommands();
+
+	while (!undoHistory.empty() && undoHistory.size() > g_settings.undoLevels)
+	{
+		delete undoHistory[0];
+		undoHistory.erase(undoHistory.begin());
+	}
+
+	calcUndoMemoryUsage();
+}
+
+void BspRenderer::undo()
+{
+	if (undoHistory.empty())
+	{
+		return;
+	}
+
+	Command* undoCommand = undoHistory[undoHistory.size() - 1];
+	if (!undoCommand->allowedDuringLoad && g_app->isLoading)
+	{
+		logf("Can't undo %s while map is loading!\n", undoCommand->desc.c_str());
+		return;
+	}
+
+	undoCommand->undo();
+	undoHistory.pop_back();
+	redoHistory.push_back(undoCommand);
+	g_app->updateEnts();
+}
+
+void BspRenderer::redo()
+{
+	if (redoHistory.empty())
+	{
+		return;
+	}
+
+	Command* redoCommand = redoHistory[redoHistory.size() - 1];
+	if (!redoCommand->allowedDuringLoad && g_app->isLoading)
+	{
+		logf("Can't redo %s while map is loading!\n", redoCommand->desc.c_str());
+		return;
+	}
+
+	redoCommand->execute();
+	redoHistory.pop_back();
+	undoHistory.push_back(redoCommand);
+	g_app->updateEnts();
+}
+
+void BspRenderer::clearUndoCommands()
+{
+	for (int i = 0; i < undoHistory.size(); i++)
+	{
+		delete undoHistory[i];
+	}
+
+	undoHistory.clear();
+	calcUndoMemoryUsage();
+}
+
+void BspRenderer::clearRedoCommands()
+{
+	for (int i = 0; i < redoHistory.size(); i++)
+	{
+		delete redoHistory[i];
+	}
+
+	redoHistory.clear();
+	calcUndoMemoryUsage();
+}
+
+void BspRenderer::calcUndoMemoryUsage()
+{
+	undoMemoryUsage = (undoHistory.size() + redoHistory.size()) * sizeof(Command*);
+
+	for (int i = 0; i < undoHistory.size(); i++)
+	{
+		undoMemoryUsage += undoHistory[i]->memoryUsage();
+	}
+	for (int i = 0; i < redoHistory.size(); i++)
+	{
+		undoMemoryUsage += redoHistory[i]->memoryUsage();
+	}
+}
+
+PickInfo::PickInfo()
+{
+	selectedEnts.clear();
+	selectedFaces.clear();
+	bestDist = 0.0f;
+}
+
+int PickInfo::GetSelectedEnt()
+{
+	if (selectedEnts.size())
+		return selectedEnts[0];
+	return -1;
+}
+
+void PickInfo::AddSelectedEnt(int entIdx)
+{
+	selectedEnts.push_back(entIdx);
+}
+
+void PickInfo::SetSelectedEnt(int entIdx)
+{
+	selectedEnts.clear();
+	AddSelectedEnt(entIdx);
+}
+
+void PickInfo::DelSelectedEnt(int entIdx)
+{
+	if (IsSelectedEnt(entIdx))
+	{
+		selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), entIdx));
+	}
+}
+
+bool PickInfo::IsSelectedEnt(int entIdx)
+{
+	return std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
 }

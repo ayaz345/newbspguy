@@ -727,9 +727,6 @@ Renderer::Renderer()
 	reloading = true;
 	fgdFuture = std::async(std::launch::async, &Renderer::loadFgds, this);
 
-	memset(&undoLumpState, 0, sizeof(LumpState));
-
-	undoEntityState = Entity();
 	//cameraOrigin = vec3(51, 427, 234);
 	//cameraAngles = vec3(41, 0, -170);
 }
@@ -813,6 +810,21 @@ void Renderer::renderLoop()
 			}
 		}
 
+		int modelIdx = -1;
+		int entIdx = pickInfo.GetSelectedEnt();
+
+		if (map && entIdx >= 0 && entIdx < map->ents.size())
+		{
+			modelIdx = map->ents[entIdx]->getBspModelIdx();
+		}
+
+		isTransformableSolid = entIdx >= 0;
+		bool isScalingObject = transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT;
+		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN;
+		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
+		bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
+
+
 		g_time = glfwGetTime();
 		g_frame_counter++;
 
@@ -864,7 +876,7 @@ void Renderer::renderLoop()
 				highlightEnts = pickInfo.selectedEnts;
 			}
 
-			if (selectedMap && getSelectedMap() != curMap && !curMap->is_model)
+			if (selectedMap && getSelectedMap() != curMap && (!curMap->is_model || curMap->parentMap != selectedMap))
 			{
 				continue;
 			}
@@ -915,13 +927,6 @@ void Renderer::renderLoop()
 		matmodel.loadIdentity();
 		colorShader->bind();
 
-		int modelIdx = -1;
-
-		if (map && pickInfo.GetSelectedEnt() >= 0)
-		{
-			modelIdx = map->ents[pickInfo.GetSelectedEnt()]->getBspModelIdx();
-		}
-
 		if (map)
 		{
 			if (debugClipnodes && modelIdx > 0)
@@ -967,12 +972,7 @@ void Renderer::renderLoop()
 			entConnectionPoints->drawFull();
 			glEnable(GL_DEPTH_TEST);
 		}
-		int entIdx = pickInfo.GetSelectedEnt();
-		bool isScalingObject = transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT;
-		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN;
-		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
-		bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
-
+		
 		if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
 		{
 			if (!movingEnt && !isTransformingWorld && entIdx >= 0 && (isTransformingValid || isMovingOrigin))
@@ -1067,8 +1067,6 @@ void Renderer::clearMaps()
 	}
 	mapRenderers.clear();
 	clearSelection();
-	clearUndoCommands();
-	clearRedoCommands();
 
 	logf("Cleared map list\n");
 }
@@ -1088,9 +1086,7 @@ void Renderer::reloadMaps()
 		addMap(new Bsp(reloadPaths[i]));
 	}
 
-	clearUndoCommands();
-	clearRedoCommands();
-
+	reloadBspModels();
 	logf("Reloaded maps\n");
 }
 
@@ -1111,7 +1107,6 @@ void Renderer::saveSettings()
 	g_settings.fov = fov;
 	g_settings.render_flags = g_render_flags;
 	g_settings.fontSize = gui->fontSize;
-	g_settings.undoLevels = undoLevels;
 	g_settings.moveSpeed = moveSpeed;
 	g_settings.rotSpeed = rotationSpeed;
 }
@@ -1136,7 +1131,6 @@ void Renderer::loadSettings()
 	fov = g_settings.fov;
 	g_render_flags = g_settings.render_flags;
 	gui->fontSize = g_settings.fontSize;
-	undoLevels = g_settings.undoLevels;
 	rotationSpeed = g_settings.rotSpeed;
 	moveSpeed = g_settings.moveSpeed;
 
@@ -1465,11 +1459,8 @@ void Renderer::vertexEditControls()
 
 	}
 
-	if (!isTransformableSolid)
-	{
-		canTransform = (transformTarget == TRANSFORM_OBJECT || transformTarget == TRANSFORM_ORIGIN) && transformMode == TRANSFORM_MOVE;
-	}
-
+	canTransform = (transformTarget == TRANSFORM_OBJECT || transformTarget == TRANSFORM_ORIGIN) && transformMode == TRANSFORM_MOVE && pickMode == pick_modes::PICK_OBJECT;
+	
 
 	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F])
 	{
@@ -1481,11 +1472,6 @@ void Renderer::vertexEditControls()
 		{
 			gui->showEntityReport = true;
 		}
-	}
-
-	if (canTransform)
-	{
-		canTransform = pickMode == pick_modes::PICK_OBJECT;
 	}
 }
 
@@ -1600,8 +1586,9 @@ void Renderer::applyTransform(bool forceUpdate)
 {
 	Bsp* map = SelectedMap;
 
-	if (!isTransformableSolid || (modelUsesSharedStructures && (transformMode != TRANSFORM_MOVE || transformTarget == TRANSFORM_VERTEX)))
+	if (!map || !isTransformableSolid || (modelUsesSharedStructures && (transformMode != TRANSFORM_MOVE || transformTarget == TRANSFORM_VERTEX)))
 	{
+		updateModelVerts();
 		return;
 	}
 
@@ -1699,7 +1686,7 @@ void Renderer::applyTransform(bool forceUpdate)
 
 		if (actionIsUndoable)
 		{
-			pushModelUndoState("Edit BSP Model", EDIT_MODEL_LUMPS);
+			map->getBspRender()->pushModelUndoState("Edit BSP Model", EDIT_MODEL_LUMPS);
 		}
 	}
 }
@@ -1880,14 +1867,13 @@ void Renderer::cameraContextMenus()
 		{
 			for (int i = 0; i < mapRenderers.size(); i++)
 			{
-				if (getSelectedMap() == mapRenderers[i]->map->parentMap &&
-					mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map) && tempPick.GetSelectedEnt() > 0)
+				if (mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map) && tempPick.GetSelectedEnt() >= 0)
 				{
-					if (oLdmap != map)
+					if (map && oLdmap != map)
 					{
-						clearSelection();
-						selectMap(map);
-						deselectObject();
+						map->selectModelEnt();
+						map = oLdmap;
+						tempPick.SetSelectedEnt(pickInfo.GetSelectedEnt());
 					}
 					break;
 				}
@@ -1985,7 +1971,7 @@ void Renderer::shortcutControls()
 		}
 		if (pressed[GLFW_KEY_DELETE] && !oldPressed[GLFW_KEY_DELETE])
 		{
-			deleteEnt();
+			deleteEnts();
 		}
 	}
 	else if (pickMode == PICK_FACE)
@@ -2003,13 +1989,16 @@ void Renderer::shortcutControls()
 
 void Renderer::globalShortcutControls()
 {
+	Bsp* map = SelectedMap;
+	if (!map)
+		return;
 	if (anyCtrlPressed && pressed[GLFW_KEY_Z] && !oldPressed[GLFW_KEY_Z])
 	{
-		undo();
+		map->getBspRender()->undo();
 	}
 	if (anyCtrlPressed && pressed[GLFW_KEY_Y] && !oldPressed[GLFW_KEY_Y])
 	{
-		redo();
+		map->getBspRender()->redo();
 	}
 }
 
@@ -2060,10 +2049,7 @@ void Renderer::pickObject()
 		{
 			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], false);
 		}
-
-		clearSelection();
-		selectMap(map);
-		deselectObject();
+		map->selectModelEnt();
 		return;
 	}
 
@@ -2078,8 +2064,6 @@ void Renderer::pickObject()
 			transformMode = TRANSFORM_MOVE;
 		transformTarget = TRANSFORM_OBJECT;
 	}
-
-	isTransformableSolid = tmpPickInfo.GetSelectedEnt() >= 0;
 
 	if (pickMode == PICK_OBJECT)
 	{
@@ -2200,7 +2184,7 @@ bool Renderer::transformAxisControls()
 				moveSelectedVerts(delta);
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
-					pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
+					map->getBspRender()->pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
 				}
 			}
 			else if (transformTarget == TRANSFORM_OBJECT)
@@ -2232,7 +2216,7 @@ bool Renderer::transformAxisControls()
 					{
 						if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 						{
-							pushEntityUndoState("Move Entity", tmpEntIdx);
+							map->getBspRender()->pushEntityUndoState("Move Entity", tmpEntIdx);
 						}
 					}
 				}
@@ -2246,7 +2230,7 @@ bool Renderer::transformAxisControls()
 					updateEntConnectionPositions();
 					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
-						pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
+						map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
 					}
 				}
 			}
@@ -2258,7 +2242,7 @@ bool Renderer::transformAxisControls()
 				updateEntConnectionPositions();
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
-					pushEntityUndoState("Move Origin", pickInfo.GetSelectedEnt());
+					map->getBspRender()->pushEntityUndoState("Move Origin", pickInfo.GetSelectedEnt());
 				}
 			}
 
@@ -2280,7 +2264,7 @@ bool Renderer::transformAxisControls()
 				map->getBspRender()->refreshModel(ent->getBspModelIdx());
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
-					pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
+					map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
 				}
 			}
 		}
@@ -2507,7 +2491,7 @@ void Renderer::reloadBspModels()
 				if (entity->hasKey("model"))
 				{
 					std::string modelPath = entity->keyvalues["model"];
-					if (modelPath.find(".bsp") != std::string::npos)
+					if (toLowerCase(modelPath).find(".bsp") != std::string::npos)
 					{
 						for (int i = 0; i < tryPaths.size(); i++)
 						{
@@ -2546,6 +2530,7 @@ void Renderer::addMap(Bsp* map)
 
 	if (!map->is_model)
 	{
+		deselectObject();
 		clearSelection();
 		selectMap(map);
 		if (map->ents.size())
@@ -3498,7 +3483,10 @@ bool Renderer::splitModelFace()
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (!map)
+	{
+		logf("No selected map\n");
 		return false;
+	}
 	BspRenderer* mapRenderer = map->getBspRender();
 	// find the pseudo-edge to split with
 	std::vector<int> selectedEdges;
@@ -3705,7 +3693,7 @@ bool Renderer::splitModelFace()
 		modelEdges[i].selected = false;
 	}
 
-	pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
+	map->getBspRender()->pushModelUndoState("Split Face", EDIT_MODEL_LUMPS);
 
 	mapRenderer->updateLightmapInfos();
 	mapRenderer->calcFaceMaths();
@@ -3830,17 +3818,18 @@ void Renderer::cutEnt()
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (entIdx <= 0)
 		return;
+	Bsp* map = SelectedMap;
+	if (!map)
+		return;
 
 	if (copiedEnt)
 		delete copiedEnt;
-
-	Bsp* map = SelectedMap;
 	copiedEnt = new Entity();
 	*copiedEnt = *map->ents[entIdx];
 
 	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", pickInfo);
 	deleteCommand->execute();
-	pushUndoCommand(deleteCommand);
+	map->getBspRender()->pushUndoCommand(deleteCommand);
 }
 
 void Renderer::copyEnt()
@@ -3887,7 +3876,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 
 	CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), &insertEnt);
 	createCommand->execute();
-	pushUndoCommand(createCommand);
+	map->getBspRender()->pushUndoCommand(createCommand);
 
 	clearSelection();
 	selectMap(map);
@@ -3896,7 +3885,9 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 
 void Renderer::deleteEnt(int entIdx)
 {
-	if (pickInfo.GetSelectedEnt() <= 0 && entIdx <= 0)
+	Bsp* map = SelectedMap;
+
+	if (!map || (pickInfo.GetSelectedEnt() <= 0 && entIdx <= 0))
 		return;
 	PickInfo tmpPickInfo = pickInfo;
 
@@ -3907,7 +3898,38 @@ void Renderer::deleteEnt(int entIdx)
 
 	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", tmpPickInfo);
 	deleteCommand->execute();
-	pushUndoCommand(deleteCommand);
+	map->getBspRender()->pushUndoCommand(deleteCommand);
+}
+
+void Renderer::deleteEnts()
+{
+	Bsp* map = SelectedMap;
+
+	if (map && pickInfo.selectedEnts.size() > 0)
+	{
+		bool reloadbspmdls = false;
+		std::set<int> entList;
+
+		//entList.insert_range(app->pickInfo.selectedEnts);
+
+		entList.insert(pickInfo.selectedEnts.begin(), pickInfo.selectedEnts.end());
+
+		for (auto rit = entList.rbegin(); rit != entList.rend(); ++rit)
+		{
+			if (map->ents[*rit]->hasKey("model") &&
+				toLowerCase(map->ents[*rit]->keyvalues["model"]).find(".bsp") != std::string::npos)
+			{
+				reloadbspmdls = true;
+			}
+
+			deleteEnt(*rit);
+		}
+
+		if (reloadbspmdls)
+		{
+			reloadBspModels();
+		}
+	}
 }
 
 void Renderer::deselectObject()
@@ -3915,7 +3937,7 @@ void Renderer::deselectObject()
 	filterNeeded = true;
 	pickInfo.selectedEnts.clear();
 	pickInfo.selectedFaces.clear();
-	isTransformableSolid = true;
+	isTransformableSolid = false;
 	modelUsesSharedStructures = false;
 	hoverVert = -1;
 	hoverEdge = -1;
@@ -3939,6 +3961,9 @@ void Renderer::deselectFaces()
 
 void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 {
+	if (!map)
+		return;
+
 	Entity* ent = NULL;
 	if (entIdx >= 0)
 	{
@@ -3966,9 +3991,9 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	updateSelectionSize();
 	updateEntConnections();
 
-	updateEntityState(ent);
+	map->getBspRender()->updateEntityState(ent);
 	if (ent && ent->isBspModel())
-		saveLumpState(map, 0xffffffff, true);
+		map->getBspRender()->saveLumpState(map, 0xffffffff, true);
 	pickCount++; // force transform window update
 }
 
@@ -4003,241 +4028,24 @@ void Renderer::goToEnt(Bsp* map, int entIdx)
 
 void Renderer::ungrabEnt()
 {
-	if (!movingEnt)
+	Bsp* map = SelectedMap;
+	if (!movingEnt || !map)
 	{
 		return;
 	}
-	pushEntityUndoState("Move Entity", pickInfo.GetSelectedEnt());
+	map->getBspRender()->pushEntityUndoState("Move Entity", pickInfo.GetSelectedEnt());
 
 	movingEnt = false;
 }
 
-void Renderer::updateEntityState(Entity* ent)
-{
-	if (!ent)
-		return;
-
-	undoEntityState = *ent;
-	undoEntOrigin = ent->getOrigin();
-}
-
-void Renderer::saveLumpState(Bsp* map, int targetLumps, bool deleteOldState)
-{
-	if (deleteOldState)
-	{
-		for (int i = 0; i < HEADER_LUMPS; i++)
-		{
-			if (undoLumpState.lumps[i])
-				delete[] undoLumpState.lumps[i];
-		}
-	}
-
-	undoLumpState = map->duplicate_lumps(targetLumps);
-}
-
-void Renderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
-{
-	if (entIdx < 0)
-	{
-		logf("Invalid entity undo state push[No ent id]\n");
-		return;
-	}
-
-	Entity* ent = SelectedMap->ents[entIdx];
-
-	if (!ent)
-	{
-		logf("Invalid entity undo state push[No ent]\n");
-		return;
-	}
-
-	bool anythingToUndo = true;
-	if (undoEntityState.keyOrder.size() == ent->keyOrder.size())
-	{
-		bool keyvaluesDifferent = false;
-		for (int i = 0; i < undoEntityState.keyOrder.size(); i++)
-		{
-			std::string oldKey = undoEntityState.keyOrder[i];
-			std::string newKey = ent->keyOrder[i];
-			if (oldKey != newKey)
-			{
-				keyvaluesDifferent = true;
-				break;
-			}
-			std::string oldVal = undoEntityState.keyvalues[oldKey];
-			std::string newVal = ent->keyvalues[oldKey];
-			if (oldVal != newVal)
-			{
-				keyvaluesDifferent = true;
-				break;
-			}
-		}
-
-		anythingToUndo = keyvaluesDifferent;
-	}
-
-	if (!anythingToUndo)
-	{
-		logf("Invalid entity undo state push[No changes]\n");
-		return; // nothing to undo
-	}
-
-	pushUndoCommand(new EditEntityCommand(actionDesc, pickInfo, undoEntityState, *ent));
-	updateEntityState(ent);
-}
-
-void Renderer::pushModelUndoState(const std::string& actionDesc, int targetLumps)
-{
-	Bsp* map = SelectedMap;
-
-	if (!map || pickInfo.GetSelectedEnt() < 0)
-	{
-		logf("Impossible, no map, ent or model idx\n");
-		return;
-	}
-	int entIdx = pickInfo.GetSelectedEnt();
-	Entity* ent = map->ents[entIdx];
-
-	LumpState newLumps = map->duplicate_lumps(targetLumps);
-
-	bool differences[HEADER_LUMPS] = {false};
-
-	bool anyDifference = false;
-	for (int i = 0; i < HEADER_LUMPS; i++)
-	{
-		if (newLumps.lumps[i] && undoLumpState.lumps[i])
-		{
-			if (newLumps.lumpLen[i] != undoLumpState.lumpLen[i] || memcmp(newLumps.lumps[i], undoLumpState.lumps[i], newLumps.lumpLen[i]) != 0)
-			{
-				anyDifference = true;
-				differences[i] = true;
-			}
-		}
-	}
-
-	if (!anyDifference)
-	{
-		logf("No differences detected\n");
-		return;
-	}
-
-	// delete lumps that have no differences to save space
-	for (int i = 0; i < HEADER_LUMPS; i++)
-	{
-		if (!differences[i])
-		{
-			delete[] undoLumpState.lumps[i];
-			delete[] newLumps.lumps[i];
-			undoLumpState.lumps[i] = newLumps.lumps[i] = NULL;
-			undoLumpState.lumpLen[i] = newLumps.lumpLen[i] = 0;
-		}
-	}
-
-	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, pickInfo, undoLumpState, newLumps, undoEntOrigin);
-	pushUndoCommand(editCommand);
-	saveLumpState(map, 0xffffffff, false);
-
-	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
-	updateEntityState(ent);
-}
-
-void Renderer::pushUndoCommand(Command* cmd)
-{
-	undoHistory.push_back(cmd);
-	clearRedoCommands();
-
-	while (!undoHistory.empty() && undoHistory.size() > undoLevels)
-	{
-		delete undoHistory[0];
-		undoHistory.erase(undoHistory.begin());
-	}
-
-	calcUndoMemoryUsage();
-}
-
-void Renderer::undo()
-{
-	if (undoHistory.empty())
-	{
-		return;
-	}
-
-	Command* undoCommand = undoHistory[undoHistory.size() - 1];
-	if (!undoCommand->allowedDuringLoad && isLoading)
-	{
-		logf("Can't undo %s while map is loading!\n", undoCommand->desc.c_str());
-		return;
-	}
-
-	undoCommand->undo();
-	undoHistory.pop_back();
-	redoHistory.push_back(undoCommand);
-	updateEnts();
-}
-
-void Renderer::redo()
-{
-	if (redoHistory.empty())
-	{
-		return;
-	}
-
-	Command* redoCommand = redoHistory[redoHistory.size() - 1];
-	if (!redoCommand->allowedDuringLoad && isLoading)
-	{
-		logf("Can't redo %s while map is loading!\n", redoCommand->desc.c_str());
-		return;
-	}
-
-	redoCommand->execute();
-	redoHistory.pop_back();
-	undoHistory.push_back(redoCommand);
-	updateEnts();
-}
-
-void Renderer::clearUndoCommands()
-{
-	for (int i = 0; i < undoHistory.size(); i++)
-	{
-		delete undoHistory[i];
-	}
-
-	undoHistory.clear();
-	calcUndoMemoryUsage();
-}
-
-void Renderer::clearRedoCommands()
-{
-	for (int i = 0; i < redoHistory.size(); i++)
-	{
-		delete redoHistory[i];
-	}
-
-	redoHistory.clear();
-	calcUndoMemoryUsage();
-}
-
-void Renderer::calcUndoMemoryUsage()
-{
-	undoMemoryUsage = (undoHistory.size() + redoHistory.size()) * sizeof(Command*);
-
-	for (int i = 0; i < undoHistory.size(); i++)
-	{
-		undoMemoryUsage += undoHistory[i]->memoryUsage();
-	}
-	for (int i = 0; i < redoHistory.size(); i++)
-	{
-		undoMemoryUsage += redoHistory[i]->memoryUsage();
-	}
-}
 
 void Renderer::updateEnts()
 {
 	Bsp* map = SelectedMap;
-	if (map && map->getBspRender())
+	if (map)
 	{
 		map->getBspRender()->preRenderEnts();
-		updateEntConnections();
-		updateEntConnectionPositions();
+		g_app->updateEntConnections();
+		g_app->updateEntConnectionPositions();
 	}
 }

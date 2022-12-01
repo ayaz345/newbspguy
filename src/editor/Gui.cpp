@@ -6,6 +6,7 @@
 #include "Renderer.h"
 #include <lodepng.h>
 #include <algorithm>
+#include <string>
 #include "BspMerger.h"
 #include "filedialog/ImFileDialog.h"
 // embedded binary data
@@ -533,6 +534,7 @@ void Gui::draw3dContextMenus()
 			{
 				copyTexture();
 			}
+
 			if (ImGui::MenuItem("Paste texture", "Ctrl+V", false, copiedMiptex >= 0 && copiedMiptex < map->textureCount))
 			{
 				pasteTexture();
@@ -563,11 +565,11 @@ void Gui::draw3dContextMenus()
 	{
 		if (ImGui::BeginPopup("ent_context"))
 		{
-			if (ImGui::MenuItem("Cut", "Ctrl+X"))
+			if (ImGui::MenuItem("Cut", "Ctrl+X", false, app->pickInfo.selectedEnts.size() == 1))
 			{
 				app->cutEnt();
 			}
-			if (ImGui::MenuItem("Copy", "Ctrl+C"))
+			if (ImGui::MenuItem("Copy", "Ctrl+C", false, app->pickInfo.selectedEnts.size() == 1))
 			{
 				app->copyEnt();
 			}
@@ -586,23 +588,11 @@ void Gui::draw3dContextMenus()
 
 			if (ImGui::MenuItem("Delete", "Del"))
 			{
-				if (app->pickInfo.selectedEnts.size() > 0)
-				{
-					std::set<int> entList;
-
-					//entList.insert_range(app->pickInfo.selectedEnts);
-
-					entList.insert(app->pickInfo.selectedEnts.begin(), app->pickInfo.selectedEnts.end());
-
-					for (auto rit = entList.rbegin(); rit != entList.rend(); ++rit)
-					{
-						app->deleteEnt(*rit);
-					}
-				}
+				app->deleteEnts();
 			}
 
 			ImGui::Separator();
-			if (map && entIdx >= 0 && entIdx < map->ents.size())
+			if (map && entIdx >= 0 && entIdx < map->ents.size() && app->pickInfo.selectedEnts.size() == 1)
 			{
 				Entity* ent = map->ents[entIdx];
 				int modelIdx = ent->getBspModelIdx();
@@ -738,11 +728,11 @@ void Gui::draw3dContextMenus()
 
 				ImGui::Separator();
 
-				if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && modelIdx >= 0))
+				if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && modelIdx >= 0 && app->pickInfo.selectedEnts.size() == 1))
 				{
 					DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", app->pickInfo);
 					command->execute();
-					app->pushUndoCommand(command);
+					map->getBspRender()->pushUndoCommand(command);
 				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
@@ -750,19 +740,19 @@ void Gui::draw3dContextMenus()
 					ImGui::TextUnformatted("Create a copy of this BSP model and assign to this entity.\n\nThis lets you edit the model for this entity without affecting others.");
 					ImGui::EndTooltip();
 				}
-				if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && modelIdx >= 0))
+				if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && modelIdx >= 0 && app->pickInfo.selectedEnts.size() == 1))
 				{
 					if (modelIdx)
 					{
 						ExportModel(map, modelIdx, 0);
 					}
 				}
-				/*if (ImGui::MenuItem("Export .bsp WATER(true collision)", 0, false, !app->isLoading)) {
+				if (ImGui::MenuItem("Export .bsp WATER(true collision)", 0, false, !app->isLoading)) {
 					if (modelIdx)
 					{
 						ExportModel(map, modelIdx, 2);
 					}
-				}*/
+				}
 				if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 				{
 					ImGui::BeginTooltip();
@@ -808,7 +798,7 @@ void Gui::draw3dContextMenus()
 			ImGui::EndPopup();
 		}
 	}
-	
+
 }
 
 bool ExportWad(Bsp* map)
@@ -898,9 +888,12 @@ void Gui::drawMenuBar()
 	ImGuiContext& g = *GImGui;
 	ImGui::BeginMainMenuBar();
 	Bsp* map = app->getSelectedMap();
+	BspRenderer* rend = NULL;
+
 
 	if (map)
 	{
+		rend = map->getBspRender();
 		if (ifd::FileDialog::Instance().IsDone("WadOpenDialog"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
@@ -957,7 +950,7 @@ void Gui::drawMenuBar()
 		if (ImGui::MenuItem("Open", NULL, false, !app->isLoading))
 		{
 			filterNeeded = true;
-			ifd::FileDialog::Instance().Open("MapOpenDialog", "Open a map", "Map file (*.bsp){.bsp},.*", false, g_settings.lastdir);
+			ifd::FileDialog::Instance().Open("MapOpenDialog", "Open .bsp map", "Map file (*.bsp){.bsp},.*", false, g_settings.lastdir);
 		}
 
 
@@ -974,6 +967,7 @@ void Gui::drawMenuBar()
 			filterNeeded = true;
 			if (map)
 			{
+				app->deselectObject();
 				app->clearSelection();
 				app->deselectMap();
 				app->clearMaps();
@@ -1196,7 +1190,7 @@ void Gui::drawMenuBar()
 			{
 				if (map)
 				{
-					ifd::FileDialog::Instance().Open("WadOpenDialog", "Open a wad", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
+					ifd::FileDialog::Instance().Open("WadOpenDialog", "Open .wad", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
 				}
 
 				if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1289,8 +1283,8 @@ void Gui::drawMenuBar()
 
 	if (ImGui::BeginMenu("Edit"))
 	{
-		Command* undoCmd = !app->undoHistory.empty() ? app->undoHistory[app->undoHistory.size() - 1] : NULL;
-		Command* redoCmd = !app->redoHistory.empty() ? app->redoHistory[app->redoHistory.size() - 1] : NULL;
+		Command* undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
+		Command* redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
 		std::string undoTitle = undoCmd ? "Undo " + undoCmd->desc : "Can't undo";
 		std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
 		bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
@@ -1301,20 +1295,20 @@ void Gui::drawMenuBar()
 
 		if (ImGui::MenuItem(undoTitle.c_str(), "Ctrl+Z", false, canUndo))
 		{
-			app->undo();
+			rend->undo();
 		}
 		else if (ImGui::MenuItem(redoTitle.c_str(), "Ctrl+Y", false, canRedo))
 		{
-			app->redo();
+			rend->redo();
 		}
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Cut", "Ctrl+X", false, nonWorldspawnEntSelected))
+		if (ImGui::MenuItem("Cut", "Ctrl+X", false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size() == 1))
 		{
 			app->cutEnt();
 		}
-		if (ImGui::MenuItem("Copy", "Ctrl+C", false, nonWorldspawnEntSelected))
+		if (ImGui::MenuItem("Copy", "Ctrl+C", false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size() == 1))
 		{
 			app->copyEnt();
 		}
@@ -1328,16 +1322,16 @@ void Gui::drawMenuBar()
 		}
 		if (ImGui::MenuItem("Delete", "Del", false, nonWorldspawnEntSelected))
 		{
-			app->deleteEnt();
+			app->deleteEnts();
 		}
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && nonWorldspawnEntSelected))
+		if (ImGui::MenuItem("Duplicate BSP model", 0, false, app->pickInfo.selectedEnts.size() == 1 && !app->isLoading && nonWorldspawnEntSelected))
 		{
 			DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", app->pickInfo);
 			command->execute();
-			app->pushUndoCommand(command);
+			rend->pushUndoCommand(command);
 		}
 		if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "G", false, nonWorldspawnEntSelected))
 		{
@@ -1380,18 +1374,18 @@ void Gui::drawMenuBar()
 
 		if (ImGui::MenuItem("Clean", 0, false, !app->isLoading && map))
 		{
-			CleanMapCommand* command = new CleanMapCommand("Clean " + map->bsp_name, app->getSelectedMapId(), app->undoLumpState);
-			app->saveLumpState(map, 0xffffffff, false);
+			CleanMapCommand* command = new CleanMapCommand("Clean " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
+			rend->saveLumpState(map, 0xffffffff, false);
 			command->execute();
-			app->pushUndoCommand(command);
+			rend->pushUndoCommand(command);
 		}
 
 		if (ImGui::MenuItem("Optimize", 0, false, !app->isLoading && map))
 		{
-			OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->bsp_name, app->getSelectedMapId(), app->undoLumpState);
-			app->saveLumpState(map, 0xffffffff, false);
+			OptimizeMapCommand* command = new OptimizeMapCommand("Optimize " + map->bsp_name, app->getSelectedMapId(), rend->undoLumpState);
+			rend->saveLumpState(map, 0xffffffff, false);
 			command->execute();
-			app->pushUndoCommand(command);
+			rend->pushUndoCommand(command);
 		}
 
 		ImGui::Separator();
@@ -1462,7 +1456,7 @@ void Gui::drawMenuBar()
 			CreateEntityCommand* createCommand = new CreateEntityCommand("Create Entity", app->getSelectedMapId(), newEnt);
 			delete newEnt;
 			createCommand->execute();
-			app->pushUndoCommand(createCommand);
+			rend->pushUndoCommand(createCommand);
 		}
 
 		if (ImGui::MenuItem("BSP Model", 0, false, !app->isLoading && map))
@@ -1484,7 +1478,7 @@ void Gui::drawMenuBar()
 			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize);
 			command->execute();
 			delete newEnt;
-			app->pushUndoCommand(command);
+			rend->pushUndoCommand(command);
 		}
 		ImGui::EndMenu();
 	}
@@ -1539,6 +1533,7 @@ void Gui::drawMenuBar()
 			{
 				if (ImGui::MenuItem(bspRend->map->bsp_name.c_str(), NULL, selectedMap == bspRend->map))
 				{
+					app->deselectObject();
 					app->clearSelection();
 					app->selectMap(bspRend->map);
 				}
@@ -1974,14 +1969,14 @@ void Gui::drawDebugWidget()
 			}
 		}
 
-		if (ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
+		if (map && ImGui::CollapsingHeader("Debug", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Text("DebugVec0 %6.2f %6.2f %6.2f", app->debugVec0.x, app->debugVec0.y, app->debugVec0.z);
 			ImGui::Text("DebugVec1 %6.2f %6.2f %6.2f", app->debugVec1.x, app->debugVec1.y, app->debugVec1.z);
 			ImGui::Text("DebugVec2 %6.2f %6.2f %6.2f", app->debugVec2.x, app->debugVec2.y, app->debugVec2.z);
 			ImGui::Text("DebugVec3 %6.2f %6.2f %6.2f", app->debugVec3.x, app->debugVec3.y, app->debugVec3.z);
 
-			float mb = app->undoMemoryUsage / (1024.0f * 1024.0f);
+			float mb = map->getBspRender()->undoMemoryUsage / (1024.0f * 1024.0f);
 			ImGui::Text("Undo Memory Usage: %.2f MB", mb);
 
 
@@ -1990,6 +1985,7 @@ void Gui::drawDebugWidget()
 			bool isTransformingValid = !(app->modelUsesSharedStructures && (app->transformMode != TRANSFORM_MOVE || app->transformTarget == TRANSFORM_VERTEX)) && (app->isTransformableSolid || isScalingObject);
 			bool isTransformingWorld = entIdx == 0 && app->transformTarget != TRANSFORM_OBJECT;
 
+			ImGui::Text("isTransformableSolid %d", app->isTransformableSolid);
 			ImGui::Text("isScalingObject %d", isScalingObject);
 			ImGui::Text("isMovingOrigin %d", isMovingOrigin);
 			ImGui::Text("isTransformingValid %d", isTransformingValid);
@@ -2015,10 +2011,10 @@ void Gui::drawKeyvalueEditor()
 	if (ImGui::Begin("Keyvalue Editor", &showKeyvalueWidget, 0))
 	{
 		int entIdx = app->pickInfo.GetSelectedEnt();
+		Bsp* map = app->getSelectedMap();
 		if (entIdx >= 0 && app->fgd
-			&& !app->isLoading && !app->isModelsReloading && !app->reloading)
+			&& !app->isLoading && !app->isModelsReloading && !app->reloading && map)
 		{
-			Bsp* map = app->getSelectedMap();
 
 			Entity* ent = map->ents[entIdx];
 			std::string cname = ent->keyvalues["classname"];
@@ -2084,7 +2080,7 @@ void Gui::drawKeyvalueEditor()
 							{
 								ent->setOrAddKeyvalue("classname", group.classes[k]->name);
 								map->getBspRender()->refreshEnt(entIdx);
-								app->pushEntityUndoState("Change Class", entIdx);
+								map->getBspRender()->pushEntityUndoState("Change Class", entIdx);
 							}
 						}
 
@@ -2258,7 +2254,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 							ent->setOrAddKeyvalue(key, choice.svalue);
 							map->getBspRender()->refreshEnt(entIdx);
 							app->updateEntConnections();
-							app->pushEntityUndoState("Edit Keyvalue", entIdx);
+							map->getBspRender()->pushEntityUndoState("Edit Keyvalue", entIdx);
 						}
 					}
 
@@ -2309,6 +2305,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 						}
 
 						linputData->bspRenderer->refreshEnt(linputData->entIdx);
+
 						if (needReloadModel)
 							g_app->reloadBspModels();
 						g_app->updateEntConnections();
@@ -2391,7 +2388,7 @@ void Gui::drawKeyvalueEditor_FlagsTab(int entIdx)
 			else
 				ent->removeKeyvalue("spawnflags");
 
-			app->pushEntityUndoState(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", entIdx);
+			map->getBspRender()->pushEntityUndoState(checkboxEnabled[i] ? "Enable Flag" : "Disable Flag", entIdx);
 		}
 	}
 
@@ -2466,7 +2463,8 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 				{
 					g_app->reloadBspModels();
 					inputData->bspRenderer->preRenderEnts();
-					g_app->saveLumpState(inputData->bspRenderer->map, 0xffffffff, false);
+					if (g_app->SelectedMap)
+						g_app->SelectedMap->getBspRender()->saveLumpState(inputData->bspRenderer->map, 0xffffffff, false);
 				}
 				g_app->updateEntConnections();
 			}
@@ -2488,7 +2486,8 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 				{
 					g_app->reloadBspModels();
 					inputData->bspRenderer->preRenderEnts();
-					g_app->saveLumpState(inputData->bspRenderer->map, 0xffffffff, false);
+					if (g_app->SelectedMap)
+						g_app->SelectedMap->getBspRender()->saveLumpState(inputData->bspRenderer->map, 0xffffffff, false);
 				}
 				g_app->updateEntConnections();
 			}
@@ -2660,7 +2659,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 				if (keyOrdname == "model")
 					map->getBspRender()->preRenderEnts();
 				app->updateEntConnections();
-				app->pushEntityUndoState("Delete Keyvalue",entIdx);
+				map->getBspRender()->pushEntityUndoState("Delete Keyvalue", entIdx);
 			}
 			ImGui::PopStyleColor(3);
 			ImGui::NextColumn();
@@ -2669,8 +2668,8 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 	if (!keyDragging && wasKeyDragging)
 	{
-		app->pushEntityUndoState("Move Keyvalue",entIdx);
 		map->getBspRender()->refreshEnt(entIdx);
+		map->getBspRender()->pushEntityUndoState("Move Keyvalue", entIdx);
 	}
 
 	wasKeyDragging = keyDragging;
@@ -2692,7 +2691,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			ent->addKeyvalue(keyName, "");
 			map->getBspRender()->refreshEnt(entIdx);
 			app->updateEntConnections();
-			app->pushEntityUndoState("Add Keyvalue",entIdx);
+			map->getBspRender()->pushEntityUndoState("Add Keyvalue", entIdx);
 			keyName = "";
 		}
 	}
@@ -2930,9 +2929,9 @@ void Gui::drawTransformWidget()
 
 			if (inputsWereDragged && !inputsAreDragging)
 			{
-				if (app->undoEntityState.getOrigin() != ent->getOrigin())
+				if (map->getBspRender()->undoEntityState.getOrigin() != ent->getOrigin())
 				{
-					app->pushEntityUndoState("Move Entity",entIdx);
+					map->getBspRender()->pushEntityUndoState("Move Entity", entIdx);
 				}
 
 				if (transformingEnt)
@@ -3304,6 +3303,7 @@ void Gui::drawSettings()
 			}
 			ifd::FileDialog::Instance().Close();
 		}
+
 		if (ifd::FileDialog::Instance().IsDone("WorkingDir"))
 		{
 			if (ifd::FileDialog::Instance().HasResult())
@@ -3339,7 +3339,7 @@ void Gui::drawSettings()
 			{
 				shouldReloadFonts = true;
 			}
-			ImGui::DragInt("Undo Levels", &app->undoLevels, 0.05f, 0, 64);
+			ImGui::DragInt("Undo Levels", &g_settings.undoLevels, 0.05f, 0, 64);
 			ImGui::Checkbox("Verbose Logging", &g_verbose);
 			ImGui::SameLine();
 			ImGui::Checkbox("Make map backup", &g_settings.backUpMap);
@@ -4008,18 +4008,6 @@ void Gui::drawImportMapWidget()
 	static std::string mapPath;
 	const char* title = "Import .bsp model as func_breakable entity";
 
-	if (ifd::FileDialog::Instance().IsDone("BspOpenDialog"))
-	{
-		if (ifd::FileDialog::Instance().HasResult())
-		{
-			std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-			mapPath = res.string();
-			g_settings.lastdir = res.parent_path().string();
-		}
-		ifd::FileDialog::Instance().Close();
-	}
-
-
 	if (showImportMapWidget_Type == SHOW_IMPORT_OPEN)
 	{
 		title = "Open map";
@@ -4035,12 +4023,27 @@ void Gui::drawImportMapWidget()
 
 	if (ImGui::Begin(title, &showImportMapWidget))
 	{
+
+		if (ifd::FileDialog::Instance().IsDone("BspOpenDialog"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				mapPath = res.string();
+				g_settings.lastdir = res.parent_path().string();
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+
+
 		ImGui::InputText(".bsp file", &mapPath);
 		ImGui::SameLine();
+
 		if (ImGui::Button("...##open_bsp_file1"))
 		{
-			ifd::FileDialog::Instance().Open("BspOpenDialog", "Open a map", "Map file (*.bsp){.bsp},.*", false, g_settings.lastdir);
+			ifd::FileDialog::Instance().Open("BspOpenDialog", "Opep bsp model", "BSP file (*.bsp){.bsp},.*", false, g_settings.lastdir);
 		}
+
 		if (ImGui::Button("Load", ImVec2(120, 0)))
 		{
 			fixupPath(mapPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
@@ -5842,7 +5845,7 @@ void Gui::drawTextureTool()
 		{
 			unsigned int newMiptex = 0;
 			app->pickCount++;
-			app->saveLumpState(map, 0xffffffff, false);
+			map->getBspRender()->saveLumpState(map, 0xffffffff, false);
 			if (textureChanged)
 			{
 				validTexture = false;
@@ -5974,7 +5977,7 @@ void Gui::drawTextureTool()
 			updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
 				textureChanged = toggledFlags = updatedTexVec = false;
 
-			app->pushModelUndoState("Edit Face", EDIT_MODEL_LUMPS);
+			map->getBspRender()->pushModelUndoState("Edit Face", EDIT_MODEL_LUMPS);
 
 			mapRenderer->updateLightmapInfos();
 			mapRenderer->calcFaceMaths();

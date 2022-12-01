@@ -1,10 +1,11 @@
 #pragma once
 
+#include "Renderer.h"
 #include "util.h"
 #include "Bsp.h"
 #include "Entity.h"
-#include "BspRenderer.h"
 
+class PickInfo;
 // Undoable actions following the Command Pattern
 
 class Command
