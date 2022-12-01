@@ -4107,10 +4107,10 @@ void Gui::drawImportMapWidget()
 					}
 					if (newTexinfo.size())
 					{
-						for (auto& s : newTexinfo)
+						for (auto& texinfo : newTexinfo)
 						{
 							int newMiptex = -1;
-							int texOffset = ((int*)bspModel->textures)[s.iMiptex + 1];
+							int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
 							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
 							for (unsigned int i = 0; i < map->textureCount; i++)
 							{
@@ -4143,7 +4143,7 @@ void Gui::drawImportMapWidget()
 											imageData[k] = palette[src[k]];
 										}
 
-										map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+										texinfo.iMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
 
 										delete[] imageData;
@@ -4151,11 +4151,10 @@ void Gui::drawImportMapWidget()
 										break;
 									}
 								}
-								//s.iMiptex = map->add_texture(tex.szName, NULL, tex.nWidth, tex.nHeight);
 							}
 							else
 							{
-								s.iMiptex = newMiptex;
+								texinfo.iMiptex = newMiptex;
 							}
 						}
 						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
@@ -4180,7 +4179,7 @@ void Gui::drawImportMapWidget()
 					{
 						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
 					}
-					newModel.nVisLeafs = 0; // techinically should match the old model, but leaves aren't duplicated yet
+					newModel.nVisLeafs = 0; 
 
 					map->ents.push_back(new Entity("func_wall"));
 					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));
