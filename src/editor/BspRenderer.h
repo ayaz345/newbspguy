@@ -95,13 +95,13 @@ struct RenderClipnodes
 	std::vector<FaceMath> faceMaths[MAX_MAP_HULLS];
 };
 
-struct PickInfo
+class PickInfo
 {
+public:
 	std::vector<int> selectedEnts;
 	std::vector<int> selectedFaces;
 
 	float bestDist;
-	PickInfo()
 	PickInfo();
 
 	int GetSelectedEnt();
