@@ -4082,43 +4082,105 @@ void Gui::drawImportMapWidget()
 					bspModel->copy_bsp_model(0, map, remap, newPlanes, newVerts, newEdges, newSurfedges, newTexinfo, newFaces, newLightmaps, newNodes, newClipnodes);
 
 					if (newClipnodes.size())
+					{
 						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE) * newClipnodes.size());
+					}
 					if (newEdges.size())
+					{
 						map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE) * newEdges.size());
-					/*if (newFaces.size())
-						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE) * newFaces.size());*/
+					}
+					if (newFaces.size())
+					{
+						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE) * newFaces.size());
+					}
 					if (newNodes.size())
+					{
 						map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE) * newNodes.size());
-					/*if (newPlanes.size())
-						map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());*/
+					}
+					if (newPlanes.size())
+					{
+						map->append_lump(LUMP_PLANES, &newPlanes[0], sizeof(BSPPLANE) * newPlanes.size());
+					}
 					if (newSurfedges.size())
+					{
 						map->append_lump(LUMP_SURFEDGES, &newSurfedges[0], sizeof(int) * newSurfedges.size());
-				/*	if (newTexinfo.size())
-						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());*/
+					}
+					if (newTexinfo.size())
+					{
+						for (auto& s : newTexinfo)
+						{
+							int newMiptex = -1;
+							int texOffset = ((int*)bspModel->textures)[s.iMiptex + 1];
+							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
+							for (unsigned int i = 0; i < map->textureCount; i++)
+							{
+								int texOffset = ((int*)map->textures)[i + 1];
+								BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + texOffset));
+								if (strcmp(tex.szName, tex2.szName) == 0)
+								{
+									newMiptex = i;
+									break;
+								}
+							}
+							if (!newMiptex)
+							{
+								for (auto& s : bspModel->getBspRender()->wads)
+								{
+									if (s->hasTexture(tex.szName))
+									{
+										WADTEX* wadTex = s->readTexture(tex.szName);
+										int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+
+										COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
+										unsigned char* src = wadTex->data;
+
+										COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
+
+										int sz = wadTex->nWidth * wadTex->nHeight;
+
+										for (int k = 0; k < sz; k++)
+										{
+											imageData[k] = palette[src[k]];
+										}
+
+										map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+
+
+										delete[] imageData;
+										delete wadTex;
+										break;
+									}
+								}
+								//s.iMiptex = map->add_texture(tex.szName, NULL, tex.nWidth, tex.nHeight);
+							}
+							else
+							{
+								s.iMiptex = newMiptex;
+							}
+						}
+						map->append_lump(LUMP_TEXINFO, &newTexinfo[0], sizeof(BSPTEXTUREINFO) * newTexinfo.size());
+					}
 					if (newVerts.size())
+					{
 						map->append_lump(LUMP_VERTICES, &newVerts[0], sizeof(vec3) * newVerts.size());
+					}
 					if (newLightmaps.size())
+					{
 						map->append_lump(LUMP_LIGHTING, &newLightmaps[0], sizeof(COLOR3) * newLightmaps.size());
+					}
 
 					int newModelIdx = map->create_model();
 					BSPMODEL& oldModel = bspModel->models[0];
 					BSPMODEL& newModel = map->models[newModelIdx];
 					memcpy(&newModel, &oldModel, sizeof(BSPMODEL));
 
-					//newModel.iFirstFace += FaceCount;
-					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : oldModel.iHeadnodes[0] += NodeCount;
+					newModel.iFirstFace = remap.faces[oldModel.iFirstFace];
+					newModel.iHeadnodes[0] = oldModel.iHeadnodes[0] < 0 ? -1 : remap.nodes[oldModel.iHeadnodes[0]];
 					for (int i = 1; i < MAX_MAP_HULLS; i++)
 					{
-						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : oldModel.iHeadnodes[i] += ClipNodeCount;
+						newModel.iHeadnodes[i] = oldModel.iHeadnodes[i] < 0 ? -1 : remap.clipnodes[oldModel.iHeadnodes[i]];
 					}
-
-					newModel.nVisLeafs = 0;
-
-					BspMerger merger;
-					merger.merge_textures(*map, *bspModel);
-					merger.merge_texinfo(*map, *bspModel);
-					merger.merge_planes(*map, *bspModel);
-					merger.merge_faces(*map, *bspModel);
+					newModel.nVisLeafs = 0; // techinically should match the old model, but leaves aren't duplicated yet
 
 					map->ents.push_back(new Entity("func_wall"));
 					map->ents[map->ents.size() - 1]->setOrAddKeyvalue("model", "*" + std::to_string(newModelIdx));

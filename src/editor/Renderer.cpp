@@ -1861,24 +1861,26 @@ void Renderer::cameraContextMenus()
 		Bsp* oLdmap = SelectedMap;
 		Bsp* map = SelectedMap;
 
-		map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
 
-		if (tempPick.GetSelectedEnt() < 0)
+		for (int i = 0; i < mapRenderers.size(); i++)
 		{
-			for (int i = 0; i < mapRenderers.size(); i++)
+			if (mapRenderers[i]->map && map == mapRenderers[i]->map->parentMap && mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map) && tempPick.GetSelectedEnt() >= 0)
 			{
-				if (mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map) && tempPick.GetSelectedEnt() >= 0)
+				if (map && oLdmap != map)
 				{
-					if (map && oLdmap != map)
-					{
-						map->selectModelEnt();
-						map = oLdmap;
-						tempPick.SetSelectedEnt(pickInfo.GetSelectedEnt());
-					}
-					break;
+					tempPick = PickInfo();
+					map->selectModelEnt();
+					map = oLdmap;
+					tempPick.SetSelectedEnt(pickInfo.GetSelectedEnt());
 				}
+				break;
 			}
 		}
+
+		if (tempPick.GetSelectedEnt() <= 0)
+			map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
+
+
 		if (tempPick.GetSelectedEnt() != 0 && tempPick.GetSelectedEnt() == pickInfo.GetSelectedEnt())
 		{
 			gui->openContextMenu(pickInfo.GetSelectedEnt());
