@@ -95,7 +95,7 @@ bool Fgd::parse()
 		{
 			if (bracketNestLevel)
 			{
-				logf("ERROR: New FGD class definition starts before previous one ends (line %d)\n", lineNum);
+				logf("ERROR: New FGD class definition starts before previous one ends (line %d) in FGD %s\n", lineNum, name.c_str());
 			}
 
 			parseClassHeader(*fgdClass);
@@ -129,7 +129,7 @@ bool Fgd::parse()
 		{
 			if (fgdClass->keyvalues.empty())
 			{
-				logf("ERROR: Choice values begin before any keyvalue are defined (line %d)\n", lineNum);
+				logf("ERROR: Choice values begin before any keyvalue are defined (line %d) in FGD %s\n", lineNum, name.c_str());
 				continue;
 			}
 			KeyvalueDef& lastKey = fgdClass->keyvalues[fgdClass->keyvalues.size() - 1];
@@ -149,7 +149,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 
 	if (headerParts.empty())
 	{
-		logf("ERROR: Unexpected end of class header (line %d)\n", lineNum);
+		logf("ERROR: Unexpected end of class header (line %d) in FGD %s\n", lineNum, name.c_str());
 		return;
 	}
 
@@ -173,7 +173,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 	}
 	else
 	{
-		logf("ERROR: Unrecognized FGD class type '%s'\n", typeParts[0].c_str());
+		logf("ERROR: Unrecognized FGD class type '%s' in FGD %s\n", typeParts[0].c_str(),name.c_str());
 	}
 
 	// parse constructors/properties
@@ -207,7 +207,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			else
 			{
-				logf("ERROR: Expected 2 vectors in size() property (line %d)\n", lineNum);
+				logf("ERROR: Expected 2 vectors in size() property (line %d) in FGD %s\n", lineNum, name.c_str());
 			}
 
 			fgdClass.sizeSet = true;
@@ -222,7 +222,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			else
 			{
-				logf("ERROR: Expected 3 components in color() property (line %d)\n", lineNum);
+				logf("ERROR: Expected 3 components in color() property (line %d) in FGD %s\n", lineNum, name.c_str());
 			}
 
 			fgdClass.colorSet = true;
@@ -231,6 +231,10 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		{
 			fgdClass.model = getValueInParens(typeParts[i]);
 			fgdClass.isModel = true;
+		}
+		else if (lpart.find("sequence(") == 0)
+		{
+			fgdClass.modelSequence = atoi(getValueInParens(typeParts[i]).c_str());
 		}
 		else if (lpart.find("iconsprite(") == 0)
 		{
@@ -245,16 +249,30 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		{
 			fgdClass.isDecal = true;
 		}
+		else if (lpart.find("flags(") == 0)
+		{
+			std::vector<std::string> flagsList = splitString(getValueInParens(typeParts[i]), ",");
+			for (int k = 0; k < flagsList.size(); k++)
+			{
+				std::string flag = trimSpaces(flagsList[k]);
+				if (flag == "Angle")
+					fgdClass.hasAngles = true; // force using angles/angle key ?
+				else if (flag == "Path" || flag == "Light")
+					;
+				else
+					logf("WARNING: Unrecognized type flags value %s (line %d) in FGD %s\n", flag.c_str(), lineNum, name.c_str());
+			}
+		}
 		else if (typeParts[i].find('(') != std::string::npos)
 		{
 			std::string typeName = typeParts[i].substr(0, typeParts[i].find('('));
-			logf("WARNING: Unrecognized type %s (line %d)\n", typeName.c_str(), lineNum);
+			logf("WARNING: Unrecognized type %s (line %d) in FGD %s\n", typeName.c_str(), lineNum, name.c_str());
 		}
 	}
 
 	if (headerParts.size() == 1)
 	{
-		logf("ERROR: Unexpected end of class header (line %d)\n", lineNum);
+		logf("ERROR: Unexpected end of class header (line %d) in FGD %s\n", lineNum, name.c_str());
 		return;
 	}
 	std::vector<std::string> nameParts = splitStringIgnoringQuotes(headerParts[1], ":");
@@ -536,7 +554,7 @@ void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList)
 		{
 			if (fgd->classMap.find(baseClasses[i]) == fgd->classMap.end())
 			{
-				logf("ERROR: Invalid base class %s\n", baseClasses[i].c_str());
+				logf("ERROR: Invalid base class %s in FGD %s\n", baseClasses[i].c_str(), name.c_str());
 				continue;
 			}
 			inheritanceList.push_back(fgd->classMap[baseClasses[i]]);
@@ -625,7 +643,7 @@ void Fgd::setSpawnflagNames()
 
 					if (!choice.isInteger)
 					{
-						logf("ERROR: Invalid spwanflag value %s\n", choice.svalue.c_str());
+						logf("ERROR: Invalid spwanflag value %s in FGD %s\n", choice.svalue.c_str(), name.c_str());
 						continue;
 					}
 
@@ -638,7 +656,7 @@ void Fgd::setSpawnflagNames()
 
 					if (bit > 31)
 					{
-						logf("ERROR: Invalid spawnflag value %s\n", choice.svalue.c_str());
+						logf("ERROR: Invalid spawnflag value %s in FGD %s\n", choice.svalue.c_str(), name.c_str());
 					}
 					else
 					{

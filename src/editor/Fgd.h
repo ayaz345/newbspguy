@@ -59,6 +59,8 @@ struct FgdClass
 	bool isModel;
 	bool isSprite;
 	bool isDecal;
+	bool hasAngles;
+	int modelSequence;
 	vec3 mins;
 	vec3 maxs;
 	COLOR3 color;
@@ -77,7 +79,8 @@ struct FgdClass
 		isDecal = false;
 		colorSet = false;
 		sizeSet = false;
-
+		hasAngles = false;
+		modelSequence = 0;
 		// default to the purple cube
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
