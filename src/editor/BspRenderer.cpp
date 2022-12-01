@@ -87,7 +87,7 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 
 	memset(&undoLumpState, 0, sizeof(LumpState));
 
-	undoEntityState = Entity();
+	undoEntityState = std::map<int, Entity>();
 }
 
 void BspRenderer::loadTextures()
@@ -2081,13 +2081,12 @@ int BspRenderer::getBestClipnodeHull(int modelIdx)
 }
 
 
-void BspRenderer::updateEntityState(Entity* ent)
+void BspRenderer::updateEntityState(int entIdx)
 {
-	if (!ent)
+	if (entIdx < 0)
 		return;
 
-	undoEntityState = *ent;
-	undoEntOrigin = ent->getOrigin();
+	undoEntityState[entIdx] = *map->ents[entIdx];
 }
 
 void BspRenderer::saveLumpState(int targetLumps, bool deleteOldState)
@@ -2121,19 +2120,19 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 	}
 
 	bool anythingToUndo = true;
-	if (undoEntityState.keyOrder.size() == ent->keyOrder.size())
+	if (undoEntityState[entIdx].keyOrder.size() == ent->keyOrder.size())
 	{
 		bool keyvaluesDifferent = false;
-		for (int i = 0; i < undoEntityState.keyOrder.size(); i++)
+		for (int i = 0; i < undoEntityState[entIdx].keyOrder.size(); i++)
 		{
-			std::string oldKey = undoEntityState.keyOrder[i];
+			std::string oldKey = undoEntityState[entIdx].keyOrder[i];
 			std::string newKey = ent->keyOrder[i];
 			if (oldKey != newKey)
 			{
 				keyvaluesDifferent = true;
 				break;
 			}
-			std::string oldVal = undoEntityState.keyvalues[oldKey];
+			std::string oldVal = undoEntityState[entIdx].keyvalues[oldKey];
 			std::string newVal = ent->keyvalues[oldKey];
 			if (oldVal != newVal)
 			{
@@ -2151,8 +2150,8 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 		return; // nothing to undo
 	}
 
-	pushUndoCommand(new EditEntityCommand(actionDesc, g_app->pickInfo, undoEntityState, *ent));
-	updateEntityState(ent);
+	pushUndoCommand(new EditEntityCommand(actionDesc, entIdx, undoEntityState[entIdx], *ent));
+	updateEntityState(entIdx);
 }
 
 void BspRenderer::pushModelUndoState(const std::string& actionDesc, int targetLumps)
@@ -2200,12 +2199,12 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, int targetLu
 		}
 	}
 
-	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, g_app->pickInfo, undoLumpState, newLumps, undoEntOrigin);
+	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, g_app->pickInfo, undoLumpState, newLumps, undoEntityState[entIdx].getOrigin());
 	pushUndoCommand(editCommand);
 	saveLumpState(0xffffffff, false);
 
 	// entity origin edits also update the ent origin (TODO: this breaks when moving + scaling something)
-	updateEntityState(ent);
+	updateEntityState(entIdx);
 }
 
 void BspRenderer::pushUndoCommand(Command* cmd)

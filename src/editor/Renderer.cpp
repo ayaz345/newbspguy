@@ -3992,7 +3992,7 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 	updateSelectionSize();
 	updateEntConnections();
 
-	map->getBspRender()->updateEntityState(ent);
+	map->getBspRender()->updateEntityState(entIdx);
 	if (ent && ent->isBspModel())
 		map->getBspRender()->saveLumpState(0xffffffff, true);
 	pickCount++; // force transform window update

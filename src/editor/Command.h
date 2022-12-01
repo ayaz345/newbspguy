@@ -33,7 +33,7 @@ public:
 	Entity oldEntData;
 	Entity newEntData;
 
-	EditEntityCommand(std::string desc, PickInfo& pickInfo, Entity oldEntData, Entity newEntData);
+	EditEntityCommand(std::string desc, int entIdx, Entity oldEntData, Entity newEntData);
 	~EditEntityCommand();
 
 	void execute() override;

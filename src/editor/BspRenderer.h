@@ -233,9 +233,8 @@ public:
 	size_t undoMemoryUsage = 0; // approximate space used by undo+redo history
 	std::vector<Command*> undoHistory;
 	std::vector<Command*> redoHistory;
-	Entity undoEntityState = Entity();
+	std::map<int, Entity> undoEntityState;
 	LumpState undoLumpState = LumpState();
-	vec3 undoEntOrigin;
 
 	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
 	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
@@ -245,6 +244,6 @@ public:
 	void clearUndoCommands();
 	void clearRedoCommands();
 	void calcUndoMemoryUsage();
-	void updateEntityState(Entity* ent);
+	void updateEntityState(int entIdx);
 	void saveLumpState(int targetLumps, bool deleteOldState);
 };

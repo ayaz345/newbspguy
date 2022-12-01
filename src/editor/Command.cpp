@@ -36,10 +36,10 @@ BspRenderer* Command::getBspRenderer()
 //
 // Edit entity
 //
-EditEntityCommand::EditEntityCommand(std::string desc, PickInfo& pickInfo, Entity oldEntData, Entity newEntData)
+EditEntityCommand::EditEntityCommand(std::string desc, int entIdx, Entity oldEntData, Entity newEntData)
 	: Command(desc, g_app->getSelectedMapId())
 {
-	this->entIdx = pickInfo.GetSelectedEnt();
+	this->entIdx = entIdx;
 	this->oldEntData = Entity();
 	this->newEntData = Entity();
 	this->oldEntData = oldEntData;
@@ -90,7 +90,7 @@ void EditEntityCommand::refresh()
 	{
 		renderer->refreshPointEnt(entIdx);
 	}
-	renderer->updateEntityState(ent);
+	renderer->updateEntityState(entIdx);
 	g_app->pickCount++; // force GUI update
 	g_app->updateModelVerts();
 }
@@ -528,7 +528,7 @@ void EditBspModelCommand::execute()
 
 	map->replace_lumps(newLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
-	map->getBspRender()->undoEntOrigin = newOrigin;
+	map->getBspRender()->undoEntityState[entIdx].setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 
 	refresh();
 }
@@ -541,7 +541,7 @@ void EditBspModelCommand::undo()
 
 	map->replace_lumps(oldLumps);
 	map->ents[entIdx]->setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
-	map->getBspRender()->undoEntOrigin = oldOrigin;
+	map->getBspRender()->undoEntityState[entIdx].setOrAddKeyvalue("origin", oldOrigin.toKeyvalueString());
 	map->getBspRender()->reload();
 	refresh();
 }
@@ -552,7 +552,6 @@ void EditBspModelCommand::refresh()
 	if (!map)
 		return;
 	BspRenderer* renderer = getBspRenderer();
-	Entity* ent = map->ents[entIdx];
 
 	renderer->updateLightmapInfos();
 	renderer->calcFaceMaths();
@@ -560,7 +559,7 @@ void EditBspModelCommand::refresh()
 	renderer->refreshEnt(entIdx);
 	g_app->gui->refresh();
 	renderer->saveLumpState(0xffffff, true);
-	renderer->updateEntityState(ent);
+	renderer->updateEntityState(entIdx);
 
 	if (g_app->pickInfo.GetSelectedEnt() == entIdx)
 	{

@@ -2929,7 +2929,7 @@ void Gui::drawTransformWidget()
 
 			if (inputsWereDragged && !inputsAreDragging)
 			{
-				if (map->getBspRender()->undoEntityState.getOrigin() != ent->getOrigin())
+				if (map->getBspRender()->undoEntityState[entIdx].getOrigin() != ent->getOrigin())
 				{
 					map->getBspRender()->pushEntityUndoState("Move Entity", entIdx);
 				}
@@ -4063,8 +4063,6 @@ void Gui::drawImportMapWidget()
 				{
 					Bsp* bspModel = new Bsp(mapPath);
 					Bsp* map = app->getSelectedMap();
-
-					int FaceCount = map->faceCount, NodeCount = map->nodeCount, ClipNodeCount = map->clipnodeCount;
 
 					std::vector<BSPPLANE> newPlanes;
 					std::vector<vec3> newVerts;
