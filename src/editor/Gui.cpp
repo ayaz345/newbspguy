@@ -590,7 +590,9 @@ void Gui::draw3dContextMenus()
 				{
 					std::set<int> entList;
 
-					entList.insert_range(app->pickInfo.selectedEnts);
+					//entList.insert_range(app->pickInfo.selectedEnts);
+
+					entList.insert(app->pickInfo.selectedEnts.begin(), app->pickInfo.selectedEnts.end());
 
 					for (auto rit = entList.rbegin(); rit != entList.rend(); ++rit)
 					{
