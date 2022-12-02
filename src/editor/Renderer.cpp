@@ -142,7 +142,7 @@ void AppSettings::reset()
 	loadDefault();
 
 	fgdPaths.clear();
-	fgdPaths.push_back({"/moddir/GameDefinitionFile.fgd",true});
+	fgdPaths.push_back(FgdPathStruct("/moddir/GameDefinitionFile.fgd",true));
 
 	resPaths.clear();
 	resPaths.push_back("/moddir/");

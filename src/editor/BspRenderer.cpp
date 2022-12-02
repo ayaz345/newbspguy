@@ -2173,7 +2173,6 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, int targetLu
 		return;
 	}
 	int entIdx = g_app->pickInfo.GetSelectedEnt();
-	Entity* ent = map->ents[entIdx];
 
 	LumpState newLumps = map->duplicate_lumps(targetLumps);
 

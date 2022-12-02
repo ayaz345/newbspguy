@@ -56,6 +56,11 @@ struct FgdPathStruct
 {
 	std::string fgdPath;
 	bool enabled;
+	FgdPathStruct(std::string path, bool enable)
+	{
+		fgdPath = path;
+		enabled = enable;
+	}
 };
 
 struct AppSettings

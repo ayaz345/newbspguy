@@ -3408,7 +3408,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button("Add fgd path"))
 			{
-				g_settings.fgdPaths.emplace_back(std::string());
+				g_settings.fgdPaths.emplace_back(FgdPathStruct(std::string(),true));
 			}
 		}
 		else if (settingsTab == 2)
