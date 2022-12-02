@@ -52,6 +52,12 @@ struct TransformAxes
 	int numAxes;
 };
 
+struct FgdPathStruct
+{
+	std::string fgdPath;
+	bool enabled;
+};
+
 struct AppSettings
 {
 	int windowWidth;
@@ -91,7 +97,7 @@ struct AppSettings
 
 	bool entListReload;
 
-	std::vector<std::string> fgdPaths;
+	std::vector<FgdPathStruct> fgdPaths;
 	std::vector<std::string> resPaths;
 
 
@@ -272,8 +278,8 @@ private:
 
 	bool pressed[GLFW_KEY_LAST];
 	bool released[GLFW_KEY_LAST];
-	char oldPressed[GLFW_KEY_LAST];
-	char oldReleased[GLFW_KEY_LAST];
+	bool oldPressed[GLFW_KEY_LAST];
+	bool oldReleased[GLFW_KEY_LAST];
 
 	bool anyCtrlPressed;
 	bool anyAltPressed;

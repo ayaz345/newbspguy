@@ -3388,8 +3388,11 @@ void Gui::drawSettings()
 		{
 			for (int i = 0; i < g_settings.fgdPaths.size(); i++)
 			{
-				ImGui::SetNextItemWidth(pathWidth);
-				ImGui::InputText(("##fgd" + std::to_string(i)).c_str(), &g_settings.fgdPaths[i]);
+				ImGui::SetNextItemWidth(pathWidth * 0.20);
+				ImGui::Checkbox((std::string("##enablefgd") + std::to_string(i)).c_str(), &g_settings.fgdPaths[i].enabled);
+				ImGui::SameLine();
+				ImGui::SetNextItemWidth(pathWidth * 0.80);
+				ImGui::InputText(("##fgd" + std::to_string(i)).c_str(), &g_settings.fgdPaths[i].fgdPath);
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
@@ -3757,13 +3760,13 @@ void Gui::drawSettings()
 		}
 		for (auto& s : g_settings.fgdPaths)
 		{
-			if (s.find(':') == std::string::npos)
+			if (s.fgdPath.find(':') == std::string::npos)
 			{
-				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+				fixupPath(s.fgdPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 			}
 			else
 			{
-				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+				fixupPath(s.fgdPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 			}
 		}
 		for (auto& s : g_settings.resPaths)

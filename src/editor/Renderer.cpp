@@ -140,7 +140,7 @@ void AppSettings::reset()
 	loadDefault();
 
 	fgdPaths.clear();
-	fgdPaths.push_back("/moddir/GameDefinitionFile.fgd");
+	fgdPaths.push_back({"/moddir/GameDefinitionFile.fgd",true});
 
 	resPaths.clear();
 	resPaths.push_back("/moddir/");
@@ -326,7 +326,16 @@ void AppSettings::load()
 			}
 			else if (key == "fgd")
 			{
-				fgdPaths.push_back(val);
+				if (val.find('?') == std::string::npos)
+					fgdPaths.push_back({val,true});
+				else
+				{
+					auto vals = splitString(val, "?");
+					if (vals.size() == 2)
+					{
+						fgdPaths.push_back({vals[1],vals[0] == "enabled"});
+					}
+				}
 			}
 			else if (key == "res")
 			{
@@ -544,7 +553,7 @@ void AppSettings::save(std::string path)
 
 	for (int i = 0; i < fgdPaths.size(); i++)
 	{
-		file << "fgd=" << g_settings.fgdPaths[i] << std::endl;
+		file << "fgd=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].fgdPath << std::endl;
 	}
 
 	for (int i = 0; i < resPaths.size(); i++)
@@ -1145,10 +1154,12 @@ void Renderer::loadFgds()
 	Fgd* mergedFgd = NULL;
 	for (int i = 0; i < g_settings.fgdPaths.size(); i++)
 	{
-		Fgd* tmp = new Fgd(g_settings.fgdPaths[i]);
+		if (!g_settings.fgdPaths[i].enabled)
+			continue;
+		Fgd* tmp = new Fgd(g_settings.fgdPaths[i].fgdPath);
 		if (!tmp->parse())
 		{
-			tmp->path = g_settings.gamedir + g_settings.fgdPaths[i];
+			tmp->path = g_settings.gamedir + g_settings.fgdPaths[i].fgdPath;
 			if (!tmp->parse())
 			{
 				continue;
@@ -1342,7 +1353,7 @@ void Renderer::controls()
 		oldPressed[i] = pressed[i];
 		oldReleased[i] = released[i];
 	}
-
+	
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
 	{
 		pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
