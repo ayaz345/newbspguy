@@ -92,7 +92,6 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 
 void BspRenderer::loadTextures()
 {
-
 	for (int i = 0; i < wads.size(); i++)
 	{
 		delete wads[i];
@@ -110,6 +109,18 @@ void BspRenderer::loadTextures()
 			{
 				wadNames[k] = basename(wadNames[k]);
 			}
+
+			if (g_settings.stripWad)
+			{
+				std::string newWadString = "";
+
+				for (int k = 0; k < wadNames.size(); k++)
+				{
+					newWadString += wadNames[k] + ";";
+				}
+				map->ents[i]->setOrAddKeyvalue("wad", newWadString);
+			}
+
 			break;
 		}
 	}

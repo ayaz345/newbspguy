@@ -3439,6 +3439,15 @@ void Gui::drawSettings()
 		else if (settingsTab == 3)
 		{
 			ImGui::SetNextItemWidth(pathWidth);
+			ImGui::Checkbox("Strip wads after load", &g_settings.stripWad);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Automatically strip wad filenames. (path/to/wadname.wad to wadname.wad)");
+				ImGui::EndTooltip();
+			}
+			ImGui::Separator();
+
+			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::Text("Conditional Point Ent Triggers");
 
 			for (int i = 0; i < g_settings.conditionalPointEntTriggers.size(); i++)

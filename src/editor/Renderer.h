@@ -96,6 +96,7 @@ struct AppSettings
 	bool sameDirForEnt;
 
 	bool entListReload;
+	bool stripWad;
 
 	std::vector<FgdPathStruct> fgdPaths;
 	std::vector<std::string> resPaths;

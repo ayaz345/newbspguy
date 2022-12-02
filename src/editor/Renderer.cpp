@@ -132,6 +132,8 @@ void AppSettings::loadDefault()
 
 	entListReload = true;
 
+	stripWad = false;
+
 	ResetBspLimits();
 }
 
@@ -360,6 +362,10 @@ void AppSettings::load()
 			else if (key == "reload_ents_list")
 			{
 				entListReload = atoi(val.c_str()) != 0;
+			}
+			else if (key == "strip_wad_path")
+			{
+				stripWad = atoi(val.c_str()) != 0;
 			}
 			else if (key == "FLT_MAX_COORD")
 			{
@@ -610,7 +616,8 @@ void AppSettings::save(std::string path)
 	file << "save_crc=" << g_settings.preserveCrc32 << std::endl;
 	file << "auto_import_ent=" << g_settings.autoImportEnt << std::endl;
 	file << "same_dir_for_ent=" << g_settings.sameDirForEnt << std::endl;
-	file << "reload_ent_list=" << g_settings.entListReload << std::endl;
+	file << "reload_ents_list=" << g_settings.entListReload << std::endl;
+	file << "strip_wad_path=" << g_settings.stripWad << std::endl;
 
 	file << "FLT_MAX_COORD=" << FLT_MAX_COORD << std::endl;
 	file << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << std::endl;
