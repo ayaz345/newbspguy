@@ -3841,6 +3841,12 @@ void Gui::drawSettings()
 		app->postLoadFgds();
 		app->reloadingGameDir = false;
 		app->reloading = false;
+		app->updateEnts();
+		for (int i = 0; i < app->mapRenderers.size(); i++)
+		{
+			BspRenderer* mapRender = app->mapRenderers[i];
+			mapRender->reload();
+		}
 		g_settings.save();
 	}
 }
