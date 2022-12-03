@@ -134,7 +134,6 @@ Bsp::Bsp(std::string fpath)
 	}
 	bsp_path = fpath;
 	bsp_name = stripExt(basename(fpath));
-
 	bsp_valid = false;
 
 	if (!fileExists(fpath))
@@ -2048,14 +2047,22 @@ bool Bsp::is_invisible_solid(Entity* ent)
 	int renderamt = atoi(ent->keyvalues["renderamt"].c_str());
 	int renderfx = atoi(ent->keyvalues["renderfx"].c_str());
 
-	if (rendermode == 0 || renderamt != 0)
+	if (rendermode == RenderMode::kRenderNormal || renderamt != 0)
 	{
 		return false;
 	}
+
 	switch (renderfx)
 	{
-		case 1: case 2: case 3: case 4: case 7:
-		case 8: case 15: case 16: case 17:
+		case kRenderFxPulseSlow:
+		case kRenderFxPulseFast:
+		case kRenderFxPulseSlowWide:
+		case kRenderFxPulseFastWide:
+		case kRenderFxSolidSlow:
+		case kRenderFxSolidFast:
+		case kRenderFxDistort:
+		case kRenderFxHologram:
+		case kRenderFxDeadPlayer:
 			return false;
 		default:
 			break;

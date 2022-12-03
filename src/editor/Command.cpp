@@ -388,7 +388,7 @@ void CreateBspModelCommand::execute()
 	if (aaatriggerIdx == -1)
 	{
 		aaatriggerIdx = addDefaultTexture();
-		renderer->reloadTextures();
+		renderer->loadTextures();
 	}
 
 	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);

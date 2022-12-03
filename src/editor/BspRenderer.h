@@ -26,7 +26,8 @@ enum RenderFlags
 	RENDER_ORIGIN = 128,
 	RENDER_WORLD_CLIPNODES = 256,
 	RENDER_ENT_CLIPNODES = 512,
-	RENDER_ENT_CONNECTIONS = 1024
+	RENDER_ENT_CONNECTIONS = 1024,
+	RENDER_TRANSPARENT = 2048
 };
 
 struct LightmapInfo
@@ -148,7 +149,6 @@ public:
 	void updateClipnodeOpacity(unsigned char newValue);
 
 	void reload(); // reloads all geometry, textures, and lightmaps
-	void reloadTextures();
 	void reloadLightmaps();
 	void reloadClipnodes();
 	void addClipnodeModel(int modelIdx);
@@ -209,9 +209,6 @@ public:
 	bool lightmapsGenerated = false;
 	bool lightmapsUploaded = false;
 	std::future<void> lightmapFuture;
-
-	std::future<void> texturesFuture;
-
 	bool clipnodesLoaded = false;
 	int clipnodeLeafCount = 0;
 	std::future<void> clipnodesFuture;
@@ -235,6 +232,8 @@ public:
 	std::vector<Command*> redoHistory;
 	std::map<int, Entity> undoEntityState;
 	LumpState undoLumpState = LumpState();
+
+	std::map<std::string, std::set<std::string>> mapTexsUsage;
 
 	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
 	void pushEntityUndoState(const std::string& actionDesc, int entIdx);

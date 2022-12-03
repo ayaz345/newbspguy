@@ -75,8 +75,8 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	colorShaderMultId = glGetUniformLocation(colorShader->ID, "colorMult");
 
 	numRenderClipnodes = map->modelCount;
+	loadTextures();
 	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
-	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
 
 	// cache ent targets so first selection doesn't lag
@@ -181,7 +181,6 @@ void BspRenderer::loadTextures()
 
 		if (tex.nOffsets[0] <= 0)
 		{
-
 			bool foundInWad = false;
 			for (int k = 0; k < wads.size(); k++)
 			{
@@ -233,12 +232,46 @@ void BspRenderer::loadTextures()
 
 		glTexturesSwap[i] = new Texture(tex.nWidth, tex.nHeight, (unsigned char*)imageData, tex.szName);
 	}
+
+	mapTexsUsage = std::map<std::string, std::set<std::string>>();
+
+	for (unsigned int i = 0; i < map->faceCount; i++)
+	{
+		BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
+		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+		if (texOffset >= 0)
+		{
+			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+			if (tex.szName[0] != '\0')
+			{
+				if (tex.nOffsets[0] <= 0)
+				{
+					for (auto& s : wads)
+					{
+						if (s->hasTexture(tex.szName))
+						{
+							if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
+								mapTexsUsage[basename(s->filename)].insert(tex.szName);
+						}
+					}
+				}
+				else
+				{
+					if (!mapTexsUsage["internal"].count(tex.szName))
+						mapTexsUsage["internal"].insert(tex.szName);
+				}
+			}
+		}
+	}
+
+	if (mapTexsUsage.size())
+		logf("Used %d wad files(include map file)\n", (int) mapTexsUsage.size());
 	if (wadTexCount)
-		debugf("Loaded %d wad textures\n", wadTexCount);
+		logf("Loaded %d wad textures\n", wadTexCount);
 	if (embedCount)
-		debugf("Loaded %d embedded textures\n", embedCount);
+		logf("Loaded %d embedded textures\n", embedCount);
 	if (missingCount)
-		debugf("%d missing textures\n", missingCount);
+		logf("%d missing textures\n", missingCount);
 }
 
 void BspRenderer::reload()
@@ -247,16 +280,11 @@ void BspRenderer::reload()
 	calcFaceMaths();
 	preRenderFaces();
 	preRenderEnts();
-	reloadTextures();
+	loadTextures();
 	reloadLightmaps();
 	reloadClipnodes();
 }
 
-void BspRenderer::reloadTextures()
-{
-	texturesLoaded = false;
-	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
-}
 
 void BspRenderer::reloadLightmaps()
 {
@@ -875,6 +903,8 @@ void BspRenderer::loadClipnodes()
 	{
 		generateClipnodeBuffer(i);
 	}
+
+	updateClipnodeOpacity((g_render_flags & RENDER_TRANSPARENT) ? 128 : 255);
 }
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
@@ -1343,7 +1373,6 @@ BspRenderer::~BspRenderer()
 	clearRedoCommands();
 
 	if (lightmapFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
-		texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
 		clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
 	{
 		logf("ERROR: Deleted bsp renderer while it was loading\n");
@@ -1418,7 +1447,7 @@ void BspRenderer::delayLoadData()
 
 		lightmapsUploaded = true;
 	}
-	else if (!texturesLoaded && texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
+	else if (!texturesLoaded)
 	{
 		deleteTextures();
 

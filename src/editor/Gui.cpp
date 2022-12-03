@@ -875,7 +875,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 		}
 		for (int i = 0; i < app->mapRenderers.size(); i++)
 		{
-			app->mapRenderers[i]->reloadTextures();
+			app->mapRenderers[i]->loadTextures();
 		}
 	}
 
@@ -1966,6 +1966,51 @@ void Gui::drawDebugWidget()
 			else
 			{
 				ImGui::Text("No model selected");
+			}
+		}
+
+		if (map && ImGui::CollapsingHeader("Textures usage", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			int InternalTextures = 0;
+			int TotalInternalTextures = 0;
+			int WadTextures = 0;
+
+			for (unsigned int i = 0; i < map->textureCount; i++)
+			{
+				int oldOffset = ((int*)map->textures)[i + 1];
+				if (oldOffset >= 0)
+				{
+					BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
+					if (bspTex->nOffsets[0] > 0)
+					{
+						TotalInternalTextures++;
+					}
+				}
+			}
+
+			for (auto& tmpWad : map->getBspRender()->mapTexsUsage)
+			{
+				if (tmpWad.first == "internal")
+					InternalTextures+= tmpWad.second.size();
+				else
+					WadTextures += tmpWad.second.size();
+			}
+
+			ImGui::Text("Total textures used in map %d", map->textureCount);
+			ImGui::Text("Used %d internal textures of %d", InternalTextures, TotalInternalTextures);
+			ImGui::Text("Used %d wad files", TotalInternalTextures > 0 ? (int)map->getBspRender()->mapTexsUsage.size() - 1 : (int)map->getBspRender()->mapTexsUsage.size());
+			ImGui::Text("Used %d wad textures", WadTextures);
+
+			for (auto& tmpWad : map->getBspRender()->mapTexsUsage)
+			{
+				if (ImGui::CollapsingHeader((tmpWad.first + "##debug").c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Bullet
+					| ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed))
+				{
+					for (auto& texName : tmpWad.second)
+					{
+						ImGui::Text(texName.c_str());
+					}
+				}
 			}
 		}
 
@@ -3654,6 +3699,7 @@ void Gui::drawSettings()
 			bool renderWorldClipnodes = g_render_flags & RENDER_WORLD_CLIPNODES;
 			bool renderEntClipnodes = g_render_flags & RENDER_ENT_CLIPNODES;
 			bool renderEntConnections = g_render_flags & RENDER_ENT_CONNECTIONS;
+			bool transparentNodes = g_render_flags & RENDER_TRANSPARENT;
 
 			ImGui::Text("Render Flags:");
 
@@ -3729,9 +3775,9 @@ void Gui::drawSettings()
 			{
 				g_render_flags ^= RENDER_ENT_CLIPNODES;
 			}
-			static bool transparentNodes = true;
-			if (ImGui::Checkbox("Transparency", &transparentNodes))
+			if (ImGui::Checkbox("Transparent clipnodes", &transparentNodes))
 			{
+				g_render_flags ^= RENDER_TRANSPARENT;
 				for (int i = 0; i < app->mapRenderers.size(); i++)
 				{
 					app->mapRenderers[i]->updateClipnodeOpacity(transparentNodes ? 128 : 255);
