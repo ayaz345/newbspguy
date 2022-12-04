@@ -21,7 +21,7 @@ See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 Added new features in this fork:
 - Texture Rotation
 - Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
-- Export obj, wad, ent, bsp(selected model with working collision, can be used in any entity instead of MDL models)
+- Export obj, wad, ent, bsp(like "valve hammer prefabs", model with working collision, can be used in any entity instead of MDL models)
 - Import wad, ent, bsp(in two modes)
 - Render bsp models(no MDL render at this time)
 - Full support for "angle" and "angles" keyvalue.
