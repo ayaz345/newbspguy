@@ -1057,7 +1057,7 @@ void Renderer::postLoadFgds()
 		mapRenderers[i]->preRenderEnts();
 		if (reloadingGameDir)
 		{
-			mapRenderers[i]->loadTextures();
+			mapRenderers[i]->reloadTextures();
 		}
 	}
 

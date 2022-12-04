@@ -875,7 +875,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 		}
 		for (int i = 0; i < app->mapRenderers.size(); i++)
 		{
-			app->mapRenderers[i]->loadTextures();
+			app->mapRenderers[i]->reloadTextures();
 		}
 	}
 

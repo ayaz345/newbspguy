@@ -159,8 +159,11 @@ public:
 	void preRenderFaces();
 	void preRenderEnts();
 	void calcFaceMaths();
-
+	
 	void loadTextures(); // will reload them if already loaded
+	void reloadTextures();
+	void ReuploadTextures();
+
 	void updateLightmapInfos();
 	bool isFinishedLoading();
 
@@ -170,7 +173,6 @@ public:
 
 	bool getRenderPointers(int faceIdx, RenderFace** renderFace, RenderGroup** renderGroup);
 
-	void ReuploadTextures();
 
 	ShaderProgram* bspShader;
 	ShaderProgram* fullBrightBspShader;
