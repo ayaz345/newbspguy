@@ -852,7 +852,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			logf("Crash WINAPI_LASTERROR:%X. Exception code: %X. Exception address: %P\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress);
+			logf("Crash WINAPI_LASTERROR:%X. Exception code: %X. Exception address: %p\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress);
 
 			make_minidump(e);
 		}
