@@ -142,11 +142,11 @@ void AppSettings::reset()
 	loadDefault();
 
 	fgdPaths.clear();
-	fgdPaths.push_back(FgdPathStruct("/moddir/GameDefinitionFile.fgd",true));
+	fgdPaths.push_back({"/moddir/GameDefinitionFile.fgd",true});
 
 	resPaths.clear();
-	resPaths.push_back("/moddir/");
-	resPaths.push_back("/moddir_addon/");
+	resPaths.push_back({"/moddir/",true});
+	resPaths.push_back({"/moddir_addon/",true});
 
 	conditionalPointEntTriggers.clear();
 	conditionalPointEntTriggers.push_back("trigger_once");
@@ -341,7 +341,16 @@ void AppSettings::load()
 			}
 			else if (key == "res")
 			{
-				resPaths.push_back(val);
+				if (val.find('?') == std::string::npos)
+					resPaths.push_back({val,true});
+				else
+				{
+					auto vals = splitString(val, "?");
+					if (vals.size() == 2)
+					{
+						resPaths.push_back({vals[1],vals[0] == "enabled"});
+					}
+				}
 			}
 			else if (key == "savebackup")
 			{
@@ -559,12 +568,12 @@ void AppSettings::save(std::string path)
 
 	for (int i = 0; i < fgdPaths.size(); i++)
 	{
-		file << "fgd=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].fgdPath << std::endl;
+		file << "fgd=" << (g_settings.fgdPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.fgdPaths[i].path << std::endl;
 	}
 
 	for (int i = 0; i < resPaths.size(); i++)
 	{
-		file << "res=" << g_settings.resPaths[i] << std::endl;
+		file << "res=" << (g_settings.resPaths[i].enabled ? "enabled" : "disabled") << "?" << g_settings.resPaths[i].path << std::endl;
 	}
 
 	for (int i = 0; i < conditionalPointEntTriggers.size(); i++)
@@ -988,7 +997,7 @@ void Renderer::renderLoop()
 			entConnectionPoints->drawFull();
 			glEnable(GL_DEPTH_TEST);
 		}
-		
+
 		if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
 		{
 			if (!movingEnt && !isTransformingWorld && entIdx >= 0 && (isTransformingValid || isMovingOrigin))
@@ -1163,10 +1172,10 @@ void Renderer::loadFgds()
 	{
 		if (!g_settings.fgdPaths[i].enabled)
 			continue;
-		Fgd* tmp = new Fgd(g_settings.fgdPaths[i].fgdPath);
+		Fgd* tmp = new Fgd(g_settings.fgdPaths[i].path);
 		if (!tmp->parse())
 		{
-			tmp->path = g_settings.gamedir + g_settings.fgdPaths[i].fgdPath;
+			tmp->path = g_settings.gamedir + g_settings.fgdPaths[i].path;
 			if (!tmp->parse())
 			{
 				continue;
@@ -1360,7 +1369,7 @@ void Renderer::controls()
 		oldPressed[i] = pressed[i];
 		oldReleased[i] = released[i];
 	}
-	
+
 	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
 	{
 		pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
@@ -1477,7 +1486,7 @@ void Renderer::vertexEditControls()
 	}
 
 	canTransform = (transformTarget == TRANSFORM_OBJECT || transformTarget == TRANSFORM_ORIGIN) && transformMode == TRANSFORM_MOVE && pickMode == pick_modes::PICK_OBJECT;
-	
+
 
 	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F])
 	{
@@ -2219,7 +2228,7 @@ bool Renderer::transformAxisControls()
 						if (!tmpEnt)
 							continue;
 
-						vec3 offset = getEntOrigin(map,tmpEnt) + delta;
+						vec3 offset = getEntOrigin(map, tmpEnt) + delta;
 
 						vec3 rounded = gridSnappingEnabled ? snapToGrid(offset) : offset;
 
@@ -2499,7 +2508,11 @@ void Renderer::reloadBspModels()
 		"./"
 	};
 
-	tryPaths.insert(tryPaths.end(), g_settings.resPaths.begin(), g_settings.resPaths.end());
+	for (auto& path : g_settings.resPaths)
+	{
+		if (path.enabled)
+			tryPaths.push_back(path.path);
+	}
 
 	for (auto bsprend : mapRenderers)
 	{

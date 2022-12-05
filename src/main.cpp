@@ -798,7 +798,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 				"_%4d%02d%02d_%02d%02d%02d.dmp",
 				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
 
-	logf("Generating minidump at path %s", name);
+	logf("Generating minidump at path %s\n", name);
 
 	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -820,6 +820,8 @@ void make_minidump(EXCEPTION_POINTERS* e)
 
 	CloseHandle(hFile);
 }
+
+int crashdumps = 3;
 
 LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 {
@@ -853,8 +855,11 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 			}
 
 			logf("Crash WINAPI_LASTERROR:%X. Exception code: %X. Exception address: %p\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress);
-
-			make_minidump(e);
+			if (crashdumps > 0)
+			{
+				crashdumps--;
+				make_minidump(e);
+			}
 		}
 	}
 

@@ -52,14 +52,15 @@ struct TransformAxes
 	int numAxes;
 };
 
-struct FgdPathStruct
+struct PathToggleStruct
 {
-	std::string fgdPath;
+	std::string path;
 	bool enabled;
-	FgdPathStruct(std::string path, bool enable)
+
+	PathToggleStruct(std::string filePath, bool isEnable)
 	{
-		fgdPath = path;
-		enabled = enable;
+		path = filePath;
+		enabled = isEnable;
 	}
 };
 
@@ -103,8 +104,8 @@ struct AppSettings
 	bool entListReload;
 	bool stripWad;
 
-	std::vector<FgdPathStruct> fgdPaths;
-	std::vector<std::string> resPaths;
+	std::vector<PathToggleStruct> fgdPaths;
+	std::vector<PathToggleStruct> resPaths;
 
 
 

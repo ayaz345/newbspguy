@@ -3295,7 +3295,6 @@ void Gui::drawLog()
 
 void Gui::drawSettings()
 {
-
 	ImGui::SetNextWindowSize(ImVec2(790.f, 350.f), ImGuiCond_FirstUseEver);
 
 	bool oldShowSettings = showSettingsWidget;
@@ -3304,6 +3303,10 @@ void Gui::drawSettings()
 	{
 		ImGuiContext& g = *GImGui;
 		const int settings_tabs = 7;
+
+		static int resSelected = 0;
+		static int fgdSelected = 0;
+
 		static const char* tab_titles[settings_tabs] = {
 			"General",
 			"FGDs",
@@ -3354,6 +3357,7 @@ void Gui::drawSettings()
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				g_settings.gamedir = res.parent_path().string();
+				g_settings.lastdir = res.parent_path().string();
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -3364,6 +3368,31 @@ void Gui::drawSettings()
 			{
 				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
 				g_settings.workingdir = res.parent_path().string();
+				g_settings.lastdir = res.parent_path().string();
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+
+		if (ifd::FileDialog::Instance().IsDone("fgdOpen"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				g_settings.fgdPaths[fgdSelected].path = res.string();
+				g_settings.fgdPaths[fgdSelected].enabled = true;
+				g_settings.lastdir = res.parent_path().string();
+			}
+			ifd::FileDialog::Instance().Close();
+		}
+
+		if (ifd::FileDialog::Instance().IsDone("resOpen"))
+		{
+			if (ifd::FileDialog::Instance().HasResult())
+			{
+				std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
+				g_settings.resPaths[resSelected].path = res.string();
+				g_settings.resPaths[resSelected].enabled = true;
+				g_settings.lastdir = res.parent_path().string();
 			}
 			ifd::FileDialog::Instance().Close();
 		}
@@ -3444,9 +3473,21 @@ void Gui::drawSettings()
 			{
 				ImGui::SetNextItemWidth(pathWidth * 0.20);
 				ImGui::Checkbox((std::string("##enablefgd") + std::to_string(i)).c_str(), &g_settings.fgdPaths[i].enabled);
+
 				ImGui::SameLine();
+
 				ImGui::SetNextItemWidth(pathWidth * 0.80);
-				ImGui::InputText(("##fgd" + std::to_string(i)).c_str(), &g_settings.fgdPaths[i].fgdPath);
+				ImGui::InputText(("##fgd" + std::to_string(i)).c_str(), &g_settings.fgdPaths[i].path);
+
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				if (ImGui::Button(("...##fgdOpen" + std::to_string(i)).c_str()))
+				{
+					fgdSelected = i;
+					ifd::FileDialog::Instance().Open("fgdOpen", "Select fgd path", "fgd file (*.fgd){.fgd},.*", false, g_settings.lastdir);
+				}
+
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
@@ -3462,15 +3503,30 @@ void Gui::drawSettings()
 
 			if (ImGui::Button("Add fgd path"))
 			{
-				g_settings.fgdPaths.emplace_back(FgdPathStruct(std::string(),true));
+				g_settings.fgdPaths.push_back({std::string(),true});
 			}
 		}
 		else if (settingsTab == 2)
 		{
 			for (int i = 0; i < g_settings.resPaths.size(); i++)
 			{
-				ImGui::SetNextItemWidth(pathWidth);
-				ImGui::InputText(("##res" + std::to_string(i)).c_str(), &g_settings.resPaths[i]);
+				ImGui::SetNextItemWidth(pathWidth * 0.20);
+				ImGui::Checkbox((std::string("##enableres") + std::to_string(i)).c_str(), &g_settings.resPaths[i].enabled);
+
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(pathWidth * 0.80);
+				ImGui::InputText(("##res" + std::to_string(i)).c_str(), &g_settings.resPaths[i].path);
+
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				if (ImGui::Button(("...##resOpen" + std::to_string(i)).c_str()))
+				{
+					resSelected = i;
+					ifd::FileDialog::Instance().Open("resOpen", "Select fgd path", std::string(), false, g_settings.lastdir);
+				}
+
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(delWidth);
@@ -3487,7 +3543,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button("Add res path"))
 			{
-				g_settings.resPaths.emplace_back(std::string());
+				g_settings.resPaths.push_back({std::string(), true});
 			}
 		}
 		else if (settingsTab == 3)
@@ -3824,24 +3880,24 @@ void Gui::drawSettings()
 		}
 		for (auto& s : g_settings.fgdPaths)
 		{
-			if (s.fgdPath.find(':') == std::string::npos)
+			if (s.path.find(':') == std::string::npos)
 			{
-				fixupPath(s.fgdPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 			}
 			else
 			{
-				fixupPath(s.fgdPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 			}
 		}
 		for (auto& s : g_settings.resPaths)
 		{
-			if (s.find(':') == std::string::npos)
+			if (s.path.find(':') == std::string::npos)
 			{
-				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 			}
 			else
 			{
-				fixupPath(s, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 			}
 		}
 		app->reloading = true;

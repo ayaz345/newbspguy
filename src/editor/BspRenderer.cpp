@@ -94,6 +94,8 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 
 void BspRenderer::loadTextures()
 {
+	texturesLoaded = false;
+
 	for (int i = 0; i < wads.size(); i++)
 	{
 		delete wads[i];
@@ -131,7 +133,11 @@ void BspRenderer::loadTextures()
 		"./"
 	};
 
-	tryPaths.insert(tryPaths.end(), g_settings.resPaths.begin(), g_settings.resPaths.end());
+	for (auto& path : g_settings.resPaths)
+	{
+		if (path.enabled)
+			tryPaths.push_back(path.path);
+	}
 
 	for (int i = 0; i < wadNames.size(); i++)
 	{
@@ -290,7 +296,6 @@ void BspRenderer::reload()
 
 void BspRenderer::reloadTextures()
 {
-	texturesLoaded = false;
 	loadTextures();
 }
 
@@ -1454,7 +1459,8 @@ void BspRenderer::delayLoadData()
 
 		lightmapsUploaded = true;
 	}
-	else if (!texturesLoaded)
+
+	if (!texturesLoaded)
 	{
 		deleteTextures();
 
@@ -1468,7 +1474,6 @@ void BspRenderer::delayLoadData()
 		numLoadedTextures = map->textureCount;
 
 		texturesLoaded = true;
-
 		preRenderFaces();
 	}
 
