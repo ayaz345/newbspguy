@@ -73,7 +73,7 @@ void PointEntRenderer::genPointEntCubes()
 		}
 	}
 
-	debugf("Generated %d entity cubes\n", entCubes.size());
+	logf("Generated %d point entities cubes\n", entCubes.size());
 }
 
 EntCube* PointEntRenderer::getCubeMatchingProps(EntCube* entCube)

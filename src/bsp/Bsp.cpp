@@ -1300,13 +1300,13 @@ void Bsp::split_shared_model_structures(int modelIdx)
 
 	if (duplicatePlanes || duplicateClipnodes || duplicateTexinfos)
 	{
-		debugf("\nShared model structures were duplicated to allow independent movement:\n");
+		logf("\nShared model structures were duplicated to allow independent movement:\n");
 		if (duplicatePlanes)
-			debugf("    Added %d planes\n", duplicatePlanes);
+			logf("    Added %d planes\n", duplicatePlanes);
 		if (duplicateClipnodes)
-			debugf("    Added %d clipnodes\n", duplicateClipnodes);
+			logf("    Added %d clipnodes\n", duplicateClipnodes);
 		if (duplicateTexinfos)
-			debugf("    Added %d texinfos\n", duplicateTexinfos);
+			logf("    Added %d texinfos\n", duplicateTexinfos);
 	}
 }
 
@@ -1866,7 +1866,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 
 		if (usageEnts.empty())
 		{
-			debugf("Deleting unused model %d\n", i);
+			logf("Deleting unused model %d\n", i);
 
 			for (int k = 0; k < MAX_MAP_HULLS; k++)
 				deletedHulls += models[i].iHeadnodes[k] >= 0;
@@ -1986,7 +1986,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		if (!needsVisibleHull && !needsMonsterHulls)
 		{
 			if (models[i].iHeadnodes[0] >= 0)
-				debugf("Deleting HULL 0 from model %d, used in %s\n", i, uses.c_str());
+				logf("Deleting HULL 0 from model %d, used in %s\n", i, uses.c_str());
 
 			deletedHulls += models[i].iHeadnodes[0] >= 0;
 
@@ -2009,7 +2009,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 			}
 
 			if (deletedAnyHulls)
-				debugf("Deleting HULL 1-3 from model %d, used in %s\n", i, uses.c_str());
+				logf("Deleting HULL 1-3 from model %d, used in %s\n", i, uses.c_str());
 
 			model.iHeadnodes[1] = -1;
 			model.iHeadnodes[2] = -1;
@@ -2018,7 +2018,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		else if (!needsMonsterHulls)
 		{
 			if (models[i].iHeadnodes[2] >= 0)
-				debugf("Deleting HULL 2 from model %d, used in %s\n", i, uses.c_str());
+				logf("Deleting HULL 2 from model %d, used in %s\n", i, uses.c_str());
 
 			deletedHulls += models[i].iHeadnodes[2] >= 0;
 
@@ -4547,7 +4547,7 @@ BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx)
 			texinfos[newInfo] = texinfos[targetInfo];
 			targetInfo = newInfo;
 			targetFace.iTextureInfo = newInfo;
-			debugf("Create new texinfo\n");
+			logf("Create new texinfo %d\n", newInfo);
 			break;
 		}
 	}

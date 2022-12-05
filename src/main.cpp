@@ -762,11 +762,116 @@ void print_help(const std::string& command)
 		);
 	}
 }
+#ifdef WIN32
+#ifndef NDEBUG
 
+#include <Dbghelp.h>
+
+void make_minidump(EXCEPTION_POINTERS* e)
+{
+	if (!e)
+	{
+		e = new	_EXCEPTION_POINTERS();
+	}
+	if (!e->ContextRecord)
+	{
+		e->ContextRecord = new CONTEXT();
+	}
+
+	if (!e->ExceptionRecord)
+	{
+		e->ExceptionRecord = new EXCEPTION_RECORD();
+	}
+
+	auto hDbgHelp = LoadLibraryA("dbghelp");
+	if (hDbgHelp == nullptr)
+		return;
+	auto pMiniDumpWriteDump = (decltype(&MiniDumpWriteDump))GetProcAddress(hDbgHelp, "MiniDumpWriteDump");
+	if (pMiniDumpWriteDump == nullptr)
+		return;
+
+	char name[1024]{};
+	auto nameEnd = name + GetModuleFileNameA(GetModuleHandleA(0), name, 1024);
+	SYSTEMTIME t;
+	GetSystemTime(&t);
+	wsprintfA(nameEnd - strlen(".exe"),
+				"_%4d%02d%02d_%02d%02d%02d.dmp",
+				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+
+	logf("Generating minidump at path %s", name);
+
+	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return;
+
+	MINIDUMP_EXCEPTION_INFORMATION exceptionInfo = MINIDUMP_EXCEPTION_INFORMATION();
+	exceptionInfo.ThreadId = GetCurrentThreadId();
+	exceptionInfo.ExceptionPointers = e;
+	exceptionInfo.ClientPointers = FALSE;
+
+	pMiniDumpWriteDump(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		hFile,
+		MINIDUMP_TYPE(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory),
+		e ? &exceptionInfo : nullptr,
+		nullptr,
+		nullptr);
+
+	CloseHandle(hFile);
+}
+
+LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
+{
+	if (e)
+	{
+		if (e->ExceptionRecord)
+		{
+			DWORD exceptionCode = e->ExceptionRecord->ExceptionCode;
+
+		// Not interested in non-error exceptions. In this category falls exceptions
+		// like:
+		// 0x40010006 - OutputDebugStringA. Seen when no debugger is attached
+		//              (otherwise debugger swallows the exception and prints
+		//              the string).
+		// 0x406D1388 - DebuggerProbe. Used by debug CRT - for example see source
+		//              code of isatty(). Used to name a thread as well.
+		// RPC_E_DISCONNECTED and Co. - COM IPC non-fatal warnings
+		// STATUS_BREAKPOINT and Co. - Debugger related breakpoints
+			if ((exceptionCode & ERROR_SEVERITY_ERROR) != ERROR_SEVERITY_ERROR)
+			{
+				return ExceptionContinueExecution;
+			}
+			if (e->ExceptionRecord->ExceptionCode == 0x406D1388)
+				return EXCEPTION_CONTINUE_EXECUTION;
+			// Ignore custom exception codes.
+			// MSXML likes to raise 0xE0000001 while parsing.
+			// Note the C++ SEH (0xE06D7363) also fails in that range.
+			if (exceptionCode & APPLICATION_ERROR_MASK)
+			{
+				return ExceptionContinueExecution;
+			}
+
+			logf("Crash WINAPI_LASTERROR:%X. Exception code: %X. Exception address: %P\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress);
+
+			make_minidump(e);
+		}
+	}
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+#endif
 int main(int argc, char* argv[])
 {
 #ifdef WIN32
 	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
+#ifndef NDEBUG
+	SetUnhandledExceptionFilter(unhandled_handler);
+	AddVectoredExceptionHandler(1, unhandled_handler);
+#endif
+	// Disable ghost ^_^
+	DisableProcessWindowsGhosting(); 
 #endif
 
 	if (strlen(argv[0]))

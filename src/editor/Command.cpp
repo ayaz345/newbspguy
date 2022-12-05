@@ -9,7 +9,6 @@ Command::Command(std::string _desc, int _mapIdx)
 {
 	this->desc = _desc;
 	this->mapIdx = _mapIdx;
-	debugf("New undo command added: %s\n", desc.c_str());
 }
 
 Bsp* Command::getBsp()
