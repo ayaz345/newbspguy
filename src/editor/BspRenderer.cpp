@@ -94,8 +94,6 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 
 void BspRenderer::loadTextures()
 {
-	texturesLoaded = false;
-
 	for (int i = 0; i < wads.size(); i++)
 	{
 		delete wads[i];
@@ -296,6 +294,7 @@ void BspRenderer::reload()
 
 void BspRenderer::reloadTextures()
 {
+	texturesLoaded = false;
 	loadTextures();
 }
 

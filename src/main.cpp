@@ -815,7 +815,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 		GetCurrentProcess(),
 		GetCurrentProcessId(),
 		hFile,
-		MINIDUMP_TYPE(MiniDumpNormal | MiniDumpFilterMemory | MiniDumpScanMemory),
+		MINIDUMP_TYPE(MiniDumpNormal),
 		e ? &exceptionInfo : nullptr,
 		nullptr,
 		nullptr);
@@ -855,6 +855,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 			}
 
 			logf("Crash\n WINAPI_LASTERROR:%X.\n Exception code: %X.\n Exception address: %p.\n Main module address: %p\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, GetModuleHandleA(0));
+			
 			if (crashdumps > 0)
 			{
 				crashdumps--;
