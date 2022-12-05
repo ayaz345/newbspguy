@@ -88,6 +88,8 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	memset(&undoLumpState, 0, sizeof(LumpState));
 
 	undoEntityState = std::map<int, Entity>();
+
+	mapTexsUsage = std::map<std::string, std::set<std::string>>();
 }
 
 void BspRenderer::loadTextures()
@@ -233,13 +235,13 @@ void BspRenderer::loadTextures()
 		glTexturesSwap[i] = new Texture(tex.nWidth, tex.nHeight, (unsigned char*)imageData, tex.szName);
 	}
 
-	mapTexsUsage = std::map<std::string, std::set<std::string>>();
+	mapTexsUsage.clear();
 
 	for (unsigned int i = 0; i < map->faceCount; i++)
 	{
 		BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
 		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-		if (texOffset >= 0)
+		if (texOffset != -1)
 		{
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 			if (tex.szName[0] != '\0')
@@ -265,7 +267,7 @@ void BspRenderer::loadTextures()
 	}
 
 	if (mapTexsUsage.size())
-		logf("Used %d wad files(include map file)\n", (int) mapTexsUsage.size());
+		logf("Used %d wad files(include map file)\n", (int)mapTexsUsage.size());
 	if (wadTexCount)
 		logf("Loaded %d wad textures\n", wadTexCount);
 	if (embedCount)
@@ -638,9 +640,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		int faceIdx = model.iFirstFace + i;
 		BSPFACE& face = map->faces[faceIdx];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 
 		int texWidth, texHeight;
+		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 		if (texOffset != -1)
 		{
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
@@ -963,7 +965,6 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 
 			for (int n = 0; n < mesh.faces.size(); n++)
 			{
-
 				if (!mesh.faces[n].visible)
 				{
 					continue;
@@ -1104,7 +1105,7 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 
 		renderClip->wireframeClipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
 		renderClip->wireframeClipnodeBuffer[i]->ownData = true;
-	
+
 		renderClip->faceMaths[i] = std::move(tfaceMaths);
 	}
 }
@@ -1540,19 +1541,22 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 	BSPFACE& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 	int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-	BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-
-	for (int i = 0; i < rface->vertCount; i++)
+	if (texOffset != -1)
 	{
-		lightmapVert& vert = rgroup->verts[rface->vertOffset + i];
-		vec3 pos = vec3(vert.x, -vert.z, vert.y);
+		BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 
-		float tw = 1.0f / (float)tex.nWidth;
-		float th = 1.0f / (float)tex.nHeight;
-		float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
-		float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
-		vert.u = fU * tw;
-		vert.v = fV * th;
+		for (int i = 0; i < rface->vertCount; i++)
+		{
+			lightmapVert& vert = rgroup->verts[rface->vertOffset + i];
+			vec3 pos = vec3(vert.x, -vert.z, vert.y);
+
+			float tw = 1.0f / (float)tex.nWidth;
+			float th = 1.0f / (float)tex.nHeight;
+			float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
+			float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
+			vert.u = fU * tw;
+			vert.v = fV * th;
+		}
 	}
 
 	rgroup->buffer->deleteBuffer();

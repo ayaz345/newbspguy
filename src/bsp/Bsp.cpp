@@ -1342,7 +1342,7 @@ bool Bsp::does_model_use_shared_structures(int modelIdx)
 
 LumpState Bsp::duplicate_lumps(int targets)
 {
-	LumpState state;
+	LumpState state = LumpState();
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -1377,18 +1377,21 @@ int Bsp::delete_embedded_textures()
 	for (unsigned int i = 0; i < textureCount; i++)
 	{
 		int oldOffset = ((int*)textures)[i + 1];
-		BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
-
-		if (oldTex->nOffsets[0] != -1)
+		if (oldOffset != -1)
 		{
-			numRemoved++;
-		}
+			BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
 
-		header[i] = headerSz + i * sizeof(BSPMIPTEX);
-		mips[i].nWidth = oldTex->nWidth;
-		mips[i].nHeight = oldTex->nHeight;
-		memcpy(mips[i].szName, oldTex->szName, MAXTEXTURENAME);
-		memset(mips[i].nOffsets, 0, MIPLEVELS * sizeof(int));
+			if (oldTex->nOffsets[0] != -1)
+			{
+				numRemoved++;
+			}
+
+			header[i] = headerSz + i * sizeof(BSPMIPTEX);
+			mips[i].nWidth = oldTex->nWidth;
+			mips[i].nHeight = oldTex->nHeight;
+			memcpy(mips[i].szName, oldTex->szName, MAXTEXTURENAME);
+			memset(mips[i].nOffsets, 0, MIPLEVELS * sizeof(int));
+		}
 	}
 
 	replace_lump(LUMP_TEXTURES, newTextureData, newTexDataSize);
@@ -1480,25 +1483,28 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 		if (!usedTextures[i])
 		{
 			int offset = ((int*)textures)[i + 1];
-			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + offset);
+			if (offset != -1)
+			{
+				BSPMIPTEX* tex = (BSPMIPTEX*)(textures + offset);
 
-			// don't delete single frames from animated textures or else game crashes
-			if (tex->szName[0] == '-' || tex->szName[0] == '+')
-			{
-				usedTextures[i] = true;
-				// TODO: delete all frames if none are used
-				continue;
-			}
+				// don't delete single frames from animated textures or else game crashes
+				if (tex->szName[0] == '-' || tex->szName[0] == '+')
+				{
+					usedTextures[i] = true;
+					// TODO: delete all frames if none are used
+					continue;
+				}
 
-			if (offset == -1)
-			{
-				removeSize += sizeof(int);
+				if (offset == -1)
+				{
+					removeSize += sizeof(int);
+				}
+				else
+				{
+					removeSize += getBspTextureSize(tex) + sizeof(int);
+				}
+				removeCount++;
 			}
-			else
-			{
-				removeSize += getBspTextureSize(tex) + sizeof(int);
-			}
-			removeCount++;
 		}
 	}
 
@@ -1516,7 +1522,6 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 			continue;
 		}
 		int oldOffset = ((int*)textures)[i + 1];
-
 		if (oldOffset == -1)
 		{
 			texHeader[k + 1] = -1;
@@ -3539,10 +3544,13 @@ BSPMIPTEX* Bsp::find_embedded_texture(const char* name)
 	for (unsigned int i = 0; i < textureCount; i++)
 	{
 		int oldOffset = ((int*)textures)[i + 1];
-		BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
-		if (strcmp(name, oldTex->szName) == 0)
+		if (oldOffset != -1)
 		{
-			return oldTex;
+			BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
+			if (strcmp(name, oldTex->szName) == 0)
+			{
+				return oldTex;
+			}
 		}
 	}
 	return NULL;
@@ -3584,7 +3592,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 	int colorCount = 0;
 
 	// create pallete and full-rez mipmap
-	unsigned char* mip[MIPLEVELS];
+	unsigned char* mip[MIPLEVELS] = {NULL};
 	mip[0] = new unsigned char[width * height];
 	COLOR3* src = (COLOR3*)data;
 	for (int y = 0; y < height; y++)
@@ -4198,7 +4206,7 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 
 		for (int k = 0; k < 6; k++)
 		{
-			BSPCLIPNODE node;
+			BSPCLIPNODE node = BSPCLIPNODE();
 			node.iPlane = (int)planeIdx++;
 
 			int insideContents = k == 5 ? CONTENTS_SOLID : (int)(clipnodeIdx + 1);

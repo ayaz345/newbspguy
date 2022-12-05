@@ -40,7 +40,12 @@ struct VertexAttr
 	int normalized; // GL_TRUE/GL_FALSE Ex: byte color values are normalized (0-255 = 0.0-1.0)
 	const char* varName;
 
-	VertexAttr() : handle(-1) {}
+	VertexAttr()
+	{
+		handle = -1;
+		numValues = valueType = size = normalized = 0;
+		varName = NULL;
+	}
 
 	VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName);
 };

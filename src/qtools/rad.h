@@ -95,6 +95,13 @@ typedef struct samplefrag_s
 	int facenum; // facenum
 	samplefragrect_t rect; // original rectangle that forms the boundary
 	Winding* mywinding; // relative to the texture coordinate on that face
+
+	samplefrag_s()
+	{
+		facenum = 0;
+		rect = samplefragrect_t();
+		mywinding = NULL;
+	}
 }
 samplefrag_t;
 

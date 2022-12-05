@@ -811,11 +811,14 @@ bool ExportWad(Bsp* map)
 		for (unsigned int i = 0; i < map->textureCount; i++)
 		{
 			int oldOffset = ((int*)map->textures)[i + 1];
-			BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
-			if (bspTex->nOffsets[0] == -1 || bspTex->nOffsets[0] == 0)
-				continue;
-			WADTEX* oldTex = new WADTEX(bspTex);
-			tmpWadTex.push_back(oldTex);
+			if (oldOffset != -1)
+			{
+				BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
+				if (bspTex->nOffsets[0] == -1 || bspTex->nOffsets[0] == 0)
+					continue;
+				WADTEX* oldTex = new WADTEX(bspTex);
+				tmpWadTex.push_back(oldTex);
+			}
 		}
 		if (!tmpWadTex.empty())
 		{
@@ -1876,10 +1879,13 @@ void Gui::drawDebugWidget()
 						{
 							BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 							int texOffset = ((int*)map->textures)[info.iMiptex + 1];
-							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-							ImGui::Text("Texinfo ID: %d", face.iTextureInfo);
-							ImGui::Text("Texture ID: %d", info.iMiptex);
-							ImGui::Text("Texture: %s (%dx%d)", tex.szName, tex.nWidth, tex.nHeight);
+							if (texOffset != -1)
+							{
+								BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+								ImGui::Text("Texinfo ID: %d", face.iTextureInfo);
+								ImGui::Text("Texture ID: %d", info.iMiptex);
+								ImGui::Text("Texture: %s (%dx%d)", tex.szName, tex.nWidth, tex.nHeight);
+							}
 							BSPPLANE& plane = map->planes[face.iPlane];
 							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 							float anglex, angley;
@@ -1978,7 +1984,7 @@ void Gui::drawDebugWidget()
 			for (unsigned int i = 0; i < map->textureCount; i++)
 			{
 				int oldOffset = ((int*)map->textures)[i + 1];
-				if (oldOffset >= 0)
+				if (oldOffset > 0)
 				{
 					BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
 					if (bspTex->nOffsets[0] > 0)
@@ -1988,12 +1994,15 @@ void Gui::drawDebugWidget()
 				}
 			}
 
-			for (auto& tmpWad : map->getBspRender()->mapTexsUsage)
+			if (map->getBspRender()->mapTexsUsage.size())
 			{
-				if (tmpWad.first == "internal")
-					InternalTextures+= tmpWad.second.size();
-				else
-					WadTextures += tmpWad.second.size();
+				for (auto& tmpWad : map->getBspRender()->mapTexsUsage)
+				{
+					if (tmpWad.first == "internal")
+						InternalTextures += (int)tmpWad.second.size();
+					else
+						WadTextures += (int)tmpWad.second.size();
+				}
 			}
 
 			ImGui::Text("Total textures used in map %d", map->textureCount);
@@ -4172,15 +4181,20 @@ void Gui::drawImportMapWidget()
 						{
 							int newMiptex = -1;
 							int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
+							if (texOffset == -1)
+								continue;
 							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
 							for (unsigned int i = 0; i < map->textureCount; i++)
 							{
 								int tex2Offset = ((int*)map->textures)[i + 1];
-								BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + tex2Offset));
-								if (strcmp(tex.szName, tex2.szName) == 0)
+								if (tex2Offset != -1)
 								{
-									newMiptex = i;
-									break;
+									BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + tex2Offset));
+									if (strcmp(tex.szName, tex2.szName) == 0)
+									{
+										newMiptex = i;
+										break;
+									}
 								}
 							}
 							if (!newMiptex)
@@ -5353,7 +5367,7 @@ void ExportLightmap(BSPFACE face, int faceIdx, Bsp* map)
 	int size[2];
 	GetFaceLightmapSize(map, faceIdx, size);
 	char fileNam[256];
-
+	
 	for (int i = 0; i < MAXLIGHTMAPS; i++)
 	{
 		if (face.nStyles[i] == 255)
@@ -5698,9 +5712,9 @@ void Gui::drawTextureTool()
 					BSPFACE& face = map->faces[faceIdx];
 					BSPPLANE& plane = map->planes[face.iPlane];
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-					int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-
 					width = height = 0;
+
+					int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 					if (texOffset != -1)
 					{
 						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
@@ -5946,9 +5960,16 @@ void Gui::drawTextureTool()
 			textureChanged = true;
 			refreshSelectedFaces = false;
 			int texOffset = ((int*)map->textures)[copiedMiptex + 1];
-			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-			memcpy(textureName, tex.szName, MAXTEXTURENAME);
-			textureName[15] = '\0';
+			if (texOffset != -1)
+			{
+				BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+				memcpy(textureName, tex.szName, MAXTEXTURENAME);
+				textureName[15] = '\0';
+			}
+			else
+			{
+				textureName[0] = '\0';
+			}
 		}
 		if (!validTexture)
 		{
@@ -5969,12 +5990,15 @@ void Gui::drawTextureTool()
 				for (unsigned int i = 0; i < map->textureCount; i++)
 				{
 					int texOffset = ((int*)map->textures)[i + 1];
-					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-					if (strcmp(tex.szName, textureName) == 0)
+					if (texOffset != -1)
 					{
-						validTexture = true;
-						newMiptex = i;
-						break;
+						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+						if (strcmp(tex.szName, textureName) == 0)
+						{
+							validTexture = true;
+							newMiptex = i;
+							break;
+						}
 					}
 				}
 

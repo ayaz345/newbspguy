@@ -451,10 +451,13 @@ int CreateBspModelCommand::getDefaultTextureIdx()
 	for (unsigned int i = 0; i < totalTextures; i++)
 	{
 		int texOffset = ((int*)map->textures)[i + 1];
-		BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-		if (strcmp(tex.szName, "aaatrigger") == 0)
+		if (texOffset != -1)
 		{
-			return i;
+			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+			if (strcmp(tex.szName, "aaatrigger") == 0)
+			{
+				return i;
+			}
 		}
 	}
 

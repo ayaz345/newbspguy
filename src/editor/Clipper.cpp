@@ -52,7 +52,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
 			{
 				positive++;
 			}
-			else if (vert.distance < EPSILON)
+			else if (std::signbit(vert.distance))
 			{
 				negative++;
 				vert.visible = false;

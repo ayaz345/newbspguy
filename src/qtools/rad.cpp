@@ -42,13 +42,13 @@ void ApplyMatrix(const matrix_t& m, const vec3_t in, vec3_t& out)
 
 bool InvertMatrix(const matrix_t& m, matrix_t& m_inverse)
 {
-	float texplanes[2][4];
-	float faceplane[4];
+	float texplanes[2][4]{};
+	float faceplane[4]{};
 	int i;
-	float texaxis[2][3];
-	float normalaxis[3];
+	float texaxis[2][3]{};
+	float normalaxis[3]{};
 	float det, sqrlen1, sqrlen2, sqrlen3;
-	float texorg[3];
+	float texorg[3]{};
 
 	for (i = 0; i < 4; i++)
 	{
@@ -140,8 +140,8 @@ void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 
 bool CanFindFacePosition(Bsp* bsp, int facenum)
 {
-	vec_t texmins[2], texmaxs[2];
-	int imins[2], imaxs[2];
+	vec_t texmins[2]{}, texmaxs[2]{};
+	int imins[2]{}, imaxs[2]{};
 
 	matrix_t worldtotex;
 	matrix_t textoworld;
@@ -297,7 +297,7 @@ void GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 	//CorrectFPUPrecision();
 
 	BSPFACE* f;
-	float mins[2], maxs[2], val;
+	float mins[2]{}, maxs[2]{}, val;
 	int i, j, e;
 	vec3* v;
 	BSPTEXTUREINFO* tex;
@@ -354,7 +354,7 @@ void GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 void CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
 {
 	BSPFACE* s;
-	float           mins[2], maxs[2], val; //vec_t           mins[2], maxs[2], val; //vluzacn
+	float           mins[2]{}, maxs[2]{}, val; //vec_t           mins[2], maxs[2], val; //vluzacn
 	int             i, j, e;
 	vec3* v;
 	BSPTEXTUREINFO* tex;
@@ -434,7 +434,7 @@ void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
 			pLuxelFlags = &LuxelFlags[s + w * t];
 			vec_t us = starts + s * TEXTURE_STEP * 1.0f;
 			vec_t ut = startt + t * TEXTURE_STEP * 1.0f;
-			vec_t square[2][2];
+			vec_t square[2][2]{};
 			square[0][0] = us - TEXTURE_STEP;
 			square[0][1] = ut - TEXTURE_STEP;
 			square[1][0] = us + TEXTURE_STEP;
