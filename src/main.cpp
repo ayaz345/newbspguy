@@ -115,14 +115,7 @@ bool start_viewer(const char* map)
 {
 	if (map && map[0] != '\0' && !fileExists(map))
 	{
-		if (std::string("empty") != map && std::string("editor") != map)
-		{
-			return false;
-		}
-		else
-		{
-			map = "";
-		}
+		return false;
 	}
 	if (!map)
 	{
@@ -728,16 +721,6 @@ void print_help(const std::string& command)
 			"Example: bspguy exportobj c1a0.bsp\n"
 		);
 	}
-	else if (command == "editor" || command == "empty")
-	{
-		logf(
-			"editor -\n"
-			"empty - Open bspguy editor window.\n\n"
-
-			"Usage:   bspguy editor\n"
-			"Usage:   bspguy empty\n"
-		);
-	}
 	else
 	{
 		logf("%s\n\n", g_version_string.c_str());
@@ -754,7 +737,7 @@ void print_help(const std::string& command)
 			"  transform : Apply 3D transformations to the BSP\n"
 			"  unembed   : Deletes embedded texture data\n"
 			"  exportobj   : Export bsp geometry to obj [WIP]\n"
-			"  editor, empty   : Open empty bspguy window\n"
+			"  no command : Open empty bspguy window\n"
 
 			"\nRun 'bspguy <command> help' to read about a specific command.\n"
 			"\nTo launch the 3D editor. Drag and drop a .bsp file onto the executable,\n"
@@ -878,10 +861,10 @@ int main(int argc, char* argv[])
 #endif
 	DisableProcessWindowsGhosting(); 
 #endif
-
-	if (strlen(argv[0]))
+	if (argv && argv[0] && argv[0][0] != '\0')
 	{
 		fs::path ph = argv[0];
+		if (!ph.empty())
 		fs::current_path(ph.parent_path());
 	}
 
@@ -940,25 +923,25 @@ int main(int argc, char* argv[])
 	{
 		return unembed(cli);
 	}
-	else if (cli.bspfile.size())
+	else 
 	{
-		logf("%s\n", ("Start bspguy editor with map: " + cli.bspfile).c_str());
-		logf("Load settings from : %s\n", g_settings_path.c_str());
-		if (!start_viewer(cli.bspfile.c_str()))
+		if (cli.bspfile.size() == 0)
+			logf("%s\n", "Open editor with empty map.");
+		else
 		{
 			if (cli.askingForHelp)
 			{
 				print_help(cli.command);
 				return 0;
 			}
+		}
+
+		logf("%s\n", ("Start bspguy editor with map: " + cli.bspfile).c_str());
+		logf("Load settings from : %s\n", g_settings_path.c_str());
+		if (!start_viewer(cli.bspfile.c_str()))
+		{
 			logf("ERROR: File not found: %s", cli.bspfile.c_str());
 		}
-	}
-
-	if (cli.askingForHelp)
-	{
-		print_help(cli.command);
-		return 0;
 	}
 	return 0;
 }
