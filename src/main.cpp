@@ -767,6 +767,8 @@ void print_help(const std::string& command)
 
 #include <Dbghelp.h>
 
+
+int crashdumps = 3;
 void make_minidump(EXCEPTION_POINTERS* e)
 {
 	if (!e)
@@ -795,8 +797,8 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	SYSTEMTIME t;
 	GetSystemTime(&t);
 	wsprintfA(nameEnd - strlen(".exe"),
-				"_%4d%02d%02d_%02d%02d%02d.dmp",
-				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond);
+				"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
+				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
 
 	logf("Generating minidump at path %s\n", name);
 
@@ -813,15 +815,13 @@ void make_minidump(EXCEPTION_POINTERS* e)
 		GetCurrentProcess(),
 		GetCurrentProcessId(),
 		hFile,
-		MINIDUMP_TYPE(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory),
+		MINIDUMP_TYPE(MiniDumpNormal | MiniDumpFilterMemory | MiniDumpScanMemory),
 		e ? &exceptionInfo : nullptr,
 		nullptr,
 		nullptr);
 
 	CloseHandle(hFile);
 }
-
-int crashdumps = 3;
 
 LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 {
@@ -854,7 +854,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			logf("Crash WINAPI_LASTERROR:%X. Exception code: %X. Exception address: %p\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress);
+			logf("Crash\n WINAPI_LASTERROR:%X.\n Exception code: %X.\n Exception address: %p.\n Main module address: %p\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, GetModuleHandleA(0));
 			if (crashdumps > 0)
 			{
 				crashdumps--;
