@@ -870,7 +870,6 @@ int main(int argc, char* argv[])
 	SetUnhandledExceptionFilter(unhandled_handler);
 	AddVectoredExceptionHandler(1, unhandled_handler);
 #endif
-	// Disable ghost ^_^
 	DisableProcessWindowsGhosting(); 
 #endif
 
