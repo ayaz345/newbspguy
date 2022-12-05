@@ -21,10 +21,12 @@ static int InputTextCallback(ImGuiInputTextCallbackData* data)
     {
         // Resize string callback
         // If for some reason we refuse the new length (BufTextLen) and/or capacity (BufSize) we need to set them back to what we want.
-        std::string* str = user_data->Str;
-        IM_ASSERT(data->Buf == str->c_str());
-        str->resize(data->BufTextLen);
-        data->Buf = (char*)str->c_str();
+        if (data->BufTextLen > 0)
+        {
+            std::string* str = user_data->Str;
+            str->resize(data->BufTextLen);
+            data->Buf = (char*)str->c_str();
+        }
     }
     else if (user_data->ChainCallback)
     {
