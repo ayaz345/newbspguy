@@ -2944,7 +2944,7 @@ void Gui::drawTransformWidget()
 				inputsAreDragging = true;
 			ImGui::SameLine();
 
-			if (ImGui::DragFloat("##zpos", &z, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "X: %.2f" : "X: %.0f"))
+			if (ImGui::DragFloat("##zpos", &z, 0.01f, -FLT_MAX_COORD, FLT_MAX_COORD, app->gridSnappingEnabled ? "Z: %.2f" : "Z: %.0f"))
 			{
 				originChanged = true;
 			}

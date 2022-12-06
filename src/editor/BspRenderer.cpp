@@ -255,17 +255,26 @@ void BspRenderer::loadTextures()
 		if (texOffset != -1)
 		{
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+
 			if (tex.szName[0] != '\0')
 			{
 				if (tex.nOffsets[0] <= 0)
 				{
+					bool fondTex = false;
 					for (auto& s : wads)
 					{
 						if (s->hasTexture(tex.szName))
 						{
 							if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
 								mapTexsUsage[basename(s->filename)].insert(tex.szName);
+
+							fondTex = true;
 						}
+					}
+					if (!fondTex)
+					{
+						if (!mapTexsUsage["notfound"].count(tex.szName))
+							mapTexsUsage["notfound"].insert(tex.szName);
 					}
 				}
 				else
