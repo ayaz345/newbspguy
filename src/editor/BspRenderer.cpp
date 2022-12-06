@@ -75,8 +75,8 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	colorShaderMultId = glGetUniformLocation(colorShader->ID, "colorMult");
 
 	numRenderClipnodes = map->modelCount;
-	loadTextures();
 	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
+	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
 
 	// cache ent targets so first selection doesn't lag
@@ -295,7 +295,7 @@ void BspRenderer::reload()
 void BspRenderer::reloadTextures()
 {
 	texturesLoaded = false;
-	loadTextures();
+	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
 }
 
 void BspRenderer::reloadLightmaps()
@@ -666,7 +666,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		lightmapVert* verts = new lightmapVert[face.nEdges];
 		int vertCount = face.nEdges;
-		Texture* lightmapAtlas[MAXLIGHTMAPS];
+		Texture* lightmapAtlas[MAXLIGHTMAPS]{NULL};
 
 		float lw = 0;
 		float lh = 0;
@@ -1459,7 +1459,7 @@ void BspRenderer::delayLoadData()
 		lightmapsUploaded = true;
 	}
 
-	if (!texturesLoaded)
+	if (!texturesLoaded && texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
 		deleteTextures();
 

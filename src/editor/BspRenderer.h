@@ -207,6 +207,7 @@ public:
 	Texture* blackTex = NULL;
 	Texture* blueTex = NULL;
 	Texture* missingTex = NULL;
+	std::future<void> texturesFuture;
 
 	bool lightmapsGenerated = false;
 	bool lightmapsUploaded = false;

@@ -2898,7 +2898,7 @@ vec3 Renderer::getAxisDragPoint(vec3 origin)
 	};
 
 	// get intersection points between the pick ray and each each movement direction plane
-	float dots[3];
+	float dots[3]{};
 	for (int i = 0; i < 3; i++)
 	{
 		dots[i] = abs(dotProduct(cameraForward, axisNormals[i]));
@@ -3121,7 +3121,7 @@ void Renderer::updateEntConnections()
 
 	size_t numVerts = targets.size() * 2 + callers.size() * 2 + callerAndTarget.size() * 2;
 	size_t numPoints = callers.size() + targets.size() + callerAndTarget.size();
-	cVert* lines = new cVert[numVerts + 3];
+	cVert* lines = new cVert[numVerts + 9];
 	cCube* points = new cCube[numPoints + 3];
 
 	const COLOR4 targetColor = {255, 255, 0, 255};
@@ -3255,7 +3255,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 
 		for (int i = 0; i < orderedVerts.size(); i++)
 		{
-			HullEdge edge;
+			HullEdge edge = HullEdge();
 			edge.verts[0] = orderedVerts[i];
 			edge.verts[1] = orderedVerts[(i + 1) % orderedVerts.size()];
 			edge.selected = false;

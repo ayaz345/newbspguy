@@ -2216,6 +2216,15 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 		Entity* entRef;
 		int entIdx;
 		BspRenderer* bspRenderer;
+
+		InputData()
+		{
+			key = std::string();
+			defaultValue = std::string();
+			entRef = NULL;
+			entIdx = 0;
+			bspRenderer = 0;
+		}
 	};
 
 	if (fgdClass)
