@@ -34,8 +34,8 @@ class Renderer;
 
 #define SHOW_IMPORT_OPEN 1
 #define SHOW_IMPORT_ADD_NEW 2
-#define SHOW_IMPORT_MODEL 3
-#define SHOW_IMPORT_MODEL_BSP 3
+#define SHOW_IMPORT_MODEL_ENTITY 3
+#define SHOW_IMPORT_MODEL_BSP 4
 
 extern bool filterNeeded;
 

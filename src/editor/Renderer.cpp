@@ -94,6 +94,7 @@ void AppSettings::loadDefault()
 	lastdir = "";
 	undoLevels = 64;
 	verboseLogs = false;
+	save_windows = false;
 	debug_open = false;
 	keyvalue_open = false;
 	transform_open = false;
@@ -131,7 +132,6 @@ void AppSettings::loadDefault()
 	entsNegativePitchPrefix.clear();
 
 	entListReload = true;
-
 	stripWad = false;
 
 	ResetBspLimits();
@@ -242,37 +242,42 @@ void AppSettings::load()
 			{
 				g_settings.maximized = atoi(val.c_str());
 			}
+			else if (key == "save_windows")
+			{
+				g_settings.save_windows = atoi(val.c_str()) != 0;
+			}
 			else if (key == "debug_open")
 			{
-				g_settings.debug_open = atoi(val.c_str()) != 0;
+				g_settings.debug_open = atoi(val.c_str()) != 0 && save_windows;
 			}
 			else if (key == "keyvalue_open")
 			{
-				g_settings.keyvalue_open = atoi(val.c_str()) != 0;
+				g_settings.keyvalue_open = atoi(val.c_str()) != 0 && save_windows;
 			}
 			else if (key == "transform_open")
 			{
-				g_settings.transform_open = atoi(val.c_str()) != 0;
+				g_settings.transform_open = atoi(val.c_str()) != 0 && save_windows;
 			}
 			else if (key == "log_open")
 			{
-				g_settings.log_open = atoi(val.c_str()) != 0;
+				g_settings.log_open = atoi(val.c_str()) != 0 && save_windows;
 			}
 			else if (key == "settings_open")
 			{
-				g_settings.settings_open = atoi(val.c_str()) != 0;
+				g_settings.settings_open = atoi(val.c_str()) != 0 && save_windows;
 			}
 			else if (key == "limits_open")
 			{
-				g_settings.limits_open = atoi(val.c_str()) != 0;
+				g_settings.limits_open = atoi(val.c_str()) != 0 && save_windows;
 			}
 			else if (key == "entreport_open")
 			{
-				g_settings.entreport_open = atoi(val.c_str()) != 0;
+				g_settings.entreport_open = atoi(val.c_str()) != 0 && save_windows;
 			}
 			else if (key == "settings_tab")
 			{
-				g_settings.settings_tab = atoi(val.c_str());
+				if (save_windows)
+					g_settings.settings_tab = atoi(val.c_str());
 			}
 			else if (key == "vsync")
 			{
@@ -552,6 +557,7 @@ void AppSettings::save(std::string path)
 	file << "window_y=" << g_settings.windowY << std::endl;
 	file << "window_maximized=" << g_settings.maximized << std::endl;
 
+	file << "save_windows=" << g_settings.save_windows << std::endl;
 	file << "debug_open=" << g_settings.debug_open << std::endl;
 	file << "keyvalue_open=" << g_settings.keyvalue_open << std::endl;
 	file << "transform_open=" << g_settings.transform_open << std::endl;
@@ -825,6 +831,40 @@ void Renderer::renderLoop()
 
 	while (!glfwWindowShouldClose(window))
 	{
+		double xpos, ypos;
+		glfwGetCursorPos(window, &xpos, &ypos);
+		mousePos = vec2((float)xpos, (float)ypos);
+
+		glfwPollEvents();
+
+		{//Update keyboard / mouse state 
+			oldLeftMouse = curLeftMouse;
+			curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
+			oldRightMouse = curRightMouse;
+			curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
+
+			for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
+			{
+				oldPressed[i] = pressed[i];
+				oldReleased[i] = released[i];
+			}
+
+			for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
+			{
+				pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
+				released[i] = glfwGetKey(window, i) == GLFW_RELEASE;
+			}
+
+			DebugKeyPressed = pressed[GLFW_KEY_F1];
+
+			anyCtrlPressed = pressed[GLFW_KEY_LEFT_CONTROL] || pressed[GLFW_KEY_RIGHT_CONTROL];
+			anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
+			anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
+
+			oldControl = canControl;
+			canControl = !gui->imgui_io->WantCaptureKeyboard && !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
+		}
+
 		Bsp* map = SelectedMap;
 		if (g_time - lastTitleTime > 0.5)
 		{
@@ -852,12 +892,6 @@ void Renderer::renderLoop()
 
 		g_time = glfwGetTime();
 		g_frame_counter++;
-
-		double xpos, ypos;
-		glfwGetCursorPos(window, &xpos, &ypos);
-		mousePos = vec2((float)xpos, (float)ypos);
-
-		glfwPollEvents();
 
 		double frameDelta = g_time - lastFrameTime;
 		frameTimeScale = 0.05 / frameDelta;
@@ -887,7 +921,6 @@ void Renderer::renderLoop()
 
 		Bsp* selectedMap = SelectedMap;
 
-		std::set<int> modelidskip;
 		for (size_t i = 0; i < mapRenderers.size(); i++)
 		{
 			std::vector<int> highlightEnts;
@@ -905,6 +938,7 @@ void Renderer::renderLoop()
 			{
 				continue;
 			}
+			std::set<int> modelidskip;
 
 			if (curMap->ents.size() && !isLoading)
 			{
@@ -1357,34 +1391,6 @@ void Renderer::drawEntConnections()
 void Renderer::controls()
 {
 	static bool blockMoving = false;
-	static bool canControlOld = true;
-
-	oldLeftMouse = curLeftMouse;
-	curLeftMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT);
-	oldRightMouse = curRightMouse;
-	curRightMouse = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT);
-
-	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
-	{
-		oldPressed[i] = pressed[i];
-		oldReleased[i] = released[i];
-	}
-
-	for (int i = GLFW_KEY_SPACE; i < GLFW_KEY_LAST; i++)
-	{
-		pressed[i] = glfwGetKey(window, i) == GLFW_PRESS;
-		released[i] = glfwGetKey(window, i) == GLFW_RELEASE;
-	}
-
-	DebugKeyPressed = pressed[GLFW_KEY_F1];
-
-	anyCtrlPressed = pressed[GLFW_KEY_LEFT_CONTROL] || pressed[GLFW_KEY_RIGHT_CONTROL];
-	anyAltPressed = pressed[GLFW_KEY_LEFT_ALT] || pressed[GLFW_KEY_RIGHT_ALT];
-	anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
-
-	canControlOld = canControl;
-	canControl = !gui->imgui_io->WantCaptureKeyboard && !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
-
 
 	if (blockMoving)
 	{
@@ -1438,7 +1444,7 @@ void Renderer::controls()
 	}
 	else
 	{
-		if (canControlOld)
+		if (oldControl)
 		{
 			curLeftMouse = GLFW_RELEASE;
 			oldLeftMouse = GLFW_PRESS;
@@ -1907,9 +1913,23 @@ void Renderer::cameraContextMenus()
 			map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
 
 
-		if (tempPick.GetSelectedEnt() != 0 && tempPick.GetSelectedEnt() == pickInfo.GetSelectedEnt())
+		if (tempPick.GetSelectedEnt() >= 0 && tempPick.GetSelectedEnt() == pickInfo.GetSelectedEnt())
 		{
-			gui->openContextMenu(pickInfo.GetSelectedEnt());
+			if (tempPick.GetSelectedEnt() == 0)
+			{
+				if (map->ents.size() == 1)
+				{
+					gui->openContextMenu(pickInfo.GetSelectedEnt());
+				}
+				else
+				{
+					gui->openContextMenu(-1);
+				}
+			}
+			else
+			{
+				gui->openContextMenu(pickInfo.GetSelectedEnt());
+			}
 		}
 		else
 		{

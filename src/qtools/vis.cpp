@@ -70,7 +70,6 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 	int overflow = 0;
 	for (int k = 0; k < bitShifts; k++)
 	{
-
 		if (g_debug_shift)
 		{
 			logf("%2d = ", k);
@@ -147,14 +146,13 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 // TODO: detect overflows here too
 		if (shift > 0)
 		{
+			unsigned char* temp = new unsigned char[MAX_MAP_LEAVES / 8];
+
 			int startByte = (offsetLeaf + bitShifts) / 8;
 			int moveSize = len - (startByte + byteShifts);
-			unsigned char* temp = new unsigned char[moveSize];
 
 			memcpy(temp, (unsigned char*)vis + startByte, moveSize);
-
 			memset((unsigned char*)vis + startByte, 0, byteShifts);
-
 			memcpy((unsigned char*)vis + startByte + byteShifts, temp, moveSize);
 
 			delete[] temp;
@@ -177,8 +175,8 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 						 int iterationLeaves, int visDataLeafCount, int newNumLeaves)
 {
 	unsigned char* dest;
-	int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
-	int newVisRowSize = ((newNumLeaves + 63) & ~63) >> 3;
+	unsigned int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
+	unsigned int newVisRowSize = ((newNumLeaves + 63) & ~63) >> 3;
 
 	// calculate which bits of an uncompressed visibility row are used/unused
 	unsigned char lastChunkMask = 0;
@@ -234,6 +232,7 @@ void DecompressVis(const unsigned char* src, unsigned char* const dest, const un
 
 	row = (numLeaves + 7) >> 3; // same as the length used by VIS program in CompressVis
 	// The wrong size will cause DecompressVis to spend extremely long time once the source pointer runs into the invalid area in g_dvisdata (for example, in BuildFaceLights, some faces could hang for a few seconds), and sometimes to crash.
+
 	out = dest;
 
 	do
@@ -270,7 +269,7 @@ void DecompressVis(const unsigned char* src, unsigned char* const dest, const un
 	} while (out - dest < row);
 }
 
-int64_t CompressVis(const unsigned char* const src, const unsigned int src_length, unsigned char* dest, unsigned int dest_length)
+int CompressVis(const unsigned char* const src, const unsigned int src_length, unsigned char* dest, unsigned int dest_length)
 {
 	unsigned int    j;
 	unsigned char* dest_p = dest;
@@ -313,9 +312,10 @@ int64_t CompressVis(const unsigned char* const src, const unsigned int src_lengt
 	return dest_p - dest;
 }
 
-int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize)
+int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize)
 {
-	int64_t x = 0;
+	int x = 0;
+
 	unsigned char* dest;
 	unsigned char* src;
 	unsigned int g_bitbytes = ((numLeaves + 63) & ~63) >> 3;
@@ -343,7 +343,6 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 		}
 		g_progress.tick();
 	}
-
 
 	unsigned char* compressed = new unsigned char[MAX_MAP_LEAVES / 8];
 
@@ -373,8 +372,8 @@ int64_t CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* 
 		leafs[i + 1].nVisOffset = (int)(dest - output);            // leaf 0 is a common solid
 
 		memcpy(dest, compressed, x);
-
 	}
+
 
 	delete[] compressed;
 	delete[] sharedRows;

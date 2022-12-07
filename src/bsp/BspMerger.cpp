@@ -1827,7 +1827,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	// recompress the combined vis data
 	unsigned char* compressedVis = new unsigned char[decompressedVisSize];
 	memset(compressedVis, 0, decompressedVisSize);
-	int64_t newVisLen = CompressAll(allLeaves, decompressedVis, compressedVis, totalVisLeaves, mergedWorldLeafCount, decompressedVisSize);
+	int newVisLen = CompressAll(allLeaves, decompressedVis, compressedVis, totalVisLeaves, mergedWorldLeafCount, decompressedVisSize);
 	unsigned int oldLen = mapA.bsp_header.lump[LUMP_VISIBILITY].nLength;
 
 	unsigned char* compressedVisResize = new unsigned char[newVisLen];

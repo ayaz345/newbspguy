@@ -2,8 +2,9 @@
 class Bsp;
 
 // excludes entities
-struct STRUCTCOUNT
+class STRUCTCOUNT
 {
+public:
 	unsigned int planes;
 	unsigned int texInfos;
 	unsigned int leaves;
@@ -21,6 +22,7 @@ struct STRUCTCOUNT
 
 	STRUCTCOUNT();
 	STRUCTCOUNT(Bsp* map);
+	~STRUCTCOUNT();
 
 	void add(const STRUCTCOUNT& other);
 	void sub(const STRUCTCOUNT& other);
@@ -29,8 +31,9 @@ struct STRUCTCOUNT
 };
 
 // used to mark structures that are in use by a model
-struct STRUCTUSAGE
+class STRUCTUSAGE
 {
+public:
 	bool* nodes;
 	bool* clipnodes;
 	bool* leaves;
@@ -48,6 +51,7 @@ struct STRUCTUSAGE
 
 	int modelIdx;
 
+	STRUCTUSAGE();
 	STRUCTUSAGE(Bsp* map);
 	~STRUCTUSAGE();
 
@@ -55,8 +59,9 @@ struct STRUCTUSAGE
 };
 
 // used to remap structure indexes to new locations
-struct STRUCTREMAP
+class STRUCTREMAP
 {
+public:
 	int* nodes;
 	int* clipnodes;
 	int* leaves;
@@ -76,7 +81,7 @@ struct STRUCTREMAP
 	bool* visitedFaces;
 
 	STRUCTCOUNT count; // size of each array
-	STRUCTREMAP() = default;
+	STRUCTREMAP();
 	STRUCTREMAP(Bsp* map);
 	~STRUCTREMAP();
 };

@@ -339,12 +339,13 @@ size_t DuplicateBspModelCommand::memoryUsage()
 //
 // Create BSP model
 //
-CreateBspModelCommand::CreateBspModelCommand(std::string desc, int mapIdx, Entity* entData, float size) : Command(desc, mapIdx)
+CreateBspModelCommand::CreateBspModelCommand(std::string desc, int mapIdx, Entity* entData, float size, bool solid) : Command(desc, mapIdx)
 {
 	this->entData = new Entity();
 	*this->entData = *entData;
 	this->mdl_size = size;
 	this->initialized = false;
+	this->solid = solid;
 	memset(&oldLumps, 0, sizeof(LumpState));
 }
 
@@ -387,12 +388,13 @@ void CreateBspModelCommand::execute()
 	if (aaatriggerIdx == -1)
 	{
 		aaatriggerIdx = addDefaultTexture();
-		renderer->reloadTextures();
+		renderer->texturesLoaded = false;
+		renderer->loadTextures();
 	}
 
 	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
 	vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
-	int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx);
+	int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx,solid);
 
 	if (!initialized)
 	{
@@ -678,6 +680,7 @@ void OptimizeMapCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!map || !renderer)
 		return;
+	map->update_ent_lump();
 
 	logf("Optimizing %s\n", map->bsp_name.c_str());
 	if (!map->has_hull2_ents())

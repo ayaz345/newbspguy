@@ -2,7 +2,23 @@
 #include "remap.h"
 #include "Bsp.h"
 
-STRUCTCOUNT::STRUCTCOUNT() = default;
+STRUCTCOUNT::STRUCTCOUNT()
+{
+	planes = texInfos = leaves
+		= nodes = clipnodes = verts
+		= faces = textures = markSurfs
+		= surfEdges = edges = models
+		= lightdata = visdata = 0;
+}
+
+STRUCTCOUNT::~STRUCTCOUNT()
+{
+	planes = texInfos = leaves
+		= nodes = clipnodes = verts
+		= faces = textures = markSurfs
+		= surfEdges = edges = models
+		= lightdata = visdata = 0;
+}
 
 STRUCTCOUNT::STRUCTCOUNT(Bsp* map)
 {
@@ -60,9 +76,7 @@ void STRUCTCOUNT::sub(const STRUCTCOUNT& other)
 
 bool STRUCTCOUNT::allZero()
 {
-	STRUCTCOUNT zeros;
-	memset(&zeros, 0, sizeof(zeros));
-
+	STRUCTCOUNT zeros = STRUCTCOUNT();
 	return memcmp(&zeros, this, sizeof(zeros)) == 0;
 }
 
@@ -111,21 +125,29 @@ void STRUCTCOUNT::print_delete_stats(int indent)
 	print_stat_mem(indent, visdata, "VIS data");
 }
 
+STRUCTUSAGE::STRUCTUSAGE()
+{
+	nodes = clipnodes = leaves = planes = verts = texInfo = faces
+		= textures = markSurfs = surfEdges = edges = 0;
+	count = STRUCTCOUNT();
+	sum = STRUCTCOUNT();
+	modelIdx = 0;
+}
 STRUCTUSAGE::STRUCTUSAGE(Bsp* map) : count(map)
 {
 	modelIdx = 0;
 
-	nodes = new bool[count.nodes];
-	clipnodes = new bool[count.clipnodes];
-	leaves = new bool[count.leaves];
-	planes = new bool[count.planes];
-	verts = new bool[count.verts];
-	texInfo = new bool[count.texInfos];
-	faces = new bool[count.faces];
-	textures = new bool[count.textures];
-	markSurfs = new bool[count.markSurfs];
-	surfEdges = new bool[count.surfEdges];
-	edges = new bool[count.edges];
+	nodes = new bool[count.nodes + 1];
+	clipnodes = new bool[count.clipnodes + 1];
+	leaves = new bool[count.leaves + 1];
+	planes = new bool[count.planes + 1];
+	verts = new bool[count.verts + 1];
+	texInfo = new bool[count.texInfos + 1];
+	faces = new bool[count.faces + 1];
+	textures = new bool[count.textures + 1];
+	markSurfs = new bool[count.markSurfs + 1];
+	surfEdges = new bool[count.surfEdges + 1];
+	edges = new bool[count.edges + 1];
 
 	memset(nodes, 0, count.nodes * sizeof(bool));
 	memset(clipnodes, 0, count.clipnodes * sizeof(bool));
@@ -158,32 +180,54 @@ void STRUCTUSAGE::compute_sum()
 
 STRUCTUSAGE::~STRUCTUSAGE()
 {
-	delete[] nodes;
-	delete[] clipnodes;
-	delete[] leaves;
-	delete[] planes;
-	delete[] verts;
-	delete[] texInfo;
-	delete[] faces;
-	delete[] textures;
-	delete[] markSurfs;
-	delete[] surfEdges;
-	delete[] edges;
-}
+	if (nodes)
+		delete[] nodes;
+	if (clipnodes)
+		delete[] clipnodes;
+	if (leaves)
+		delete[] leaves;
+	if (planes)
+		delete[] planes;
+	if (verts)
+		delete[] verts;
+	if (texInfo)
+		delete[] texInfo;
+	if (faces)
+		delete[] faces;
+	if (textures)
+		delete[] textures;
+	if (markSurfs)
+		delete[] markSurfs;
+	if (surfEdges)
+		delete[] surfEdges;
+	if (edges)
+		delete[] edges;
 
-STRUCTREMAP::STRUCTREMAP(Bsp* map) : count(map)
+	nodes = clipnodes = leaves = planes = verts = texInfo = faces
+		= textures = markSurfs = surfEdges = edges = 0;
+}
+STRUCTREMAP::STRUCTREMAP()
 {
-	nodes = new int[count.nodes];
-	clipnodes = new int[count.clipnodes];
-	leaves = new int[count.leaves];
-	planes = new int[count.planes];
-	verts = new int[count.verts];
-	texInfo = new int[count.texInfos];
-	faces = new int[count.faces];
-	textures = new int[count.textures];
-	markSurfs = new int[count.markSurfs];
-	surfEdges = new int[count.surfEdges];
-	edges = new int[count.edges];
+	nodes = clipnodes = leaves = planes = verts = texInfo = faces
+		= textures = markSurfs = surfEdges = edges = 0;
+	visitedNodes = visitedClipnodes = visitedLeaves = visitedFaces = 0;
+	count = STRUCTCOUNT();
+}
+STRUCTREMAP::STRUCTREMAP(Bsp* map)
+{
+	count = STRUCTCOUNT(map);
+
+	nodes = new int[count.nodes + 1];
+	clipnodes = new int[count.clipnodes + 1];
+	leaves = new int[count.leaves + 1];
+	planes = new int[count.planes + 1];
+	verts = new int[count.verts + 1];
+	texInfo = new int[count.texInfos + 1];
+	faces = new int[count.faces + 1];
+	textures = new int[count.textures + 1];
+	markSurfs = new int[count.markSurfs + 1];
+	surfEdges = new int[count.surfEdges + 1];
+	edges = new int[count.edges + 1];
 
 	visitedNodes = new bool[count.nodes];
 	visitedClipnodes = new bool[count.clipnodes];
@@ -211,20 +255,39 @@ STRUCTREMAP::STRUCTREMAP(Bsp* map) : count(map)
 
 STRUCTREMAP::~STRUCTREMAP()
 {
-	delete[] nodes;
-	delete[] clipnodes;
-	delete[] leaves;
-	delete[] planes;
-	delete[] verts;
-	delete[] texInfo;
-	delete[] faces;
-	delete[] textures;
-	delete[] markSurfs;
-	delete[] surfEdges;
-	delete[] edges;
+	if (nodes)
+		delete[] nodes;
+	if (clipnodes)
+		delete[] clipnodes;
+	if (leaves)
+		delete[] leaves;
+	if (planes)
+		delete[] planes;
+	if (verts)
+		delete[] verts;
+	if (texInfo)
+		delete[] texInfo;
+	if (faces)
+		delete[] faces;
+	if (textures)
+		delete[] textures;
+	if (markSurfs)
+		delete[] markSurfs;
+	if (surfEdges)
+		delete[] surfEdges;
+	if (edges)
+		delete[] edges;
 
-	delete[] visitedClipnodes;
-	delete[] visitedNodes;
-	delete[] visitedFaces;
-	delete[] visitedLeaves;
+	if (visitedClipnodes)
+		delete[] visitedClipnodes;
+	if (visitedNodes)
+		delete[] visitedNodes;
+	if (visitedFaces)
+		delete[] visitedFaces;
+	if (visitedLeaves)
+		delete[] visitedLeaves;
+
+	nodes = clipnodes = leaves = planes = verts = texInfo = faces
+		= textures = markSurfs = surfEdges = edges = 0;
+	visitedNodes = visitedClipnodes = visitedLeaves = visitedFaces = 0;
 }

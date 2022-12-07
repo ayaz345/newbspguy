@@ -79,6 +79,7 @@ struct AppSettings
 	int undoLevels;
 	bool verboseLogs;
 
+	bool save_windows;
 	bool debug_open;
 	bool keyvalue_open;
 	bool transform_open;
@@ -293,6 +294,7 @@ private:
 	bool anyShiftPressed;
 
 	bool canControl;
+	bool oldControl;
 
 	int pickCount = 0; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
 	int vertPickCount = 0;

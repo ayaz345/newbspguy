@@ -39,7 +39,6 @@ static char log_line[4096];
 void logf(const char* format, ...)
 {
 	g_log_mutex.lock();
-
 	va_list vl;
 	va_start(vl, format);
 	vsnprintf(log_line, 4096, format, vl);

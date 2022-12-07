@@ -163,7 +163,7 @@ public:
 	bool validate();
 
 	// creates a solid cube
-	int create_solid(const vec3& mins, const vec3& maxs, int textureIdx);
+	int create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool solid = true);
 
 	// creates a new solid from the given solid definition (must be convex).
 	int create_solid(Solid& solid, int targetModelIdx = -1);

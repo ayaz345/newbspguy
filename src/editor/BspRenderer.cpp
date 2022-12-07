@@ -101,6 +101,9 @@ void BspRenderer::loadTextures()
 	wads.clear();
 
 	std::vector<std::string> wadNames;
+
+	bool foundInfoDecals = false;
+
 	for (int i = 0; i < map->ents.size(); i++)
 	{
 		if (map->ents[i]->keyvalues["classname"] == "worldspawn")
@@ -122,8 +125,10 @@ void BspRenderer::loadTextures()
 				}
 				map->ents[i]->setOrAddKeyvalue("wad", newWadString);
 			}
-
-			break;
+		}
+		if (map->ents[i]->keyvalues["classname"] == "infodecal")
+		{
+			foundInfoDecals = true;
 		}
 	}
 
@@ -136,6 +141,9 @@ void BspRenderer::loadTextures()
 		if (path.enabled)
 			tryPaths.push_back(path.path);
 	}
+
+	if (foundInfoDecals)
+		wadNames.push_back("decals.wad");
 
 	for (int i = 0; i < wadNames.size(); i++)
 	{
@@ -245,49 +253,6 @@ void BspRenderer::loadTextures()
 		logf("Loaded %d embedded textures\n", embedCount);
 	if (missingCount)
 		logf("%d missing textures\n", missingCount);
-
-	mapTexsUsage.clear();
-
-	for (unsigned int i = 0; i < map->faceCount; i++)
-	{
-		BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
-		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-		if (texOffset != -1)
-		{
-			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-
-			if (tex.szName[0] != '\0')
-			{
-				if (tex.nOffsets[0] <= 0)
-				{
-					bool fondTex = false;
-					for (auto& s : wads)
-					{
-						if (s->hasTexture(tex.szName))
-						{
-							if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
-								mapTexsUsage[basename(s->filename)].insert(tex.szName);
-
-							fondTex = true;
-						}
-					}
-					if (!fondTex)
-					{
-						if (!mapTexsUsage["notfound"].count(tex.szName))
-							mapTexsUsage["notfound"].insert(tex.szName);
-					}
-				}
-				else
-				{
-					if (!mapTexsUsage["internal"].count(tex.szName))
-						mapTexsUsage["internal"].insert(tex.szName);
-				}
-			}
-		}
-	}
-
-	if (mapTexsUsage.size())
-		logf("Used %d wad files(include map file)\n", (int)mapTexsUsage.size());
 }
 
 void BspRenderer::reload()
@@ -539,14 +504,19 @@ void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 	for (int k = 0; k < renderModel->groupCount; k++)
 	{
 		RenderGroup& group = renderModel->renderGroups[k];
+
 		delete[] group.verts;
 		delete[] group.wireframeVerts;
+
 		delete group.buffer;
 		delete group.wireframeBuffer;
 	}
 
 	delete[] renderModel->renderGroups;
 	delete[] renderModel->renderFaces;
+
+	renderModel->renderGroups = NULL;
+	renderModel->renderFaces = NULL;
 }
 
 void BspRenderer::deleteRenderClipnodes()
@@ -598,7 +568,10 @@ void BspRenderer::deleteTextures()
 		for (unsigned int i = 0; i < numLoadedTextures; i++)
 		{
 			if (glTextures[i] != missingTex)
+			{
 				delete glTextures[i];
+				glTextures[i] = missingTex;
+			}
 		}
 		delete[] glTextures;
 	}
@@ -613,7 +586,10 @@ void BspRenderer::deleteLightmapTextures()
 		for (int i = 0; i < numLightmapAtlases; i++)
 		{
 			if (glLightmapTextures[i])
+			{
 				delete glLightmapTextures[i];
+				glLightmapTextures[i] = NULL;
+			}
 		}
 		delete[] glLightmapTextures;
 	}
@@ -657,7 +633,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		int texWidth, texHeight;
 		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-		if (texOffset != -1)
+		if (texOffset != -1 && texinfo.iMiptex != -1)
 		{
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 			texWidth = tex.nWidth;
@@ -799,6 +775,8 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		int groupIdx = -1;
 		for (int k = 0; k < renderGroups.size(); k++)
 		{
+			if (texinfo.iMiptex == -1)
+				continue;
 			bool textureMatch = !texturesLoaded || renderGroups[k].texture == glTextures[texinfo.iMiptex];
 			if (textureMatch && renderGroups[k].transparent == isTransparent)
 			{
@@ -826,7 +804,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			newGroup.vertCount = 0;
 			newGroup.verts = NULL;
 			newGroup.transparent = isTransparent;
-			newGroup.texture = texturesLoaded ? glTextures[texinfo.iMiptex] : greyTex;
+			newGroup.texture = texturesLoaded && texinfo.iMiptex != -1 ? glTextures[texinfo.iMiptex] : greyTex;
 			for (int s = 0; s < MAXLIGHTMAPS; s++)
 			{
 				newGroup.lightmapAtlas[s] = lightmapAtlas[s];
@@ -1483,6 +1461,49 @@ void BspRenderer::delayLoadData()
 
 		texturesLoaded = true;
 		preRenderFaces();
+
+		mapTexsUsage.clear();
+
+		for (unsigned int i = 0; i < map->faceCount; i++)
+		{
+			BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
+			int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+			if (texOffset != -1 && texinfo.iMiptex != -1)
+			{
+				BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+
+				if (tex.szName[0] != '\0')
+				{
+					if (tex.nOffsets[0] <= 0)
+					{
+						bool fondTex = false;
+						for (auto& s : wads)
+						{
+							if (s->hasTexture(tex.szName))
+							{
+								if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
+									mapTexsUsage[basename(s->filename)].insert(tex.szName);
+
+								fondTex = true;
+							}
+						}
+						if (!fondTex)
+						{
+							if (!mapTexsUsage["notfound"].count(tex.szName))
+								mapTexsUsage["notfound"].insert(tex.szName);
+						}
+					}
+					else
+					{
+						if (!mapTexsUsage["internal"].count(tex.szName))
+							mapTexsUsage["internal"].insert(tex.szName);
+					}
+				}
+			}
+		}
+
+		if (mapTexsUsage.size())
+			logf("Used %d wad files(include map file)\n", (int)mapTexsUsage.size());
 	}
 
 	if (!clipnodesLoaded && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
@@ -1555,7 +1576,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 	BSPFACE& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 	int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-	if (texOffset != -1)
+	if (texOffset != -1 && texinfo.iMiptex != -1)
 	{
 		BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 
@@ -1597,6 +1618,8 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 {
 	BSPFACE& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+	if (texinfo.iMiptex == -1)
+		return 0;
 	return glTextures[texinfo.iMiptex]->id;
 }
 ShaderProgram* activeShader; vec3 renderOffset;

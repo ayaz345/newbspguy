@@ -1621,7 +1621,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 
 	unsigned char* compressedVis = new unsigned char[decompressedVisSize];
 	memset(compressedVis, 0, decompressedVisSize);
-	int64_t newVisLen = CompressAll(leaves, decompressedVis, compressedVis, newVisLeafCount, newWorldLeaves, decompressedVisSize);
+	int newVisLen = CompressAll(leaves, decompressedVis, compressedVis, newVisLeafCount, newWorldLeaves, decompressedVisSize);
 
 	unsigned char* compressedVisResized = new unsigned char[newVisLen];
 	memcpy(compressedVisResized, compressedVis, newVisLen);
@@ -1669,10 +1669,8 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes)
 		}
 	}
 
-	STRUCTREMAP remap(this);
-	STRUCTCOUNT removeCount;
-	memset(&removeCount, 0, sizeof(STRUCTCOUNT));
-
+	STRUCTREMAP remap(this); 
+	STRUCTCOUNT removeCount = STRUCTCOUNT();
 	usedStructures.edges[0] = true; // first edge is never used but maps break without it?
 
 	unsigned char* oldLeaves = new unsigned char[bsp_header.lump[LUMP_LEAVES].nLength];
@@ -3501,13 +3499,21 @@ void Bsp::delete_model(int modelIdx)
 	}
 }
 
-int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx)
+int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool solid)
 {
 	int newModelIdx = create_model();
 	BSPMODEL& newModel = models[newModelIdx];
-
+	
+	
 	create_node_box(mins, maxs, &newModel, textureIdx);
 	create_clipnode_box(mins, maxs, &newModel);
+
+	if (!solid)
+	{
+		delete_hull(1, newModelIdx, 0);
+		delete_hull(2, newModelIdx, 0);
+		delete_hull(3, newModelIdx, 0);
+	}
 
 	//remove_unused_model_structures(); // will also resize VIS data for new leaf count
 
@@ -3531,6 +3537,7 @@ void Bsp::add_model(Bsp* sourceMap, int modelIdx)
 	sourceMap->mark_model_structures(modelIdx, &usage, false);
 
 	// TODO: add the model lel
+	// partially done in Import->BSP Model
 
 	usage.compute_sum();
 
@@ -3681,7 +3688,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 
 			int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
 			BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + texOffset));
-			if (tex == oldtex)
+			if (tex == oldtex || texinfo.iMiptex == -1)
 				texinfo.iMiptex = textureCount;
 		}
 	}
@@ -3900,7 +3907,7 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 			face.nEdges = 4;
 			face.nPlaneSide = i % 2 == 0; // even-numbered planes are inverted
 			face.iTextureInfo = startTexinfo + i;
-			face.nLightmapOffset = 0; // TODO: Lighting
+			face.nLightmapOffset = -1; // TODO: Lighting
 			memset(face.nStyles, 255, 4);
 		}
 
@@ -3991,7 +3998,6 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 
 void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 {
-
 	std::vector<int> newVertIndexes;
 	unsigned int startVert = vertCount;
 	{
@@ -4089,11 +4095,9 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 			face.iPlane = startPlane + i;
 			face.nEdges = (unsigned short)solid.faces[i].verts.size();
 			face.nPlaneSide = solid.faces[i].planeSide;
-			//face.iTextureInfo = startTexinfo + i;
 			face.iTextureInfo = solid.faces[i].iTextureInfo;
-			face.nLightmapOffset = 0; // TODO: Lighting
+			face.nLightmapOffset = -1; // TODO: Lighting
 			memset(face.nStyles, 255, 4);
-
 			surfedgeOffset += face.nEdges;
 		}
 
@@ -4612,7 +4616,8 @@ short Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 				{
 					logf("UNEXPECTED SOLID CONTENTS %d\n", solidContents);
 				}
-				return CONTENTS_SOLID; // solid leaf
+				// solidContents or CONTENTS_SOLID?
+				return CONTENTS_SOLID;
 			}
 			return regenerate_clipnodes_from_nodes(solidChild, hullIdx);
 		}
