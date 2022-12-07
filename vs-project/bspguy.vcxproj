@@ -26,6 +26,7 @@
     <ConfigurationType>Application</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
     <PlatformToolset>v143</PlatformToolset>
+    <SpectreMitigation>false</SpectreMitigation>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
@@ -70,13 +71,21 @@
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
       <UseFullPaths>false</UseFullPaths>
       <WarningLevel>Level4</WarningLevel>
-      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;GLEW_STATIC;NOMINMAX;</PreprocessorDefinitions>
+      <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_WINDOWS;GLEW_STATIC;NOMINMAX</PreprocessorDefinitions>
       <ObjectFileName>$(IntDir)</ObjectFileName>
       <LanguageStandard>stdcpplatest</LanguageStandard>
       <EnableFiberSafeOptimizations>true</EnableFiberSafeOptimizations>
       <CompileAsWinRT>
       </CompileAsWinRT>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <GuardSignedReturns>
+      </GuardSignedReturns>
+      <ControlFlowGuard>false</ControlFlowGuard>
+      <SDLCheck>true</SDLCheck>
+      <SmallerTypeCheck>false</SmallerTypeCheck>
+      <RemoveUnreferencedCodeData>true</RemoveUnreferencedCodeData>
+      <OmitFramePointers>true</OmitFramePointers>
+      <CallingConvention>Cdecl</CallingConvention>
     </ClCompile>
     <ResourceCompile>
       <PreprocessorDefinitions>%(PreprocessorDefinitions);WIN32;_DEBUG;_WINDOWS;GLEW_STATIC;</PreprocessorDefinitions>
@@ -99,6 +108,10 @@
       <ImportLibrary>Debug/bspguy.lib</ImportLibrary>
       <ProgramDataBaseFile>Debug/bspguy.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
+      <HeapReserveSize>16777216</HeapReserveSize>
+      <StackReserveSize>16777216</StackReserveSize>
+      <HeapCommitSize>1048576</HeapCommitSize>
+      <StackCommitSize>1048576</StackCommitSize>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>

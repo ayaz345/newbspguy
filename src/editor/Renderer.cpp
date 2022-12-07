@@ -2989,7 +2989,6 @@ void Renderer::updateModelVerts()
 
 	modelOriginBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &modelOriginCube, 6 * 6, GL_TRIANGLES);
 
-
 	modelUsesSharedStructures = modelIdx >= 0 && map->does_model_use_shared_structures(modelIdx);
 
 	updateSelectionSize();
@@ -3337,7 +3336,7 @@ void Renderer::scaleSelectedObject(float x, float y, float z)
 void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 {
 	int entIdx = pickInfo.GetSelectedEnt();
-	if (entIdx < 0)
+	if (entIdx < 0 || !SelectedMap)
 		return;
 
 	Bsp* map = SelectedMap;
@@ -3409,7 +3408,7 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 	}
 	int modelIdx = -1;
 
-	if (map && entIdx >= 0)
+	if (entIdx >= 0)
 	{
 		modelIdx = map->ents[entIdx]->getBspModelIdx();
 	}

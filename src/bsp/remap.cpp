@@ -133,9 +133,12 @@ STRUCTUSAGE::STRUCTUSAGE()
 	sum = STRUCTCOUNT();
 	modelIdx = 0;
 }
-STRUCTUSAGE::STRUCTUSAGE(Bsp* map) : count(map)
+STRUCTUSAGE::STRUCTUSAGE(Bsp* map)
 {
 	modelIdx = 0;
+
+	count = STRUCTCOUNT(map);
+	sum = STRUCTCOUNT();
 
 	nodes = new bool[count.nodes + 1];
 	clipnodes = new bool[count.clipnodes + 1];

@@ -82,7 +82,7 @@ void Gui::init()
 	};
 
 	ifd::FileDialog::Instance().DeleteTexture = [](void* tex){
-		GLuint texID = (GLuint)((uintptr_t)tex);
+		GLuint texID = (GLuint)(tex);
 		glDeleteTextures(1, &texID);
 	};
 
@@ -5492,7 +5492,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 		{
 			snprintf(fileNam, sizeof(fileNam), "%s%sFull%dStyle.png", GetWorkDir().c_str(), "lightmap", lightId);
 			logf("Exporting to %s file\n", fileNam);
-			lodepng_encode24_file(fileNam, (unsigned char*)colordata.data(), LMapMaxWidth, current_y + max_y_found);
+			lodepng_encode24_file(fileNam, (const unsigned char*)colordata.data(), LMapMaxWidth, current_y + max_y_found);
 		}
 	}
 

@@ -1029,20 +1029,22 @@ int mkdir_p(const char* dir, const mode_t mode)
 
 bool createDir(const std::string& dirName)
 {
-	std::string fixDirName = dirName;
+	std::string fixDirName = dirName.c_str();
 	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-	if (dirExists(dirName))
+	if (dirExists(fixDirName))
 		return true;
-	fs::create_directories(dirName);
-	if (dirExists(dirName))
+	fs::create_directories(fixDirName);
+	if (dirExists(fixDirName))
 		return true;
 	return false;
 }
 
 void removeDir(const std::string& dirName)
 {
+	std::string fixDirName = dirName.c_str();
+	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 	std::error_code e;
-	fs::remove_all(dirName, e);
+	fs::remove_all(fixDirName, e);
 }
 
 

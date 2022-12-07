@@ -1583,7 +1583,7 @@ unsigned int Bsp::remove_unused_lightmaps(bool* usedFaces)
 	return (unsigned int)(oldLightdataSize - newLightDataSize);
 }
 
-unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, int oldLeafCount)
+unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, int oldLeafCount, int oldLeavesMemSize)
 {
 	int oldVisLength = visDataLength;
 
@@ -1594,6 +1594,8 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 	int oldWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS])->nVisLeafs; // TODO: allow deleting world leaves
 	int newWorldLeaves = ((BSPMODEL*)lumps[LUMP_MODELS])->nVisLeafs;
 
+	int tmpLumpVisMemSize = bsp_header.lump[LUMP_VISIBILITY].nLength;
+
 	unsigned int oldVisRowSize = ((oldVisLeafCount + 63) & ~63) >> 3;
 	unsigned int newVisRowSize = ((newVisLeafCount + 63) & ~63) >> 3;
 
@@ -1601,17 +1603,21 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0, decompressedVisSize);
 	decompress_vis_lump(oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
-						oldWorldLeaves, oldVisLeafCount, oldVisLeafCount);
+						oldWorldLeaves, oldVisLeafCount, oldVisLeafCount, oldLeavesMemSize, tmpLumpVisMemSize);
 
 	if (oldVisRowSize != newVisRowSize)
 	{
-		int newDecompressedVisSize = oldLeafCount * newVisRowSize;
-		unsigned char* newDecompressedVis = new unsigned char[decompressedVisSize];
-		memset(newDecompressedVis, 0, newDecompressedVisSize);
-
 		int minRowSize = std::min(oldVisRowSize, newVisRowSize);
+		unsigned char* newDecompressedVis = new unsigned char[decompressedVisSize + (oldWorldLeaves * newVisRowSize) + minRowSize];
+		memset(newDecompressedVis, 0, decompressedVisSize + (oldWorldLeaves * newVisRowSize) + minRowSize);
+
 		for (int i = 0; i < oldWorldLeaves; i++)
 		{
+			if (i * oldVisRowSize + minRowSize >= decompressedVisSize)
+			{
+				logf("Overflow decompressedVis!\n");
+				break;
+			}
 			memcpy(newDecompressedVis + i * newVisRowSize, decompressedVis + i * oldVisRowSize, minRowSize);
 		}
 
@@ -1621,7 +1627,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 
 	unsigned char* compressedVis = new unsigned char[decompressedVisSize];
 	memset(compressedVis, 0, decompressedVisSize);
-	int newVisLen = CompressAll(leaves, decompressedVis, compressedVis, newVisLeafCount, newWorldLeaves, decompressedVisSize);
+	int newVisLen = CompressAll(leaves, decompressedVis, compressedVis, newVisLeafCount, newWorldLeaves, decompressedVisSize, leafCount);
 
 	unsigned char* compressedVisResized = new unsigned char[newVisLen];
 	memcpy(compressedVisResized, compressedVis, newVisLen);
@@ -1638,6 +1644,9 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes)
 {
 	if (!modelCount)
 		return STRUCTCOUNT();
+
+	update_lump_pointers();
+
 // marks which structures should not be moved
 	STRUCTUSAGE usedStructures(this);
 
@@ -1669,12 +1678,13 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes)
 		}
 	}
 
-	STRUCTREMAP remap(this); 
+	STRUCTREMAP remap(this);
 	STRUCTCOUNT removeCount = STRUCTCOUNT();
 	usedStructures.edges[0] = true; // first edge is never used but maps break without it?
 
-	unsigned char* oldLeaves = new unsigned char[bsp_header.lump[LUMP_LEAVES].nLength];
-	memcpy(oldLeaves, lumps[LUMP_LEAVES], bsp_header.lump[LUMP_LEAVES].nLength);
+	int oldLeavesCount = bsp_header.lump[LUMP_LEAVES].nLength;
+	unsigned char* oldLeaves = new unsigned char[oldLeavesCount];
+	memcpy(oldLeaves, lumps[LUMP_LEAVES], oldLeavesCount);
 
 	if (lightDataLength)
 		removeCount.lightdata = remove_unused_lightmaps(usedStructures.faces);
@@ -1695,7 +1705,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(bool export_bsp_with_clipnodes)
 	removeCount.textures = remove_unused_textures(usedStructures.textures, remap.textures);
 
 	if (visDataLength && usedStructures.count.leaves)
-		removeCount.visdata = remove_unused_visdata(usedStructures.leaves, (BSPLEAF*)oldLeaves, usedStructures.count.leaves);
+		removeCount.visdata = remove_unused_visdata(usedStructures.leaves, (BSPLEAF*)oldLeaves, usedStructures.count.leaves, oldLeavesCount);
 
 	STRUCTCOUNT newCounts(this);
 
@@ -2028,6 +2038,8 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		}
 	}
 
+	update_lump_pointers();
+
 	STRUCTCOUNT removed = remove_unused_model_structures();
 
 	update_ent_lump();
@@ -2207,16 +2219,19 @@ void Bsp::get_lightmap_shift(const LIGHTMAP& oldLightmap, const LIGHTMAP& newLig
 
 void Bsp::update_ent_lump(bool stripNodes)
 {
-	std::stringstream ent_data;
+	std::stringstream ent_data = std::stringstream();
 
 	for (int i = 0; i < ents.size(); i++)
 	{
 		if (stripNodes)
 		{
-			std::string cname = ents[i]->keyvalues["classname"];
-			if (cname == "info_node" || cname == "info_node_air")
+			if (ents[i]->hasKey("classname"))
 			{
-				continue;
+				std::string cname = ents[i]->keyvalues["classname"];
+				if (cname == "info_node" || cname == "info_node_air")
+				{
+					continue;
+				}
 			}
 		}
 
@@ -2225,7 +2240,8 @@ void Bsp::update_ent_lump(bool stripNodes)
 		for (int k = 0; k < ents[i]->keyOrder.size(); k++)
 		{
 			std::string key = ents[i]->keyOrder[k];
-			ent_data << "\"" << key << "\" \"" << ents[i]->keyvalues[key] << "\"\n";
+			if (ents[i]->hasKey(key))
+				ent_data << "\"" << key << "\" \"" << ents[i]->keyvalues[key] << "\"\n";
 		}
 
 		ent_data << "}";
@@ -3503,8 +3519,8 @@ int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool s
 {
 	int newModelIdx = create_model();
 	BSPMODEL& newModel = models[newModelIdx];
-	
-	
+
+
 	create_node_box(mins, maxs, &newModel, textureIdx);
 	create_clipnode_box(mins, maxs, &newModel);
 

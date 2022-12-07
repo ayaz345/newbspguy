@@ -1454,7 +1454,7 @@ void BspRenderer::delayLoadData()
 
 		for (unsigned int i = 0; i < map->textureCount; i++)
 		{
-			if (!glTextures[i]->uploaded)
+			if (glTextures[i] && !glTextures[i]->uploaded)
 				glTextures[i]->upload(GL_RGB);
 		}
 		numLoadedTextures = map->textureCount;
