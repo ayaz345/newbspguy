@@ -2730,8 +2730,8 @@ bool Bsp::validate()
 			logf("Bad textureinfo reference in face %d: %d / %d\n", i, faces[i].iTextureInfo, texinfoCount);
 			isValid = false;
 		}
-		if (lightDataLength > 0 && faces[i].nStyles[0] != 255 &&
-			faces[i].nLightmapOffset < 0 && faces[i].nLightmapOffset >= lightDataLength)
+		if (lightDataLength > 0 &&
+			faces[i].nLightmapOffset >= 0 && faces[i].nLightmapOffset >= lightDataLength)
 		{
 			logf("Bad lightmap offset in face %d: %d / %d\n", i, faces[i].nLightmapOffset, lightDataLength);
 			isValid = false;
