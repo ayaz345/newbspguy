@@ -47,6 +47,13 @@ struct VertexAttr
 		varName = NULL;
 	}
 
+	~VertexAttr()
+	{
+		handle = -1;
+		numValues = valueType = size = normalized = 0;
+		varName = NULL;
+	}
+
 	VertexAttr(int numValues, int valueType, int handle, int normalized, const char* varName);
 };
 

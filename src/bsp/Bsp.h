@@ -80,7 +80,7 @@ public:
 	void init_empty_bsp();
 
 	// if modelIdx=0, the world is moved and all entities along with it
-	bool move(vec3 offset, int modelIdx = 0, bool onlyModel = false);
+	bool move(vec3 offset, int modelIdx = 0, bool onlyModel = false, bool forceMove = false);
 
 	void move_texinfo(int idx, vec3 offset);
 	void write(const std::string & path);
@@ -88,7 +88,7 @@ public:
 	void print_info(bool perModelStats, int perModelLimit, int sortMode);
 	void print_model_hull(int modelIdx, int hull);
 	void print_clipnode_tree(int iNode, int depth);
-	void recurse_node(short node, int depth);
+	void recurse_node(int node, int depth);
 	int pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx);
 	int pointContents(int iNode, const vec3& p, int hull);
 	const char* getLeafContentsName(int contents);
@@ -150,7 +150,9 @@ public:
 	bool isValid(); // check if any lumps are overflowed
 
 	// delete structures not used by the map (needed after deleting models/hulls)
-	STRUCTCOUNT remove_unused_model_structures(bool export_bsp_with_clipnodes = false);
+	STRUCTCOUNT remove_unused_model_structures(unsigned int target = CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES |
+											   CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS | 
+											   CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	void delete_model(int modelIdx);
 
 	// conditionally deletes hulls for entities that aren't using them
@@ -228,7 +230,8 @@ public:
 
 	int delete_embedded_textures();
 
-	BSPMIPTEX* find_embedded_texture(const char* name);
+	BSPMIPTEX* find_embedded_texture(const char* name, int & texid);
+	BSPMIPTEX* find_embedded_wad_texture(const char* name, int& texid);
 
 	void update_lump_pointers();
 
@@ -265,11 +268,11 @@ private:
 	std::vector<Entity*> get_model_ents(int modelIdx);
 	std::vector<int> get_model_ents_ids(int modelIdx);
 
-	void write_csg_polys(short nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
+	void write_csg_polys(int nodeIdx, FILE* fout, int flipPlaneSkip, bool debug);
 
 	// marks all structures that this model uses
 	// TODO: don't mark faces in submodel leaves (unused)
-	void mark_model_structures(int modelIdx, STRUCTUSAGE* STRUCTUSAGE, bool skipLeaves);
+	void mark_model_structures(int modelIdx, STRUCTUSAGE* STRUCTUSAGE, bool skipLeaves, bool makeSomething = false);
 	void mark_face_structures(int iFace, STRUCTUSAGE* usage);
 	void mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves);
 	void mark_clipnode_structures(int iNode, STRUCTUSAGE* usage);

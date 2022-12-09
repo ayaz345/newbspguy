@@ -249,10 +249,12 @@ bool isNumeric(const std::string& s)
 	return !s.empty() && it == s.end();
 }
 
-std::string toLowerCase(std::string str)
+std::string toLowerCase(std::string s)
 {
-	transform(str.begin(), str.end(), str.begin(), ::tolower);
-	return str;
+	std::transform(s.begin(), s.end(), s.begin(),
+					[](unsigned char c){ return (unsigned char)std::tolower(c); }
+	);
+	return s;
 }
 
 std::string trimSpaces(std::string s)
@@ -275,7 +277,7 @@ std::string trimSpaces(std::string s)
 int getBspTextureSize(BSPMIPTEX* bspTexture)
 {
 	int sz = sizeof(BSPMIPTEX);
-	if (bspTexture->nOffsets[0] != 0)
+	if (bspTexture->nOffsets[0] > 0)
 	{
 		sz += 256 * 3 + 4; // pallette + padding
 
@@ -920,7 +922,7 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 	fwrite(&height, 4, 1, outputFile);
 	short planes = 1; //always 1
 	fwrite(&planes, 2, 1, outputFile);
-	short bitsPerPixel = bytesPerPixel * 8;
+	short bitsPerPixel = (short)(bytesPerPixel * 8);
 	fwrite(&bitsPerPixel, 2, 1, outputFile);
 	//write compression
 	int compression = NO_COMPRESION;

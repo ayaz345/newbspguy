@@ -5,7 +5,7 @@ class LightmapNode
 {
 public:
 	LightmapNode* child[2];
-	short x, y, w, h;
+	int x, y, w, h;
 	bool filled;
 
 	LightmapNode(int offX, int offY, int mapW, int mapH);

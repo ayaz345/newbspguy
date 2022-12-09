@@ -10,7 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <future>
 
-#define LIGHTMAP_ATLAS_SIZE 512
+#define LIGHTMAP_ATLAS_SIZE 1024
 
 class Command;
 
@@ -238,7 +238,7 @@ public:
 
 	std::map<std::string, std::set<std::string>> mapTexsUsage;
 
-	void pushModelUndoState(const std::string& actionDesc, int targetLumps);
+	void pushModelUndoState(const std::string& actionDesc, unsigned int targetLumps);
 	void pushEntityUndoState(const std::string& actionDesc, int entIdx);
 	void pushUndoCommand(Command* cmd);
 	void undo();

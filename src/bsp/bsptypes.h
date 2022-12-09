@@ -42,6 +42,26 @@ enum lump_copy_targets
 	MODELS = 16384
 };
 
+
+enum clean_unused_lump
+{
+	CLEAN_LIGHTMAP = 1,
+	CLEAN_PLANES = 2,
+	CLEAN_NODES = 4,
+	CLEAN_CLIPNODES = 8,
+	CLEAN_LEAVES = 16,
+	CLEAN_MARKSURFACES = 32,
+	CLEAN_FACES = 64,
+	CLEAN_SURFEDGES = 128,
+	CLEAN_TEXINFOS = 256,
+	CLEAN_EDGES = 512,
+	CLEAN_VERTICES = 1024,
+	CLEAN_TEXTURES = 2048,
+	CLEAN_VISDATA = 4096,
+	CLEAN_CLIPNODES_SOMETHING = 8192
+};
+
+
 #define CONTENTS_EMPTY        -1
 #define CONTENTS_SOLID        -2
 #define CONTENTS_WATER        -3
@@ -192,6 +212,7 @@ struct BSPEDGE
 	unsigned short iVertex[2]; // Indices into vertex array
 
 	BSPEDGE();
+	BSPEDGE(unsigned int v1, unsigned int v2);
 	BSPEDGE(unsigned short v1, unsigned short v2);
 };
 

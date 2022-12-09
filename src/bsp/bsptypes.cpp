@@ -4,6 +4,12 @@
 
 BSPEDGE::BSPEDGE() = default;
 
+BSPEDGE::BSPEDGE(unsigned int v1, unsigned int v2)
+{
+	iVertex[0] = (unsigned short)v1;
+	iVertex[1] = (unsigned short)v2;
+}
+
 BSPEDGE::BSPEDGE(unsigned short v1, unsigned short v2)
 {
 	iVertex[0] = v1;

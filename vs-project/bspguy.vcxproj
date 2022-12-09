@@ -108,10 +108,17 @@
       <ImportLibrary>Debug/bspguy.lib</ImportLibrary>
       <ProgramDataBaseFile>Debug/bspguy.pdb</ProgramDataBaseFile>
       <SubSystem>Console</SubSystem>
-      <HeapReserveSize>16777216</HeapReserveSize>
-      <StackReserveSize>16777216</StackReserveSize>
-      <HeapCommitSize>1048576</HeapCommitSize>
-      <StackCommitSize>1048576</StackCommitSize>
+      <HeapReserveSize>
+      </HeapReserveSize>
+      <StackReserveSize>
+      </StackReserveSize>
+      <HeapCommitSize>
+      </HeapCommitSize>
+      <StackCommitSize>
+      </StackCommitSize>
+      <BaseAddress>0x10000000</BaseAddress>
+      <RandomizedBaseAddress>false</RandomizedBaseAddress>
+      <FixedBaseAddress>true</FixedBaseAddress>
     </Link>
     <ProjectReference>
       <LinkLibraryDependencies>false</LinkLibraryDependencies>

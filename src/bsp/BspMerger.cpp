@@ -1184,15 +1184,15 @@ void BspMerger::merge_planes(Bsp& mapA, Bsp& mapB)
 	std::vector<BSPPLANE> mergedPlanes;
 	mergedPlanes.reserve(mapA.planeCount + mapB.planeCount);
 
-	for (unsigned int i = 0; i < mapA.planeCount; i++)
+	for (int i = 0; i < mapA.planeCount; i++)
 	{
 		mergedPlanes.push_back(mapA.planes[i]);
 		g_progress.tick();
 	}
-	for (unsigned int i = 0; i < mapB.planeCount; i++)
+	for (int i = 0; i < mapB.planeCount; i++)
 	{
 		bool isUnique = true;
-		for (unsigned int k = 0; k < mapA.planeCount; k++)
+		for (int k = 0; k < mapA.planeCount; k++)
 		{
 			if (abs(mapB.planes[i].fDist - mapA.planes[k].fDist) < EPSILON
 				&& mapB.planes[i].nType == mapA.planes[k].nType
@@ -1238,8 +1238,8 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 
 	g_progress.update("Merging textures", mapA.textureCount + mapB.textureCount);
 
-	unsigned int thisMergeSz = (mapA.textureCount + 1) * sizeof(int);
-	for (unsigned int i = 0; i < mapA.textureCount; i++)
+	int thisMergeSz = (mapA.textureCount + 1) * sizeof(int);
+	for (int i = 0; i < mapA.textureCount; i++)
 	{
 		int offset = ((int*)mapA.textures)[i + 1];
 		if (offset == -1)
@@ -1252,7 +1252,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 			int sz = getBspTextureSize(tex);
 			//memset(tex->nOffsets, 0, sizeof(unsigned int) * 4);
 
-			mipTexOffsets[newTexCount] = (unsigned int)(mipTexWritePtr - newMipTexData);
+			mipTexOffsets[newTexCount] = (int)(mipTexWritePtr - newMipTexData);
 			memcpy(mipTexWritePtr, tex, sz);
 			mipTexWritePtr += sz;
 			thisMergeSz += sz;
@@ -1262,8 +1262,8 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	unsigned int otherMergeSz = (mapB.textureCount + 1) * sizeof(int);
-	for (unsigned int i = 0; i < mapB.textureCount; i++)
+	int otherMergeSz = (mapB.textureCount + 1) * sizeof(int);
+	for (int i = 0; i < mapB.textureCount; i++)
 	{
 		int offset = ((int*)mapB.textures)[i + 1];
 		if (offset != -1)
@@ -1272,7 +1272,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 			BSPMIPTEX* tex = (BSPMIPTEX*)(mapB.textures + offset);
 			int sz = getBspTextureSize(tex);
 
-			for (unsigned int k = 0; k < mapA.textureCount; k++)
+			for (int k = 0; k < mapA.textureCount; k++)
 			{
 				if (mipTexOffsets[k] == -1)
 				{
@@ -1289,7 +1289,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 
 			if (isUnique)
 			{
-				mipTexOffsets[newTexCount] = (unsigned int)(mipTexWritePtr - newMipTexData);
+				mipTexOffsets[newTexCount] = (int)(mipTexWritePtr - newMipTexData);
 				texRemap.push_back(newTexCount);
 				memcpy(mipTexWritePtr, tex, sz); // Note: won't work if pixel data isn't immediately after struct
 				mipTexWritePtr += sz;
@@ -1355,19 +1355,19 @@ void BspMerger::merge_texinfo(Bsp& mapA, Bsp& mapB)
 	std::vector<BSPTEXTUREINFO> mergedInfo;
 	mergedInfo.reserve(mapA.texinfoCount + mapB.texinfoCount);
 
-	for (unsigned int i = 0; i < mapA.texinfoCount; i++)
+	for (int i = 0; i < mapA.texinfoCount; i++)
 	{
 		mergedInfo.push_back(mapA.texinfos[i]);
 		g_progress.tick();
 	}
 
-	for (unsigned int i = 0; i < mapB.texinfoCount; i++)
+	for (int i = 0; i < mapB.texinfoCount; i++)
 	{
 		BSPTEXTUREINFO info = mapB.texinfos[i];
 		info.iMiptex = texRemap[info.iMiptex];
 
 		bool isUnique = true;
-		for (unsigned int k = 0; k < mapA.texinfoCount; k++)
+		for (int k = 0; k < mapA.texinfoCount; k++)
 		{
 			if (info.iMiptex == mapA.texinfos[k].iMiptex
 				&& info.nFlags == mapA.texinfos[k].nFlags
@@ -1438,9 +1438,9 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 			continue;
 
 		BSPFACE& face = newFaces[i];
-		face.iPlane = planeRemap[face.iPlane];
+		face.iPlane = (unsigned short)planeRemap[face.iPlane];
 		face.iFirstEdge = face.iFirstEdge + thisSurfEdgeCount;
-		face.iTextureInfo = texInfoRemap[face.iTextureInfo];
+		face.iTextureInfo = (short)texInfoRemap[face.iTextureInfo];
 		g_progress.tick();
 	}
 
@@ -1472,7 +1472,7 @@ void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB)
 		BSPLEAF& leaf = mapB.leaves[i];
 		if (leaf.nMarkSurfaces)
 		{
-			leaf.iFirstMarkSurface = leaf.iFirstMarkSurface + thisMarkSurfCount;
+			leaf.iFirstMarkSurface = (unsigned short)(leaf.iFirstMarkSurface + thisMarkSurfCount);
 		}
 
 		bool isSharedSolidLeaf = i == 0;
@@ -1529,7 +1529,7 @@ void BspMerger::merge_marksurfs(Bsp& mapA, Bsp& mapB)
 		unsigned short& mark = newSurfs[i];
 		if (mark >= thisWorldFaceCount)
 		{
-			mark = mark + otherFaceCount;
+			mark += (unsigned short)otherFaceCount;
 		}
 		g_progress.tick();
 	}
@@ -1537,7 +1537,7 @@ void BspMerger::merge_marksurfs(Bsp& mapA, Bsp& mapB)
 	for (int i = thisMarkSurfCount; i < totalSurfCount; i++)
 	{
 		unsigned short& mark = newSurfs[i];
-		mark = mark + thisWorldFaceCount;
+		mark += (unsigned short)thisWorldFaceCount;
 		g_progress.tick();
 	}
 
@@ -1559,8 +1559,8 @@ void BspMerger::merge_edges(Bsp& mapA, Bsp& mapB)
 	for (int i = thisEdgeCount; i < totalEdgeCount; i++)
 	{
 		BSPEDGE& edge = newEdges[i];
-		edge.iVertex[0] = edge.iVertex[0] + thisVertCount;
-		edge.iVertex[1] = edge.iVertex[1] + thisVertCount;
+		edge.iVertex[0] += (unsigned short)thisVertCount;
+		edge.iVertex[1] += (unsigned short)thisVertCount;
 		g_progress.tick();
 	}
 
@@ -1618,14 +1618,14 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		}
 		if (node.nFaces && node.firstFace >= thisWorldFaceCount)
 		{
-			node.firstFace += otherFaceCount;
+			node.firstFace += (unsigned short)otherFaceCount;
 		}
 
 		mergedNodes.push_back(node);
 		g_progress.tick();
 	}
 
-	for (unsigned int i = 0; i < mapB.nodeCount; i++)
+	for (int i = 0; i < mapB.nodeCount; i++)
 	{
 		BSPNODE node = mapB.nodes[i];
 
@@ -1633,7 +1633,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		{
 			if (node.iChildren[k] >= 0)
 			{
-				node.iChildren[k] += thisNodeCount;
+				node.iChildren[k] += (short)thisNodeCount;
 			}
 			else
 			{
@@ -1643,7 +1643,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		node.iPlane = planeRemap[node.iPlane];
 		if (node.nFaces)
 		{
-			node.firstFace += thisWorldFaceCount;
+			node.firstFace += (unsigned short)thisWorldFaceCount;
 		}
 
 		mergedNodes.push_back(node);
@@ -1684,7 +1684,7 @@ void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
 		g_progress.tick();
 	}
 
-	for (unsigned int i = 0; i < mapB.clipnodeCount; i++)
+	for (int i = 0; i < mapB.clipnodeCount; i++)
 	{
 		BSPCLIPNODE node = mapB.clipnodes[i];
 		node.iPlane = planeRemap[node.iPlane];
@@ -1693,7 +1693,7 @@ void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
 		{
 			if (node.iChildren[k] >= 0)
 			{
-				node.iChildren[k] += thisClipnodeCount;
+				node.iChildren[k] += (unsigned short)thisClipnodeCount;
 			}
 		}
 		mergedNodes.push_back(node);
@@ -1719,7 +1719,7 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	mergedModels.push_back(mapA.models[0]);
 
 	// other map's submodels
-	for (unsigned int i = 1; i < mapB.modelCount; i++)
+	for (int i = 1; i < mapB.modelCount; i++)
 	{
 		BSPMODEL model = mapB.models[i];
 		if (model.iHeadnodes[0] >= 0)
@@ -1735,7 +1735,7 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	}
 
 	// this map's submodels
-	for (unsigned int i = 1; i < mapA.modelCount; i++)
+	for (int i = 1; i < mapA.modelCount; i++)
 	{
 		BSPMODEL model = mapA.models[i];
 		if (model.iHeadnodes[0] >= 0)
@@ -1908,7 +1908,8 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 
 	for (int i = thisWorldFaceCount; i < thisWorldFaceCount + otherFaceCount; i++)
 	{
-		mapA.faces[i].nLightmapOffset += thisColorCount * sizeof(COLOR3);
+		if (mapA.faces[i].nLightmapOffset >= 0)
+			mapA.faces[i].nLightmapOffset += thisColorCount * sizeof(COLOR3);
 		g_progress.tick();
 	}
 }
@@ -1939,7 +1940,7 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 	memcpy(newThisPlanes, mapA.planes, mapA.planeCount * sizeof(BSPPLANE));
 	newThisPlanes[mapA.planeCount] = separationPlane;
 	mapA.replace_lump(LUMP_PLANES, newThisPlanes, (mapA.planeCount + 1) * sizeof(BSPPLANE));
-	
+
 	int separationPlaneIdx = mapA.planeCount - 1;
 
 

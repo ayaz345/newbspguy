@@ -90,7 +90,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 				}
 				else if (i >= offsetLeaf / bitsPerStep)
 				{
-					vis[i] = (vis[i] << 1) + oldCarry;
+					vis[i] = (unsigned char) ((vis[i] << 1) + oldCarry);
 				}
 				else
 				{
@@ -113,11 +113,11 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 
 				if (offsetBit != 0 && i * bitsPerStep < offsetLeaf && i * bitsPerStep + bitsPerStep > offsetLeaf)
 				{
-					vis[i] = (vis[i] & mask) | ((vis[i] >> 1) & ~mask) | (oldCarry << 7);
+					vis[i] = (unsigned char)((vis[i] & mask) | ((vis[i] >> 1) & ~mask) | (oldCarry << 7));
 				}
 				else if (i >= offsetLeaf / bitsPerStep)
 				{
-					vis[i] = (vis[i] >> 1) + (oldCarry << 7);
+					vis[i] = (unsigned char)((vis[i] >> 1) + (oldCarry << 7));
 				}
 				else
 				{
@@ -175,8 +175,8 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 						 int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
 {
 	unsigned char* dest;
-	unsigned int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
-	unsigned int newVisRowSize = ((newNumLeaves + 63) & ~63) >> 3;
+	int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
+	int newVisRowSize = ((newNumLeaves + 63) & ~63) >> 3;
 
 	// calculate which bits of an uncompressed visibility row are used/unused
 	unsigned char lastChunkMask = 0;
@@ -324,7 +324,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 		j--;
 	}
 
-	return dest_p - dest;
+	return (int)(dest_p - dest);
 }
 
 int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize, int leafMemSize)
@@ -370,9 +370,9 @@ int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* outp
 
 		if (sharedRows[i] != i)
 		{
-			if (i + 1 >= leafMemSize)
+			if (sharedRows[i] + 1 >= leafMemSize)
 			{
-				logf("leaf array overflow leafs[%d] of %d (in sharedRows)\n", sharedRows[i] + 1);
+				logf("leaf array overflow leafs[%d] of %d (in sharedRows)\n", sharedRows[i] + 1, leafMemSize);
 			}
 
 			leafs[i + 1].nVisOffset = leafs[sharedRows[i] + 1].nVisOffset;
@@ -403,5 +403,5 @@ int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* outp
 	delete[] compressed;
 	delete[] sharedRows;
 
-	return vismap_p - output;
+	return (int)(vismap_p - output);
 }

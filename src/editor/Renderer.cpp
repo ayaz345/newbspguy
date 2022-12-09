@@ -383,7 +383,7 @@ void AppSettings::load()
 			}
 			else if (key == "FLT_MAX_COORD")
 			{
-				FLT_MAX_COORD = atof(val.c_str());
+				FLT_MAX_COORD = (float)atof(val.c_str());
 			}
 			else if (key == "MAX_MAP_MODELS")
 			{
@@ -1410,7 +1410,7 @@ void Renderer::controls()
 				BSPFACE& selface = map->faces[pickInfo.selectedFaces[0]];
 				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
 				deselectFaces();
-				for (unsigned int i = 0; i < map->faceCount; i++)
+				for (int i = 0; i < map->faceCount; i++)
 				{
 					BSPFACE& face = map->faces[i];
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
@@ -2425,7 +2425,7 @@ void Renderer::selectMapId(int id)
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
 		BspRenderer* s = mapRenderers[i];
-		if (s->map)
+		if (s->map && i == id)
 		{
 			SelectedMap = s->map;
 			return;

@@ -50,6 +50,7 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, int numVerts, int primitive)
 {
+	attribs = std::vector<VertexAttr>();
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
@@ -59,6 +60,7 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const voi
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive)
 {
+	attribs = std::vector<VertexAttr>();
 	numVerts = 0;
 	data = NULL;
 	vboId = (unsigned int)-1;
@@ -68,6 +70,7 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primi
 }
 
 VertexBuffer::~VertexBuffer() {
+	attribs.clear();
 	deleteBuffer();
 	if (ownData) {
 		delete[] data;

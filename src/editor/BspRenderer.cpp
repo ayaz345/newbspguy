@@ -103,6 +103,7 @@ void BspRenderer::loadTextures()
 	std::vector<std::string> wadNames;
 
 	bool foundInfoDecals = false;
+	bool foundDecalWad = false;
 
 	for (int i = 0; i < map->ents.size(); i++)
 	{
@@ -113,6 +114,8 @@ void BspRenderer::loadTextures()
 			for (int k = 0; k < wadNames.size(); k++)
 			{
 				wadNames[k] = basename(wadNames[k]);
+				if (toLowerCase(wadNames[k]) == "decals.wad")
+					foundDecalWad = true;
 			}
 
 			if (g_settings.stripWad)
@@ -142,12 +145,14 @@ void BspRenderer::loadTextures()
 			tryPaths.push_back(path.path);
 	}
 
-	if (foundInfoDecals)
+	if (foundInfoDecals && !foundDecalWad)
+	{
 		wadNames.push_back("decals.wad");
+	}
 
 	for (int i = 0; i < wadNames.size(); i++)
 	{
-		std::string path;
+		std::string path = std::string();
 		for (int k = 0; k < tryPaths.size(); k++)
 		{
 			std::string tryPath = tryPaths[k] + wadNames[i];
@@ -177,7 +182,7 @@ void BspRenderer::loadTextures()
 	int embedCount = 0;
 
 	glTexturesSwap = new Texture * [map->textureCount];
-	for (unsigned int i = 0; i < map->textureCount; i++)
+	for (int i = 0; i < map->textureCount; i++)
 	{
 		int texOffset = ((int*)map->textures)[i + 1];
 		if (texOffset == -1)
@@ -300,7 +305,7 @@ void BspRenderer::addClipnodeModel(int modelIdx)
 		return;
 	RenderClipnodes* newRenderClipnodes = new RenderClipnodes[numRenderClipnodes + 1];
 	newRenderClipnodes[numRenderClipnodes] = RenderClipnodes();
-	for (unsigned int i = 0; i < numRenderClipnodes; i++)
+	for (int i = 0; i < numRenderClipnodes; i++)
 	{
 		newRenderClipnodes[i] = renderClipnodes[i];
 	}
@@ -314,7 +319,7 @@ void BspRenderer::updateModelShaders()
 {
 	ShaderProgram* activeShader = (g_render_flags & RENDER_LIGHTMAPS) ? bspShader : fullBrightBspShader;
 
-	for (unsigned int i = 0; i < numRenderModels; i++)
+	for (int i = 0; i < numRenderModels; i++)
 	{
 		RenderModel& model = renderModels[i];
 		for (int k = 0; k < model.groupCount; k++)
@@ -341,7 +346,7 @@ void BspRenderer::loadLightmaps()
 
 	int lightmapCount = 0;
 	int atlasId = 0;
-	for (unsigned int i = 0; i < map->faceCount; i++)
+	for (int i = 0; i < map->faceCount; i++)
 	{
 		BSPFACE& face = map->faces[i];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
@@ -380,7 +385,7 @@ void BspRenderer::loadLightmaps()
 
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
-					logf("Lightmap too big for atlas size!\n");
+					logf("Lightmap too big for atlas size ( %dx%d but allowed %dx%d )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
 					continue;
 				}
 			}
@@ -458,7 +463,7 @@ void BspRenderer::preRenderFaces()
 
 	genRenderFaces(numRenderModels);
 
-	for (unsigned int i = 0; i < numRenderModels; i++)
+	for (int i = 0; i < numRenderModels; i++)
 	{
 		RenderModel& model = renderModels[i];
 		for (int k = 0; k < model.groupCount; k++)
@@ -480,7 +485,7 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 	int worldRenderGroups = 0;
 	int modelRenderGroups = 0;
 
-	for (unsigned int m = 0; m < map->modelCount; m++)
+	for (int m = 0; m < map->modelCount; m++)
 	{
 		int groupCount = refreshModel(m, false);
 		if (m == 0)
@@ -523,7 +528,7 @@ void BspRenderer::deleteRenderClipnodes()
 {
 	if (renderClipnodes)
 	{
-		for (unsigned int i = 0; i < numRenderClipnodes; i++)
+		for (int i = 0; i < numRenderClipnodes; i++)
 		{
 			deleteRenderModelClipnodes(&renderClipnodes[i]);
 		}
@@ -551,7 +556,7 @@ void BspRenderer::deleteRenderFaces()
 {
 	if (renderModels)
 	{
-		for (unsigned int i = 0; i < numRenderModels; i++)
+		for (int i = 0; i < numRenderModels; i++)
 		{
 			deleteRenderModel(&renderModels[i]);
 		}
@@ -565,7 +570,7 @@ void BspRenderer::deleteTextures()
 {
 	if (glTextures)
 	{
-		for (unsigned int i = 0; i < numLoadedTextures; i++)
+		for (int i = 0; i < numLoadedTextures; i++)
 		{
 			if (glTextures[i] != missingTex)
 			{
@@ -895,10 +900,10 @@ void BspRenderer::loadClipnodes()
 	numRenderClipnodes = map->modelCount;
 	renderClipnodes = new RenderClipnodes[numRenderClipnodes];
 
-	for (unsigned int i = 0; i < numRenderClipnodes; i++)
+	for (int i = 0; i < numRenderClipnodes; i++)
 		renderClipnodes[i] = RenderClipnodes();
 
-	for (unsigned int i = 0; i < numRenderClipnodes; i++)
+	for (int i = 0; i < numRenderClipnodes; i++)
 	{
 		generateClipnodeBuffer(i);
 	}
@@ -1104,7 +1109,7 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 
 void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 {
-	for (unsigned int i = 0; i < numRenderClipnodes; i++)
+	for (int i = 0; i < numRenderClipnodes; i++)
 	{
 		for (int k = 0; k < MAX_MAP_HULLS; k++)
 		{
@@ -1145,7 +1150,7 @@ void BspRenderer::preRenderEnts()
 
 void BspRenderer::refreshPointEnt(int entIdx)
 {
-	unsigned int skipIdx = 0;
+	int skipIdx = 0;
 
 	if (entIdx == 0)
 		return;
@@ -1273,7 +1278,7 @@ void BspRenderer::refreshEnt(int entIdx)
 		if (ent->keyOrder[i] == "angle")
 		{
 			setAngles = true;
-			float y = atof(ent->keyvalues["angle"].c_str());
+			float y = (float)atof(ent->keyvalues["angle"].c_str());
 
 			if (y >= 0.0f)
 			{
@@ -1312,7 +1317,7 @@ void BspRenderer::calcFaceMaths()
 	vec3 world_y = vec3(0, 1, 0);
 	vec3 world_z = vec3(0, 0, 1);
 
-	for (unsigned int i = 0; i < map->faceCount; i++)
+	for (int i = 0; i < map->faceCount; i++)
 	{
 		refreshFace(i);
 	}
@@ -1418,7 +1423,7 @@ void BspRenderer::ReuploadTextures()
 
 	glTextures = glTexturesSwap;
 
-	for (unsigned int i = 0; i < map->textureCount; i++)
+	for (int i = 0; i < map->textureCount; i++)
 	{
 		if (!glTextures[i]->uploaded)
 			glTextures[i]->upload(GL_RGB);
@@ -1452,7 +1457,7 @@ void BspRenderer::delayLoadData()
 
 		glTextures = glTexturesSwap;
 
-		for (unsigned int i = 0; i < map->textureCount; i++)
+		for (int i = 0; i < map->textureCount; i++)
 		{
 			if (glTextures[i] && !glTextures[i]->uploaded)
 				glTextures[i]->upload(GL_RGB);
@@ -1464,7 +1469,7 @@ void BspRenderer::delayLoadData()
 
 		mapTexsUsage.clear();
 
-		for (unsigned int i = 0; i < map->faceCount; i++)
+		for (int i = 0; i < map->faceCount; i++)
 		{
 			BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
 			int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
@@ -1508,8 +1513,7 @@ void BspRenderer::delayLoadData()
 
 	if (!clipnodesLoaded && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-
-		for (unsigned int i = 0; i < numRenderClipnodes; i++)
+		for (int i = 0; i < numRenderClipnodes; i++)
 		{
 			RenderClipnodes& clip = renderClipnodes[i];
 			for (int k = 0; k < MAX_MAP_HULLS; k++)
@@ -2240,7 +2244,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 	updateEntityState(entIdx);
 }
 
-void BspRenderer::pushModelUndoState(const std::string& actionDesc, int targetLumps)
+void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int targetLumps)
 {
 	if (!map || g_app->pickInfo.GetSelectedEnt() < 0)
 	{

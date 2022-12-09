@@ -160,7 +160,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 
 	Winding facewinding(bsp, *f);
 	Winding texwinding(facewinding.m_NumPoints);
-	for (unsigned int x = 0; x < facewinding.m_NumPoints; x++)
+	for (int x = 0; x < facewinding.m_NumPoints; x++)
 	{
 		ApplyMatrix(worldtotex, facewinding.m_Points[x], texwinding.m_Points[x]);
 		texwinding.m_Points[x][2] = 0.0;
@@ -172,7 +172,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 		return false;
 	}
 
-	for (unsigned int x = 0; x < texwinding.m_NumPoints; x++)
+	for (int x = 0; x < texwinding.m_NumPoints; x++)
 	{
 		for (int k = 0; k < 2; k++)
 		{
@@ -220,7 +220,7 @@ static bool TestSampleFrag(Bsp* bsp, int facenum, vec_t s, vec_t t, const vec_t 
 
 	TranslateWorldToTex(bsp, head.facenum, worldtotex);
 	head.mywinding = new Winding(facewinding.m_NumPoints);
-	for (unsigned int x = 0; x < facewinding.m_NumPoints; x++)
+	for (int x = 0; x < facewinding.m_NumPoints; x++)
 	{
 		ApplyMatrix(worldtotex, facewinding.m_Points[x], head.mywinding->m_Points[x]);
 		head.mywinding->m_Points[x][2] = 0.0;

@@ -388,8 +388,7 @@ void CreateBspModelCommand::execute()
 	if (aaatriggerIdx == -1)
 	{
 		aaatriggerIdx = addDefaultTexture();
-		renderer->texturesLoaded = false;
-		renderer->loadTextures();
+		renderer->reloadTextures();
 	}
 
 	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
@@ -455,8 +454,9 @@ int CreateBspModelCommand::getDefaultTextureIdx()
 		if (texOffset != -1)
 		{
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-			if (strcmp(tex.szName, "aaatrigger") == 0)
+			if (tex.szName[0] != '\0' && strcmp(tex.szName, "aaatrigger") == 0)
 			{
+				logf("Found default texture in map file.\n");
 				return i;
 			}
 		}
@@ -474,10 +474,11 @@ int CreateBspModelCommand::addDefaultTexture()
 	unsigned int w, h;
 
 	lodepng_decode24(&tex_dat, &w, &h, aaatrigger_dat, sizeof(aaatrigger_dat));
-	int aaatriggerIdx = map->add_texture("aaatrigger", tex_dat, w, h);
+
+	int aaatriggerIdx = map->add_texture("aaatrigger", NULL, w, h);
 	//renderer->reloadTextures();
 
-	lodepng_encode24_file("test.png", (unsigned char*)tex_dat, w, h);
+	//lodepng_encode24_file("test.png", (unsigned char*)tex_dat, w, h);
 	delete[] tex_dat;
 
 	return aaatriggerIdx;
