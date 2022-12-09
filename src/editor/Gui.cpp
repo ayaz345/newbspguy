@@ -391,7 +391,7 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 		while (tmpMap.models[0].nVisLeafs >= tmpMap.leafCount)
 			tmpMap.create_leaf(-2);
 
-		tmpMap.lumps[LUMP_LEAVES] = (byte*)tmpMap.leaves;
+		tmpMap.lumps[LUMP_LEAVES] = (unsigned char*)tmpMap.leaves;
 		tmpMap.update_lump_pointers();
 	}
 
