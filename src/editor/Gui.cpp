@@ -361,7 +361,7 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 
 	tmpMap.update_ent_lump();
 
-	tmpMap.lumps[LUMP_MODELS] = (byte*)tmpMap.models;
+	tmpMap.lumps[LUMP_MODELS] = (unsigned char*)tmpMap.models;
 	tmpMap.bsp_header.lump[LUMP_MODELS].nLength = sizeof(tmpModel);
 	tmpMap.update_lump_pointers();
 
