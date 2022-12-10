@@ -42,12 +42,6 @@ jobs:
                  cmake .. -DCMAKE_BUILD_TYPE=RELEASE
                  make
 
-            - name: Upload linux artifacts
-              uses: actions/upload-artifact@v3
-              with:
-                  name: bspguy-linux
-                  path: build/bspguy
-
             - name: Publish nightly binaries for linux
               uses: softprops/action-gh-release@v1
               with:
@@ -80,14 +74,19 @@ jobs:
               run: |
                  msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=Release
 
-            - name: Upload windows artifacts
-              uses: actions/upload-artifact@v3
-              with:
-                  name: Windows
-                  path: ./vs-project/Release/bspguy.exe  
-
             - name: Publish nightly binaries for windows
               uses: softprops/action-gh-release@v1
               with:
                   tag_name: ${{ needs.get_time_build.outputs.release_tag }}
                   files: ./vs-project/Release/bspguy.exe
+            
+            - name: Build app for debug
+              run: |
+                 msbuild ${{ env.solution }} -m -t:rebuild -verbosity:diag -property:Configuration=DebugGithub
+
+            - name: Publish nightly debug binaries for windows
+              uses: softprops/action-gh-release@v1
+              with:
+                  tag_name: ${{ needs.get_time_build.outputs.release_tag }}
+                  files: ./vs-project/Release/bspguy_debug.exe
+            
