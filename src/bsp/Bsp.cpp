@@ -1366,14 +1366,14 @@ int Bsp::delete_embedded_textures()
 {
 	unsigned int headerSz = (textureCount + 1) * sizeof(int);
 	unsigned int newTexDataSize = headerSz + (textureCount * sizeof(BSPMIPTEX));
+
 	unsigned char* newTextureData = new unsigned char[newTexDataSize];
+	memset(newTextureData, 0, newTexDataSize);
 
 	unsigned char* mips = (unsigned char*)(newTextureData + headerSz);
 
 	int* header = (int*)newTextureData;
-	header[0] = textureCount;
-
-	int offset = 0;
+	int offset = headerSz;
 
 	int numRemoved = 0;
 	for (int i = 0; i < textureCount; i++)
@@ -1381,22 +1381,28 @@ int Bsp::delete_embedded_textures()
 		int oldoffset = ((int*)textures)[i + 1];
 		if (oldoffset < 0)
 		{
-			header[i + 1] = oldoffset;
+			numRemoved++;
 			continue;
 		}
 
-		header[i + 1] = offset;
+		header[0]++;
 
-		BSPMIPTEX* newMip = (BSPMIPTEX*)(mips + offset);
-		BSPMIPTEX* oldMip = (BSPMIPTEX*)(textures + offset);
+		BSPMIPTEX* oldMip = (BSPMIPTEX*)(textures + oldoffset);
 
-		if (oldMip->nOffsets[0] > 0)
+		if (oldMip->nOffsets[0] + oldMip->nOffsets[1] +
+			oldMip->nOffsets[2] + oldMip->nOffsets[3] > 0)
+		{
 			numRemoved++;
+		}
+
+		BSPMIPTEX* newMip = (BSPMIPTEX*)(newTextureData + offset);
 
 		memcpy(newMip, oldMip, sizeof(BSPMIPTEX));
+
 		newMip->nOffsets[0] = newMip->nOffsets[1] =
 			newMip->nOffsets[2] = newMip->nOffsets[3] = 0;
 
+		header[1 + i] = offset;
 		offset += sizeof(BSPMIPTEX);
 	}
 
