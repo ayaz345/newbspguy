@@ -507,22 +507,22 @@ std::vector<NodeVolumeCuts> Bsp::get_model_leaf_volume_cuts(int modelIdx, int hu
 			std::vector<BSPPLANE> clipOrder;
 			if (hullIdx == 0)
 			{
-				get_node_leaf_cuts(nodeIdx, clipOrder, modelVolumeCuts);
+				get_node_leaf_cuts(nodeIdx, 0, clipOrder, modelVolumeCuts);
 			}
 			else
 			{
-				get_clipnode_leaf_cuts(nodeIdx, clipOrder, modelVolumeCuts);
+				get_clipnode_leaf_cuts(nodeIdx, 0, clipOrder, modelVolumeCuts);
 			}
 		}
 	}
 	return modelVolumeCuts;
 }
 
-void Bsp::get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
+void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
 {
 	BSPCLIPNODE& node = clipnodes[iNode];
 
-	if (node.iPlane < 0)
+	if (node.iPlane < 0 || node.iPlane >= planeCount)
 	{
 		return;
 	}
@@ -535,11 +535,16 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, st
 			plane.vNormal = plane.vNormal.invert();
 			plane.fDist = -plane.fDist;
 		}
+		if (node.iChildren[i] == iStartNode)
+		{
+			logf("Detect stack overflowing! clipnode.iChildren[i] %d already processed!\n ", node.iChildren[i]);
+			return;
+		}
 		clipOrder.push_back(plane);
 
 		if (node.iChildren[i] >= 0)
 		{
-			get_clipnode_leaf_cuts(node.iChildren[i], clipOrder, output);
+			get_clipnode_leaf_cuts(node.iChildren[i], iStartNode, clipOrder, output);
 		}
 		else if (node.iChildren[i] != CONTENTS_EMPTY)
 		{
@@ -562,7 +567,7 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, st
 	}
 }
 
-void Bsp::get_node_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
+void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
 {
 	BSPNODE& node = nodes[iNode];
 
@@ -574,11 +579,18 @@ void Bsp::get_node_leaf_cuts(int iNode, std::vector<BSPPLANE>& clipOrder, std::v
 			plane.vNormal = plane.vNormal.invert();
 			plane.fDist = -plane.fDist;
 		}
+
+		if (node.iChildren[i] == iStartNode)
+		{
+			logf("Detect stack overflowing! node.iChildren[i] %d already processed!\n ", node.iChildren[i]);
+			return;
+		}
+
 		clipOrder.push_back(plane);
 
 		if (node.iChildren[i] >= 0)
 		{
-			get_node_leaf_cuts(node.iChildren[i], clipOrder, output);
+			get_node_leaf_cuts(node.iChildren[i], iStartNode, clipOrder, output);
 		}
 		else if (leaves[~node.iChildren[i]].nContents != CONTENTS_EMPTY)
 		{

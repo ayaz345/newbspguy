@@ -931,7 +931,8 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 
 	if (!tmpWad->readInfo())
 	{
-		logf("Parsing wad file failed!\n");
+		logf("Reading wad file failed!\n");
+		delete tmpWad;
 	}
 	else
 	{
@@ -1010,7 +1011,51 @@ void Gui::drawMenuBar()
 		if (ifd::FileDialog::Instance().HasResult())
 		{
 			std::filesystem::path res = ifd::FileDialog::Instance().GetResult();
-			app->addMap(new Bsp(res.string()));
+			std::string pathlowercase = toLowerCase(res.string());
+			if (pathlowercase.ends_with(".wad"))
+			{
+				if (!app->SelectedMap)
+				{
+					app->addMap(new Bsp(""));
+					app->selectMapId(0);
+				}
+
+				if (app->SelectedMap)
+				{
+					bool foundInMap = false;
+					for (auto& wad : app->SelectedMap->getBspRender()->wads)
+					{
+						std::string tmppath = toLowerCase(wad->filename);
+						if (tmppath.find(basename(pathlowercase)) != std::string::npos)
+						{
+							foundInMap = true;
+							logf("Already found in current map!\n");
+							break;
+						}
+					}
+
+					if (!foundInMap)
+					{
+						Wad* wad = new Wad(res.string());
+						if (wad->readInfo())
+						{
+							app->SelectedMap->getBspRender()->wads.push_back(wad);
+							if (!app->SelectedMap->ents[0]->keyvalues["wad"].ends_with(";"))
+								app->SelectedMap->ents[0]->keyvalues["wad"] += ";";
+							app->SelectedMap->ents[0]->keyvalues["wad"] += basename(res.string()) + ";";
+							app->SelectedMap->update_ent_lump();
+							app->updateEnts();
+							map->getBspRender()->reload();
+						}
+						else
+							delete wad;
+					}
+				}
+			}
+			else
+			{
+				app->addMap(new Bsp(res.string()));
+			}
 			g_settings.lastdir = res.parent_path().string();
 		}
 		ifd::FileDialog::Instance().Close();
@@ -1020,7 +1065,6 @@ void Gui::drawMenuBar()
 	{
 		if (ImGui::MenuItem("Save", NULL, false, !app->isLoading))
 		{
-
 			if (map)
 			{
 				map->update_ent_lump();
@@ -1028,21 +1072,35 @@ void Gui::drawMenuBar()
 				map->write(map->bsp_path);
 			}
 		}
-
-		if (ImGui::MenuItem("Open", NULL, false, !app->isLoading))
+		if (ImGui::BeginMenu("Open"))
 		{
-			filterNeeded = true;
-			ifd::FileDialog::Instance().Open("MapOpenDialog", "Open .bsp map", "Map file (*.bsp){.bsp},.*", false, g_settings.lastdir);
+			if (ImGui::MenuItem("Map", NULL, false, !app->isLoading))
+			{
+				filterNeeded = true;
+				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select map path", "Map file (*.bsp){.bsp},Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Open map in new Window");
+				ImGui::EndTooltip();
+			}
+
+			if (ImGui::MenuItem("Wad", NULL, false, !app->isLoading))
+			{
+				filterNeeded = true;
+				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select wad path", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Add wad file path to current map");
+				ImGui::EndTooltip();
+			}
+			ImGui::EndMenu();
 		}
-
-
-		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-		{
-			ImGui::BeginTooltip();
-			ImGui::TextUnformatted("Open map in new window.");
-			ImGui::EndTooltip();
-		}
-
 
 		if (ImGui::MenuItem("Close All", NULL, false, !app->isLoading))
 		{
@@ -1094,7 +1152,7 @@ void Gui::drawMenuBar()
 					logf("Select map first\n");
 				}
 			}
-			if (ImGui::MenuItem("Embedded textures (.wad)", NULL))
+			if (ImGui::MenuItem("All embedded textures to wad", NULL))
 			{
 				if (map)
 				{
@@ -1216,13 +1274,13 @@ void Gui::drawMenuBar()
 		}
 		if (ImGui::BeginMenu("Import", !app->isLoading))
 		{
-			if (ImGui::MenuItem("BSP model", NULL))
+			if (ImGui::MenuItem("BSP model(native)", NULL))
 			{
 				showImportMapWidget_Type = SHOW_IMPORT_MODEL_BSP;
 				showImportMapWidget = true;
 			}
 
-			if (ImGui::MenuItem(".bsp model path in func_breakable", NULL))
+			if (ImGui::MenuItem("BSP model(cached as func_breakable)", NULL))
 			{
 				showImportMapWidget_Type = SHOW_IMPORT_MODEL_ENTITY;
 				showImportMapWidget = true;
@@ -1268,7 +1326,7 @@ void Gui::drawMenuBar()
 
 
 
-			if (ImGui::MenuItem("Merge with .wad", NULL))
+			if (ImGui::MenuItem("Import all textures from wad", NULL))
 			{
 				if (map)
 				{
@@ -4070,7 +4128,7 @@ void Gui::drawSettings()
 			{
 				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 			}
-
+			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::DragInt("TEXTURE_STEP", (int*)&TEXTURE_STEP, 4, 4, 512, "%u");
 		}
 		else if (settingsTab == 5)

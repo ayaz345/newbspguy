@@ -101,7 +101,6 @@ bool Wad::readInfo()
 		return false; // we can't use these types of textures (see fonts.wad as an example)
 	}
 
-
 	return true;
 }
 

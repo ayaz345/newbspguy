@@ -173,8 +173,13 @@ void BspRenderer::loadTextures()
 
 		logf("Loading WAD %s\n", path.c_str());
 		Wad* wad = new Wad(path);
-		wad->readInfo();
-		wads.push_back(wad);
+		if (wad->readInfo())
+			wads.push_back(wad);
+		else
+		{
+			logf("Unreadable WAD file %s\n", path.c_str());
+			delete wad;
+		}
 	}
 
 	int wadTexCount = 0;
