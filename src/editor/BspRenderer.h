@@ -162,7 +162,7 @@ public:
 	
 	void loadTextures(); // will reload them if already loaded
 	void reloadTextures();
-	void ReuploadTextures();
+	void reuploadTextures();
 
 	void updateLightmapInfos();
 	bool isFinishedLoading();
@@ -235,8 +235,6 @@ public:
 	std::vector<Command*> redoHistory;
 	std::map<int, Entity> undoEntityState;
 	LumpState undoLumpState = LumpState();
-
-	std::map<std::string, std::set<std::string>> mapTexsUsage;
 
 	void pushModelUndoState(const std::string& actionDesc, unsigned int targetLumps);
 	void pushEntityUndoState(const std::string& actionDesc, int entIdx);

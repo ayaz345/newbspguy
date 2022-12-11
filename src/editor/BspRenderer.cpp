@@ -88,8 +88,6 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	memset(&undoLumpState, 0, sizeof(LumpState));
 
 	undoEntityState = std::map<int, Entity>();
-
-	mapTexsUsage = std::map<std::string, std::set<std::string>>();
 }
 
 void BspRenderer::loadTextures()
@@ -1422,7 +1420,7 @@ BspRenderer::~BspRenderer()
 
 }
 
-void BspRenderer::ReuploadTextures()
+void BspRenderer::reuploadTextures()
 {
 	deleteTextures();
 
@@ -1432,9 +1430,9 @@ void BspRenderer::ReuploadTextures()
 
 	for (int i = 0; i < map->textureCount; i++)
 	{
-		if (!glTextures[i]->uploaded)
-			glTextures[i]->upload(GL_RGB);
+		glTextures[i]->upload(GL_RGB);
 	}
+
 	numLoadedTextures = map->textureCount;
 
 	texturesLoaded = true;
@@ -1460,62 +1458,7 @@ void BspRenderer::delayLoadData()
 
 	if (!texturesLoaded && texturesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-		deleteTextures();
-
-		glTextures = glTexturesSwap;
-
-		for (int i = 0; i < map->textureCount; i++)
-		{
-			if (glTextures[i] && !glTextures[i]->uploaded)
-				glTextures[i]->upload(GL_RGB);
-		}
-		numLoadedTextures = map->textureCount;
-
-		texturesLoaded = true;
-		preRenderFaces();
-
-		mapTexsUsage.clear();
-
-		for (int i = 0; i < map->faceCount; i++)
-		{
-			BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
-			int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-			if (texOffset != -1 && texinfo.iMiptex != -1)
-			{
-				BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-
-				if (tex.szName[0] != '\0')
-				{
-					if (tex.nOffsets[0] <= 0)
-					{
-						bool fondTex = false;
-						for (auto& s : wads)
-						{
-							if (s->hasTexture(tex.szName))
-							{
-								if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
-									mapTexsUsage[basename(s->filename)].insert(tex.szName);
-
-								fondTex = true;
-							}
-						}
-						if (!fondTex)
-						{
-							if (!mapTexsUsage["notfound"].count(tex.szName))
-								mapTexsUsage["notfound"].insert(tex.szName);
-						}
-					}
-					else
-					{
-						if (!mapTexsUsage["internal"].count(tex.szName))
-							mapTexsUsage["internal"].insert(tex.szName);
-					}
-				}
-			}
-		}
-
-		if (mapTexsUsage.size())
-			logf("Used %d wad files(include map file)\n", (int)mapTexsUsage.size());
+		reuploadTextures();
 	}
 
 	if (!clipnodesLoaded && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)

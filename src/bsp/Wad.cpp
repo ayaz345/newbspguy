@@ -33,7 +33,27 @@ Wad::~Wad(void)
 	filedata = NULL;
 }
 
-bool Wad::readInfo(bool allowempty)
+void W_CleanupName(const char* in, char* out)
+{
+	int			i;
+	int			c;
+
+	for (i = 0; i < MAXTEXTURENAME; i++) {
+		c = in[i];
+		if (!c)
+			break;
+
+		if (c >= 'A' && c <= 'Z')
+			c += ('a' - 'A');
+		out[i] = c;
+	}
+
+	for (; i < MAXTEXTURENAME; i++)
+		out[i] = 0;
+}
+
+
+bool Wad::readInfo()
 {
 	std::string file = filename;
 
@@ -62,7 +82,6 @@ bool Wad::readInfo(bool allowempty)
 	int offset = 0;
 
 	memcpy((char*)&header, &filedata[offset], sizeof(WADHEADER));
-	offset += sizeof(WADHEADER);
 
 	if (std::string(header.szMagic).find("WAD3") != 0)
 	{
@@ -87,7 +106,10 @@ bool Wad::readInfo(bool allowempty)
 
 	dirEntries.clear();
 
-	bool usableTextures = false;
+	usableTextures = false;
+
+	//logf("D %d %d\n", header.nDirOffset, header.nDir);
+
 	for (int i = 0; i < header.nDir; i++)
 	{
 		WADDIRENTRY tmpWadEntry = WADDIRENTRY();
@@ -101,18 +123,19 @@ bool Wad::readInfo(bool allowempty)
 		memcpy((char*)&tmpWadEntry, &filedata[offset], sizeof(WADDIRENTRY));
 		offset += sizeof(WADDIRENTRY);
 
+		W_CleanupName(tmpWadEntry.szName, tmpWadEntry.szName);
+
 		dirEntries.push_back(tmpWadEntry);
 
 		if (dirEntries[i].nType == 0x43) usableTextures = true;
 	}
 
 
-	if (!usableTextures && !allowempty)
+	if (!usableTextures)
 	{
-		dirEntries.clear();
-		header.nDir = 0;
-		logf("%s contains no regular textures\n", filename.c_str());
-		return false; // we can't use these types of textures (see fonts.wad as an example)
+		logf("Info: %s contains no regular textures\n", basename(filename).c_str());
+		if (!dirEntries.size())
+			return false;
 	}
 
 	return true;
@@ -135,7 +158,7 @@ bool Wad::hasTexture(int dirIndex)
 	return true;
 }
 
-WADTEX* Wad::readTexture(int dirIndex)
+WADTEX* Wad::readTexture(int dirIndex, int * texturetype)
 {
 	if (dirIndex < 0 || dirIndex >= dirEntries.size())
 	{
@@ -145,10 +168,10 @@ WADTEX* Wad::readTexture(int dirIndex)
 	//if (cache != NULL)
 		//return cache[dirIndex];
 	std::string name = std::string(dirEntries[dirIndex].szName);
-	return readTexture(name);
+	return readTexture(name, texturetype);
 }
 
-WADTEX* Wad::readTexture(const std::string& texname)
+WADTEX* Wad::readTexture(const std::string& texname, int * texturetype)
 {
 	int idx = -1;
 	for (int d = 0; d < header.nDir; d++)
@@ -172,6 +195,11 @@ WADTEX* Wad::readTexture(const std::string& texname)
 	}
 
 	int offset = dirEntries[idx].nFilePos;
+
+	if (texturetype)
+	{
+		*texturetype = dirEntries[idx].nType;
+	}
 
 	BSPMIPTEX mtex = BSPMIPTEX();
 	memcpy((char*)&mtex, &filedata[offset], sizeof(BSPMIPTEX));

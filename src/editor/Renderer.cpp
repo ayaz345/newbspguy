@@ -1075,6 +1075,15 @@ void Renderer::renderLoop()
 		if (reloading && fgdFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 		{
 			postLoadFgds();
+			for (int i = 0; i < mapRenderers.size(); i++)
+			{
+				mapRenderers[i]->pointEntRenderer = pointEntRenderer;
+				mapRenderers[i]->preRenderEnts();
+				if (reloadingGameDir)
+				{
+					mapRenderers[i]->reloadTextures();
+				}
+			}
 			reloading = reloadingGameDir = false;
 		}
 
@@ -1099,11 +1108,6 @@ void Renderer::postLoadFgds()
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
 		mapRenderers[i]->pointEntRenderer = pointEntRenderer;
-		mapRenderers[i]->preRenderEnts();
-		if (reloadingGameDir)
-		{
-			mapRenderers[i]->reloadTextures();
-		}
 	}
 
 	swapPointEntRenderer = NULL;

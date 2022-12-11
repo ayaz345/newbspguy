@@ -54,6 +54,9 @@ struct WADTEX
 	}
 };
 
+#pragma pack(pop)
+
+
 class Wad
 {
 public:
@@ -61,6 +64,7 @@ public:
 
 	unsigned char* filedata = NULL;
 	int fileLen = 0;
+	bool usableTextures = false;
 
 	WADHEADER header = WADHEADER();
 
@@ -71,7 +75,7 @@ public:
 
 	~Wad(void);
 
-	bool readInfo(bool allowempty = false);
+	bool readInfo();
 
 	bool hasTexture(int dirIndex);
 	bool hasTexture(const std::string& name);
@@ -80,11 +84,9 @@ public:
 	bool write(WADTEX** textures, size_t numTex);
 	bool write(std::vector<WADTEX*> textures);
 
-	WADTEX* readTexture(int dirIndex);
-	WADTEX* readTexture(const std::string& texname);
+	WADTEX* readTexture(int dirIndex, int* texturetype = NULL);
+	WADTEX* readTexture(const std::string& texname, int* texturetype = NULL);
 };
 
 WADTEX* create_wadtex(const char* name, COLOR3* data, int width, int height);
 COLOR3* ConvertWadTexToRGB(WADTEX* wadTex);
-
-#pragma pack(pop)

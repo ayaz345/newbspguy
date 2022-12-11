@@ -951,7 +951,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 		}
 		for (int i = 0; i < app->mapRenderers.size(); i++)
 		{
-			app->mapRenderers[i]->reloadTextures();
+			app->mapRenderers[i]->reuploadTextures();
 		}
 	}
 
@@ -1067,7 +1067,7 @@ void Gui::drawMenuBar()
 		}
 		if (ImGui::BeginMenu("Open"))
 		{
-			if (ImGui::MenuItem("Map", NULL, false, !app->isLoading))
+			if (ImGui::MenuItem("Map"))
 			{
 				filterNeeded = true;
 				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select map path", "Map file (*.bsp){.bsp},Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
@@ -1080,7 +1080,7 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::MenuItem("Wad", NULL, false, !app->isLoading))
+			if (ImGui::MenuItem("Wad"))
 			{
 				filterNeeded = true;
 				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select wad path", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
@@ -1106,6 +1106,8 @@ void Gui::drawMenuBar()
 				app->clearMaps();
 				ImGui::EndMenu();
 				ImGui::EndMainMenuBar();
+				app->addMap(new Bsp(""));
+				app->selectMapId(0);
 				return;
 			}
 		}
@@ -1281,6 +1283,8 @@ void Gui::drawMenuBar()
 						for (int i = 0; i < (int)wad->dirEntries.size(); i++)
 						{
 							WADTEX* texture = wad->readTexture(i);
+							char textureName[MAXTEXTURENAME];
+
 							if (texture->szName[0] != '\0' && strlen(texture->szName) < MAXTEXTURENAME)
 							{
 								logf("Exporting %s from %s to working directory.\n", texture->szName, basename(wad->filename).c_str());
@@ -1440,7 +1444,7 @@ void Gui::drawMenuBar()
 
 							tmpWad->write(textureList);
 							delete tmpWad;
-							map->getBspRender()->reloadTextures();
+							map->getBspRender()->reuploadTextures();
 						}
 					}
 				}
@@ -1485,7 +1489,7 @@ void Gui::drawMenuBar()
 		{
 			app->reloadMaps();
 		}
-		if (ImGui::MenuItem("Validate"))
+		if (ImGui::MenuItem("Validate", 0, false, !app->isLoading))
 		{
 			if (map)
 			{
@@ -1494,7 +1498,7 @@ void Gui::drawMenuBar()
 			}
 		}
 		ImGui::Separator();
-		if (ImGui::MenuItem("Settings", NULL))
+		if (ImGui::MenuItem("Settings", 0, false, !app->isLoading))
 		{
 			if (!showSettingsWidget)
 			{
@@ -1791,7 +1795,7 @@ void Gui::drawMenuBar()
 						}
 					}
 				}
-				map->getBspRender()->reloadTextures();
+				map->getBspRender()->reuploadTextures();
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
@@ -1833,7 +1837,7 @@ void Gui::drawMenuBar()
 
 			Entity* newEnt = new Entity();
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-			newEnt->addKeyvalue("classname", "trigger_once");
+			newEnt->addKeyvalue("classname", "func_illusionary");
 
 			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
 			if (snapSize < 16)
@@ -1846,12 +1850,16 @@ void Gui::drawMenuBar()
 			delete newEnt;
 			rend->pushUndoCommand(command);
 
-			for (int i = 0; i < map->models[newEnt->getBspModelIdx()].nFaces; i++)
+			newEnt = map->ents[map->ents.size() - 1];
+			if (newEnt && newEnt->getBspModelIdx() >= 0)
 			{
-				map->faces[map->models[newEnt->getBspModelIdx()].iFirstFace + i].nStyles[0] = 0;
+				BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
+				for (int i = 0; i < model.nFaces; i++)
+				{
+					map->faces[model.iFirstFace + i].nStyles[0] = 0;
+				}
 			}
 		}
-
 
 		if (ImGui::MenuItem("BSP Trigger Model", 0, false, !app->isLoading && map))
 		{
@@ -1861,7 +1869,7 @@ void Gui::drawMenuBar()
 
 			Entity* newEnt = new Entity();
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-			newEnt->addKeyvalue("classname", "func_illusionary");
+			newEnt->addKeyvalue("classname", "trigger_once");
 
 			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
 
@@ -1878,8 +1886,9 @@ void Gui::drawMenuBar()
 			newEnt = map->ents[map->ents.size() - 1];
 			if (newEnt && newEnt->getBspModelIdx() >= 0)
 			{
-				map->models[newEnt->getBspModelIdx()].iFirstFace = 0;
-				map->models[newEnt->getBspModelIdx()].nFaces = 0;
+				BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
+				model.iFirstFace = 0;
+				model.nFaces = 0;
 			}
 		}
 
@@ -1904,9 +1913,14 @@ void Gui::drawMenuBar()
 			delete newEnt;
 			rend->pushUndoCommand(command);
 
-			for (int i = 0; i < map->models[newEnt->getBspModelIdx()].nFaces; i++)
+			newEnt = map->ents[map->ents.size() - 1];
+			if (newEnt && newEnt->getBspModelIdx() >= 0)
 			{
-				map->faces[map->models[newEnt->getBspModelIdx()].iFirstFace + i].nStyles[0] = 0;
+				BSPMODEL& model = map->models[newEnt->getBspModelIdx()];
+				for (int i = 0; i < model.nFaces; i++)
+				{
+					map->faces[model.iFirstFace + i].nStyles[0] = 0;
+				}
 			}
 		}
 		ImGui::EndMenu();
@@ -2234,12 +2248,18 @@ void Gui::drawStatusMessage()
 
 void Gui::drawDebugWidget()
 {
+	static std::map<std::string, std::set<std::string>> mapTexsUsage{};
+	static double lastupdate = 0.0;
+
 	ImGui::SetNextWindowBgAlpha(0.75f);
 
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight * 1.0f));
 
 	Bsp* map = app->getSelectedMap();
+	BspRenderer* renderer = map ? map->getBspRender() : NULL;
 	int entIdx = app->pickInfo.GetSelectedEnt();
+
+	bool oldShowDebugWidget = showDebugWidget;
 
 	if (ImGui::Begin("Debug info", &showDebugWidget))
 	{
@@ -2420,9 +2440,9 @@ void Gui::drawDebugWidget()
 				}
 			}
 
-			if (map->getBspRender()->mapTexsUsage.size())
+			if (mapTexsUsage.size())
 			{
-				for (auto& tmpWad : map->getBspRender()->mapTexsUsage)
+				for (auto& tmpWad : mapTexsUsage)
 				{
 					if (tmpWad.first == "internal")
 						InternalTextures += (int)tmpWad.second.size();
@@ -2433,10 +2453,10 @@ void Gui::drawDebugWidget()
 
 			ImGui::Text("Total textures used in map %d", map->textureCount);
 			ImGui::Text("Used %d internal textures of %d", InternalTextures, TotalInternalTextures);
-			ImGui::Text("Used %d wad files", TotalInternalTextures > 0 ? (int)map->getBspRender()->mapTexsUsage.size() - 1 : (int)map->getBspRender()->mapTexsUsage.size());
+			ImGui::Text("Used %d wad files", TotalInternalTextures > 0 ? (int)mapTexsUsage.size() - 1 : (int)mapTexsUsage.size());
 			ImGui::Text("Used %d wad textures", WadTextures);
 
-			for (auto& tmpWad : map->getBspRender()->mapTexsUsage)
+			for (auto& tmpWad : mapTexsUsage)
 			{
 				if (ImGui::CollapsingHeader((tmpWad.first + "##debug").c_str(), ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Bullet
 					| ImGuiTreeNodeFlags_::ImGuiTreeNodeFlags_Framed))
@@ -2480,6 +2500,56 @@ void Gui::drawDebugWidget()
 
 		}
 	}
+
+	if (
+		((app->curTime - lastupdate > 5.0 && showDebugWidget) || (oldShowDebugWidget && !showDebugWidget))
+		&& map && renderer)
+	{
+		lastupdate = app->curTime;
+		mapTexsUsage.clear();
+
+		for (int i = 0; i < map->faceCount; i++)
+		{
+			BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
+			int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+			if (texOffset != -1 && texinfo.iMiptex != -1)
+			{
+				BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+
+				if (tex.szName[0] != '\0')
+				{
+					if (tex.nOffsets[0] <= 0)
+					{
+						bool fondTex = false;
+						for (auto& s : renderer->wads)
+						{
+							if (s->hasTexture(tex.szName))
+							{
+								if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
+									mapTexsUsage[basename(s->filename)].insert(tex.szName);
+
+								fondTex = true;
+							}
+						}
+						if (!fondTex)
+						{
+							if (!mapTexsUsage["notfound"].count(tex.szName))
+								mapTexsUsage["notfound"].insert(tex.szName);
+						}
+					}
+					else
+					{
+						if (!mapTexsUsage["internal"].count(tex.szName))
+							mapTexsUsage["internal"].insert(tex.szName);
+					}
+				}
+			}
+		}
+
+		if (mapTexsUsage.size())
+			logf("Debug: Used %d wad files(include map file)\n", (int)mapTexsUsage.size());
+	}
+
 	ImGui::End();
 }
 
@@ -4404,19 +4474,19 @@ void Gui::drawSettings()
 				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 			}
 		}
-		app->reloading = true;
-		app->reloadingGameDir = true;
-		app->loadFgds();
-		app->postLoadFgds();
-		app->reloadingGameDir = false;
-		app->reloading = false;
-		app->updateEnts();
-		for (int i = 0; i < app->mapRenderers.size(); i++)
-		{
-			BspRenderer* mapRender = app->mapRenderers[i];
-			mapRender->reload();
-		}
 		g_settings.save();
+		if (!app->reloading)
+		{
+			app->reloading = true;
+			app->loadFgds();
+			app->postLoadFgds();
+			for (int i = 0; i < app->mapRenderers.size(); i++)
+			{
+				BspRenderer* mapRender = app->mapRenderers[i];
+				mapRender->reload();
+			}
+			app->reloading = false;
+		}
 	}
 }
 
@@ -6594,7 +6664,7 @@ void Gui::drawTextureTool()
 							validTexture = true;
 							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
-							mapRenderer->ReuploadTextures();
+							mapRenderer->reuploadTextures();
 
 							delete[] imageData;
 							delete wadTex;
