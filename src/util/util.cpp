@@ -24,6 +24,7 @@
 #include <unistd.h>
 #define GetCurrentDir getcwd
 #endif
+#include <set>
 
 bool DebugKeyPressed = false;
 unsigned int g_frame_counter = 0;
@@ -265,7 +266,7 @@ bool isNumeric(const std::string& s)
 std::string toLowerCase(std::string s)
 {
 	std::transform(s.begin(), s.end(), s.begin(),
-					[](unsigned char c){ return (unsigned char)std::tolower(c); }
+				   [](unsigned char c){ return (unsigned char)std::tolower(c); }
 	);
 	return s;
 }
@@ -1515,4 +1516,68 @@ vec3 AxisFromTextureAngle(float angle, bool x, int type)
 size_t strlen(std::string str)
 {
 	return str.size() ? strlen(str.c_str()) : 0;
+}
+
+int ColorDistance(COLOR3 color, COLOR3 other)
+{
+	int dist_b = abs(other.b - color.b);
+	int dist_g = abs(other.g - color.g);
+	int dist_r = abs(other.r - color.r);
+	return dist_b + dist_g + dist_r;
+}
+
+void SimpeColorReduce(COLOR3* image, int size, int& oldcolors, int newcolornumber)
+{
+	std::vector<COLOR3> colorset;
+	for (int i = 0; i < size; i++)
+	{
+		if (std::find(colorset.begin(),colorset.end(),image[i]) == colorset.end())
+			colorset.push_back(image[i]);
+	}
+	oldcolors = (int)colorset.size();
+
+	if (newcolornumber < 2)
+	{
+		return;
+	}
+
+	int reduce_dist = 1;
+
+	while (colorset.size() > newcolornumber)
+	{
+		for (size_t x = 0; x < colorset.size(); x++)
+		{
+			for (size_t y = 0; x < colorset.size() && y < colorset.size(); y++)
+			{
+				if (x != y)
+				{
+					if ((colorset[x].b == colorset[y].b && colorset[x].g == colorset[y].g && abs(colorset[x].r - colorset[y].r) <= reduce_dist)
+						|| (colorset[x].r == colorset[y].r && colorset[x].g == colorset[y].g && abs(colorset[x].b - colorset[y].b) <= reduce_dist)
+						|| (colorset[x].b == colorset[y].b && colorset[x].r == colorset[y].r && abs(colorset[x].g - colorset[y].g) <= reduce_dist)
+						|| ColorDistance(colorset[x], colorset[y]) < reduce_dist)
+					{
+						for (int i = 0; i < size; i++)
+						{
+							if (image[i] == colorset[x])
+								image[i] = colorset[y];
+						}
+						colorset.erase(colorset.begin() + x);
+
+						while (x >= colorset.size())
+						{
+							x--;
+						}
+
+						while (y >= colorset.size())
+						{
+							y--;
+						}
+					}
+					if (colorset.size() <= newcolornumber)
+						return;
+				}
+			}
+		}
+		reduce_dist += 1;
+	}
 }

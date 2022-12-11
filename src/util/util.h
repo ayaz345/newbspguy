@@ -174,3 +174,7 @@ float AngleFromTextureAxis(vec3 axis, bool x, int type);
 vec3 AxisFromTextureAngle(float angle, bool x, int type);
 
 size_t strlen(std::string str);
+
+
+int ColorDistance(COLOR3 color, COLOR3 other);
+void SimpeColorReduce(COLOR3* image, int size, int& oldcolors, int newcolornumber);

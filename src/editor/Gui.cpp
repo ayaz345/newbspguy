@@ -1397,9 +1397,15 @@ void Gui::drawMenuBar()
 									unsigned char* image_bytes;
 									unsigned int w2, h2;
 									auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, dir_entry.path().string().c_str());
-
+									int colorsOld;
 									if (error == 0 && image_bytes)
 									{
+										SimpeColorReduce((COLOR3*)image_bytes, w2 * h2, colorsOld, 0);
+										if (colorsOld > 256)
+										{
+											logf("Reduce color of image from %d to %d\n", colorsOld, 256);
+											SimpeColorReduce((COLOR3*)image_bytes, w2* h2, colorsOld, 256);
+										}
 										Wad* tmpWad = new Wad(wad->filename);
 										if (tmpWad->readInfo(true))
 										{
@@ -1416,10 +1422,10 @@ void Gui::drawMenuBar()
 									}
 								}
 							}
+							map->getBspRender()->reloadTextures();
 						}
 					}
 				}
-
 				ImGui::EndMenu();
 			}
 
@@ -1659,7 +1665,7 @@ void Gui::drawMenuBar()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::BeginMenu("Fixes", map))
+		if (ImGui::BeginMenu("Fixes", !app->isLoading && map))
 		{
 			if (ImGui::MenuItem("Bad surface extents"))
 			{

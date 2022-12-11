@@ -345,6 +345,7 @@ struct COLOR3
 	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b)
 	{}
 };
+
 struct COLOR4
 {
 	unsigned char r, g, b, a;
