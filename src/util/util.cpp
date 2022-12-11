@@ -1526,58 +1526,52 @@ int ColorDistance(COLOR3 color, COLOR3 other)
 	return dist_b + dist_g + dist_r;
 }
 
-void SimpeColorReduce(COLOR3* image, int size, int& oldcolors, int newcolornumber)
+bool Is256Colors(COLOR3* image, int size)
 {
-	std::vector<COLOR3> colorset;
-	for (int i = 0; i < size; i++)
+	int colorCount = 0;
+	COLOR3 palette[256];
+	memset(&palette, 0, sizeof(COLOR3) * 256);
+	for (int y = 0; y < size / 2; y++)
 	{
-		if (std::find(colorset.begin(),colorset.end(),image[i]) == colorset.end())
-			colorset.push_back(image[i]);
-	}
-	oldcolors = (int)colorset.size();
-
-	if (newcolornumber < 2)
-	{
-		return;
-	}
-
-	int reduce_dist = 1;
-
-	while (colorset.size() > newcolornumber)
-	{
-		for (size_t x = 0; x < colorset.size(); x++)
+		int paletteIdx = -1;
+		for (int k = 0; k < colorCount; k++)
 		{
-			for (size_t y = 0; x < colorset.size() && y < colorset.size(); y++)
+			if (image[y] == palette[k])
 			{
-				if (x != y)
-				{
-					if ((colorset[x].b == colorset[y].b && colorset[x].g == colorset[y].g && abs(colorset[x].r - colorset[y].r) <= reduce_dist)
-						|| (colorset[x].r == colorset[y].r && colorset[x].g == colorset[y].g && abs(colorset[x].b - colorset[y].b) <= reduce_dist)
-						|| (colorset[x].b == colorset[y].b && colorset[x].r == colorset[y].r && abs(colorset[x].g - colorset[y].g) <= reduce_dist)
-						|| ColorDistance(colorset[x], colorset[y]) < reduce_dist)
-					{
-						for (int i = 0; i < size; i++)
-						{
-							if (image[i] == colorset[x])
-								image[i] = colorset[y];
-						}
-						colorset.erase(colorset.begin() + x);
-
-						while (x >= colorset.size())
-						{
-							x--;
-						}
-
-						while (y >= colorset.size())
-						{
-							y--;
-						}
-					}
-					if (colorset.size() <= newcolornumber)
-						return;
-				}
+				paletteIdx = k;
+				break;
 			}
 		}
-		reduce_dist += 1;
+		if (paletteIdx == -1)
+		{
+			if (colorCount >= 256)
+			{
+				return false;
+			}
+			palette[colorCount] = image[y];
+			paletteIdx = colorCount;
+			colorCount++;
+		}
+	}
+	return true;
+}
+
+void SimpeColorReduce(COLOR3* image, int size)
+{
+	std::vector<COLOR3> colorset;
+	for (int i = 255; i > 0; i--)
+	{
+		colorset.push_back(COLOR3(i, i, i));
+	}
+
+	for (int i = 0; i < size; i++)
+	{
+		for (auto& color : colorset)
+		{
+			if (ColorDistance(image[i], color) <= 3)
+			{
+				image[i] = color;
+			}
+		}
 	}
 }
