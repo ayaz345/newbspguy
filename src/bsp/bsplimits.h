@@ -11,6 +11,7 @@
 #define MAX_MAP_FACES 65535 // (unsgined short) This ought to be 32768, otherwise faces(in world) can become invisible. --vluzacn
 #define MAX_KEYS_PER_ENT 128
 #define MAXLIGHTMAPS 4
+#define MAX_LIGHTSTYLES		256	// a byte limit, don't modify
 
 extern float FLT_MAX_COORD;
 
@@ -29,5 +30,7 @@ extern unsigned int MAX_TEXTURE_SIZE;
 
 extern unsigned int MAX_KEY_LEN; // not sure if this includes the null char
 extern unsigned int MAX_VAL_LEN; // not sure if this includes the null char
+
+extern unsigned int TEXTURE_STEP;
 
 extern void ResetBspLimits(); // reset all limits to default values

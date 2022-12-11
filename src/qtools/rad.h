@@ -8,8 +8,6 @@
 #define MAX_SURFACE_EXTENT  64
 // max pixels in a single lightmap
 #define MAX_LUXELS 1600
-// this constant was previously defined in lightmap.cpp. --vluzacn
-#define TEXTURE_STEP        16
 // sky or slime or null, no lightmap or 256 subdivision
 #define TEX_SPECIAL     1
 
@@ -26,6 +24,7 @@
 //
 // Vector Math
 //
+
 #define DotProduct(x,y) ( (x)[0] * (y)[0] + (x)[1] * (y)[1]  +  (x)[2] * (y)[2])
 #define CrossProduct(a, b, dest) \
 { \
@@ -121,6 +120,6 @@ const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE* const face);
 
 void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2]);
 int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum);
-void GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2]);
-void CalcFaceExtents(Bsp* bsp, lightinfo_t* l);
+bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2]);
+bool CalcFaceExtents(Bsp* bsp, lightinfo_t* l);
 void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags);

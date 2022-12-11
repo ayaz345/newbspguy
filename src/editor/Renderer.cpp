@@ -430,6 +430,10 @@ void AppSettings::load()
 				MAX_TEXTURE_DIMENSION = atoi(val.c_str());
 				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 			}
+			else if (key == "TEXTURE_STEP")
+			{
+				TEXTURE_STEP = atoi(val.c_str());
+			}
 			else if (key == "optimizer_cond_ents")
 			{
 				conditionalPointEntTriggers.push_back(val);
@@ -646,6 +650,7 @@ void AppSettings::save(std::string path)
 	file << "MAX_MAP_TEXTURES=" << MAX_MAP_TEXTURES << std::endl;
 	file << "MAX_MAP_LIGHTDATA=" << MAX_MAP_LIGHTDATA / (1024 * 1024) << std::endl;
 	file << "MAX_TEXTURE_DIMENSION=" << MAX_TEXTURE_DIMENSION << std::endl;
+	file << "TEXTURE_STEP=" << TEXTURE_STEP << std::endl;
 
 	file.flush();
 
@@ -2106,14 +2111,26 @@ void Renderer::pickObject()
 		ungrabEnt();
 	}
 
-	if (!isTransformableSolid)
+	if (pickMode == PICK_FACE)
 	{
-		if (transformMode == TRANSFORM_SCALE)
-			transformMode = TRANSFORM_MOVE;
-		transformTarget = TRANSFORM_OBJECT;
-	}
+		gui->showLightmapEditorUpdate = true;
 
-	if (pickMode == PICK_OBJECT)
+		if (!anyCtrlPressed)
+		{
+			for (auto idx : pickInfo.selectedFaces)
+			{
+				map->getBspRender()->highlightFace(idx, false);
+			}
+			pickInfo.selectedFaces.clear();
+		}
+
+		if (tmpPickInfo.selectedFaces.size() > 0)
+		{
+			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], true);
+			pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
+		}
+	}
+	else /*if (pickMode == PICK_OBJECT)*/
 	{
 		for (auto idx : pickInfo.selectedFaces)
 		{
@@ -2129,46 +2146,21 @@ void Renderer::pickObject()
 		tmpPickInfo.selectedFaces.clear();
 
 		updateModelVerts();
-	}
-	else if (pickMode == PICK_FACE)
-	{
-		gui->showLightmapEditorUpdate = true;
 
-		if (!anyCtrlPressed)
+		if (pointEntWasSelected)
 		{
-			for (auto idx : pickInfo.selectedFaces)
+			for (int i = 0; i < mapRenderers.size(); i++)
 			{
-				map->getBspRender()->highlightFace(idx, false);
+				mapRenderers[i]->refreshPointEnt(entIdx);
 			}
-
-			if (tmpPickInfo.selectedFaces.size() == 1)
-			{
-				map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], false);
-			}
-			pickInfo.selectedFaces.clear();
 		}
 
-		if (tmpPickInfo.selectedFaces.size() == 1)
-		{
-			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], true);
-			pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
-		}
+		pickClickHeld = true;
+
+		updateEntConnections();
+
+		selectEnt(SelectedMap, tmpPickInfo.GetSelectedEnt(), anyCtrlPressed && canControl);
 	}
-
-	if (pointEntWasSelected)
-	{
-		for (int i = 0; i < mapRenderers.size(); i++)
-		{
-			mapRenderers[i]->refreshPointEnt(entIdx);
-		}
-	}
-
-	pickClickHeld = true;
-
-	updateEntConnections();
-
-
-	selectEnt(SelectedMap, tmpPickInfo.GetSelectedEnt(), anyCtrlPressed && canControl);
 }
 
 bool Renderer::transformAxisControls()
@@ -3996,6 +3988,27 @@ void Renderer::deselectObject()
 	updateEntConnections();
 }
 
+void Renderer::selectFace(Bsp * map, int face, bool add)
+{
+	if (!map)
+		return;
+
+	if (!add)
+	{
+		for (auto faceIdx : pickInfo.selectedFaces)
+		{
+			map->getBspRender()->highlightFace(faceIdx, false);
+		}
+		pickInfo.selectedFaces.clear();
+	}
+
+	if (face < map->faceCount && face >= 0)
+	{
+		map->getBspRender()->highlightFace(face, true);
+		pickInfo.selectedFaces.push_back(face);
+	}
+}
+
 void Renderer::deselectFaces()
 {
 	Bsp* map = SelectedMap;
@@ -4014,6 +4027,9 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 {
 	if (!map)
 		return;
+
+	pickMode = PICK_OBJECT;
+	pickInfo.selectedFaces.clear();
 
 	Entity* ent = NULL;
 	if (entIdx >= 0)

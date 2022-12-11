@@ -4,6 +4,7 @@
 #include "bsplimits.h"
 #include <vector>
 
+#pragma pack(push, 1)
 #define BSP_MODEL_BYTES 64 // size of a BSP model in bytes
 
 #define LUMP_ENTITIES      0
@@ -254,7 +255,7 @@ struct ScalableTexinfo
 	int planeIdx;
 	int faceIdx;
 };
-
+#pragma pack(pop)
 struct TransformVert
 {
 	vec3 pos;
@@ -264,7 +265,7 @@ struct TransformVert
 	vec3 undoPos; // for undoing invalid solid stuff
 	bool selected;
 };
-
+#pragma pack(push, 1)
 struct HullEdge
 {
 	int verts[2]; // index into modelVerts/hullVerts
@@ -286,14 +287,14 @@ struct Solid
 	std::vector<TransformVert> hullVerts; // control points for hull 0
 	std::vector<HullEdge> hullEdges; // for vertex manipulation (holds indexes into hullVerts)
 };
-
+#pragma pack(pop)
 // used to construct bounding volumes for solid leaves
 struct NodeVolumeCuts
 {
 	int nodeIdx;
 	std::vector<BSPPLANE> cuts; // cuts which define the leaf boundaries when applied to a bounding box, in order.
 };
-
+#pragma pack(push, 1)
 // Rendering constants
 enum RenderMode : int
 {
@@ -331,3 +332,27 @@ enum RenderFx : int
 	kRenderFxClampMinScale,		// Keep this sprite from getting very small (SPRITES only!)
 	kRenderFxLightMultiplier    //CTM !!!CZERO added to tell the studiorender that the value in iuser2 is a lightmultiplier
 };
+
+#define MAXTEXELS 262144
+
+#define CLAMP(v, min, max) if (v < min) { v = min; } else if (v > max) { v = max; }
+
+struct COLOR3
+{
+	unsigned char r, g, b;
+
+	COLOR3() : r(0), g(0), b(0){};
+	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b)
+	{}
+};
+struct COLOR4
+{
+	unsigned char r, g, b, a;
+	COLOR4() : r(0), g(0), b(0), a(0){};
+	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a)
+	{}
+	COLOR4(COLOR3 c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
+	{}
+};
+
+#pragma pack(pop)

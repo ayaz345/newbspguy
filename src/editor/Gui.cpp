@@ -290,14 +290,15 @@ void Gui::pasteLightmap()
 		logf("No face selected\n");
 		return;
 	}
+	int faceIdx = app->pickInfo.selectedFaces[0];
 
 	int size[2];
-	GetFaceLightmapSize(map, app->pickInfo.selectedFaces[0], size);
+	GetFaceLightmapSize(map, faceIdx, size);
 
 	LIGHTMAP dstLightmap = LIGHTMAP();
 	dstLightmap.width = size[0];
 	dstLightmap.height = size[1];
-	dstLightmap.layers = map->lightmap_count(app->pickInfo.selectedFaces[0]);
+	dstLightmap.layers = map->lightmap_count(faceIdx);
 
 	if (dstLightmap.width != copiedLightmap.width || dstLightmap.height != copiedLightmap.height)
 	{
@@ -310,7 +311,7 @@ void Gui::pasteLightmap()
 	}
 
 	BSPFACE& src = map->faces[copiedLightmapFace];
-	BSPFACE& dst = map->faces[app->pickInfo.selectedFaces[0]];
+	BSPFACE& dst = map->faces[faceIdx];
 	dst.nLightmapOffset = src.nLightmapOffset;
 	memcpy(dst.nStyles, src.nStyles, 4);
 
@@ -498,11 +499,11 @@ void ExportModel(Bsp* map, int id, int ExportType)
 			markid += tmpLeaf.nMarkSurfaces;
 		}
 	}*/
-	
+
 	//tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
 	while (tmpMap->models[0].nVisLeafs >= tmpMap->leafCount)
 		tmpMap->create_leaf(CONTENTS_EMPTY);
-		
+
 
 	tmpMap->move(-modelOrigin, 0, true, true);
 
@@ -1520,6 +1521,113 @@ void Gui::drawMenuBar()
 			ImGui::EndMenu();
 		}
 
+		if (ImGui::BeginMenu("Fixes", map))
+		{
+			if (ImGui::MenuItem("Bad surface extents"))
+			{
+				for (int i = 0; i < map->faceCount; i++)
+				{
+					BSPFACE& face = map->faces[i];
+					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
+					if (info.nFlags & TEX_SPECIAL)
+					{
+						continue;
+					}
+					int bmins[2];
+					int bmaxs[2];
+					if (!GetFaceExtents(map, i, bmins, bmaxs))
+					{
+						info.nFlags += TEX_SPECIAL;
+					}
+				}
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Mark all bad surfaces as 'TEX_SPECIAL'");
+				ImGui::EndTooltip();
+			}
+			if (ImGui::MenuItem("Swapped leaf mins/maxs"))
+			{
+				for (int i = 0; i < map->leafCount; i++)
+				{
+					for (int n = 0; n < 3; n++)
+					{
+						if (map->leaves[i].nMins[n] > map->leaves[i].nMaxs[n])
+						{
+							logf("Leaf %i: swap mins/maxs\n", i);
+							std::swap(map->leaves[i].nMins[n], map->leaves[i].nMaxs[n]);
+						}
+					}
+				}
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Swap all bad mins/maxs in leaves LUMP.");
+				ImGui::EndTooltip();
+			}
+			if (ImGui::MenuItem("Swapped models mins/maxs"))
+			{
+				for (int i = 0; i < map->modelCount; i++)
+				{
+					for (int n = 0; n < 3; n++)
+					{
+						if (map->models[i].nMins[n] > map->models[i].nMaxs[n])
+						{
+							logf("Model %i: swap mins/maxs\n", i);
+							std::swap(map->models[i].nMins[n], map->models[i].nMaxs[n]);
+						}
+					}
+				}
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Swap all bad mins/maxs in models.");
+				ImGui::EndTooltip();
+			}
+			if (ImGui::MenuItem("Missing textures"))
+			{
+				for (int i = 0; i < map->faceCount; i++)
+				{
+					BSPFACE& face = map->faces[i];
+					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
+					int texOffset = ((int*)map->textures)[info.iMiptex + 1];
+					if (info.iMiptex != -1 && texOffset != -1)
+					{
+						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+						if (tex.nOffsets[0] <= 0)
+						{
+							bool textureFoundInWad = false;
+							for (auto& s : map->getBspRender()->wads)
+							{
+								if (s->hasTexture(tex.szName))
+								{
+									textureFoundInWad = true;
+									break;
+								}
+							}
+							if (!textureFoundInWad)
+							{
+								COLOR3* imageData = new COLOR3[128 * 128]{COLOR3(255,255,255)};
+								map->add_texture(tex.szName, (unsigned char*)imageData, 128, 128);
+							}
+						}
+					}
+				}
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Replace all missing textures to white 128x128.");
+				ImGui::EndTooltip();
+			}
+
+
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMenu();
 	}
 
@@ -1539,6 +1647,29 @@ void Gui::drawMenuBar()
 			createCommand->execute();
 			rend->pushUndoCommand(createCommand);
 		}
+
+		if (ImGui::MenuItem("BSP Passable Model", 0, false, !app->isLoading && map))
+		{
+			vec3 origin = cameraOrigin + app->cameraForward * 100;
+			if (app->gridSnappingEnabled)
+				origin = app->snapToGrid(origin);
+
+			Entity* newEnt = new Entity();
+			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
+			newEnt->addKeyvalue("classname", "func_illusionary");
+
+			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
+			if (snapSize < 16)
+			{
+				snapSize = 16;
+			}
+
+			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
+			command->execute();
+			delete newEnt;
+			rend->pushUndoCommand(command);
+		}
+
 
 		if (ImGui::MenuItem("BSP Trigger Model", 0, false, !app->isLoading && map))
 		{
@@ -1560,6 +1691,12 @@ void Gui::drawMenuBar()
 			command->execute();
 			delete newEnt;
 			rend->pushUndoCommand(command);
+
+			newEnt = map->ents[map->ents.size() - 1];
+			if (newEnt && newEnt->getBspModelIdx() >= 0)
+			{
+				map->delete_hull(0, newEnt->getBspModelIdx(), 0);
+			}
 		}
 
 		if (ImGui::MenuItem("BSP Solid Model", 0, false, !app->isLoading && map))
@@ -2872,7 +3009,9 @@ void Gui::drawGOTOWidget()
 	static vec3 coordinates = vec3();
 	static vec3 angles = vec3();
 	float angles_y = 0.0f;
-	if (ImGui::Begin("Go to coordinates:", &showGOTOWidget, 0))
+	static int modelid = -1, faceid = -1, entid = -1;
+
+	if (ImGui::Begin("GO TO MENU", &showGOTOWidget, 0))
 	{
 		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
@@ -2910,7 +3049,68 @@ void Gui::drawGOTOWidget()
 			makeVectors(angles, app->cameraForward, app->cameraRight, app->cameraUp);
 		}
 		ImGui::PopStyleColor(3);
+		Bsp* map = app->getSelectedMap();
+		if (map)
+		{
+			ImGui::Separator();
+			ImGui::PushItemWidth(inputWidth);
+			ImGui::DragInt("Model id:", &modelid);
+			ImGui::DragInt("Face id:", &faceid);
+			ImGui::DragInt("Entity id:", &entid);
+			ImGui::PopItemWidth();
+			if (ImGui::Button("Go to##2"))
+			{
+				if (modelid > 0 && modelid < map->modelCount)
+				{
+					for (size_t i = 0; i < map->ents.size(); i++)
+					{
+						if (map->ents[i]->getBspModelIdx() == modelid)
+						{
+							app->selectEnt(map, entid);
+							app->goToEnt(map, entid);
+							break;
+						}
+					}
+				}
+				else if (faceid > 0 && faceid < map->faceCount)
+				{
+					if (map->faces[faceid].iFirstEdge)
+					{
+						int edgeIdx = map->surfedges[map->faces[faceid].iFirstEdge];
+						BSPEDGE& edge = map->edges[abs(edgeIdx)];
+						int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+						vec3& vert = map->verts[vertIdx];
+						app->goToCoords(vert.x, vert.y, vert.z);
+					}
 
+					int modelIdx = map->get_model_from_face(faceid);
+					if (modelIdx >= 0)
+					{
+						for (size_t i = 0; i < map->ents.size(); i++)
+						{
+							if (map->ents[i]->getBspModelIdx() == modelid)
+							{
+								app->pickInfo.SetSelectedEnt((int)i);
+								break;
+							}
+						}
+					}
+					app->selectFace(map, faceid);
+				}
+				else if (entid > 0 && entid < map->ents.size())
+				{
+					app->selectEnt(map, entid);
+					app->goToEnt(map, entid);
+				}
+
+				if (modelid != -1 && entid != -1 ||
+					modelid != -1 && faceid != -1 ||
+					entid != -1 && faceid != -1)
+				{
+					modelid = entid = faceid = -1;
+				}
+			}
+		}
 	}
 
 	ImGui::End();
@@ -2942,8 +3142,6 @@ void Gui::drawTransformWidget()
 	static int lastPickCount = -1;
 	static int lastVertPickCount = -1;
 	static bool oldSnappingEnabled = app->gridSnappingEnabled;
-	static int oldTransformTarget = -1;
-
 
 	if (ImGui::Begin("Transformation", &showTransformWidget, 0))
 	{
@@ -2961,8 +3159,7 @@ void Gui::drawTransformWidget()
 					app->draggingAxis != -1 ||
 					app->movingEnt ||
 					oldSnappingEnabled != app->gridSnappingEnabled ||
-					lastVertPickCount != app->vertPickCount ||
-					oldTransformTarget != app->transformTarget;
+					lastVertPickCount != app->vertPickCount;
 			}
 
 			if (shouldUpdateUi)
@@ -3005,7 +3202,6 @@ void Gui::drawTransformWidget()
 				shouldUpdateUi = false;
 			}
 
-			oldTransformTarget = app->transformTarget;
 			oldSnappingEnabled = app->gridSnappingEnabled;
 			lastVertPickCount = app->vertPickCount;
 			lastPickCount = app->pickCount;
@@ -3137,16 +3333,9 @@ void Gui::drawTransformWidget()
 			ImGui::RadioButton("Origin", &app->transformTarget, TRANSFORM_ORIGIN); ImGui::NextColumn();
 
 			ImGui::Text("3D Axes: "); ImGui::NextColumn();
-			if (ImGui::RadioButton("Hide", &app->transformMode, TRANSFORM_NONE))
-				app->showDragAxes = false;
-
-			ImGui::NextColumn();
-			if (ImGui::RadioButton("Move", &app->transformMode, TRANSFORM_MOVE))
-				app->showDragAxes = true;
-
-			ImGui::NextColumn();
-			if (ImGui::RadioButton("Scale", &app->transformMode, TRANSFORM_SCALE))
-				app->showDragAxes = true;
+			ImGui::RadioButton("Hide", &app->transformMode, TRANSFORM_NONE); ImGui::NextColumn();
+			ImGui::RadioButton("Move", &app->transformMode, TRANSFORM_MOVE); ImGui::NextColumn();
+			ImGui::RadioButton("Scale", &app->transformMode, TRANSFORM_SCALE); ImGui::NextColumn();
 
 			ImGui::Columns(1);
 
@@ -3867,6 +4056,7 @@ void Gui::drawSettings()
 				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 			}
 
+			ImGui::DragInt("TEXTURE_STEP", (int*)&TEXTURE_STEP, 4, 4, 512, "%u");
 		}
 		else if (settingsTab == 5)
 		{
@@ -5864,6 +6054,7 @@ void Gui::drawTextureTool()
 		static std::vector<vec3> edgeVerts;
 		static ImTextureID textureId = NULL; // OpenGL ID
 		static char textureName[MAXTEXTURENAME];
+		static char textureName2[MAXTEXTURENAME];
 		static int lastPickCount = -1;
 		static bool validTexture = true;
 		static bool scaledX = false;
@@ -5875,6 +6066,8 @@ void Gui::drawTextureTool()
 		static bool updatedTexVec = false;
 		static bool updatedFaceVec = false;
 
+		static int tmpStyles[4] = {255,255,255,255};
+		static bool stylesChanged = false;
 
 		Bsp* map = app->getSelectedMap();
 		if (!map || app->pickMode != PICK_FACE || app->pickInfo.selectedFaces.empty())
@@ -5936,6 +6129,11 @@ void Gui::drawTextureTool()
 					textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId(faceIdx);
 					validTexture = true;
 
+					for (int i = 0; i < MAXLIGHTMAPS; i++)
+					{
+						tmpStyles[i] = face.nStyles[i];
+					}
+
 					// show default values if not all faces share the same values
 					for (int i = 1; i < app->pickInfo.selectedFaces.size(); i++)
 					{
@@ -5969,7 +6167,6 @@ void Gui::drawTextureTool()
 						vec3 v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
 						edgeVerts.push_back(v);
 					}
-
 				}
 			}
 			else
@@ -6081,6 +6278,15 @@ void Gui::drawTextureTool()
 
 		if (app->pickInfo.selectedFaces.size() == 1)
 		{
+			ImGui::Separator();
+			ImGui::Text("Face Styles");
+			if (ImGui::DragInt("# 1:", &tmpStyles[0], 1, 0, 255)) stylesChanged = true;
+			ImGui::SameLine();
+			if (ImGui::DragInt("# 2:", &tmpStyles[1], 1, 0, 255)) stylesChanged = true;
+			if (ImGui::DragInt("# 3:", &tmpStyles[2], 1, 0, 255)) stylesChanged = true;
+			ImGui::SameLine();
+			if (ImGui::DragInt("# 4:", &tmpStyles[3], 1, 0, 255)) stylesChanged = true;
+			ImGui::Separator();
 			ImGui::Text("Expert settings");
 			ImGui::SameLine();
 			ImGui::TextDisabled("[VERTS] (WIP)");
@@ -6144,13 +6350,15 @@ void Gui::drawTextureTool()
 
 		if (ImGui::InputText("##texname", textureName, MAXTEXTURENAME))
 		{
-			logf("chacha\n");
-			textureChanged = true;
+			if (memcmp(textureName, textureName2, MAXTEXTURENAME) != 0)
+			{
+				textureChanged = true;
+			}
+			memcpy(textureName2, textureName, MAXTEXTURENAME);
 		}
 
 		if (refreshSelectedFaces)
 		{
-			logf("chacha2\n");
 			textureChanged = true;
 			refreshSelectedFaces = false;
 			int texOffset = ((int*)map->textures)[copiedMiptex + 1];
@@ -6172,7 +6380,7 @@ void Gui::drawTextureTool()
 		ImGui::SameLine();
 		ImGui::Text("%.0fx%.0f", width, height);
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_::ImGuiMouseButton_Left) &&
-			(updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || textureChanged || refreshSelectedFaces || toggledFlags || updatedTexVec))
+			(updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || textureChanged || stylesChanged || refreshSelectedFaces || toggledFlags || updatedTexVec))
 		{
 			unsigned int newMiptex = 0;
 			app->pickCount++;
@@ -6195,7 +6403,6 @@ void Gui::drawTextureTool()
 						}
 					}
 				}
-
 				if (!validTexture)
 				{
 					for (auto& s : mapRenderer->wads)
@@ -6217,7 +6424,8 @@ void Gui::drawTextureTool()
 								imageData[k] = palette[src[k]];
 							}
 
-							map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+							validTexture = true;
+							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
 							mapRenderer->ReuploadTextures();
 
@@ -6235,7 +6443,10 @@ void Gui::drawTextureTool()
 			for (int i = 0; i < app->pickInfo.selectedFaces.size(); i++)
 			{
 				int faceIdx = app->pickInfo.selectedFaces[i];
+				if (faceIdx < 0)
+					continue;
 
+				BSPFACE& face = map->faces[faceIdx];
 				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
 
 				if (shiftedX)
@@ -6255,6 +6466,14 @@ void Gui::drawTextureTool()
 					texinfo->vT = texinfo->vT.normalize(1.0f / scaleY);
 				}
 
+				if (stylesChanged)
+				{
+					for (int n = 0; n < MAXLIGHTMAPS; n++)
+					{
+						face.nStyles[n] = tmpStyles[n];
+					}
+				}
+
 				if (scaledX)
 				{
 					texinfo->vS = texinfo->vS.normalize(1.0f / scaleX);
@@ -6269,7 +6488,7 @@ void Gui::drawTextureTool()
 					texinfo->nFlags = isSpecial ? TEX_SPECIAL : 0;
 				}
 
-				if ((textureChanged || toggledFlags || updatedFaceVec) && validTexture)
+				if ((textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && validTexture)
 				{
 					int modelIdx = map->get_model_from_face(faceIdx);
 					if (textureChanged)
@@ -6294,7 +6513,7 @@ void Gui::drawTextureTool()
 				}
 			}
 
-			if ((textureChanged || toggledFlags || updatedFaceVec) && app->pickInfo.selectedFaces.size() && app->pickInfo.selectedFaces[0] >= 0)
+			if ((textureChanged || toggledFlags || updatedFaceVec || stylesChanged) && app->pickInfo.selectedFaces.size() && app->pickInfo.selectedFaces[0] >= 0)
 			{
 				textureId = (void*)(uint64_t)mapRenderer->getFaceTextureId(app->pickInfo.selectedFaces[0]);
 				for (auto it = modelRefreshes.begin(); it != modelRefreshes.end(); it++)
@@ -6309,7 +6528,7 @@ void Gui::drawTextureTool()
 
 			checkFaceErrors();
 			updatedFaceVec = scaledX = scaledY = shiftedX = shiftedY =
-				textureChanged = toggledFlags = updatedTexVec = false;
+				textureChanged = toggledFlags = updatedTexVec = stylesChanged = false;
 
 			map->getBspRender()->pushModelUndoState("Edit Face", EDIT_MODEL_LUMPS);
 

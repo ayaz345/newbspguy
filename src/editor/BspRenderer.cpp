@@ -408,6 +408,7 @@ void BspRenderer::loadLightmaps()
 					if (offset + src * sizeof(COLOR3) < map->lightDataLength)
 					{
 						lightDst[dst] = lightSrc[src];
+						//lightDst[dst] = getLightMapRGB(lightSrc[src], face.nStyles[s]);
 					}
 					else
 					{
@@ -2246,12 +2247,34 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int targetLumps)
 {
-	if (!map || g_app->pickInfo.GetSelectedEnt() < 0)
+	if (!map)
 	{
-		logf("Impossible, no map, ent or model idx\n");
+		logf("Impossible, no map\n");
 		return;
 	}
+
 	int entIdx = g_app->pickInfo.GetSelectedEnt();
+	if (entIdx < 0)
+	{
+		if (g_app->pickInfo.selectedFaces.size())
+		{
+			int modelIdx = map->get_model_from_face(g_app->pickInfo.selectedFaces[0]);
+
+			if (modelIdx > 0 && modelIdx < map->modelCount)
+			{
+				for (size_t i = 0; i < map->ents.size(); i++)
+				{
+					if (map->ents[i]->getBspModelIdx() == modelIdx)
+					{
+						entIdx = (int)i;
+						break;
+					}
+				}
+			}
+		}
+	}
+	if (entIdx < 0)
+		entIdx = 0;
 
 	LumpState newLumps = map->duplicate_lumps(targetLumps);
 

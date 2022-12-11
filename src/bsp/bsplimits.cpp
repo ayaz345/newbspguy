@@ -19,6 +19,9 @@ unsigned int MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION 
 unsigned int MAX_KEY_LEN = 256; // not sure if this includes the null char
 unsigned int MAX_VAL_LEN = 4096; // not sure if this includes the null char
 
+// this constant was previously defined in lightmap.cpp. --vluzacn
+unsigned int TEXTURE_STEP = 16;  // BSP 31 has 8
+
 void ResetBspLimits()
 {
 	FLT_MAX_COORD = 32767.f;
@@ -38,4 +41,6 @@ void ResetBspLimits()
 
 	MAX_KEY_LEN = 256;
 	MAX_VAL_LEN = 4096;
+
+	TEXTURE_STEP = 16;
 }

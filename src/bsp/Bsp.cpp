@@ -1495,10 +1495,13 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 		if (!usedTextures[i])
 		{
 			int offset = ((int*)textures)[i + 1];
-			if (offset != -1)
+			if (offset < 0)
+			{
+				removeSize += sizeof(int);
+			}
+			else
 			{
 				BSPMIPTEX* tex = (BSPMIPTEX*)(textures + offset);
-
 				// don't delete single frames from animated textures or else game crashes
 				if (tex->szName[0] == '-' || tex->szName[0] == '+')
 				{
@@ -1506,22 +1509,15 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 					// TODO: delete all frames if none are used
 					continue;
 				}
-
-				if (offset == -1)
-				{
-					removeSize += sizeof(int);
-				}
-				else
-				{
-					removeSize += getBspTextureSize(tex) + sizeof(int);
-				}
-				removeCount++;
+				removeSize += getBspTextureSize(tex) + sizeof(int);
 			}
+			removeCount++;
 		}
 	}
 
 	int newTexCount = oldTexCount - removeCount;
 	unsigned char* newTexData = new unsigned char[bsp_header.lump[LUMP_TEXTURES].nLength - removeSize];
+	memset(newTexData, 0, bsp_header.lump[LUMP_TEXTURES].nLength - removeSize);
 
 	int* texHeader = (int*)newTexData;
 	texHeader[0] = newTexCount;
@@ -1534,9 +1530,9 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 			continue;
 		}
 		int oldOffset = ((int*)textures)[i + 1];
-		if (oldOffset == -1)
+		if (oldOffset < 0)
 		{
-			texHeader[k + 1] = -1;
+			texHeader[k + 1] = oldOffset;
 		}
 		else
 		{
@@ -1613,14 +1609,14 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 
 	int tmpLumpVisMemSize = bsp_header.lump[LUMP_VISIBILITY].nLength;
 
-	int oldVisRowSize = ((oldVisLeafCount + 63) & ~63) >> 3;
-	int newVisRowSize = ((newVisLeafCount + 63) & ~63) >> 3;
+	int oldVisRowSize = ((oldVisLeafCount + 63 + 1) & ~63) >> 3;
+	int newVisRowSize = ((newVisLeafCount + 63 + 1) & ~63) >> 3;
 
-	int decompressedVisSize = oldLeafCount * oldVisRowSize;
+	int decompressedVisSize = (oldLeafCount + 1) * oldVisRowSize;
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
 	memset(decompressedVis, 0, decompressedVisSize);
 	decompress_vis_lump(oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
-						oldWorldLeaves, oldVisLeafCount, oldVisLeafCount, oldLeavesMemSize, tmpLumpVisMemSize);
+						oldWorldLeaves, oldVisLeafCount + 1, newVisLeafCount + 1, oldLeavesMemSize, tmpLumpVisMemSize);
 
 	if (oldVisRowSize != newVisRowSize)
 	{
@@ -2888,22 +2884,10 @@ bool Bsp::validate()
 			models[i].nMins.y > models[i].nMaxs.y ||
 			models[i].nMins.z > models[i].nMaxs.z)
 		{
-			std::swap(models[i].nMins, models[i].nMaxs);
-			if (models[i].nMins.x > models[i].nMaxs.x ||
-				models[i].nMins.y > models[i].nMaxs.y ||
-				models[i].nMins.z > models[i].nMaxs.z)
-			{
-				logf("Backwards mins/maxs in model %d. Mins: (%f, %f, %f) Maxs: (%f %f %f)\n", i,
-					 models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
-					 models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
-				isValid = false;
-			}
-			else
-			{
-				logf("SWAPPED mins/maxs in model %d. Mins: (%f, %f, %f) Maxs: (%f %f %f)\n", i,
-					 models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
-					 models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
-			}
+			logf("Backwards mins/maxs in model %d. Mins: (%f, %f, %f) Maxs: (%f %f %f)\n", i,
+				 models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
+				 models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
+			isValid = false;
 		}
 	}
 	if (totalVisLeaves != leafCount)
@@ -2911,7 +2895,8 @@ bool Bsp::validate()
 		logf("Bad model vis leaf sum: %d / %d\n", totalVisLeaves, leafCount);
 		isValid = false;
 	}
-	if (totalFaces != faceCount)
+
+	if (totalFaces > faceCount)
 	{
 		logf("Bad model face sum: %d / %d\n", totalFaces, faceCount);
 		isValid = false;
@@ -3571,14 +3556,7 @@ int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool s
 
 
 	create_node_box(mins, maxs, &newModel, textureIdx);
-	create_clipnode_box(mins, maxs, &newModel);
-
-	if (!solid)
-	{
-		delete_hull(1, newModelIdx, 0);
-		delete_hull(2, newModelIdx, 0);
-		delete_hull(3, newModelIdx, 0);
-	}
+	create_clipnode_box(mins, maxs, &newModel, 0, false, solid);
 
 	//remove_unused_model_structures(); // will also resize VIS data for new leaf count
 
@@ -4316,7 +4294,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 	}
 }
 
-int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull, bool skipEmpty)
+int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull, bool skipEmpty, bool solid)
 {
 	std::vector<BSPPLANE> addPlanes;
 	std::vector<BSPCLIPNODE> addNodes;
@@ -4353,9 +4331,9 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 			BSPCLIPNODE node = BSPCLIPNODE();
 			node.iPlane = (int)planeIdx++;
 
-			int insideContents = k == 5 ? CONTENTS_SOLID : (int)(clipnodeIdx + 1);
+			int insideContents = k == 5 ? (solid ? CONTENTS_SOLID : CONTENTS_EMPTY) : (int)(clipnodeIdx + 1);
 
-			if (insideContents == CONTENTS_SOLID)
+			if (insideContents == (solid ? CONTENTS_SOLID : k == 5 ? CONTENTS_EMPTY : CONTENTS_SOLID))
 				solidNodeIdx = (int)clipnodeIdx;
 
 			clipnodeIdx++;

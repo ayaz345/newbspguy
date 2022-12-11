@@ -174,8 +174,7 @@ public:
 	void create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx);
 	void create_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
-	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false);
-
+	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool solid = false);
 	// copies a model from the sourceMap into this one
 	void add_model(Bsp* sourceMap, int modelIdx);
 

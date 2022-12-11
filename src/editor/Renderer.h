@@ -360,6 +360,7 @@ private:
 	vec3 getEdgeControlPoint(std::vector<TransformVert>& hullVerts, HullEdge& edge);
 	vec3 getCentroid(std::vector<TransformVert>& hullVerts);
 	void deselectObject(); // keep map selected but unselect all objects
+	void selectFace(Bsp* map, int face, bool add = false);
 	void deselectFaces();
 	void selectEnt(Bsp* map, int entIdx, bool add = false);
 	void goToEnt(Bsp* map, int entIdx);

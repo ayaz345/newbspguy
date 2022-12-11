@@ -263,18 +263,8 @@ void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2])
 	size[0] = (maxs[0] - mins[0]);
 	size[1] = (maxs[1] - mins[1]);
 
-	/*bool badSurfaceExtents = false;
-	if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
-	{
-		//logf("Bad surface extents (%d x %d)\n", size[0], size[1]);
-		size[0] = std::min(size[0], MAX_SURFACE_EXTENT);
-		size[1] = std::min(size[1], MAX_SURFACE_EXTENT);
-		badSurfaceExtents = true;
-	}
-	*/
 	size[0] += 1;
 	size[1] += 1;
-
 	//return !badSurfaceExtents;
 }
 
@@ -292,20 +282,73 @@ int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum)
 	return size[0] * size[1] * lightmapCount * sizeof(COLOR3);
 }
 
-void GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
-{
-	//CorrectFPUPrecision();
 
+bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
+{
+	float mins[2], maxs[2], val;
+
+	mins[0] = mins[1] = 999999.0f;
+	maxs[0] = maxs[1] = -999999.0f;
+
+	BSPFACE & face = bsp->faces[facenum];
+
+	BSPTEXTUREINFO tex = bsp->texinfos[face.iTextureInfo];
+
+	for (int i = 0; i < face.nEdges; i++)
+	{
+		vec3 v = vec3();
+		int e = bsp->surfedges[face.iFirstEdge + i];
+		if (e >= 0)
+		{
+			v = bsp->verts[bsp->edges[e].iVertex[0]];
+		}
+		else
+		{
+			v = bsp->verts[bsp->edges[-e].iVertex[1]];
+		}
+		for (int j = 0; j < 2; j++)
+		{
+			float* axis = j == 0 ? (float*)&tex.vS : (float*)&tex.vT;
+			val = CalculatePointVecsProduct((vec_t*)&v, axis);
+
+			if (val < mins[j])
+			{
+				mins[j] = val;
+			}
+			if (val > maxs[j])
+			{
+				maxs[j] = val;
+			}
+		}
+	}
+
+	for (int i = 0; i < 2; i++)
+	{
+		mins_out[i] = floor(mins[i] / TEXTURE_STEP);
+		maxs_out[i] = ceil(maxs[i] / TEXTURE_STEP);;
+
+
+		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * TEXTURE_STEP > 4096)
+		{
+			logf("Bad surface extents %d ( %d > 4096 )\n", facenum, (int)((maxs_out[i] - mins_out[i]) * TEXTURE_STEP));
+			return false;
+		}
+	}
+	return true;
+}
+
+bool GetFaceExtentsX(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
+{
 	BSPFACE* f;
-	float mins[2]{}, maxs[2]{}, val;
+	float mins[2], maxs[2], val;
 	int i, j, e;
 	vec3* v;
 	BSPTEXTUREINFO* tex;
 
 	f = &bsp->faces[facenum];
 
-	mins[0] = mins[1] = FLT_MAX_COORD;
-	maxs[0] = maxs[1] = -FLT_MAX_COORD;
+	mins[0] = mins[1] = 999999.0f;
+	maxs[0] = maxs[1] = -999999.0f;
 
 	tex = &bsp->texinfos[f->iTextureInfo];
 
@@ -349,74 +392,28 @@ void GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 		mins_out[i] = (int)floor(mins[i] / TEXTURE_STEP);
 		maxs_out[i] = (int)ceil(maxs[i] / TEXTURE_STEP);
 	}
+	return true;
 }
 
-void CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
+bool CalcFaceExtents(Bsp* bsp, lightinfo_t* l)
 {
-	BSPFACE* s;
-	float           mins[2]{}, maxs[2]{}, val; //vec_t           mins[2], maxs[2], val; //vluzacn
-	int             i, j, e;
-	vec3* v;
-	BSPTEXTUREINFO* tex;
-
-	s = l->face;
-
-	mins[0] = mins[1] = FLT_MAX_COORD;
-	maxs[0] = maxs[1] = -FLT_MAX_COORD;
-
-	tex = &bsp->texinfos[s->iTextureInfo];
-
-	for (i = 0; i < s->nEdges; i++)
-	{
-		e = bsp->surfedges[s->iFirstEdge + i];
-		if (e >= 0)
-		{
-			v = bsp->verts + bsp->edges[e].iVertex[0];
-		}
-		else
-		{
-			v = bsp->verts + bsp->edges[-e].iVertex[1];
-		}
-
-		for (j = 0; j < 2; j++)
-		{
-			vec3& axis = j == 0 ? tex->vS : tex->vT;
-			float shift = j == 0 ? tex->shiftS : tex->shiftT;
-
-			val = v->x * axis.x + v->y * axis.y + v->z * axis.z + shift;
-			if (val < mins[j])
-			{
-				mins[j] = val;
-			}
-			if (val > maxs[j])
-			{
-				maxs[j] = val;
-			}
-		}
-	}
-
 	int bmins[2];
 	int bmaxs[2];
-	GetFaceExtents(bsp, l->surfnum, bmins, bmaxs);
-	for (i = 0; i < 2; i++)
+	if (!GetFaceExtents(bsp, l->surfnum, bmins, bmaxs))
 	{
-		mins[i] = bmins[i] * 1.0f;
-		maxs[i] = bmaxs[i] * 1.0f;
+		for (int i = 0; i < 2; i++)
+		{
+			l->texmins[i] = 0;
+			l->texsize[i] = 0;
+		}
+		return false;
+	}
+	for (int i = 0; i < 2; i++)
+	{
 		l->texmins[i] = bmins[i];
 		l->texsize[i] = bmaxs[i] - bmins[i];
 	}
-
-	if (!(tex->nFlags & TEX_SPECIAL))
-	{
-		if ((l->texsize[0] > MAX_SURFACE_EXTENT) || (l->texsize[1] > MAX_SURFACE_EXTENT)
-			|| l->texsize[0] < 0 || l->texsize[1] < 0 //--vluzacn
-			)
-		{
-			//logf("Bad surface extents (%d x %d)\n", l->texsize[0], l->texsize[1]);
-			l->texsize[0] = std::min(l->texsize[0], MAX_SURFACE_EXTENT);
-			l->texsize[1] = std::min(l->texsize[1], MAX_SURFACE_EXTENT);
-		}
-	}
+	return true;
 }
 
 void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)

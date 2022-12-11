@@ -10,7 +10,7 @@
 #include <GLFW/glfw3.h>
 #include <future>
 
-#define LIGHTMAP_ATLAS_SIZE 1024
+#define LIGHTMAP_ATLAS_SIZE 512
 
 class Command;
 
