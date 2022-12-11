@@ -1404,18 +1404,14 @@ void Gui::drawMenuBar()
 										if ((oldcolors = GetImageColors((COLOR3*)image_bytes,w2*h2)) > 256)
 										{
 											logf("Reduce color of image from %d to %d\n", oldcolors, 256);
-
 											Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 											tmpCQuantizer->ProcessImage((COLOR3*)image_bytes, w2 * h2);
 											unsigned char* pal = new unsigned char[256 * sizeof(COLOR3)];
 											tmpCQuantizer->SetColorTable((COLOR3*)pal);
-											unsigned char* image_bytes2 = new unsigned char[w2 * h2 * sizeof(COLOR3)];
 											tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2,(COLOR3*)pal);
-
-											delete[] image_bytes2;
-
 											delete tmpCQuantizer;
 										}
+
 										Wad* tmpWad = new Wad(wad->filename);
 										if (tmpWad->readInfo(true))
 										{

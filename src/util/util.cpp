@@ -1541,6 +1541,8 @@ int GetImageColors(COLOR3* image, int size)
 		}
 		if (paletteIdx == -1)
 		{
+			if (colorCount >= 1000)
+				colorCount = 1000; // Just for speed reason
 			palette[colorCount] = image[y];
 			paletteIdx = colorCount;
 			colorCount++;
