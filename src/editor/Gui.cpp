@@ -1870,7 +1870,7 @@ void Gui::drawMenuBar()
 				snapSize = 16;
 			}
 
-			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
+			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
 			command->execute();
 			delete newEnt;
 			rend->pushUndoCommand(command);
@@ -1878,13 +1878,8 @@ void Gui::drawMenuBar()
 			newEnt = map->ents[map->ents.size() - 1];
 			if (newEnt && newEnt->getBspModelIdx() >= 0)
 			{
-				for (int i = 0; i < map->models[newEnt->getBspModelIdx()].nFaces; i++)
-				{
-					for (int n = 0; n < MAX_LIGHTSTYLES; n++)
-					{
-						map->faces[map->models[newEnt->getBspModelIdx()].iFirstFace + i].nStyles[n] = 255;
-					}
-				}
+				map->models[newEnt->getBspModelIdx()].iFirstFace = 0;
+				map->models[newEnt->getBspModelIdx()].nFaces = 0;
 			}
 		}
 
