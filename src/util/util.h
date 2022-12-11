@@ -51,6 +51,7 @@ extern bool g_verbose;
 extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;
 extern std::mutex g_log_mutex;
+extern std::mutex g_log_mutex2;
 
 extern int g_render_flags;
 

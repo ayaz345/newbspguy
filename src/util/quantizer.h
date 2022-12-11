@@ -30,7 +30,7 @@ protected:
 	unsigned int m_nMaxColors;
 	unsigned int m_nOutputMaxColors;
 	unsigned int m_nColorBits;
-	unsigned char m_lastIndex;
+	unsigned int m_lastIndex;
 	
 public:
 	Quantizer( unsigned int nMaxColors, unsigned int nColorBits );
@@ -40,8 +40,8 @@ public:
 	void ApplyColorTable(COLOR3* image, unsigned int size, COLOR3* pal);
 	unsigned int GetColorCount( );
 	void SetColorTable( COLOR3 * prgb );
-	unsigned char GetNearestIndex(COLOR3 c, COLOR3* pal );
-	unsigned char GetNearestIndexFast(COLOR3 c, COLOR3* pal );
+	unsigned int GetNearestIndex(COLOR3 c, COLOR3* pal );
+	unsigned int GetNearestIndexFast(COLOR3 c, COLOR3* pal );
 
 protected:
 	unsigned int GetLeafCount( Node* pTree );
@@ -50,7 +50,7 @@ protected:
 	void ReduceTree( unsigned int nColorBits, unsigned int* pLeafCount, Node** pReducibleNodes );
 	void DeleteTree( Node** ppNode );
 	void GetPaletteColors( Node* pTree, COLOR3* prgb, unsigned int* pIndex, unsigned int* pSum );
-	unsigned char GetNextBestLeaf( Node** pTree, unsigned int nLevel, COLOR3 c, COLOR3* pal );
+	unsigned int GetNextBestLeaf( Node** pTree, unsigned int nLevel, COLOR3 c, COLOR3* pal );
 	bool ColorsAreEqual(COLOR3 a, COLOR3 b);
 };
 

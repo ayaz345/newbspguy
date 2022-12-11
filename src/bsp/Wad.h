@@ -76,15 +76,15 @@ public:
 	bool hasTexture(int dirIndex);
 	bool hasTexture(const std::string& name);
 
-	bool write(const std::string& filename, WADTEX** textures, size_t numTex);
+	bool write(const std::string& filename, std::vector<WADTEX*> textures);
 	bool write(WADTEX** textures, size_t numTex);
-
-	void add_texture(const char* texname, COLOR3* data, int width, int height);
+	bool write(std::vector<WADTEX*> textures);
 
 	WADTEX* readTexture(int dirIndex);
 	WADTEX* readTexture(const std::string& texname);
 };
 
+WADTEX* create_wadtex(const char* name, COLOR3* data, int width, int height);
 COLOR3* ConvertWadTexToRGB(WADTEX* wadTex);
 
 #pragma pack(pop)

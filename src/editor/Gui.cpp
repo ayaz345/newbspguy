@@ -27,6 +27,8 @@
 
 #include "quantizer.h"
 
+#include <execution>
+
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
 
@@ -903,7 +905,7 @@ bool ExportWad(Bsp* map)
 		if (!tmpWadTex.empty())
 		{
 			createDir(GetWorkDir());
-			tmpWad->write(GetWorkDir() + map->bsp_name + ".wad", &tmpWadTex[0], tmpWadTex.size());
+			tmpWad->write(GetWorkDir() + map->bsp_name + ".wad", tmpWadTex);
 		}
 		else
 		{
@@ -1273,8 +1275,8 @@ void Gui::drawMenuBar()
 					{
 						logf("Preparing to export %s.\n", basename(wad->filename).c_str());
 						createDir(GetWorkDir());
-						createDir(GetWorkDir() + "/wads");
-						createDir(GetWorkDir() + "/wads/" + basename(wad->filename));
+						createDir(GetWorkDir() + "wads");
+						createDir(GetWorkDir() + "wads/" + basename(wad->filename));
 
 						for (int i = 0; i < (int)wad->dirEntries.size(); i++)
 						{
@@ -1284,7 +1286,7 @@ void Gui::drawMenuBar()
 								logf("Exporting %s from %s to working directory.\n", texture->szName, basename(wad->filename).c_str());
 								COLOR3* texturedata = ConvertWadTexToRGB(texture);
 
-								lodepng_encode24_file((GetWorkDir() + "/wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
+								lodepng_encode24_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
 													  , (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
 								delete texturedata;
 							}
@@ -1379,9 +1381,9 @@ void Gui::drawMenuBar()
 					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 					{
 						logf("Preparing to import %s.\n", basename(wad->filename).c_str());
-						if (!dirExists(GetWorkDir() + "/wads/" + basename(wad->filename)))
+						if (!dirExists(GetWorkDir() + "wads/" + basename(wad->filename)))
 						{
-							logf("Error. No files in %s directory.\n", (GetWorkDir() + "/wads/" + basename(wad->filename)).c_str());
+							logf("Error. No files in %s directory.\n", (GetWorkDir() + "wads/" + basename(wad->filename)).c_str());
 						}
 						else
 						{
@@ -1391,43 +1393,53 @@ void Gui::drawMenuBar()
 							resetWad->write(NULL, 0);
 							delete resetWad;
 
-							for (auto const& dir_entry : std::filesystem::directory_iterator(GetWorkDir() + "/wads/" + basename(wad->filename)))
+							Wad* tmpWad = new Wad(wad->filename);
+
+							std::vector<WADTEX*> textureList{};
+							fs::path tmpPath = GetWorkDir() + "wads/" + basename(wad->filename);
+
+							std::vector<std::string> files{};
+
+							for (auto& dir_entry : std::filesystem::directory_iterator(tmpPath))
 							{
 								if (!dir_entry.is_directory() && toLowerCase(dir_entry.path().string()).ends_with(".png"))
 								{
-									unsigned char* image_bytes;
-									unsigned int w2, h2;
-									auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, dir_entry.path().string().c_str());
-									if (error == 0 && image_bytes)
-									{
-										int oldcolors = 0;
-										if ((oldcolors = GetImageColors((COLOR3*)image_bytes,w2*h2)) > 256)
-										{
-											logf("Reduce color of image from %d to %d\n", oldcolors, 256);
-											Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-											tmpCQuantizer->ProcessImage((COLOR3*)image_bytes, w2 * h2);
-											unsigned char* pal = new unsigned char[256 * sizeof(COLOR3)];
-											tmpCQuantizer->SetColorTable((COLOR3*)pal);
-											tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2,(COLOR3*)pal);
-											delete tmpCQuantizer;
-										}
-
-										Wad* tmpWad = new Wad(wad->filename);
-										if (tmpWad->readInfo(true))
-										{
-											std::string tmpTexName = stripExt(basename(dir_entry.path().string()));
-											tmpWad->add_texture(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-											free(image_bytes);
-											delete tmpWad;
-										}
-										else
-										{
-											logf("File %s is corrupted.\n", wad->filename.c_str());
-											break;
-										}
-									}
+									files.emplace_back(dir_entry.path().string());
 								}
 							}
+
+							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto& file)
+							{
+								logf("Importing %s from workdir %s wad.\n", basename(file).c_str(), basename(wad->filename).c_str());
+								unsigned char* image_bytes;
+								unsigned int w2, h2;
+								auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, file.c_str());
+								if (error == 0 && image_bytes)
+								{
+									int oldcolors = 0;
+									if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
+									{
+										logf("Reduce color of image from %d to %d\n", oldcolors, 256);
+										Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+										tmpCQuantizer->ProcessImage((COLOR3*)image_bytes, w2 * h2);
+										unsigned char* pal = new unsigned char[256 * sizeof(COLOR3)];
+										tmpCQuantizer->SetColorTable((COLOR3*)pal);
+										tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2, (COLOR3*)pal);
+										delete tmpCQuantizer;
+									}
+									std::string tmpTexName = stripExt(basename(file));
+
+									WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
+									g_log_mutex2.lock();
+									textureList.push_back(tmpWadTex);
+									g_log_mutex2.unlock();
+									free(image_bytes);
+								}
+							});
+							logf("Success load all textures\n");
+
+							tmpWad->write(textureList);
+							delete tmpWad;
 							map->getBspRender()->reloadTextures();
 						}
 					}
@@ -1833,6 +1845,11 @@ void Gui::drawMenuBar()
 			command->execute();
 			delete newEnt;
 			rend->pushUndoCommand(command);
+
+			for (int i = 0; i < map->models[newEnt->getBspModelIdx()].nFaces; i++)
+			{
+				map->faces[map->models[newEnt->getBspModelIdx()].iFirstFace + i].nStyles[0] = 0;
+			}
 		}
 
 
@@ -1847,6 +1864,7 @@ void Gui::drawMenuBar()
 			newEnt->addKeyvalue("classname", "func_illusionary");
 
 			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
+
 			if (snapSize < 16)
 			{
 				snapSize = 16;
@@ -1860,7 +1878,13 @@ void Gui::drawMenuBar()
 			newEnt = map->ents[map->ents.size() - 1];
 			if (newEnt && newEnt->getBspModelIdx() >= 0)
 			{
-				map->delete_hull(0, newEnt->getBspModelIdx(), 0);
+				for (int i = 0; i < map->models[newEnt->getBspModelIdx()].nFaces; i++)
+				{
+					for (int n = 0; n < MAX_LIGHTSTYLES; n++)
+					{
+						map->faces[map->models[newEnt->getBspModelIdx()].iFirstFace + i].nStyles[n] = 255;
+					}
+				}
 			}
 		}
 
@@ -1884,6 +1908,11 @@ void Gui::drawMenuBar()
 			command->execute();
 			delete newEnt;
 			rend->pushUndoCommand(command);
+
+			for (int i = 0; i < map->models[newEnt->getBspModelIdx()].nFaces; i++)
+			{
+				map->faces[map->models[newEnt->getBspModelIdx()].iFirstFace + i].nStyles[0] = 0;
+			}
 		}
 		ImGui::EndMenu();
 	}
@@ -3683,7 +3712,6 @@ void Gui::loadFonts()
 
 void Gui::drawLog()
 {
-
 	ImGui::SetNextWindowSize(ImVec2(750.f, 300.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 	if (!ImGui::Begin("Log", &showLogWidget))

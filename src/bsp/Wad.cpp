@@ -203,10 +203,16 @@ WADTEX* Wad::readTexture(const std::string& texname)
 
 bool Wad::write(WADTEX** textures, size_t numTex)
 {
-	return write(filename, textures, numTex);
+	std::vector<WADTEX*> textList = std::vector<WADTEX*>(&textures[0], &textures[numTex]);
+	return write(filename, textList);
 }
 
-bool Wad::write(const std::string& _filename, WADTEX** textures, size_t numTex)
+bool Wad::write(std::vector<WADTEX*> textures)
+{
+	return write(filename, textures);
+}
+
+bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 {
 	this->filename = _filename;
 
@@ -216,10 +222,10 @@ bool Wad::write(const std::string& _filename, WADTEX** textures, size_t numTex)
 	header.szMagic[1] = 'A';
 	header.szMagic[2] = 'D';
 	header.szMagic[3] = '3';
-	header.nDir = (int)numTex;
+	header.nDir = (int)textures.size();
 
-	size_t tSize = sizeof(BSPMIPTEX) * numTex;
-	for (size_t i = 0; i < numTex; i++)
+	size_t tSize = sizeof(BSPMIPTEX) * textures.size();
+	for (size_t i = 0; i < textures.size(); i++)
 	{
 		int w = textures[i]->nWidth;
 		int h = textures[i]->nHeight;
@@ -236,7 +242,7 @@ bool Wad::write(const std::string& _filename, WADTEX** textures, size_t numTex)
 		header.nDirOffset = (int)(sizeof(WADHEADER) + tSize);
 		myFile.write((char*)&header, sizeof(WADHEADER));
 
-		for (int i = 0; i < numTex; i++)
+		for (size_t i = 0; i < textures.size(); i++)
 		{
 			BSPMIPTEX miptex;
 			for (int k = 0; k < MAXTEXTURENAME; k++)
@@ -261,7 +267,7 @@ bool Wad::write(const std::string& _filename, WADTEX** textures, size_t numTex)
 		}
 
 		int offset = sizeof(WADHEADER);
-		for (int i = 0; i < numTex; i++)
+		for (size_t i = 0; i < textures.size(); i++)
 		{
 			WADDIRENTRY entry;
 			entry.nFilePos = offset;
@@ -295,13 +301,13 @@ bool Wad::write(const std::string& _filename, WADTEX** textures, size_t numTex)
 	return true;
 }
 
-void Wad::add_texture(const char* name, COLOR3* data, int width, int height)
+WADTEX * create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 {
 	COLOR3 palette[256];
 	memset(&palette, 0, sizeof(COLOR3) * 256);
 	unsigned char* mip[MIPLEVELS] = {NULL};
 
-	COLOR3* src = data;
+	COLOR3* src = rgbdata;
 	int colorCount = 0;
 
 	// create pallete and full-rez mipmap
@@ -326,7 +332,7 @@ void Wad::add_texture(const char* name, COLOR3* data, int width, int height)
 				{
 					logf("Too many colors\n");
 					delete[] mip[0];
-					return;
+					return NULL;
 				}
 				palette[colorCount] = *src;
 				paletteIdx = colorCount;
@@ -338,7 +344,7 @@ void Wad::add_texture(const char* name, COLOR3* data, int width, int height)
 		}
 	}
 
-	int texDataSize = width * height + sizeof(COLOR3) * 256;
+	int texDataSize = width * height + sizeof(COLOR3) * 256 + 4;
 
 	// generate mipmaps
 	for (int i = 1; i < MIPLEVELS; i++)
@@ -349,7 +355,7 @@ void Wad::add_texture(const char* name, COLOR3* data, int width, int height)
 		texDataSize += mipWidth * height;
 		mip[i] = new unsigned char[mipWidth * mipHeight];
 
-		src = data;
+		src = rgbdata;
 		for (int y = 0; y < mipHeight; y++)
 		{
 			for (int x = 0; x < mipWidth; x++)
@@ -384,7 +390,8 @@ void Wad::add_texture(const char* name, COLOR3* data, int width, int height)
 	newMipTex->nOffsets[1] = newMipTex->nOffsets[0] + width * height;
 	newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
 	newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
-	size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
+
+	unsigned int palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
 
 	memcpy(newTexData + newMipTex->nOffsets[0], mip[0], width * height);
 	memcpy(newTexData + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
@@ -392,29 +399,9 @@ void Wad::add_texture(const char* name, COLOR3* data, int width, int height)
 	memcpy(newTexData + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 	memcpy(newTexData + palleteOffset, palette, sizeof(COLOR3) * 256);
 
-	newMipTex->data = (unsigned char*)(((unsigned char*)newMipTex) + newMipTex->nOffsets[0]);
+	newMipTex->data = (unsigned char*)(&newTexData[sizeof(BSPMIPTEX)]);
 
-	int entries = (int)dirEntries.size();
-
-	WADTEX** listofTex = new WADTEX * [entries + 1];
-	for (int i = 0; i < entries; i++)
-	{
-		listofTex[i] = readTexture(i);
-	}
-	listofTex[entries] = newMipTex;
-
-	write(listofTex, entries + 1);
-
-	for (int i = 0; i < entries; i++)
-	{
-		delete listofTex[i];
-	}
-	delete[] newTexData;
-	delete[] listofTex;
-	if (filedata)
-		delete[] filedata;
-	filedata = NULL;
-	readInfo();
+	return newMipTex;
 }
 
 COLOR3* ConvertWadTexToRGB(WADTEX* wadTex)

@@ -55,7 +55,7 @@ bool Quantizer::ProcessImage(COLOR3 * image, unsigned long size )
 {
 	for ( unsigned long i = 0; i < size; i++ )
 	{
-		COLOR3 pix = image[i];
+		COLOR3 & pix = image[i];
 		AddColor( &m_pTree, pix.r, pix.g, pix.b, m_nColorBits, 0, &m_nLeafCount, m_pReducibleNodes );
 	
 		if ( m_nLeafCount > m_nMaxColors )
@@ -70,7 +70,7 @@ void Quantizer::ApplyColorTable(COLOR3* image, unsigned int size, COLOR3* pal)
 {
 	for (unsigned int i = 0; i < size; i++)
 	{
-		image[i] = pal[GetNearestIndex(image[i], pal)];
+		image[i] = pal[GetNearestIndexFast(image[i], pal)];
 	}
 }
 void Quantizer::FloydSteinbergDither( unsigned char* image, long width, long height, unsigned char* target, COLOR3* pal )
@@ -268,11 +268,11 @@ unsigned int Quantizer::GetLeafCount( Node* pTree )
 	return 0;
 }
 
-unsigned char Quantizer::GetNextBestLeaf( Node** pTree, unsigned int nLevel, COLOR3 c, COLOR3* pal )
+unsigned int Quantizer::GetNextBestLeaf( Node** pTree, unsigned int nLevel, COLOR3 c, COLOR3* pal )
 {
 	if ( ( *pTree )->bIsLeaf )
 	{
-		return FixBounds( ( int )( *pTree )->nIndex );
+		return ( *pTree )->nIndex;
 	}
 	else
 	{
@@ -328,7 +328,7 @@ bool Quantizer::ColorsAreEqual(COLOR3 a, COLOR3 b)
 	return (a.r == b.r && a.g == b.g && a.b == b.b);
 }
 
-unsigned char Quantizer::GetNearestIndex( COLOR3 c, COLOR3* pal )
+unsigned int Quantizer::GetNearestIndex( COLOR3 c, COLOR3* pal )
 {
 	if (!pal ) return 0;
 	if ( ColorsAreEqual( c, pal[ m_lastIndex ] ) )
@@ -339,8 +339,8 @@ unsigned char Quantizer::GetNearestIndex( COLOR3 c, COLOR3* pal )
 		k = ( unsigned long )( ( pal[ i ].r - c.r )*( pal[ i ].r - c.r ) + ( pal[ i ].g - c.g )*( pal[ i ].g - c.g ) + ( pal[ i ].b - c.b )*( pal[ i ].b - c.b ) );
 		if ( k == 0 )
 		{
-			m_lastIndex = ( unsigned char )i;
-			return ( unsigned char )i;
+			m_lastIndex = i;
+			return i;
 		}
 		if ( k < distance )
 		{
@@ -348,18 +348,18 @@ unsigned char Quantizer::GetNearestIndex( COLOR3 c, COLOR3* pal )
 			cur = i;
 		}
 	}
-	m_lastIndex = ( unsigned char )cur;
+	m_lastIndex = cur;
 	return m_lastIndex;
 }
 
-unsigned char Quantizer::GetNearestIndexFast( COLOR3 c, COLOR3* pal )
+unsigned int Quantizer::GetNearestIndexFast( COLOR3 c, COLOR3* pal )
 {
 	if ( m_nOutputMaxColors<16 && m_nLeafCount>m_nOutputMaxColors )
 		return GetNearestIndex( c, pal );
 	if ( !pal ) return 0;
 	if ( ColorsAreEqual( c, pal[ m_lastIndex ] ) )
 		return m_lastIndex;
-	m_lastIndex = ( unsigned char )GetNextBestLeaf( &m_pTree, 0, c, pal );
+	m_lastIndex = GetNextBestLeaf( &m_pTree, 0, c, pal );
 	return m_lastIndex;
 }
 

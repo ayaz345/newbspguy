@@ -34,6 +34,7 @@ ProgressMeter g_progress;
 int g_render_flags;
 std::vector<std::string> g_log_buffer;
 std::mutex g_log_mutex;
+std::mutex g_log_mutex2;
 
 static char log_line[4096];
 
@@ -1541,8 +1542,8 @@ int GetImageColors(COLOR3* image, int size)
 		}
 		if (paletteIdx == -1)
 		{
-			if (colorCount >= 1000)
-				colorCount = 1000; // Just for speed reason
+			if (colorCount >= 300)
+				colorCount = 300; // Just for speed reason
 			palette[colorCount] = image[y];
 			paletteIdx = colorCount;
 			colorCount++;
