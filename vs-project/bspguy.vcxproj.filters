@@ -124,6 +124,9 @@
     <ClCompile Include=".\..\src\filedialog\ImFileDialog.cpp">
       <Filter>Source Files\filedialog</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\util\quantizer.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -227,6 +230,9 @@
     </ClInclude>
     <ClInclude Include=".\..\src\filedialog\ImFileDialog.h">
       <Filter>Header Files\filedialog</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\util\quantizer.h">
+      <Filter>Header Files\util</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -1520,17 +1520,14 @@ size_t strlen(std::string str)
 
 int ColorDistance(COLOR3 color, COLOR3 other)
 {
-	int dist_b = abs(other.b - color.b);
-	int dist_g = abs(other.g - color.g);
-	int dist_r = abs(other.r - color.r);
-	return dist_b + dist_g + dist_r;
+	return std::hypot(std::hypot(color.r - other.r, color.b - other.b), color.g - other.g);
 }
 
-bool Is256Colors(COLOR3* image, int size)
+int GetImageColors(COLOR3* image, int size)
 {
 	int colorCount = 0;
-	COLOR3 palette[256];
-	memset(&palette, 0, sizeof(COLOR3) * 256);
+	COLOR3* palette = new COLOR3[size];
+	memset(palette, 0, size * sizeof(COLOR3));
 	for (int y = 0; y < size / 2; y++)
 	{
 		int paletteIdx = -1;
@@ -1544,20 +1541,18 @@ bool Is256Colors(COLOR3* image, int size)
 		}
 		if (paletteIdx == -1)
 		{
-			if (colorCount >= 256)
-			{
-				return false;
-			}
 			palette[colorCount] = image[y];
 			paletteIdx = colorCount;
 			colorCount++;
 		}
 	}
-	return true;
+	delete[]palette;
+	return colorCount;
 }
 
 void SimpeColorReduce(COLOR3* image, int size)
 {
+	// Fast change count of grayscale
 	std::vector<COLOR3> colorset;
 	for (int i = 255; i > 0; i--)
 	{
@@ -1574,4 +1569,6 @@ void SimpeColorReduce(COLOR3* image, int size)
 			}
 		}
 	}
+
+	//
 }

@@ -61,8 +61,13 @@ set(SOURCE_FILES
 	imgui/backends/imgui_impl_glfw.cpp
 	imgui/backends/imgui_impl_opengl3.cpp
 	imgui/misc/cpp/imgui_stdlib.cpp
+	
+	# utils
 	src/util/lodepng.h
 	src/util/lodepng.cpp
+	src/util/quantizer.h
+	src/util/quantizer.cpp
+	
 
 	# OPENFILEDIALOG
 	src/filedialog/stb_image.h
@@ -182,6 +187,7 @@ if(MSVC)
 												src/util/vectors.cpp
 												src/util/mat4x4.cpp)
 
+	source_group("Header Files\\util\\lib" FILES	src/util/quantizer.h)
 	source_group("Header Files\\util\\lib" FILES	src/util/lodepng.h)
 
 	source_group("Source Files\\util\\lib" FILES	imgui/imgui.cpp
@@ -191,7 +197,8 @@ if(MSVC)
 													imgui/backends/imgui_impl_glfw.cpp
 													imgui/backends/imgui_impl_opengl3.cpp
 													imgui/misc/cpp/imgui_stdlib.cpp
-													src/util/lodepng.cpp)
+													src/util/lodepng.cpp
+													src/util/quantizer.cpp)
 
 	source_group("Header Files\\filedialog" FILES
 													src/filedialog/stb_image.h

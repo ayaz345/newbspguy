@@ -283,7 +283,9 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\src\util\quantizer.cpp" />
     <ClCompile Include=".\..\src\main.cpp" />
+    <ClInclude Include="..\src\util\quantizer.h" />
     <ClInclude Include=".\..\src\cli\CommandLine.h" />
     <ClCompile Include=".\..\src\cli\CommandLine.cpp" />
     <ClInclude Include=".\..\src\cli\ProgressMeter.h" />
