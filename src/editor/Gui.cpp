@@ -1589,16 +1589,21 @@ void Gui::drawMenuBar()
 			}
 			if (ImGui::MenuItem("Missing textures"))
 			{
+				std::set<std::string> textureset = std::set<std::string>();
+
 				for (int i = 0; i < map->faceCount; i++)
 				{
 					BSPFACE& face = map->faces[i];
 					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 					int texOffset = ((int*)map->textures)[info.iMiptex + 1];
-					if (info.iMiptex != -1 && texOffset != -1)
+					if (info.iMiptex >= 0 && texOffset >= 0)
 					{
 						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-						if (tex.nOffsets[0] <= 0)
+						if (tex.nOffsets[0] <= 0 && tex.szName[0] != '\0')
 						{
+							if (textureset.count(tex.szName))
+								continue;
+							textureset.insert(tex.szName);
 							bool textureFoundInWad = false;
 							for (auto& s : map->getBspRender()->wads)
 							{
@@ -1610,17 +1615,27 @@ void Gui::drawMenuBar()
 							}
 							if (!textureFoundInWad)
 							{
-								COLOR3* imageData = new COLOR3[128 * 128]{COLOR3(255,255,255)};
-								map->add_texture(tex.szName, (unsigned char*)imageData, 128, 128);
+								COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
+								memset(imageData, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
+								map->add_texture(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
+								delete [] imageData;
 							}
+						}
+						else if (tex.nOffsets[0] <= 0)
+						{
+							logf("Found unnamed texture in face %d. Replaced by aaatrigger.\n", i);
+							memset(tex.szName, 0, MAXTEXTURENAME);
+							memcpy(tex.szName, "aaatrigger", strlen("aaatrigger"));
 						}
 					}
 				}
+				map->getBspRender()->reloadTextures();
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Replace all missing textures to white 128x128.");
+				ImGui::TextUnformatted("Replace all missing textures to white with same size.");
+				ImGui::TextUnformatted("Replace all unnamed textures to AAATRIGGER");
 				ImGui::EndTooltip();
 			}
 

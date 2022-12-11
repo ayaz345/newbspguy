@@ -3627,25 +3627,28 @@ BSPMIPTEX* Bsp::find_embedded_wad_texture(const char* name, int& texid)
 	return NULL;
 }
 
-int Bsp::add_texture(const char* name, unsigned char* data, int width, int height)
+int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int height)
 {
-	if (!name || name[0] == '\0')
+	if (!oldname || oldname[0] == '\0' || strlen(oldname) >= MAXTEXTURENAME)
 	{
-		logf("add_texture: bad texture name");
+		logf("add_texture: bad texture name\n");
 		return -1;
 	}
+	char name[MAXTEXTURENAME];
+	memset(name, 0, MAXTEXTURENAME);
+	memcpy(name, oldname, strlen(oldname));
 
 	logf("Adding new %s texture '%s' with size %dx%d\n", !data ? "embedded" : "wad", name, width, height);
 
 	if (width % 16 != 0 || height % 16 != 0)
 	{
-		logf("Dimensions not divisible by 16");
+		logf("Dimensions not divisible by 16\n");
 		return -1;
 	}
 
 	if (width > (int)MAX_TEXTURE_DIMENSION || height > (int)MAX_TEXTURE_DIMENSION)
 	{
-		logf("Width/height too large");
+		logf("Width/height too large\n");
 		return -1;
 	}
 
@@ -3662,7 +3665,6 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 				 oldtex->nWidth, oldtex->nHeight, width, height);
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
-			oldtex = NULL;
 		}
 		else if (oldtex->nOffsets[0] <= 0)
 		{
@@ -3672,7 +3674,6 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 					oldtex->nOffsets[3] = 0;
 				oldtex->szName[0] = '\0';
 				logf("Warning! Texture pointer found. Need replace by new texture.\n");
-				oldtex = NULL;
 			}
 			else
 			{
@@ -3695,17 +3696,15 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 				 oldtex->nWidth, oldtex->nHeight, width, height);
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
-			oldtex = NULL;
 		}
 		else if (oldtex->nOffsets[0] <= 0)
 		{
-			if (!data)
+			if (data)
 			{
 				oldtex->szName[0] = '\0';
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
 				logf("Warning! Wad texture found. Need replace by new texture.\n");
-				oldtex = NULL;
 			}
 			else
 			{
@@ -3745,7 +3744,7 @@ int Bsp::add_texture(const char* name, unsigned char* data, int width, int heigh
 				{
 					if (colorCount >= 256)
 					{
-						logf("Too many colors");
+						logf("Too many colors\n");
 						delete[] mip[0];
 						return -1;
 					}
