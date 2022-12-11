@@ -104,7 +104,6 @@ if(MSVC)
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /wd4244 /wd4018")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /wd4244 /wd4018 /W0")
 
-	# Disable C++ exceptions
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT bspguy)
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -215,5 +214,6 @@ else()
 	endif ()
 	set(CMAKE_CXX_FLAGS "-Wall -std=c++2a")
 	set(CMAKE_CXX_FLAGS_DEBUG "-g -O0")
-	set(CMAKE_CXX_FLAGS_RELEASE "-Os -fno-exceptions -w -Wfatal-errors")
+	set(PICO_ENABLE_CXX_EXCEPTIONS 1)
+	set(CMAKE_CXX_FLAGS_RELEASE "-Os -exceptions -w -Wfatal-errors")
 endif()
