@@ -388,7 +388,6 @@ void CreateBspModelCommand::execute()
 	if (aaatriggerIdx == -1)
 	{
 		aaatriggerIdx = addDefaultTexture();
-		renderer->reloadTextures();
 	}
 
 	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
@@ -475,10 +474,8 @@ int CreateBspModelCommand::addDefaultTexture()
 
 	lodepng_decode24(&tex_dat, &w, &h, aaatrigger_dat, sizeof(aaatrigger_dat));
 
-	int aaatriggerIdx = map->add_texture("aaatrigger", NULL, w, h);
-	//renderer->reloadTextures();
+	int aaatriggerIdx = map->add_texture("aaatrigger", tex_dat, w, h);
 
-	//lodepng_encode24_file("test.png", (unsigned char*)tex_dat, w, h);
 	delete[] tex_dat;
 
 	return aaatriggerIdx;

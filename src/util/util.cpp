@@ -27,9 +27,6 @@
 #include <set>
 
 bool DebugKeyPressed = false;
-unsigned int g_frame_counter = 0;
-double g_time = 0.0;
-
 ProgressMeter g_progress;
 int g_render_flags;
 std::vector<std::string> g_log_buffer;

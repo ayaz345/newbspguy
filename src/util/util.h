@@ -43,9 +43,6 @@ static const vec3  s_baseaxis[18] = {
 	{0, -1, 0}, {1, 0, 0}, {0, 0, -1},                     // north wall
 };
 
-
-extern unsigned int g_frame_counter;
-extern double g_time;
 extern bool DebugKeyPressed;
 extern bool g_verbose;
 extern ProgressMeter g_progress;

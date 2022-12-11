@@ -1833,7 +1833,7 @@ void Gui::drawMenuBar()
 
 			Entity* newEnt = new Entity();
 			newEnt->addKeyvalue("origin", origin.toKeyvalueString());
-			newEnt->addKeyvalue("classname", "func_illusionary");
+			newEnt->addKeyvalue("classname", "trigger_once");
 
 			float snapSize = pow(2.0f, app->gridSnapLevel * 1.0f);
 			if (snapSize < 16)
@@ -4357,8 +4357,8 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 6)
 		{
-			ImGui::DragFloat("Movement speed", &app->moveSpeed, 0.1f, 0.1f, 1000, "%.1f");
-			ImGui::DragFloat("Rotation speed", &app->rotationSpeed, 0.01f, 0.1f, 100, "%.1f");
+			ImGui::DragFloat("Movement speed", &app->moveSpeed, 1.0f, 100.0f, 1000.0f, "%.1f");
+			ImGui::DragFloat("Rotation speed", &app->rotationSpeed, 0.1f, 0.1f, 100.0f, "%.1f");
 		}
 
 		ImGui::EndChild();
@@ -6080,7 +6080,7 @@ void Gui::drawLightMapTool()
 					continue;
 				}
 
-				if (ImGui::ImageButton((std::to_string(i) + "_lightmap").c_str(), (ImTextureID)currentlightMap[i]->id, imgSize, ImVec2(0, 0), ImVec2(1, 1)))
+				if (ImGui::ImageButton((std::to_string(i) + "_lightmap").c_str(), (ImTextureID)(long long)currentlightMap[i]->id, imgSize, ImVec2(0, 0), ImVec2(1, 1)))
 				{
 					float itemwidth = ImGui::GetItemRectMax().x - ImGui::GetItemRectMin().x;
 					float itemheight = ImGui::GetItemRectMax().y - ImGui::GetItemRectMin().y;

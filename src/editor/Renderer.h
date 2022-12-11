@@ -176,6 +176,7 @@ public:
 	void saveSettings();
 	void loadSettings();
 
+	bool isSleeping = false;
 	bool reloading = false;
 	bool isLoading = false;
 	bool reloadingGameDir = false;
@@ -203,12 +204,13 @@ private:
 
 	Fgd* fgd = NULL;
 
+	double oldTime = 0.0;
+	double curTime = 0.0;
 	vec3 cameraForward;
 	vec3 cameraUp;
 	vec3 cameraRight;
 	bool cameraIsRotating;
-	double frameTimeScale = 0.0;
-	float moveSpeed = 4.0f;
+	float moveSpeed = 200.0f;
 	float fov = 75.0f;
 	float zNear = 1.0f;
 	float zFar = 262144.0f;

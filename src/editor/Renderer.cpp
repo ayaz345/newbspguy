@@ -59,6 +59,11 @@ void window_maximize_callback(GLFWwindow* window, int maximized)
 	g_settings.maximized = maximized == GLFW_TRUE;
 }
 
+void window_minimize_callback(GLFWwindow* window, int iconified)
+{
+	g_app->isSleeping = iconified == GLFW_TRUE;
+}
+
 void window_close_callback(GLFWwindow* window)
 {
 	g_settings.save();
@@ -115,7 +120,7 @@ void AppSettings::loadDefault()
 	autoImportEnt = false;
 	sameDirForEnt = false;
 
-	moveSpeed = 4.0f;
+	moveSpeed = 500.0f;
 	fov = 75.0f;
 	zfar = 262144.0f;
 	rotSpeed = 5.0f;
@@ -302,6 +307,11 @@ void AppSettings::load()
 			else if (key == "move_speed")
 			{
 				g_settings.moveSpeed = (float)atof(val.c_str());
+				if (g_settings.moveSpeed < 100)
+				{
+					logf("Move speed can be 100 - 1000. Replaced to default value.\n");
+					g_settings.moveSpeed = 500;
+				}
 			}
 			else if (key == "rot_speed")
 			{
@@ -717,6 +727,7 @@ Renderer::Renderer()
 	glfwSetWindowSizeCallback(window, window_size_callback);
 	glfwSetWindowPosCallback(window, window_pos_callback);
 	glfwSetWindowCloseCallback(window, window_close_callback);
+	glfwSetWindowIconifyCallback(window, window_minimize_callback);
 	glfwSetWindowMaximizeCallback(window, window_maximize_callback);
 
 	glewInit();
@@ -828,19 +839,20 @@ void Renderer::renderLoop()
 
 	updateDragAxes();
 
-	g_time = glfwGetTime();
-
-	double lastFrameTime = g_time;
-	double lastTitleTime = g_time;
-
+	oldTime = glfwGetTime();
+	curTime = oldTime;
+	double lastTitleTime = curTime;
 
 	while (!glfwWindowShouldClose(window))
 	{
+		oldTime = curTime;
+		curTime = glfwGetTime();
 		double xpos, ypos;
 		glfwGetCursorPos(window, &xpos, &ypos);
 		mousePos = vec2((float)xpos, (float)ypos);
 
 		glfwPollEvents();
+
 
 		{//Update keyboard / mouse state 
 			oldLeftMouse = curLeftMouse;
@@ -871,9 +883,9 @@ void Renderer::renderLoop()
 		}
 
 		Bsp* map = SelectedMap;
-		if (g_time - lastTitleTime > 0.5)
+		if (curTime - lastTitleTime > 0.5)
 		{
-			lastTitleTime = g_time;
+			lastTitleTime = curTime;
 			if (map)
 			{
 				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + map->bsp_path).c_str());
@@ -894,24 +906,9 @@ void Renderer::renderLoop()
 		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
 		bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
-
-		g_time = glfwGetTime();
-		g_frame_counter++;
-
-		double frameDelta = g_time - lastFrameTime;
-		frameTimeScale = 0.05 / frameDelta;
-		double fps = 1.0 / frameDelta;
-
-		//FIXME : frameTimeScale = 0.05f / frameDelta ???
-		frameTimeScale = 100.0 / fps;
-
-		lastFrameTime = g_time;
-
-		double spin = g_time * 2;
-
 		matmodel.loadIdentity();
-		matmodel.rotateZ((float)spin);
-		matmodel.rotateX((float)spin);
+		matmodel.rotateZ((float)oldTime);
+		matmodel.rotateX((float)curTime);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1428,8 +1425,7 @@ void Renderer::controls()
 			}
 		}
 
-
-		cameraOrigin += getMoveDir() * (float)frameTimeScale;
+		cameraOrigin += getMoveDir() * (curTime - oldTime) * moveSpeed;
 
 		moveGrabbedEnt();
 
@@ -2343,8 +2339,6 @@ vec3 Renderer::getMoveDir()
 	{
 		wishdir -= forward;
 	}
-
-	wishdir *= moveSpeed;
 
 	if (anyShiftPressed)
 		wishdir *= 4.0f;
@@ -3988,7 +3982,7 @@ void Renderer::deselectObject()
 	updateEntConnections();
 }
 
-void Renderer::selectFace(Bsp * map, int face, bool add)
+void Renderer::selectFace(Bsp* map, int face, bool add)
 {
 	if (!map)
 		return;
