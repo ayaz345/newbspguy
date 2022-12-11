@@ -5197,22 +5197,16 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 				if (tex->nOffsets[0] > -1)
 				{
 					WADTEX wadTex = tex;
-					int lastMipSize = (wadTex.nWidth / 8) * (wadTex.nHeight / 8);
+					COLOR3* imageData = ConvertWadTexToRGB(&wadTex);
 
-					COLOR3* palette = (COLOR3*)(wadTex.data + wadTex.nOffsets[3] + lastMipSize + 2 - 40);
-					unsigned char* src = wadTex.data;
-
-					COLOR3* imageData = new COLOR3[wadTex.nWidth * wadTex.nHeight];
-
-					int sz = wadTex.nWidth * wadTex.nHeight;
-
-					for (int k = 0; k < sz; k++)
+					for (int k = 0; k < wadTex.nHeight * wadTex.nWidth ; k++)
 					{
-						imageData[k] = palette[src[k]];
 						std::swap(imageData[k].b, imageData[k].r);
 					}
 					//tga_write((path + tex->szName + std::string(".obj")).c_str(), tex->nWidth, tex->nWidth, (unsigned char*)tex + tex->nOffsets[0], 3, 3);
 					WriteBMP(path + std::string("textures/") + tex->szName + std::string(".bmp"), (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight, 3);
+
+					delete imageData;
 				}
 				else
 				{

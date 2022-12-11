@@ -10,24 +10,30 @@
 
 Wad::Wad(void)
 {
-	numTex = -1;
-	dirEntries = NULL;
+	dirEntries.clear();
+	if (filedata)
+		delete[] filedata;
+	filedata = NULL;
 }
 
 Wad::Wad(const std::string& file)
 {
 	this->filename = file;
-	numTex = -1;
-	dirEntries = NULL;
+	dirEntries.clear();
+	if (filedata)
+		delete[] filedata;
+	filedata = NULL;
 }
 
 Wad::~Wad(void)
 {
-	if (dirEntries)
-		delete[] dirEntries;
+	dirEntries.clear();
+	if (filedata)
+		delete[] filedata;
+	filedata = NULL;
 }
 
-bool Wad::readInfo()
+bool Wad::readInfo(bool allowempty)
 {
 	std::string file = filename;
 
@@ -37,65 +43,73 @@ bool Wad::readInfo()
 		return false;
 	}
 
-	std::ifstream fin(file, std::ios::binary);
-	if (!fin.is_open())
+	filedata = (unsigned char*)loadFile(file, fileLen);
+
+	if (!filedata)
 	{
-		logf("%s does no access!\n", filename.c_str());
+		logf("%s does not exist!\n", filename.c_str());
 		return false;
 	}
 
-	auto begin = fin.tellg();
-	fin.seekg(0, std::ios::end);
-	auto end = fin.tellg();
-	auto sz = end - begin;
-	fin.seekg(0, std::ios::beg);
-
-	if (sz < sizeof(WADHEADER))
+	if (fileLen < sizeof(WADHEADER))
 	{
-		fin.close();
+		delete[] filedata;
+		filedata = NULL;
+		logf("%s is not wad file[small]!\n", filename.c_str());
 		return false;
 	}
 
-	//
-	// WAD HEADER
-	//
-	fin.read((char*)&header, sizeof(WADHEADER));
+	int offset = 0;
+
+	memcpy((char*)&header, &filedata[offset], sizeof(WADHEADER));
+	offset += sizeof(WADHEADER);
 
 	if (std::string(header.szMagic).find("WAD3") != 0)
 	{
-		fin.close();
+		delete[] filedata;
+		filedata = NULL;
+		logf("%s is not wad file[invalid header]!\n", filename.c_str());
 		return false;
 	}
 
-	if (header.nDirOffset >= (int)sz)
+	if (header.nDirOffset >= (int)fileLen)
 	{
-		fin.close();
+		delete[] filedata;
+		filedata = NULL;
+		logf("%s is not wad file[buffer overrun]!\n", filename.c_str());
 		return false;
 	}
 
 	//
 	// WAD DIRECTORY ENTRIES
 	//
-	fin.seekg(header.nDirOffset);
-	numTex = header.nDir;
-	dirEntries = new WADDIRENTRY[numTex];
+	offset = header.nDirOffset;
+
+	dirEntries.clear();
 
 	bool usableTextures = false;
-	for (int i = 0; i < numTex; i++)
+	for (int i = 0; i < header.nDir; i++)
 	{
-		if (fin.eof())
+		WADDIRENTRY tmpWadEntry = WADDIRENTRY();
+
+		if (offset + sizeof(WADDIRENTRY) > fileLen)
 		{
-			logf("Unexpected end of WAD\n"); return false;
+			logf("Unexpected end of WAD\n");
+			return false;
 		}
-		fin.read((char*)&dirEntries[i], sizeof(WADDIRENTRY));
+
+		memcpy((char*)&tmpWadEntry, &filedata[offset], sizeof(WADDIRENTRY));
+		offset += sizeof(WADDIRENTRY);
+
+		dirEntries.push_back(tmpWadEntry);
+
 		if (dirEntries[i].nType == 0x43) usableTextures = true;
 	}
-	fin.close();
 
-	if (!usableTextures)
+
+	if (!usableTextures && !allowempty)
 	{
-		delete[] dirEntries;
-		dirEntries = NULL;
+		dirEntries.clear();
 		header.nDir = 0;
 		logf("%s contains no regular textures\n", filename.c_str());
 		return false; // we can't use these types of textures (see fonts.wad as an example)
@@ -112,9 +126,18 @@ bool Wad::hasTexture(const std::string& name)
 	return false;
 }
 
+bool Wad::hasTexture(int dirIndex)
+{
+	if (dirIndex < 0 || dirIndex >= dirEntries.size())
+	{
+		return false;
+	}
+	return true;
+}
+
 WADTEX* Wad::readTexture(int dirIndex)
 {
-	if (dirIndex < 0 || dirIndex >= numTex)
+	if (dirIndex < 0 || dirIndex >= dirEntries.size())
 	{
 		logf("invalid wad directory index\n");
 		return NULL;
@@ -127,13 +150,6 @@ WADTEX* Wad::readTexture(int dirIndex)
 
 WADTEX* Wad::readTexture(const std::string& texname)
 {
-	std::string path = filename;
-	const char* file = (path.c_str());
-
-	std::ifstream fin(file, std::ios::binary);
-	if (!fin.good())
-		return NULL;
-
 	int idx = -1;
 	for (int d = 0; d < header.nDir; d++)
 	{
@@ -146,18 +162,20 @@ WADTEX* Wad::readTexture(const std::string& texname)
 
 	if (idx < 0)
 	{
-		fin.close();
 		return NULL;
 	}
+
 	if (dirEntries[idx].bCompression)
 	{
 		logf("OMG texture is compressed. I'm too scared to load it :<\n");
 		return NULL;
 	}
-	fin.seekg(dirEntries[idx].nFilePos);
 
-	BSPMIPTEX mtex;
-	fin.read((char*)&mtex, sizeof(BSPMIPTEX));
+	int offset = dirEntries[idx].nFilePos;
+
+	BSPMIPTEX mtex = BSPMIPTEX();
+	memcpy((char*)&mtex, &filedata[offset], sizeof(BSPMIPTEX));
+	offset += sizeof(BSPMIPTEX);
 
 	int w = mtex.nWidth;
 	int h = mtex.nHeight;
@@ -168,9 +186,8 @@ WADTEX* Wad::readTexture(const std::string& texname)
 	int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
 
 	unsigned char* data = new unsigned char[szAll];
-	fin.read((char*)data, szAll);
 
-	fin.close();
+	memcpy(data, &filedata[offset], szAll);
 
 	WADTEX* tex = new WADTEX;
 	for (int i = 0; i < MAXTEXTURENAME; i++)
@@ -183,16 +200,15 @@ WADTEX* Wad::readTexture(const std::string& texname)
 
 	return tex;
 }
-bool Wad::write(WADTEX** textures, size_t _numTex)
+
+bool Wad::write(WADTEX** textures, size_t numTex)
 {
-	this->numTex = (int)_numTex;
-	return write(filename, textures, _numTex);
+	return write(filename, textures, numTex);
 }
 
-bool Wad::write(const std::string& _filename, WADTEX** textures, size_t _numTex)
+bool Wad::write(const std::string& _filename, WADTEX** textures, size_t numTex)
 {
 	this->filename = _filename;
-	this->numTex = (int)_numTex;
 
 	std::ofstream myFile(filename, std::ios::trunc | std::ios::binary);
 
@@ -215,55 +231,63 @@ bool Wad::write(const std::string& _filename, WADTEX** textures, size_t _numTex)
 		tSize += szAll;
 	}
 
-	header.nDirOffset = (int)(12 + tSize);
-	myFile.write((char*)&header, sizeof(WADHEADER));
-
-	for (int i = 0; i < numTex; i++)
+	if (tSize)
 	{
-		BSPMIPTEX miptex;
-		for (int k = 0; k < MAXTEXTURENAME; k++)
-			miptex.szName[k] = textures[i]->szName[k];
+		header.nDirOffset = (int)(sizeof(WADHEADER) + tSize);
+		myFile.write((char*)&header, sizeof(WADHEADER));
 
-		int w = textures[i]->nWidth;
-		int h = textures[i]->nHeight;
-		int sz = w * h;	   // miptex 0
-		int sz2 = sz / 4;  // miptex 1
-		int sz3 = sz2 / 4; // miptex 2
-		int sz4 = sz3 / 4; // miptex 3
-		int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
-		miptex.nWidth = w;
-		miptex.nHeight = h;
-		miptex.nOffsets[0] = sizeof(BSPMIPTEX);
-		miptex.nOffsets[1] = sizeof(BSPMIPTEX) + sz;
-		miptex.nOffsets[2] = sizeof(BSPMIPTEX) + sz + sz2;
-		miptex.nOffsets[3] = sizeof(BSPMIPTEX) + sz + sz2 + sz3;
+		for (int i = 0; i < numTex; i++)
+		{
+			BSPMIPTEX miptex;
+			for (int k = 0; k < MAXTEXTURENAME; k++)
+				miptex.szName[k] = textures[i]->szName[k];
 
-		myFile.write((char*)&miptex, sizeof(BSPMIPTEX));
-		myFile.write((char*)textures[i]->data, szAll);
+			int w = textures[i]->nWidth;
+			int h = textures[i]->nHeight;
+			int sz = w * h;	   // miptex 0
+			int sz2 = sz / 4;  // miptex 1
+			int sz3 = sz2 / 4; // miptex 2
+			int sz4 = sz3 / 4; // miptex 3
+			int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+			miptex.nWidth = w;
+			miptex.nHeight = h;
+			miptex.nOffsets[0] = sizeof(BSPMIPTEX);
+			miptex.nOffsets[1] = sizeof(BSPMIPTEX) + sz;
+			miptex.nOffsets[2] = sizeof(BSPMIPTEX) + sz + sz2;
+			miptex.nOffsets[3] = sizeof(BSPMIPTEX) + sz + sz2 + sz3;
+
+			myFile.write((char*)&miptex, sizeof(BSPMIPTEX));
+			myFile.write((char*)textures[i]->data, szAll);
+		}
+
+		int offset = sizeof(WADHEADER);
+		for (int i = 0; i < numTex; i++)
+		{
+			WADDIRENTRY entry;
+			entry.nFilePos = offset;
+			int w = textures[i]->nWidth;
+			int h = textures[i]->nHeight;
+			int sz = w * h;	   // miptex 0
+			int sz2 = sz / 4;  // miptex 1
+			int sz3 = sz2 / 4; // miptex 2
+			int sz4 = sz3 / 4; // miptex 3
+			int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+			entry.nDiskSize = szAll + sizeof(BSPMIPTEX);
+			entry.nSize = szAll + sizeof(BSPMIPTEX);
+			entry.nType = 0x43; // Texture
+			entry.bCompression = false;
+			entry.nDummy = 0;
+			for (int k = 0; k < MAXTEXTURENAME; k++)
+				entry.szName[k] = textures[i]->szName[k];
+			offset += szAll + sizeof(BSPMIPTEX);
+
+			myFile.write((char*)&entry, sizeof(WADDIRENTRY));
+		}
 	}
-
-	int offset = 12;
-	for (int i = 0; i < numTex; i++)
+	else
 	{
-		WADDIRENTRY entry;
-		entry.nFilePos = offset;
-		int w = textures[i]->nWidth;
-		int h = textures[i]->nHeight;
-		int sz = w * h;	   // miptex 0
-		int sz2 = sz / 4;  // miptex 1
-		int sz3 = sz2 / 4; // miptex 2
-		int sz4 = sz3 / 4; // miptex 3
-		int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
-		entry.nDiskSize = szAll + sizeof(BSPMIPTEX);
-		entry.nSize = szAll + sizeof(BSPMIPTEX);
-		entry.nType = 0x43; // Texture
-		entry.bCompression = false;
-		entry.nDummy = 0;
-		for (int k = 0; k < MAXTEXTURENAME; k++)
-			entry.szName[k] = textures[i]->szName[k];
-		offset += szAll + sizeof(BSPMIPTEX);
-
-		myFile.write((char*)&entry, sizeof(WADDIRENTRY));
+		header.nDirOffset = 0;
+		myFile.write((char*)&header, sizeof(WADHEADER));
 	}
 
 	myFile.close();
@@ -271,3 +295,143 @@ bool Wad::write(const std::string& _filename, WADTEX** textures, size_t _numTex)
 	return true;
 }
 
+void Wad::add_texture(const char* name, COLOR3* data, int width, int height)
+{
+	COLOR3 palette[256];
+	memset(&palette, 0, sizeof(COLOR3) * 256);
+	unsigned char* mip[MIPLEVELS] = {NULL};
+
+	COLOR3* src = data;
+	int colorCount = 0;
+
+	// create pallete and full-rez mipmap
+	mip[0] = new unsigned char[width * height];
+
+	for (int y = 0; y < height; y++)
+	{
+		for (int x = 0; x < width; x++)
+		{
+			int paletteIdx = -1;
+			for (int k = 0; k < colorCount; k++)
+			{
+				if (*src == palette[k])
+				{
+					paletteIdx = k;
+					break;
+				}
+			}
+			if (paletteIdx == -1)
+			{
+				if (colorCount >= 256)
+				{
+					logf("Too many colors\n");
+					delete[] mip[0];
+					return;
+				}
+				palette[colorCount] = *src;
+				paletteIdx = colorCount;
+				colorCount++;
+			}
+
+			mip[0][y * width + x] = (unsigned char)paletteIdx;
+			src++;
+		}
+	}
+
+	int texDataSize = width * height + sizeof(COLOR3) * 256;
+
+	// generate mipmaps
+	for (int i = 1; i < MIPLEVELS; i++)
+	{
+		int div = 1 << i;
+		int mipWidth = width / div;
+		int mipHeight = height / div;
+		texDataSize += mipWidth * height;
+		mip[i] = new unsigned char[mipWidth * mipHeight];
+
+		src = data;
+		for (int y = 0; y < mipHeight; y++)
+		{
+			for (int x = 0; x < mipWidth; x++)
+			{
+				int paletteIdx = -1;
+				for (int k = 0; k < colorCount; k++)
+				{
+					if (*src == palette[k])
+					{
+						paletteIdx = k;
+						break;
+					}
+				}
+
+				mip[i][y * mipWidth + x] = (unsigned char)paletteIdx;
+				src += div;
+			}
+		}
+	}
+
+	size_t newTexLumpSize = sizeof(BSPMIPTEX) + texDataSize;
+	unsigned char* newTexData = new unsigned char[newTexLumpSize];
+	memset(newTexData, 0, sizeof(newTexLumpSize));
+
+	WADTEX* newMipTex = (WADTEX*)(newTexData);
+	newMipTex->nWidth = width;
+	newMipTex->nHeight = height;
+
+	memcpy(newMipTex->szName, name, MAXTEXTURENAME);
+
+	newMipTex->nOffsets[0] = sizeof(BSPMIPTEX);
+	newMipTex->nOffsets[1] = newMipTex->nOffsets[0] + width * height;
+	newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
+	newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
+	size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
+
+	memcpy(newTexData + newMipTex->nOffsets[0], mip[0], width * height);
+	memcpy(newTexData + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
+	memcpy(newTexData + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
+	memcpy(newTexData + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
+	memcpy(newTexData + palleteOffset, palette, sizeof(COLOR3) * 256);
+
+	newMipTex->data = (unsigned char*)(((unsigned char*)newMipTex) + newMipTex->nOffsets[0]);
+
+	int entries = (int)dirEntries.size();
+
+	WADTEX** listofTex = new WADTEX * [entries + 1];
+	for (int i = 0; i < entries; i++)
+	{
+		listofTex[i] = readTexture(i);
+	}
+	listofTex[entries] = newMipTex;
+
+	write(listofTex, entries + 1);
+
+	for (int i = 0; i < entries; i++)
+	{
+		delete listofTex[i];
+	}
+	delete[] newTexData;
+	delete[] listofTex;
+	if (filedata)
+		delete[] filedata;
+	filedata = NULL;
+	readInfo();
+}
+
+COLOR3* ConvertWadTexToRGB(WADTEX* wadTex)
+{
+	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+
+	COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
+	unsigned char* src = wadTex->data;
+
+	COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
+
+	int sz = wadTex->nWidth * wadTex->nHeight;
+
+	for (int k = 0; k < sz; k++)
+	{
+		imageData[k] = palette[src[k]];
+	}
+
+	return imageData;
+}

@@ -44,11 +44,7 @@ struct WADTEX
 	}
 	WADTEX(BSPMIPTEX* tex)
 	{
-#ifdef WIN32
-		sprintf_s(szName, MAXTEXTURENAME, "%s", tex->szName);
-#else 
 		snprintf(szName, MAXTEXTURENAME, "%s", tex->szName);
-#endif
 
 		nWidth = tex->nWidth;
 		nHeight = tex->nHeight;
@@ -61,25 +57,34 @@ struct WADTEX
 class Wad
 {
 public:
-	std::string filename;
+	std::string filename = std::string();
+
+	unsigned char* filedata = NULL;
+	int fileLen = 0;
+
 	WADHEADER header = WADHEADER();
-	WADDIRENTRY* dirEntries;
-	int numTex;
+
+	std::vector<WADDIRENTRY> dirEntries = std::vector<WADDIRENTRY>();
 
 	Wad(const std::string& file);
 	Wad(void);
+
 	~Wad(void);
 
-	bool readInfo();
+	bool readInfo(bool allowempty = false);
+
+	bool hasTexture(int dirIndex);
 	bool hasTexture(const std::string& name);
 
 	bool write(const std::string& filename, WADTEX** textures, size_t numTex);
 	bool write(WADTEX** textures, size_t numTex);
 
+	void add_texture(const char* texname, COLOR3* data, int width, int height);
 
 	WADTEX* readTexture(int dirIndex);
 	WADTEX* readTexture(const std::string& texname);
 };
 
+COLOR3* ConvertWadTexToRGB(WADTEX* wadTex);
 
 #pragma pack(pop)

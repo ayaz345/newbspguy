@@ -125,6 +125,18 @@ bool removeFile(const std::string& fileName)
 	return fs::exists(fileName) && fs::remove(fileName);
 }
 
+void copyFile(const std::string& fileName, const std::string& fileName2)
+{
+	if (fileExists(fileName2))
+		return;
+	if (!fileExists(fileName))
+		return;
+	int length = 0;
+	char* oldFileData = loadFile(fileName, length);
+	writeFile(fileName2, oldFileData, length);
+	delete[] oldFileData;
+}
+
 std::streampos fileSize(const std::string& filePath)
 {
 

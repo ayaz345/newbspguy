@@ -936,21 +936,11 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 	}
 	else
 	{
-		for (int i = 0; i < tmpWad->numTex; i++)
+		for (int i = 0; i < (int)tmpWad->dirEntries.size(); i++)
 		{
 			WADTEX* wadTex = tmpWad->readTexture(i);
-			int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+			COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
-			COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
-			unsigned char* src = wadTex->data;
-
-			int sz = wadTex->nWidth * wadTex->nHeight;
-			COLOR3* imageData = new COLOR3[sz];
-
-			for (int k = 0; k < sz; k++)
-			{
-				imageData[k] = palette[src[k]];
-			}
 			map->add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
 			delete[] imageData;
@@ -1270,6 +1260,41 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::BeginMenu("WAD"))
+			{
+				std::string hash = "##1";
+				for (auto& wad : map->getBspRender()->wads)
+				{
+					if (wad->dirEntries.size() == 0)
+						continue;
+					hash += "1";
+					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
+					{
+						logf("Preparing to export %s.\n", basename(wad->filename).c_str());
+						createDir(GetWorkDir());
+						createDir(GetWorkDir() + "/wads");
+						createDir(GetWorkDir() + "/wads/" + basename(wad->filename));
+
+						for (int i = 0; i < (int)wad->dirEntries.size(); i++)
+						{
+							WADTEX* texture = wad->readTexture(i);
+							if (texture->szName[0] != '\0' && strlen(texture->szName) < MAXTEXTURENAME)
+							{
+								logf("Exporting %s from %s to working directory.\n", texture->szName, basename(wad->filename).c_str());
+								COLOR3* texturedata = ConvertWadTexToRGB(texture);
+
+								lodepng_encode24_file((GetWorkDir() + "/wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
+													  , (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
+								delete texturedata;
+							}
+							delete texture;
+						}
+					}
+				}
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Import", !app->isLoading))
@@ -1324,8 +1349,6 @@ void Gui::drawMenuBar()
 				}
 			}
 
-
-
 			if (ImGui::MenuItem("Import all textures from wad", NULL))
 			{
 				if (map)
@@ -1341,6 +1364,63 @@ void Gui::drawMenuBar()
 					ImGui::TextUnformatted(embtextooltip);
 					ImGui::EndTooltip();
 				}
+			}
+
+
+			if (ImGui::BeginMenu("WAD"))
+			{
+				std::string hash = "##1";
+				for (auto& wad : map->getBspRender()->wads)
+				{
+					if (wad->dirEntries.size() == 0)
+						continue;
+					hash += "1";
+					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
+					{
+						logf("Preparing to import %s.\n", basename(wad->filename).c_str());
+						if (!dirExists(GetWorkDir() + "/wads/" + basename(wad->filename)))
+						{
+							logf("Error. No files in %s directory.\n", (GetWorkDir() + "/wads/" + basename(wad->filename)).c_str());
+						}
+						else
+						{
+							copyFile(wad->filename, wad->filename + ".bak");
+
+							Wad* resetWad = new Wad(wad->filename);
+							resetWad->write(NULL, 0);
+							delete resetWad;
+
+							for (auto const& dir_entry : std::filesystem::directory_iterator(GetWorkDir() + "/wads/" + basename(wad->filename)))
+							{
+								if (!dir_entry.is_directory() && toLowerCase(dir_entry.path().string()).ends_with(".png"))
+								{
+									unsigned char* image_bytes;
+									unsigned int w2, h2;
+									auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, dir_entry.path().string().c_str());
+
+									if (error == 0 && image_bytes)
+									{
+										Wad* tmpWad = new Wad(wad->filename);
+										if (tmpWad->readInfo(true))
+										{
+											std::string tmpTexName = stripExt(basename(dir_entry.path().string()));
+											tmpWad->add_texture(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
+											free(image_bytes);
+											delete tmpWad;
+										}
+										else
+										{
+											logf("File %s is corrupted.\n", wad->filename.c_str());
+											break;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+
+				ImGui::EndMenu();
 			}
 
 			ImGui::EndMenu();
@@ -1676,7 +1756,7 @@ void Gui::drawMenuBar()
 								COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
 								memset(imageData, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
 								map->add_texture(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
-								delete [] imageData;
+								delete[] imageData;
 							}
 						}
 						else if (tex.nOffsets[0] <= 0)
@@ -4653,19 +4733,7 @@ void Gui::drawImportMapWidget()
 									if (s->hasTexture(tex.szName))
 									{
 										WADTEX* wadTex = s->readTexture(tex.szName);
-										int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
-
-										COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
-										unsigned char* src = wadTex->data;
-
-										COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
-
-										int sz = wadTex->nWidth * wadTex->nHeight;
-
-										for (int k = 0; k < sz; k++)
-										{
-											imageData[k] = palette[src[k]];
-										}
+										COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 										texinfo.iMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
@@ -5660,6 +5728,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 			colordata.clear();
 			colordata.resize(w2 * h2);
 			memcpy(&colordata[0], image_bytes, w2 * h2 * sizeof(COLOR3));
+			free(image_bytes);
 			for (int faceIdx : faces_to_export)
 			{
 				int size[2];
@@ -5978,7 +6047,6 @@ void Gui::drawLightMapTool()
 
 				if (ImGui::ImageButton((std::to_string(i) + "_lightmap").c_str(), (ImTextureID)currentlightMap[i]->id, imgSize, ImVec2(0, 0), ImVec2(1, 1)))
 				{
-
 					float itemwidth = ImGui::GetItemRectMax().x - ImGui::GetItemRectMin().x;
 					float itemheight = ImGui::GetItemRectMax().y - ImGui::GetItemRectMin().y;
 
@@ -6083,17 +6151,20 @@ void Gui::drawLightMapTool()
 			{
 				logf("Export lightmaps to png files...\n");
 				createDir(GetWorkDir());
+
 				//for (int z = 0; z < map->faceCount; z++)
 				//{
 				//	lightmaps = 0;
 				//	ExportLightmaps(map->faces[z], z, map);
 				//}
+
 				ExportOneBigLightmap(map);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Import ALL", ImVec2(125, 0)))
 			{
 				logf("Import lightmaps from png files...\n");
+
 				//for (int z = 0; z < map->faceCount; z++)
 				//{
 				//	lightmaps = 0;
@@ -6483,19 +6554,7 @@ void Gui::drawTextureTool()
 						if (s->hasTexture(textureName))
 						{
 							WADTEX* wadTex = s->readTexture(textureName);
-							int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
-
-							COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
-							unsigned char* src = wadTex->data;
-
-							COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
-
-							int sz = wadTex->nWidth * wadTex->nHeight;
-
-							for (int k = 0; k < sz; k++)
-							{
-								imageData[k] = palette[src[k]];
-							}
+							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 							validTexture = true;
 							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);

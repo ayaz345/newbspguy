@@ -246,6 +246,7 @@ void BspRenderer::loadTextures()
 				imageData[k] = palette[src[k]];
 			}
 		}
+
 		if (wadTex)
 		{
 			delete[] wadTex->data;
