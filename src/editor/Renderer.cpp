@@ -1212,13 +1212,22 @@ void Renderer::loadFgds()
 	{
 		if (!g_settings.fgdPaths[i].enabled)
 			continue;
+
 		Fgd* tmp = new Fgd(g_settings.fgdPaths[i].path);
 		if (!tmp->parse())
 		{
 			tmp->path = g_settings.gamedir + g_settings.fgdPaths[i].path;
 			if (!tmp->parse())
 			{
-				continue;
+				tmp->path = GetCurrentWorkingDir() + g_settings.fgdPaths[i].path;
+				if (!tmp->parse())
+				{
+					tmp->path = g_config_dir + g_settings.fgdPaths[i].path;
+					if (!tmp->parse())
+					{
+						continue;
+					}
+				}
 			}
 		}
 
@@ -2514,9 +2523,10 @@ void Renderer::reloadBspModels()
 
 	mapRenderers = std::move(sorted_renders);
 
-	std::vector<std::string> tryPaths = {
-		"./"
-	};
+	std::vector<std::string> tryPaths{};
+	tryPaths.push_back(GetCurrentWorkingDir());
+	if (GetCurrentWorkingDir() != g_config_dir)
+		tryPaths.push_back(g_config_dir);
 
 	for (auto& path : g_settings.resPaths)
 	{

@@ -133,9 +133,10 @@ void BspRenderer::loadTextures()
 		}
 	}
 
-	std::vector<std::string> tryPaths = {
-		"./"
-	};
+	std::vector<std::string> tryPaths{};
+	tryPaths.push_back(GetCurrentWorkingDir());
+	if (GetCurrentWorkingDir() != g_config_dir)
+		tryPaths.push_back(g_config_dir);
 
 	for (auto& path : g_settings.resPaths)
 	{

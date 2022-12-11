@@ -1191,7 +1191,7 @@ void print_color(int colors)
 
 std::string getConfigDir()
 {
-	return std::string("") + getenv("HOME") + "/.config/bspguy/";
+	return getenv("HOME") + std::string("/.config/bspguy/");
 }
 #endif
 
