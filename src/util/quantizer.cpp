@@ -1,8 +1,3 @@
-// This is an independent project of an individual developer. Dear PVS-Studio, please check it.
-
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
-
-
 #include <stdint.h>
 #include "quantizer.h"
 
@@ -81,6 +76,7 @@ void Quantizer::ApplyColorTable(COLOR3* image, int64_t size, COLOR3* pal)
 		image[i] = pal[GetNearestIndexFast(image[i], pal)];
 	}
 }
+
 void Quantizer::ApplyColorTableDither(COLOR3* image, int64_t width, int64_t height, COLOR3* pal)
 {
 	unsigned int* tmpImage = new unsigned int[width * height];
@@ -91,7 +87,6 @@ void Quantizer::ApplyColorTableDither(COLOR3* image, int64_t width, int64_t heig
 	}
 	delete[]tmpImage;
 }
-
 
 void Quantizer::FloydSteinbergDither(unsigned char* image, int64_t width, int64_t height, unsigned int* target, COLOR3* pal)
 {
