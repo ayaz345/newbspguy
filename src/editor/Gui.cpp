@@ -1373,8 +1373,9 @@ void Gui::drawMenuBar()
 				}
 			}
 
+			bool ditheringEnabled = ImGui::BeginMenu("WAD +dithering");
 
-			if (ImGui::BeginMenu("WAD"))
+			if (ditheringEnabled || ImGui::BeginMenu("WAD"))
 			{
 				std::string hash = "##1";
 				for (auto& wad : map->getBspRender()->wads)
@@ -1423,12 +1424,19 @@ void Gui::drawMenuBar()
 									int oldcolors = 0;
 									if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
 									{
-										logf("Reduce color of image from %d to %d\n", oldcolors, 256);
+										logf("Need apply quantizer to reduce color count\n");
 										Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 										tmpCQuantizer->ProcessImage((COLOR3*)image_bytes, w2 * h2);
 										unsigned char* pal = new unsigned char[256 * sizeof(COLOR3)];
 										tmpCQuantizer->SetColorTable((COLOR3*)pal);
-										tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2, (COLOR3*)pal);
+
+										if (ditheringEnabled)
+											tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2, (COLOR3*)pal);
+										else
+											tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2, (COLOR3*)pal);
+
+										logf("Reduce color of image from >%d to %d\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2* h2));
+
 										delete tmpCQuantizer;
 									}
 									std::string tmpTexName = stripExt(basename(file));
