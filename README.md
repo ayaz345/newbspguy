@@ -1,8 +1,8 @@
 # bspguy
-A tool for modifying GoldSrc and merging Sven Co-op maps without decompiling.
+A tool for view and edit GoldSrc maps, and merging Sven Co-op maps without decompiling.
 
 # Usage
-To launch the 3D editor, drag and drop a .bsp file onto the executable, or "Open with" bspguy, or run `bspguy <mapname>`
+To launch the 3D editor, drag and drop a .bsp file onto the executable, or "Open with" bspguy, or run `bspguy` without args.
 
 See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 
