@@ -35,8 +35,10 @@ struct WADTEX
 	unsigned int nWidth, nHeight;
 	unsigned int nOffsets[MIPLEVELS];
 	unsigned char* data; // all mip-maps and pallete
+	bool needclean = false;
 	WADTEX()
 	{
+		needclean = false;
 		szName[0] = '\0';
 		data = NULL;
 		nWidth = nHeight = 0;
@@ -44,13 +46,40 @@ struct WADTEX
 	}
 	WADTEX(BSPMIPTEX* tex)
 	{
-		snprintf(szName, MAXTEXTURENAME, "%s", tex->szName);
+		needclean = false;
+		memcpy(szName, tex->szName, MAXTEXTURENAME);
 
 		nWidth = tex->nWidth;
 		nHeight = tex->nHeight;
 		for (int i = 0; i < MIPLEVELS; i++)
 			nOffsets[i] = tex->nOffsets[i];
-		data = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
+
+		if (nOffsets[0] <= 0)
+		{
+			data = NULL;
+			return;
+		}
+		int w = tex->nWidth;
+		int h = tex->nHeight;
+		int sz = w * h;	   // miptex 0
+		int sz2 = sz / 4;  // miptex 1
+		int sz3 = sz2 / 4; // miptex 2
+		int sz4 = sz3 / 4; // miptex 3
+		int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+		data = new unsigned char[szAll];
+		unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
+		memcpy(data, texdata, szAll);
+		needclean = true;
+	}
+	~WADTEX()
+	{
+		if (needclean)
+			delete[] data;
+		needclean = false;
+		szName[0] = '\0';
+		data = NULL;
+		nWidth = nHeight = 0;
+		nOffsets[0] = nOffsets[1] = nOffsets[2] = nOffsets[3] = 0;
 	}
 };
 
@@ -89,4 +118,5 @@ public:
 };
 
 WADTEX* create_wadtex(const char* name, COLOR3* data, int width, int height);
-COLOR3* ConvertWadTexToRGB(WADTEX* wadTex);
+COLOR3* ConvertWadTexToRGB(WADTEX * wadTex);
+COLOR3* ConvertMipTexToRGB(BSPMIPTEX* wadTex);

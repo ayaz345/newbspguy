@@ -35,60 +35,220 @@ unsigned char FixBounds(double i)
 	return (unsigned char)i;
 }
 
-Quantizer::Quantizer(unsigned int nMaxColors, unsigned int nColorBits)
+Quantizer::Quantizer(unsigned int nMaxColors, unsigned char nColorBits)
 {
-	m_nColorBits = nColorBits < 8 ? nColorBits : 8;
+	m_nColorBits = nColorBits;
 	m_pTree = 0;
 	m_nLeafCount = 0;
 	m_lastIndex = 0;
-	for (int i = 0; i <= (int)m_nColorBits; i++)
+	for (unsigned char i = 0; i <= m_nColorBits; i++)
 		m_pReducibleNodes[i] = 0;
-	m_nMaxColors = m_nOutputMaxColors = nMaxColors;
-	if (m_nMaxColors < 16) m_nMaxColors = 16;
+	m_nMaxColors = nMaxColors;
+	m_pPalette = new COLOR3[nMaxColors];
 }
 
 Quantizer::~Quantizer()
 {
 	if (m_pTree)
 		DeleteTree(&m_pTree);
-}
-#include "util.h"
+	if (m_pPalette)
+		delete[] m_pPalette;
 
-bool Quantizer::ProcessImage(COLOR3* image, int64_t size)
+	for (unsigned char i = 0; i <= m_nColorBits; i++)
+		m_pReducibleNodes[i] = 0;
+	m_nColorBits = 0;
+	m_pTree = 0;
+	m_nLeafCount = 0;
+	m_lastIndex = 0;
+	m_pPalette = NULL;
+}
+
+void Quantizer::ProcessImage(COLOR3* image, int64_t size)
 {
+	if (m_pTree)
+		DeleteTree(&m_pTree);
+
+	for (unsigned char i = 0; i <= m_nColorBits; i++)
+		m_pReducibleNodes[i] = 0;
+
+	m_pTree = 0;
+	m_nLeafCount = 0;
+	m_lastIndex = 0;
+
 	for (int64_t i = 0; i < size; i++)
 	{
-		COLOR3& pix = image[i];
-		AddColor(&m_pTree, pix.r, pix.g, pix.b, m_nColorBits, 0, &m_nLeafCount, m_pReducibleNodes);
+		AddColor(&m_pTree, image[i], 0, &m_nLeafCount, m_pReducibleNodes);
 
 		if (m_nLeafCount > m_nMaxColors)
-			ReduceTree(m_nColorBits, &m_nLeafCount, m_pReducibleNodes);
+			ReduceTree(&m_nLeafCount, m_pReducibleNodes);
 	}
+
 	while (m_nLeafCount > m_nMaxColors)
-		ReduceTree(m_nColorBits, &m_nLeafCount, m_pReducibleNodes);
-	return true;
+		ReduceTree(&m_nLeafCount, m_pReducibleNodes);
+
+
+	if (m_pPalette)
+		delete[] m_pPalette;
+
+	m_pPalette = new COLOR3[m_nMaxColors];
+
+	GenColorTable();
 }
 
-void Quantizer::ApplyColorTable(COLOR3* image, int64_t size, COLOR3* pal)
+unsigned int Quantizer::GetNearestIndexDither(COLOR3& color, COLOR3* pal)
 {
-	for (unsigned int i = 0; i < size; i++)
+	unsigned int i, distanceSquared, minDistanceSquared, bestIndex = 0;
+	minDistanceSquared = 255 * 255 + 255 * 255 + 255 * 255 + 1;
+	for (i = 0; i < m_nLeafCount; i++) {
+		int Rdiff = ((int)color.r) - pal[i].r;
+		int Gdiff = ((int)color.g) - pal[i].g;
+		int Bdiff = ((int)color.b) - pal[i].b;
+		distanceSquared = Rdiff * Rdiff + Gdiff * Gdiff + Bdiff * Bdiff;
+		if (distanceSquared < minDistanceSquared) {
+			minDistanceSquared = distanceSquared;
+			bestIndex = i;
+		}
+	}
+	return bestIndex;
+}
+
+bool Quantizer::ColorsAreEqual(COLOR3 a, COLOR3 b)
+{
+	return (a.r == b.r && a.g == b.g && a.b == b.b);
+}
+
+unsigned int Quantizer::GetNearestIndex(COLOR3 c, COLOR3* pal)
+{
+	if (!pal) return 0;
+	if (ColorsAreEqual(c, pal[m_lastIndex]))
+		return m_lastIndex;
+	int64_t cur = 0;
+	for (int64_t i = 0, k = 0, distance = 2147483647; i < m_nLeafCount; i++)
 	{
-		image[i] = pal[GetNearestIndexFast(image[i], pal)];
+		k = (int64_t)((pal[i].r - c.r) * (pal[i].r - c.r) + (pal[i].g - c.g) * (pal[i].g - c.g) + (pal[i].b - c.b) * (pal[i].b - c.b));
+		if (k == 0)
+		{
+			m_lastIndex = i;
+			return i;
+		}
+		if (k < distance)
+		{
+			distance = k;
+			cur = i;
+		}
+	}
+	m_lastIndex = cur;
+	return m_lastIndex;
+}
+
+unsigned int Quantizer::GetNearestIndexFast(COLOR3 c, COLOR3* pal)
+{
+	if (m_nMaxColors<16 && m_nLeafCount>m_nMaxColors)
+		return GetNearestIndex(c, pal);
+	if (!pal) return 0;
+	if (ColorsAreEqual(c, pal[m_lastIndex]))
+		return m_lastIndex;
+	m_lastIndex = GetNextBestLeaf(&m_pTree, 0, c, pal);
+	return m_lastIndex;
+}
+
+COLOR3 Quantizer::GetNearestColorFast(COLOR3 c, COLOR3* pal)
+{
+	return pal[GetNearestIndexFast(c, pal)];
+}
+
+
+void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t height, unsigned int* target)
+{
+	for (int64_t y = 0; y < height; y++)
+	{
+		if (y % 2 == 1)
+		{
+			for (int64_t x = 0; x < width; x++)
+			{
+				int i = width * (height - y - 1) + x;
+				int j = width * y + x;
+				unsigned int k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
+
+				target[i] = k;
+
+				int diff[3];
+				diff[0] = image[j].r - m_pPalette[k].r;
+				diff[1] = image[j].g - m_pPalette[k].g;
+				diff[2] = image[j].b - m_pPalette[k].b;
+
+				if (y < height - 1)
+				{
+					image[j + width].r = FixBounds(image[j + width].r + (diff[0] * 5) / 16);
+					image[j + width].g = FixBounds(image[j + width].g + (diff[1] * 5) / 16);
+					image[j + width].b = FixBounds(image[j + width].b + (diff[2] * 5) / 16);
+					if (x > 0)
+					{
+						image[j + (width - 1)].r = FixBounds(image[j + (width - 1)].r + (diff[0] * 3) / 16);
+						image[j + (width - 1)].g = FixBounds(image[j + (width - 1)].g + (diff[1] * 3) / 16);
+						image[j + (width - 1)].b = FixBounds(image[j + (width - 1)].b + (diff[2] * 3) / 16);
+					}
+					if (x < width - 1)
+					{
+						image[j + width + 1].r = FixBounds(image[j + width + 1].r + (diff[0] * 1) / 16);
+						image[j + width + 1].g = FixBounds(image[j + width + 1].g + (diff[1] * 1) / 16);
+						image[j + width + 1].b = FixBounds(image[j + width + 1].b + (diff[2] * 1) / 16);
+					}
+				}
+				if (x < width - 1)
+				{
+					image[j + 1].r = FixBounds(image[j + 1].r + (diff[0] * 7) / 16);
+					image[j + 1].g = FixBounds(image[j + 1].g + (diff[1] * 7) / 16);
+					image[j + 1].b = FixBounds(image[j + 1].b + (diff[2] * 7) / 16);
+				}
+
+			}
+		}
+		else
+		{
+			for (int64_t x = width - 1; x >= 0; x--)
+			{
+				int i = width * (height - y - 1) + x;
+				int j = width * y + x;
+				unsigned int k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
+				target[i] = k;
+				int diff[3];
+				diff[0] = image[j].r - m_pPalette[k].r;
+				diff[1] = image[j].g - m_pPalette[k].g;
+				diff[2] = image[j].b - m_pPalette[k].b;
+
+
+				if (y < height - 1)
+				{
+					image[j + width].r = FixBounds(image[j + width].r + (diff[0] * 5) / 16);
+					image[j + width].g = FixBounds(image[j + width].g + (diff[1] * 5) / 16);
+					image[j + width].b = FixBounds(image[j + width].b + (diff[2] * 5) / 16);
+					if (x > 0)
+					{
+						image[j + (width - 1)].r = FixBounds(image[j + (width - 1)].r + (diff[0] * 3) / 16);
+						image[j + (width - 1)].g = FixBounds(image[j + (width - 1)].g + (diff[1] * 3) / 16);
+						image[j + (width - 1)].b = FixBounds(image[j + (width - 1)].b + (diff[2] * 3) / 16);
+					}
+					if (x < width - 1)
+					{
+						image[j + width + 1].r = FixBounds(image[j + width + 1].r + (diff[0] * 1) / 16);
+						image[j + width + 1].g = FixBounds(image[j + width + 1].g + (diff[1] * 1) / 16);
+						image[j + width + 1].b = FixBounds(image[j + width + 1].b + (diff[1] * 1) / 16);
+					}
+				}
+				if (x > 0)
+				{
+					image[j - 1].r = FixBounds(image[j - 1].r + (diff[0] * 7) / 16);
+					image[j - 1].g = FixBounds(image[j - 1].g + (diff[1] * 7) / 16);
+					image[j - 1].b = FixBounds(image[j - 1].b + (diff[2] * 7) / 16);
+				}
+
+			}
+		}
 	}
 }
 
-void Quantizer::ApplyColorTableDither(COLOR3* image, int64_t width, int64_t height, COLOR3* pal)
-{
-	unsigned int* tmpImage = new unsigned int[width * height];
-	FloydSteinbergDither((unsigned char*)image, width, height, tmpImage, pal);
-	for (unsigned int i = 0; i < width * height; i++)
-	{
-		image[i] = pal[tmpImage[i]];
-	}
-	delete[]tmpImage;
-}
-
-void Quantizer::FloydSteinbergDither(unsigned char* image, int64_t width, int64_t height, unsigned int* target, COLOR3* pal)
+void Quantizer::FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t height, unsigned char* target)
 {
 	int bytespp = 3;
 	for (int64_t y = 0; y < height; y++)
@@ -99,27 +259,37 @@ void Quantizer::FloydSteinbergDither(unsigned char* image, int64_t width, int64_
 			{
 				int i = width * (height - y - 1) + x;
 				int j = (width * y + x) * bytespp;
-				unsigned char k = GetNearestIndexFast(*(COLOR3*)(image + j), pal);
+				unsigned char k = FixBounds(GetNearestIndexFast(*(COLOR3*)(image + j), m_pPalette));
 				int diff[3];
 				target[i] = k;
-				diff[0] = image[j] - pal[k].r;
-				diff[1] = image[j + 1] - pal[k].g;
-				diff[2] = image[j + 2] - pal[k].b;
+				diff[0] = image[j].r - m_pPalette[k].r;
+				diff[1] = image[j + 1].g - m_pPalette[k].g;
+				diff[2] = image[j + 2].b - m_pPalette[k].b;
 
 				if (y < height - 1)
 				{
-					for (int l = 0; l < 3; l++)
-						image[j + (width * bytespp) + l] = FixBounds(image[j + (width * bytespp) + l] + (diff[l] * 5) / 16);
+					image[j + (width * bytespp) + 0].r = FixBounds(image[j + (width * bytespp) + 0].r + (diff[0] * 5) / 16);
+					image[j + (width * bytespp) + 1].g = FixBounds(image[j + (width * bytespp) + 1].g + (diff[1] * 5) / 16);
+					image[j + (width * bytespp) + 2].b = FixBounds(image[j + (width * bytespp) + 2].b + (diff[2] * 5) / 16);
 					if (x > 0)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width - 1) * bytespp) + l] = FixBounds(image[j + ((width - 1) * bytespp) + l] + (diff[l] * 3) / 16);
+					{
+						image[j + ((width - 1) * bytespp) + 0].r = FixBounds(image[j + ((width - 1) * bytespp) + 0].r + (diff[0] * 3) / 16);
+						image[j + ((width - 1) * bytespp) + 1].g = FixBounds(image[j + ((width - 1) * bytespp) + 1].g + (diff[1] * 3) / 16);
+						image[j + ((width - 1) * bytespp) + 2].b = FixBounds(image[j + ((width - 1) * bytespp) + 2].b + (diff[2] * 3) / 16);
+					}
 					if (x < width - 1)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width + 1) * bytespp) + l] = FixBounds(image[j + ((width + 1) * bytespp) + l] + (diff[l] * 1) / 16);
+					{
+						image[j + ((width + 1) * bytespp) + 0].r = FixBounds(image[j + ((width + 1) * bytespp) + 0].r + (diff[0] * 1) / 16);
+						image[j + ((width + 1) * bytespp) + 1].g = FixBounds(image[j + ((width + 1) * bytespp) + 1].g + (diff[1] * 1) / 16);
+						image[j + ((width + 1) * bytespp) + 2].b = FixBounds(image[j + ((width + 1) * bytespp) + 2].b + (diff[2] * 1) / 16);
+					}
 				}
 				if (x < width - 1)
-					for (int l = 0; l < 3; l++)
-						image[j + bytespp + l] = FixBounds(image[j + bytespp + l] + (diff[l] * 7) / 16);
+				{
+					image[j + bytespp + 0].r = FixBounds(image[j + bytespp + 0].r + (diff[0] * 7) / 16);
+					image[j + bytespp + 1].g = FixBounds(image[j + bytespp + 1].g + (diff[1] * 7) / 16);
+					image[j + bytespp + 2].b = FixBounds(image[j + bytespp + 2].b + (diff[2] * 7) / 16);
+				}
 
 			}
 		}
@@ -129,127 +299,68 @@ void Quantizer::FloydSteinbergDither(unsigned char* image, int64_t width, int64_
 			{
 				int i = width * (height - y - 1) + x;
 				int j = (width * y + x) * bytespp;
-				unsigned char k = GetNearestIndexFast(*(COLOR3*)(image + j), pal);
+				unsigned char k = FixBounds(GetNearestIndexFast(*(COLOR3*)(image + j), m_pPalette));
 				int diff[3];
 				target[i] = k;
-				diff[0] = image[j] - pal[k].r;
-				diff[1] = image[j + 1] - pal[k].g;
-				diff[2] = image[j + 2] - pal[k].b;
+				diff[0] = image[j].r - m_pPalette[k].r;
+				diff[1] = image[j + 1].g - m_pPalette[k].g;
+				diff[2] = image[j + 2].b - m_pPalette[k].b;
 
 				if (y < height - 1)
 				{
-					for (int l = 0; l < 3; l++)
-						image[j + (width * bytespp) + l] = FixBounds(image[j + (width * bytespp) + l] + (diff[l] * 5) / 16);
+					image[j + (width * bytespp) + 0].r = FixBounds(image[j + (width * bytespp) + 0].r + (diff[0] * 5) / 16);
+					image[j + (width * bytespp) + 1].g = FixBounds(image[j + (width * bytespp) + 1].g + (diff[1] * 5) / 16);
+					image[j + (width * bytespp) + 2].b = FixBounds(image[j + (width * bytespp) + 2].b + (diff[2] * 5) / 16);
 					if (x > 0)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width - 1) * bytespp) + l] = FixBounds(image[j + ((width - 1) * bytespp) + l] + (diff[l] * 1) / 16);
+					{
+						image[j + ((width - 1) * bytespp) + 0].r = FixBounds(image[j + ((width - 1) * bytespp) + 0].r + (diff[0] * 1) / 16);
+						image[j + ((width - 1) * bytespp) + 1].g = FixBounds(image[j + ((width - 1) * bytespp) + 1].g + (diff[1] * 1) / 16);
+						image[j + ((width - 1) * bytespp) + 2].b = FixBounds(image[j + ((width - 1) * bytespp) + 2].b + (diff[2] * 1) / 16);
+					}
 					if (x < width - 1)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width + 1) * bytespp) + l] = FixBounds(image[j + ((width + 1) * bytespp) + l] + (diff[l] * 3) / 16);
+					{
+						image[j + ((width + 1) * bytespp) + 0].r = FixBounds(image[j + ((width + 1) * bytespp) + 0].r + (diff[0] * 3) / 16);
+						image[j + ((width + 1) * bytespp) + 1].g = FixBounds(image[j + ((width + 1) * bytespp) + 1].g + (diff[1] * 3) / 16);
+						image[j + ((width + 1) * bytespp) + 2].b = FixBounds(image[j + ((width + 1) * bytespp) + 2].b + (diff[2] * 3) / 16);
+					}
 				}
 				if (x > 0)
-					for (int l = 0; l < 3; l++)
-						image[j - bytespp + l] = FixBounds(image[j - bytespp + l] + (diff[l] * 7) / 16);
+				{
+					image[j - bytespp + 0].r = FixBounds(image[j - bytespp + 0].r + (diff[0] * 7) / 16);
+					image[j - bytespp + 1].g = FixBounds(image[j - bytespp + 1].g + (diff[1] * 7) / 16);
+					image[j - bytespp + 2].b = FixBounds(image[j - bytespp + 2].b + (diff[2] * 7) / 16);
+				}
 
 			}
 		}
 	}
 }
 
-void Quantizer::FloydSteinbergDither256(unsigned char* image, int64_t width, int64_t height, unsigned char* target, COLOR3* pal)
+void Quantizer::AddColor(Node** ppNode, COLOR3 c, int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes)
 {
-	int bytespp = 3;
-	for (int64_t y = 0; y < height; y++)
-	{
-		if (y % 2 == 1)
-		{
-			for (int64_t x = 0; x < width; x++)
-			{
-				int i = width * (height - y - 1) + x;
-				int j = (width * y + x) * bytespp;
-				unsigned char k = FixBounds(GetNearestIndexFast(*(COLOR3*)(image + j), pal));
-				int diff[3];
-				target[i] = k;
-				diff[0] = image[j] - pal[k].r;
-				diff[1] = image[j + 1] - pal[k].g;
-				diff[2] = image[j + 2] - pal[k].b;
-
-				if (y < height - 1)
-				{
-					for (int l = 0; l < 3; l++)
-						image[j + (width * bytespp) + l] = FixBounds(image[j + (width * bytespp) + l] + (diff[l] * 5) / 16);
-					if (x > 0)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width - 1) * bytespp) + l] = FixBounds(image[j + ((width - 1) * bytespp) + l] + (diff[l] * 3) / 16);
-					if (x < width - 1)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width + 1) * bytespp) + l] = FixBounds(image[j + ((width + 1) * bytespp) + l] + (diff[l] * 1) / 16);
-				}
-				if (x < width - 1)
-					for (int l = 0; l < 3; l++)
-						image[j + bytespp + l] = FixBounds(image[j + bytespp + l] + (diff[l] * 7) / 16);
-
-			}
-		}
-		else
-		{
-			for (int64_t x = width - 1; x >= 0; x--)
-			{
-				int i = width * (height - y - 1) + x;
-				int j = (width * y + x) * bytespp;
-				unsigned char k = FixBounds(GetNearestIndexFast(*(COLOR3*)(image + j), pal));
-				int diff[3];
-				target[i] = k;
-				diff[0] = image[j] - pal[k].r;
-				diff[1] = image[j + 1] - pal[k].g;
-				diff[2] = image[j + 2] - pal[k].b;
-
-				if (y < height - 1)
-				{
-					for (int l = 0; l < 3; l++)
-						image[j + (width * bytespp) + l] = FixBounds(image[j + (width * bytespp) + l] + (diff[l] * 5) / 16);
-					if (x > 0)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width - 1) * bytespp) + l] = FixBounds(image[j + ((width - 1) * bytespp) + l] + (diff[l] * 1) / 16);
-					if (x < width - 1)
-						for (int l = 0; l < 3; l++)
-							image[j + ((width + 1) * bytespp) + l] = FixBounds(image[j + ((width + 1) * bytespp) + l] + (diff[l] * 3) / 16);
-				}
-				if (x > 0)
-					for (int l = 0; l < 3; l++)
-						image[j - bytespp + l] = FixBounds(image[j - bytespp + l] + (diff[l] * 7) / 16);
-
-			}
-		}
-	}
-}
-
-void Quantizer::AddColor(Node** ppNode, unsigned char r, unsigned char g, unsigned char b,
-						 unsigned int nColorBits, int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes)
-{
-	static unsigned char mask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
 	if (!(*ppNode))
-		*ppNode = (Node*)CreateNode(nLevel, nColorBits, pLeafCount, pReducibleNodes);
+		*ppNode = (Node*)CreateNode(nLevel, pLeafCount, pReducibleNodes);
 	if ((*ppNode)->bIsLeaf)
 	{
 		(*ppNode)->nPixelCount++;
-		(*ppNode)->nRedSum += r;
-		(*ppNode)->nGreenSum += g;
-		(*ppNode)->nBlueSum += b;
+		(*ppNode)->nRedSum += c.r;
+		(*ppNode)->nGreenSum += c.g;
+		(*ppNode)->nBlueSum += c.b;
 	}
 	else
 	{
-		int	shift = 7 - nLevel;
-		int	nIndex = (((r & mask[nLevel]) >> shift) << 2) | (((g & mask[nLevel]) >> shift) << 1) | ((b & mask[nLevel]) >> shift);
-		AddColor(&((*ppNode)->pChild[nIndex]), r, g, b, nColorBits, nLevel + 1, pLeafCount, pReducibleNodes);
+		static unsigned char mask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+		int	shift = 7 - (int)nLevel;
+		int	nIndex = (((c.r & mask[nLevel]) >> shift) << 2) | (((c.g & mask[nLevel]) >> shift) << 1) | ((c.b & mask[nLevel]) >> shift);
+		AddColor(&((*ppNode)->pChild[nIndex]), c, nLevel + 1, pLeafCount, pReducibleNodes);
 	}
 }
 
-void* Quantizer::CreateNode(int nLevel, unsigned int nColorBits, unsigned int* pLeafCount, Node** pReducibleNodes)
+void* Quantizer::CreateNode(int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes)
 {
-	Node* pNode = (Node*)calloc(1, sizeof(Node));
+	Node* pNode = new Node();
 	if (!pNode) return 0;
-	pNode->bIsLeaf = ((unsigned int)nLevel == nColorBits) ? true : false;
+	pNode->bIsLeaf = ((unsigned int)nLevel == m_nColorBits) ? true : false;
 	pNode->nIndex = 0;
 	if (pNode->bIsLeaf) (*pLeafCount)++;
 	else
@@ -260,9 +371,9 @@ void* Quantizer::CreateNode(int nLevel, unsigned int nColorBits, unsigned int* p
 	return pNode;
 }
 
-void Quantizer::ReduceTree(unsigned int nColorBits, unsigned int* pLeafCount, Node** pReducibleNodes)
+void Quantizer::ReduceTree(unsigned int* pLeafCount, Node** pReducibleNodes)
 {
-	int i = (int)nColorBits - 1;
+	unsigned char i = m_nColorBits - 1;
 	for (; (i > 0) && (!pReducibleNodes[i]); i--);
 	if (!pReducibleNodes[i]) return;
 	Node* pNode = pReducibleNodes[i];
@@ -281,7 +392,7 @@ void Quantizer::ReduceTree(unsigned int nColorBits, unsigned int* pLeafCount, No
 			nGreenSum += pNode->pChild[i]->nGreenSum;
 			nBlueSum += pNode->pChild[i]->nBlueSum;
 			pNode->nPixelCount += pNode->pChild[i]->nPixelCount;
-			free(pNode->pChild[i]);
+			delete(pNode->pChild[i]);
 			pNode->pChild[i] = 0;
 			nChildren++;
 		}
@@ -300,19 +411,19 @@ void Quantizer::DeleteTree(Node** ppNode)
 	{
 		if ((*ppNode)->pChild[i]) DeleteTree(&((*ppNode)->pChild[i]));
 	}
-	free(*ppNode);
+	delete(*ppNode);
 	*ppNode = 0;
 }
 
-void Quantizer::GetPaletteColors(Node* pTree, COLOR3* prgb, unsigned int* pIndex, unsigned int* pSum)
+void Quantizer::GetPaletteColors(Node* pTree, COLOR3* pal, unsigned int* pIndex, unsigned int* pSum)
 {
 	if (pTree)
 	{
 		if (pTree->bIsLeaf)
 		{
-			prgb[*pIndex].r = (unsigned char)((pTree->nRedSum) / (pTree->nPixelCount));
-			prgb[*pIndex].g = (unsigned char)((pTree->nGreenSum) / (pTree->nPixelCount));
-			prgb[*pIndex].b = (unsigned char)((pTree->nBlueSum) / (pTree->nPixelCount));
+			pal[*pIndex].r = (unsigned char)((pTree->nRedSum) / (pTree->nPixelCount));
+			pal[*pIndex].g = (unsigned char)((pTree->nGreenSum) / (pTree->nPixelCount));
+			pal[*pIndex].b = (unsigned char)((pTree->nBlueSum) / (pTree->nPixelCount));
 			pTree->nIndex = *pIndex;
 			if (pSum)
 				pSum[*pIndex] = pTree->nPixelCount;
@@ -323,7 +434,7 @@ void Quantizer::GetPaletteColors(Node* pTree, COLOR3* prgb, unsigned int* pIndex
 			for (int i = 0; i < 8; i++)
 			{
 				if (pTree->pChild[i])
-					GetPaletteColors(pTree->pChild[i], prgb, pIndex, pSum);
+					GetPaletteColors(pTree->pChild[i], pal, pIndex, pSum);
 			}
 		}
 	}
@@ -374,19 +485,47 @@ unsigned int Quantizer::GetColorCount()
 	return m_nLeafCount;
 }
 
-void Quantizer::SetColorTable(COLOR3* prgb)
+void Quantizer::SetColorTable(COLOR3* pal, unsigned int colors)
 {
+	if (m_pTree)
+		DeleteTree(&m_pTree);
+
+	if (m_pPalette)
+		delete[] m_pPalette;
+
+	*this = Quantizer(colors, m_nColorBits);
+
+	m_pPalette = new COLOR3[colors];
+	memcpy(m_pPalette, pal, colors * sizeof(COLOR3));
+
+	for (unsigned int i = 0; i < colors; i++)
+	{
+		AddColor(&m_pTree, pal[i], 0, &m_nLeafCount, m_pReducibleNodes);
+	}
+
+	m_nMaxColors = colors;
+}
+
+void Quantizer::GetColorTable(COLOR3* pal)
+{
+	memcpy(pal, m_pPalette, m_nMaxColors * sizeof(COLOR3));
+}
+
+void Quantizer::GenColorTable()
+{
+	if (!m_pPalette)
+		return;
 	unsigned int nIndex = 0;
-	if (m_nOutputMaxColors<16 && m_nLeafCount>m_nOutputMaxColors)
+	if (m_nMaxColors<16 && m_nLeafCount>m_nMaxColors)
 	{
 		unsigned int nSum[16];
 		COLOR3 tmppal[16];
 		GetPaletteColors(m_pTree, tmppal, &nIndex, nSum);
 		unsigned int j, k, nr, ng, nb, ns, a, b;
-		for (j = 0; j < m_nOutputMaxColors; j++)
+		for (j = 0; j < m_nMaxColors; j++)
 		{
-			a = (j * m_nLeafCount) / m_nOutputMaxColors;
-			b = ((j + 1) * m_nLeafCount) / m_nOutputMaxColors;
+			a = (j * m_nLeafCount) / m_nMaxColors;
+			b = ((j + 1) * m_nLeafCount) / m_nMaxColors;
 			nr = ng = nb = ns = 0;
 			for (k = a; k < b; k++)
 			{
@@ -395,55 +534,36 @@ void Quantizer::SetColorTable(COLOR3* prgb)
 				nb += tmppal[k].b * nSum[k];
 				ns += nSum[k];
 			}
-			prgb[j].r = FixBounds((int)(nr / ns));
-			prgb[j].g = FixBounds((int)(ng / ns));
-			prgb[j].b = FixBounds((int)(nb / ns));
+			m_pPalette[j].r = FixBounds((int)(nr / ns));
+			m_pPalette[j].g = FixBounds((int)(ng / ns));
+			m_pPalette[j].b = FixBounds((int)(nb / ns));
 		}
 	}
 	else
 	{
-		GetPaletteColors(m_pTree, prgb, &nIndex, 0);
+		GetPaletteColors(m_pTree, m_pPalette, &nIndex, 0);
 	}
 }
 
-bool Quantizer::ColorsAreEqual(COLOR3 a, COLOR3 b)
+void Quantizer::ApplyColorTable(COLOR3* image, int64_t size)
 {
-	return (a.r == b.r && a.g == b.g && a.b == b.b);
-}
+	ProcessImage(image, size);
 
-unsigned int Quantizer::GetNearestIndex(COLOR3 c, COLOR3* pal)
-{
-	if (!pal) return 0;
-	if (ColorsAreEqual(c, pal[m_lastIndex]))
-		return m_lastIndex;
-	int64_t cur = 0;
-	for (int64_t i = 0, k = 0, distance = 2147483647; i < m_nLeafCount; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
-		k = (int64_t)((pal[i].r - c.r) * (pal[i].r - c.r) + (pal[i].g - c.g) * (pal[i].g - c.g) + (pal[i].b - c.b) * (pal[i].b - c.b));
-		if (k == 0)
-		{
-			m_lastIndex = i;
-			return i;
-		}
-		if (k < distance)
-		{
-			distance = k;
-			cur = i;
-		}
+		image[i] = m_pPalette[GetNearestIndexFast(image[i], m_pPalette)];
 	}
-	m_lastIndex = cur;
-	return m_lastIndex;
 }
 
-unsigned int Quantizer::GetNearestIndexFast(COLOR3 c, COLOR3* pal)
+void Quantizer::ApplyColorTableDither(COLOR3* image, int64_t width, int64_t height)
 {
-	if (m_nOutputMaxColors<16 && m_nLeafCount>m_nOutputMaxColors)
-		return GetNearestIndex(c, pal);
-	if (!pal) return 0;
-	if (ColorsAreEqual(c, pal[m_lastIndex]))
-		return m_lastIndex;
-	m_lastIndex = GetNextBestLeaf(&m_pTree, 0, c, pal);
-	return m_lastIndex;
+	ProcessImage(image, width * height);
+
+	unsigned int* tmpcolorarray = new unsigned int[width * height];
+	FloydSteinbergDither((COLOR3*)image, width, height, tmpcolorarray);
+	for (unsigned int i = 0; i < width * height; i++)
+	{
+		image[i] = m_pPalette[tmpcolorarray[i]];
+	}
+	delete[] tmpcolorarray;
 }
-
-

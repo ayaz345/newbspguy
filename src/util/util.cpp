@@ -1540,7 +1540,7 @@ int GetImageColors(COLOR3* image, int size)
 		if (paletteIdx == -1)
 		{
 			if (colorCount >= 300)
-				colorCount = 300; // Just for speed reason
+				return colorCount; // Just for speed reason
 			palette[colorCount] = image[y];
 			paletteIdx = colorCount;
 			colorCount++;
@@ -1569,6 +1569,4 @@ void SimpeColorReduce(COLOR3* image, int size)
 			}
 		}
 	}
-
-	//
 }

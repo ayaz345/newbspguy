@@ -889,16 +889,16 @@ bool ExportWad(Bsp* map)
 	if (map->textureCount > 0)
 	{
 		Wad* tmpWad = new Wad(map->bsp_path);
-		std::vector<WADTEX*> tmpWadTex;
+		std::vector<WADTEX *> tmpWadTex;
 		for (int i = 0; i < map->textureCount; i++)
 		{
 			int oldOffset = ((int*)map->textures)[i + 1];
 			if (oldOffset != -1)
 			{
-				BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
+				BSPMIPTEX * bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
 				if (bspTex->nOffsets[0] <= 0)
 					continue;
-				WADTEX* oldTex = new WADTEX(bspTex);
+				WADTEX * oldTex = new WADTEX(bspTex);
 				tmpWadTex.push_back(oldTex);
 			}
 		}
@@ -911,11 +911,6 @@ bool ExportWad(Bsp* map)
 		{
 			retval = false;
 			logf("Not found any textures in bsp file.");
-		}
-		for (int i = 0; i < tmpWadTex.size(); i++)
-		{
-			if (tmpWadTex[i])
-				delete tmpWadTex[i];
 		}
 		tmpWadTex.clear();
 		delete tmpWad;
@@ -941,7 +936,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 	{
 		for (int i = 0; i < (int)tmpWad->dirEntries.size(); i++)
 		{
-			WADTEX* wadTex = tmpWad->readTexture(i);
+			WADTEX * wadTex = tmpWad->readTexture(i);
 			COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 			map->add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
@@ -1282,8 +1277,7 @@ void Gui::drawMenuBar()
 
 						for (int i = 0; i < (int)wad->dirEntries.size(); i++)
 						{
-							WADTEX* texture = wad->readTexture(i);
-							char textureName[MAXTEXTURENAME];
+							WADTEX * texture =wad->readTexture(i);
 
 							if (texture->szName[0] != '\0' && strlen(texture->szName) < MAXTEXTURENAME)
 							{
@@ -1424,16 +1418,13 @@ void Gui::drawMenuBar()
 									int oldcolors = 0;
 									if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
 									{
-										logf("Need apply quantizer to reduce color count\n");
+										logf("Need apply quantizer to %s\n", basename(file).c_str());
 										Quantizer* tmpCQuantizer = new Quantizer(256, 8);
-										tmpCQuantizer->ProcessImage((COLOR3*)image_bytes, w2 * h2);
-										unsigned char* pal = new unsigned char[256 * sizeof(COLOR3)];
-										tmpCQuantizer->SetColorTable((COLOR3*)pal);
 
 										if (ditheringEnabled)
-											tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2, (COLOR3*)pal);
+											tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
 										else
-											tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2, (COLOR3*)pal);
+											tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
 
 										logf("Reduce color of image from >%d to %d\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2* h2));
 
@@ -1441,7 +1432,7 @@ void Gui::drawMenuBar()
 									}
 									std::string tmpTexName = stripExt(basename(file));
 
-									WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
+									WADTEX * tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
 									g_log_mutex2.lock();
 									textureList.push_back(tmpWadTex);
 									g_log_mutex2.unlock();
@@ -4845,7 +4836,7 @@ void Gui::drawImportMapWidget()
 								{
 									if (s->hasTexture(tex.szName))
 									{
-										WADTEX* wadTex = s->readTexture(tex.szName);
+										WADTEX * wadTex = s->readTexture(tex.szName);
 										COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 										texinfo.iMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
@@ -6666,7 +6657,7 @@ void Gui::drawTextureTool()
 					{
 						if (s->hasTexture(textureName))
 						{
-							WADTEX* wadTex = s->readTexture(textureName);
+							WADTEX * wadTex = s->readTexture(textureName);
 							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 							validTexture = true;
@@ -6676,7 +6667,6 @@ void Gui::drawTextureTool()
 
 							delete[] imageData;
 							delete wadTex;
-
 							ImGui::End();
 							return;
 						}

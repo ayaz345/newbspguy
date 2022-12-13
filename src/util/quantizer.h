@@ -27,32 +27,36 @@ class Quantizer
 protected:
 	Node* m_pTree;
 	unsigned int m_nLeafCount;
-	Node* m_pReducibleNodes[8];
+	Node* m_pReducibleNodes[256];
 	unsigned int m_nMaxColors;
-	unsigned int m_nOutputMaxColors;
-	unsigned int m_nColorBits;
+	unsigned char m_nColorBits;
 	unsigned int m_lastIndex;
+	COLOR3* m_pPalette;
 
 public:
-	Quantizer(unsigned int nMaxColors, unsigned int nColorBits);
+	Quantizer(unsigned int nMaxColors, unsigned char nColorBits);
 	virtual ~Quantizer();
-	bool ProcessImage(COLOR3* image, int64_t size);
-	void FloydSteinbergDither256(unsigned char* image, int64_t width, int64_t height, unsigned char* target, COLOR3* pal);
-	void FloydSteinbergDither(unsigned char* image, int64_t width, int64_t height, unsigned int* target, COLOR3* pal);
-	void ApplyColorTable(COLOR3* image, int64_t size, COLOR3* pal);
-	void ApplyColorTableDither(COLOR3* image, int64_t width, int64_t height, COLOR3* pal);
+	void ProcessImage(COLOR3* image, int64_t size);
+	void ApplyColorTable(COLOR3* image, int64_t size);
+	void ApplyColorTableDither(COLOR3* image, int64_t width, int64_t height);
+	void FloydSteinbergDither(COLOR3* image, int64_t width, int64_t height, unsigned int* target);
+	void FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t height, unsigned char* target);
 	unsigned int GetColorCount();
-	void SetColorTable(COLOR3* prgb);
+	void GetColorTable(COLOR3* pal);
+	void SetColorTable(COLOR3* pal, unsigned int colors);
 	unsigned int GetNearestIndex(COLOR3 c, COLOR3* pal);
 	unsigned int GetNearestIndexFast(COLOR3 c, COLOR3* pal);
+	COLOR3 GetNearestColorFast(COLOR3 c, COLOR3* pal);
+	unsigned int GetNearestIndexDither(COLOR3& color, COLOR3* pal);
 
 protected:
 	unsigned int GetLeafCount(Node* pTree);
-	void AddColor(Node** ppNode, unsigned char r, unsigned char g, unsigned char b, unsigned int nColorBits, int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes);
-	void* CreateNode(int nLevel, unsigned int nColorBits, unsigned int* pLeafCount, Node** pReducibleNodes);
-	void ReduceTree(unsigned int nColorBits, unsigned int* pLeafCount, Node** pReducibleNodes);
+	void GenColorTable();
+	void AddColor(Node** ppNode, COLOR3 c, int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes);
+	void* CreateNode(int nLevel, unsigned int* pLeafCount, Node** pReducibleNodes);
+	void ReduceTree(unsigned int* pLeafCount, Node** pReducibleNodes);
 	void DeleteTree(Node** ppNode);
-	void GetPaletteColors(Node* pTree, COLOR3* prgb, unsigned int* pIndex, unsigned int* pSum);
+	void GetPaletteColors(Node* pTree, COLOR3* pal, unsigned int* pIndex, unsigned int* pSum);
 	unsigned int GetNextBestLeaf(Node** pTree, unsigned int nLevel, COLOR3 c, COLOR3* pal);
 	bool ColorsAreEqual(COLOR3 a, COLOR3 b);
 };

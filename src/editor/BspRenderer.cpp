@@ -198,10 +198,8 @@ void BspRenderer::loadTextures()
 
 		COLOR3* palette = NULL;
 		unsigned char* src = NULL;
-		WADTEX* wadTex = NULL;
-
 		int lastMipSize = (tex.nWidth / 8) * (tex.nHeight / 8);
-
+		WADTEX* wadTex = NULL;
 		if (tex.nOffsets[0] <= 0)
 		{
 			bool foundInWad = false;
@@ -210,7 +208,6 @@ void BspRenderer::loadTextures()
 				if (wads[k]->hasTexture(tex.szName))
 				{
 					foundInWad = true;
-
 					wadTex = wads[k]->readTexture(tex.szName);
 					palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
 					src = wadTex->data;
@@ -245,16 +242,10 @@ void BspRenderer::loadTextures()
 				imageData[k] = palette[src[k]];
 			}
 		}
+		glTexturesSwap[i] = new Texture(tex.nWidth, tex.nHeight, (unsigned char*)imageData, tex.szName);
 
 		if (wadTex)
-		{
-			delete[] wadTex->data;
 			delete wadTex;
-		}
-
-		// map->textures + texOffset + tex.nOffsets[0]
-
-		glTexturesSwap[i] = new Texture(tex.nWidth, tex.nHeight, (unsigned char*)imageData, tex.szName);
 	}
 
 	if (wadTexCount)
@@ -1731,8 +1722,13 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 			if (highlight)
 				yellowTex->bind(0);
-			else
-				greyTex->bind(0);
+			else 
+			{
+				if (modelIdx > 0)
+					blueTex->bind(0);
+				else
+					greyTex->bind(0);
+			}
 
 			whiteTex->bind(1);
 

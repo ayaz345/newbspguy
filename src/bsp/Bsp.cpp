@@ -1382,8 +1382,6 @@ int Bsp::delete_embedded_textures()
 	unsigned char* newTextureData = new unsigned char[newTexDataSize];
 	memset(newTextureData, 0, newTexDataSize);
 
-	unsigned char* mips = (unsigned char*)(newTextureData + headerSz);
-
 	int* header = (int*)newTextureData;
 	int offset = headerSz;
 
@@ -5150,7 +5148,9 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 			BSPFACE& face = faces[i];
 			BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
 			int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
-			BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + texOffset));
+			BSPMIPTEX tex = BSPMIPTEX();
+			if (texOffset >= 0)
+				tex = *((BSPMIPTEX*)(textures + texOffset));
 
 			std::vector<int> entIds = get_model_ents_ids(mdlid);
 
@@ -5162,51 +5162,53 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 			materialid.clear();
 			for (int m = 0; m < matnames.size(); m++)
 			{
-				if (matnames[m] == tex->szName)
-					materialid = tex->szName;
+				if (matnames[m] == tex.szName)
+					materialid = tex.szName;
 			}
 			if (materialid.empty())
 			{
-				materialid = tex->szName;
+				materialid = tex.szName;
 				materials.emplace_back("newmtl " + materialid);
-				if (toLowerCase(tex->szName) == "aaatrigger" ||
-					toLowerCase(tex->szName) == "null" ||
-					toLowerCase(tex->szName) == "sky" ||
-					toLowerCase(tex->szName) == "noclip" ||
-					toLowerCase(tex->szName) == "clip" ||
-					toLowerCase(tex->szName) == "origin" ||
-					toLowerCase(tex->szName) == "bevel" ||
-					toLowerCase(tex->szName) == "hint" ||
-					toLowerCase(tex->szName) == "skip"
+				if (toLowerCase(tex.szName) == "aaatrigger" ||
+					toLowerCase(tex.szName) == "null" ||
+					toLowerCase(tex.szName) == "sky" ||
+					toLowerCase(tex.szName) == "noclip" ||
+					toLowerCase(tex.szName) == "clip" ||
+					toLowerCase(tex.szName) == "origin" ||
+					toLowerCase(tex.szName) == "bevel" ||
+					toLowerCase(tex.szName) == "hint" ||
+					toLowerCase(tex.szName) == "skip"
 					)
 				{
 					materials.push_back("illum 4");
-					materials.push_back("map_Kd " + std::string("textures/") + tex->szName + std::string(".bmp"));
-					materials.push_back("map_d " + std::string("textures/") + tex->szName + std::string(".bmp"));
+					materials.push_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
+					materials.push_back("map_d " + std::string("textures/") + tex.szName + std::string(".bmp"));
 				}
 				else
 				{
-					materials.push_back("map_Kd " + std::string("textures/") + tex->szName + std::string(".bmp"));
+					materials.push_back("map_Kd " + std::string("textures/") + tex.szName + std::string(".bmp"));
 				}
 				materials.push_back("");
-				matnames.push_back(tex->szName);
+				matnames.push_back(tex.szName);
 			}
 
-			if (!fileExists(path + std::string("textures/") + tex->szName + std::string(".bmp")))
+			if (!fileExists(path + std::string("textures/") + tex.szName + std::string(".bmp")))
 			{
-				if (tex->nOffsets[0] > -1)
+				if (tex.nOffsets[0] > 0)
 				{
-					WADTEX wadTex = tex;
-					COLOR3* imageData = ConvertWadTexToRGB(&wadTex);
-
-					for (int k = 0; k < wadTex.nHeight * wadTex.nWidth ; k++)
+					if (texOffset >= 0)
 					{
-						std::swap(imageData[k].b, imageData[k].r);
-					}
-					//tga_write((path + tex->szName + std::string(".obj")).c_str(), tex->nWidth, tex->nWidth, (unsigned char*)tex + tex->nOffsets[0], 3, 3);
-					WriteBMP(path + std::string("textures/") + tex->szName + std::string(".bmp"), (unsigned char*)imageData, wadTex.nWidth, wadTex.nHeight, 3);
+						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)));
 
-					delete imageData;
+						for (int k = 0; k < tex.nHeight * tex.nWidth; k++)
+						{
+							std::swap(imageData[k].b, imageData[k].r);
+						}
+						//tga_write((path + tex->szName + std::string(".obj")).c_str(), tex->nWidth, tex->nWidth, (unsigned char*)tex + tex->nOffsets[0], 3, 3);
+						WriteBMP(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, tex.nWidth, tex.nHeight, 3);
+
+						delete imageData;
+					}
 				}
 				else
 				{
@@ -5216,11 +5218,11 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 						Renderer* rend = g_app;
 						for (int k = 0; k < rend->mapRenderers[r]->wads.size(); k++)
 						{
-							if (rend->mapRenderers[r]->wads[k]->hasTexture(tex->szName))
+							if (rend->mapRenderers[r]->wads[k]->hasTexture(tex.szName))
 							{
 								foundInWad = true;
 
-								WADTEX* wadTex = rend->mapRenderers[r]->wads[k]->readTexture(tex->szName);
+								WADTEX * wadTex = rend->mapRenderers[r]->wads[k]->readTexture(tex.szName);
 								int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
 								unsigned char* src = wadTex->data;
@@ -5234,7 +5236,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 									std::swap(imageData[m].b, imageData[m].r);
 								}
 
-								WriteBMP(path + std::string("textures/") + tex->szName + std::string(".bmp"), (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight, 3);
+								WriteBMP(path + std::string("textures/") + tex.szName + std::string(".bmp"), (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight, 3);
 
 								delete[] imageData;
 								delete wadTex;
@@ -5292,8 +5294,8 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 					vec3 pos = vec3(vert.x, -vert.z, vert.y);
 					float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
 					float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
-					fU /= (float)tex->nWidth;
-					fV /= -(float)tex->nHeight;
+					fU /= (float)tex.nWidth;
+					fV /= -(float)tex.nHeight;
 					fprintf(f, "vt %f %f\n", fU, fV);
 				}
 
