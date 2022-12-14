@@ -282,12 +282,13 @@ bool isNumeric(const std::string& s)
 	return !s.empty() && it == s.end();
 }
 
-std::string toLowerCase(std::string s)
+std::string toLowerCase(const std::string& s)
 {
-	std::transform(s.begin(), s.end(), s.begin(),
+	std::string ret = s;
+	std::transform(ret.begin(), ret.end(), ret.begin(),
 				   [](unsigned char c){ return (unsigned char)std::tolower(c); }
 	);
-	return s;
+	return ret;
 }
 
 std::string trimSpaces(std::string s)

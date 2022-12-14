@@ -5,6 +5,11 @@
 #include "util.h"
 #include "Renderer.h"
 
+#ifdef WIN32
+#define strcasecmp _stricmp
+#endif
+
+
 Wad::Wad(void)
 {
 	dirEntries.clear();
@@ -141,7 +146,7 @@ bool Wad::readInfo()
 bool Wad::hasTexture(const std::string& texname)
 {
 	for (int d = 0; d < header.nDir; d++)
-		if (toLowerCase(texname) == toLowerCase(dirEntries[d].szName))
+		if (strcasecmp(texname.c_str(), dirEntries[d].szName) == 0)
 			return true;
 	return false;
 }
@@ -173,7 +178,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	int idx = -1;
 	for (int d = 0; d < header.nDir; d++)
 	{
-		if (toLowerCase(texname) == toLowerCase(dirEntries[d].szName))
+		if (strcasecmp(texname.c_str(), dirEntries[d].szName) == 0)
 		{
 			idx = d;
 			break;

@@ -89,7 +89,7 @@ bool createDir(const std::string& dirName);
 
 void removeDir(const std::string& dirName);
 
-std::string toLowerCase(std::string str);
+std::string toLowerCase(const std::string& s);
 
 std::string trimSpaces(std::string s);
 

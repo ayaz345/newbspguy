@@ -890,9 +890,9 @@ void Renderer::renderLoop()
 		}
 
 		isTransformableSolid = entIdx >= 0;
-		bool isScalingObject = transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT;
-		bool isMovingOrigin = transformMode == TRANSFORM_MOVE && transformTarget == TRANSFORM_ORIGIN;
-		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
+		bool isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
+		bool isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
+		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
 		bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
 		matmodel.loadIdentity();
@@ -1365,14 +1365,14 @@ void Renderer::drawTransformAxes()
 	glClear(GL_DEPTH_BUFFER_BIT);
 	updateDragAxes();
 	glDisable(GL_CULL_FACE);
-	if (transformMode == TRANSFORM_SCALE && transformTarget == TRANSFORM_OBJECT)
+	if (transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT)
 	{
 		vec3 ori = scaleAxes.origin;
 		matmodel.translate(ori.x, ori.z, -ori.y);
 		colorShader->updateMatrixes();
 		scaleAxes.buffer->drawFull();
 	}
-	if (transformMode == TRANSFORM_MOVE)
+	if (transformMode == TRANSFORM_MODE_MOVE && (transformTarget == TRANSFORM_OBJECT || transformTarget == TRANSFORM_ORIGIN))
 	{
 		vec3 ori = moveAxes.origin;
 		matmodel.translate(ori.x, ori.z, -ori.y);
@@ -1465,11 +1465,8 @@ void Renderer::controls()
 
 void Renderer::vertexEditControls()
 {
-	canTransform = true;
-
 	if (transformTarget == TRANSFORM_VERTEX)
 	{
-		canTransform = false;
 		anyEdgeSelected = false;
 		anyVertSelected = false;
 
@@ -1477,7 +1474,6 @@ void Renderer::vertexEditControls()
 		{
 			if (modelVerts[i].selected)
 			{
-				canTransform = true;
 				anyVertSelected = true;
 				break;
 			}
@@ -1487,15 +1483,11 @@ void Renderer::vertexEditControls()
 		{
 			if (modelEdges[i].selected)
 			{
-				canTransform = true;
 				anyEdgeSelected = true;
 			}
 		}
 
 	}
-
-	canTransform = (transformTarget == TRANSFORM_OBJECT || transformTarget == TRANSFORM_ORIGIN) && transformMode == TRANSFORM_MOVE && pickMode == pick_modes::PICK_OBJECT;
-
 
 	if (pressed[GLFW_KEY_F] && !oldPressed[GLFW_KEY_F])
 	{
@@ -1621,7 +1613,7 @@ void Renderer::applyTransform(bool forceUpdate)
 {
 	Bsp* map = SelectedMap;
 
-	if (!map || !isTransformableSolid || (modelUsesSharedStructures && (transformMode != TRANSFORM_MOVE || transformTarget == TRANSFORM_VERTEX)))
+	if (!map || !isTransformableSolid || (modelUsesSharedStructures && (transformMode != TRANSFORM_MODE_MOVE || transformTarget == TRANSFORM_VERTEX)))
 	{
 		updateModelVerts();
 		return;
@@ -1637,9 +1629,9 @@ void Renderer::applyTransform(bool forceUpdate)
 
 	if (modelIdx > 0 && pickMode == PICK_OBJECT)
 	{
-		bool transformingVerts = transformTarget == TRANSFORM_VERTEX;
-		bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_SCALE;
-		bool movingOrigin = transformTarget == TRANSFORM_ORIGIN;
+		bool transformingVerts = transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_MOVE;
+		bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_SCALE;
+		bool movingOrigin = transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE;
 		bool actionIsUndoable = false;
 
 		bool anyVertsChanged = false;
@@ -1653,7 +1645,6 @@ void Renderer::applyTransform(bool forceUpdate)
 
 		if (anyVertsChanged && (transformingVerts || scalingObject || forceUpdate))
 		{
-
 			invalidSolid = !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
 			gui->reloadLimits();
 
@@ -1771,7 +1762,7 @@ void Renderer::cameraObjectHovering()
 {
 	originHovered = false;
 	Bsp* map = SelectedMap;
-	if (!map || (modelUsesSharedStructures && (transformMode != TRANSFORM_MOVE || transformTarget == TRANSFORM_VERTEX)))
+	if (!map || (modelUsesSharedStructures && (transformMode != TRANSFORM_MODE_MOVE || transformTarget == TRANSFORM_VERTEX)))
 		return;
 
 	int modelIdx = -1;
@@ -1842,11 +1833,11 @@ void Renderer::cameraObjectHovering()
 		originHovered = pickAABB(pickStart, pickDir, min, max, vertPick.bestDist);
 	}
 
-	if (transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_SCALE)
+	if (transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_SCALE)
 		return; // 3D scaling disabled in vertex edit mode
 
 	// axis handle hovering
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_SCALE ? &scaleAxes : &moveAxes);
+	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 	hoverAxis = -1;
 	if (showDragAxes && !movingEnt && hoverVert == -1 && hoverEdge == -1)
 	{
@@ -1859,7 +1850,7 @@ void Renderer::cameraObjectHovering()
 		{
 			vec3 origin = activeAxes.origin;
 
-			int axisChecks = transformMode == TRANSFORM_SCALE ? activeAxes.numAxes : 3;
+			int axisChecks = transformMode == TRANSFORM_MODE_SCALE ? activeAxes.numAxes : 3;
 			for (int i = 0; i < axisChecks; i++)
 			{
 				if (pickAABB(pickStart, pickDir, origin + activeAxes.mins[i], origin + activeAxes.maxs[i], axisPick.bestDist))
@@ -1869,7 +1860,7 @@ void Renderer::cameraObjectHovering()
 			}
 
 			// center cube gets priority for selection (hard to select from some angles otherwise)
-			if (transformMode == TRANSFORM_MOVE)
+			if (transformMode == TRANSFORM_MODE_MOVE)
 			{
 				float bestDist = FLT_MAX_COORD;
 				if (pickAABB(pickStart, pickDir, origin + activeAxes.mins[3], origin + activeAxes.maxs[3], bestDist))
@@ -2163,11 +2154,18 @@ void Renderer::pickObject()
 
 bool Renderer::transformAxisControls()
 {
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_SCALE ? &scaleAxes : &moveAxes);
+	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
 
-	if (!isTransformableSolid || !canTransform || pickClickHeld || entIdx < 0 || !map)
+	bool transformingVerts = transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_MOVE;
+	bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_SCALE;
+	bool movingOrigin = (transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE)
+		|| (transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_MOVE);
+
+	bool canTransform = transformingVerts | scalingObject | movingOrigin;
+
+	if (!isTransformableSolid || pickClickHeld || entIdx < 0 || !map)
 	{
 		return false;
 	}
@@ -2215,7 +2213,7 @@ bool Renderer::transformAxisControls()
 
 		dragDelta = delta;
 
-		if (transformMode == TRANSFORM_MOVE)
+		if (transformMode == TRANSFORM_MODE_MOVE)
 		{
 			if (transformTarget == TRANSFORM_VERTEX)
 			{
@@ -2713,7 +2711,7 @@ void Renderer::updateDragAxes(vec3 delta)
 
 	vec3 entMin, entMax;
 	// set origin of the axes
-	if (transformMode == TRANSFORM_SCALE)
+	if (transformMode == TRANSFORM_MODE_SCALE)
 	{
 		if (ent && ent->isBspModel())
 		{
@@ -2782,7 +2780,7 @@ void Renderer::updateDragAxes(vec3 delta)
 		}
 	}
 
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_SCALE ? &scaleAxes : &moveAxes);
+	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 
 	float baseScale = (activeAxes.origin - localCameraOrigin).length() * 0.005f;
 	float s = baseScale;
@@ -2790,7 +2788,7 @@ void Renderer::updateDragAxes(vec3 delta)
 	float d = baseScale * 32;
 
 	// create the meshes
-	if (transformMode == TRANSFORM_SCALE)
+	if (transformMode == TRANSFORM_MODE_SCALE)
 	{
 		vec3 axisMins[6] = {
 			vec3(0, -s, -s) + vec3(entMax.x,0,0), // x+
@@ -3747,7 +3745,7 @@ bool Renderer::splitModelFace()
 void Renderer::scaleSelectedVerts(float x, float y, float z)
 {
 	int entIdx = pickInfo.GetSelectedEnt();
-	TransformAxes& activeAxes = *(transformMode == TRANSFORM_SCALE ? &scaleAxes : &moveAxes);
+	TransformAxes& activeAxes = *(transformMode == TRANSFORM_MODE_SCALE ? &scaleAxes : &moveAxes);
 	vec3 fromOrigin = activeAxes.origin;
 
 	vec3 min(FLT_MAX_COORD, FLT_MAX_COORD, FLT_MAX_COORD);

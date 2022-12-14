@@ -2125,7 +2125,7 @@ void Gui::drawStatusMessage()
 		{
 			if (app->modelUsesSharedStructures)
 			{
-				if (app->transformMode == TRANSFORM_MOVE)
+				if (app->transformMode == TRANSFORM_MODE_MOVE)
 					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA (EDIT ONLY VISUAL DATA WITHOUT COLLISION)");
 				else
 					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA");
@@ -2467,10 +2467,9 @@ void Gui::drawDebugWidget()
 			float mb = map->getBspRender()->undoMemoryUsage / (1024.0f * 1024.0f);
 			ImGui::Text("Undo Memory Usage: %.2f MB", mb);
 
-
-			bool isScalingObject = app->transformMode == TRANSFORM_SCALE && app->transformTarget == TRANSFORM_OBJECT;
-			bool isMovingOrigin = app->transformMode == TRANSFORM_MOVE && app->transformTarget == TRANSFORM_ORIGIN && app->originSelected;
-			bool isTransformingValid = !(app->modelUsesSharedStructures && (app->transformMode != TRANSFORM_MOVE || app->transformTarget == TRANSFORM_VERTEX)) && (app->isTransformableSolid || isScalingObject);
+			bool isScalingObject = app->transformMode == TRANSFORM_MODE_SCALE && app->transformTarget == TRANSFORM_OBJECT;
+			bool isMovingOrigin = app->transformMode == TRANSFORM_MODE_MOVE && app->transformTarget == TRANSFORM_ORIGIN && app->originSelected;
+			bool isTransformingValid = !(app->modelUsesSharedStructures && (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget == TRANSFORM_VERTEX)) && (app->isTransformableSolid || isScalingObject);
 			bool isTransformingWorld = entIdx == 0 && app->transformTarget != TRANSFORM_OBJECT;
 
 			ImGui::Text("isTransformableSolid %d", app->isTransformableSolid);
@@ -2482,8 +2481,8 @@ void Gui::drawDebugWidget()
 			ImGui::Text("transformTarget %d", app->transformTarget);
 			ImGui::Text("modelUsesSharedStructures %d", app->modelUsesSharedStructures);
 
-			ImGui::Text("showDragAxes %d\nmovingEnt %d\ncanTransform %d",
-						app->showDragAxes, app->movingEnt, app->canTransform);
+			ImGui::Text("showDragAxes %d\nmovingEnt %d\nanyAltPressed %d",
+						app->showDragAxes, app->movingEnt, app->anyAltPressed);
 
 
 		}
@@ -3414,7 +3413,7 @@ void Gui::drawTransformWidget()
 				shouldUpdateUi = true;
 			}
 
-			TransformAxes& activeAxes = *(app->transformMode == TRANSFORM_SCALE ? &app->scaleAxes : &app->moveAxes);
+			TransformAxes& activeAxes = *(app->transformMode == TRANSFORM_MODE_SCALE ? &app->scaleAxes : &app->moveAxes);
 
 			if (shouldUpdateUi)
 			{
@@ -3575,14 +3574,21 @@ void Gui::drawTransformWidget()
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Target: "); ImGui::NextColumn();
 
+			if (app->transformMode == TRANSFORM_MODE_NONE)
+			{
+				ImGui::BeginDisabled();
+			}
 			ImGui::RadioButton("Object", &app->transformTarget, TRANSFORM_OBJECT); ImGui::NextColumn();
 			ImGui::RadioButton("Vertex", &app->transformTarget, TRANSFORM_VERTEX); ImGui::NextColumn();
 			ImGui::RadioButton("Origin", &app->transformTarget, TRANSFORM_ORIGIN); ImGui::NextColumn();
-
+			if (app->transformMode == TRANSFORM_MODE_NONE)
+			{
+				ImGui::EndDisabled();
+			}
 			ImGui::Text("3D Axes: "); ImGui::NextColumn();
-			ImGui::RadioButton("Hide", &app->transformMode, TRANSFORM_NONE); ImGui::NextColumn();
-			ImGui::RadioButton("Move", &app->transformMode, TRANSFORM_MOVE); ImGui::NextColumn();
-			ImGui::RadioButton("Scale", &app->transformMode, TRANSFORM_SCALE); ImGui::NextColumn();
+			ImGui::RadioButton("Hide", &app->transformMode, TRANSFORM_MODE_NONE); ImGui::NextColumn();
+			ImGui::RadioButton("Move", &app->transformMode, TRANSFORM_MODE_MOVE); ImGui::NextColumn();
+			ImGui::RadioButton("Scale", &app->transformMode, TRANSFORM_MODE_SCALE); ImGui::NextColumn();
 
 			ImGui::Columns(1);
 
@@ -3617,10 +3623,10 @@ void Gui::drawTransformWidget()
 			}
 
 			ImGui::SameLine();
-			if (app->transformMode != TRANSFORM_MOVE || app->transformTarget != TRANSFORM_OBJECT)
+			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT)
 				ImGui::BeginDisabled();
 			ImGui::Checkbox("Move entity", &app->moveOrigin);
-			if (app->transformMode != TRANSFORM_MOVE || app->transformTarget != TRANSFORM_OBJECT)
+			if (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget != TRANSFORM_OBJECT)
 				ImGui::EndDisabled();
 			ImGui::SameLine();
 			ImGui::TextDisabled("(origin)");

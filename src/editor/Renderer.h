@@ -22,9 +22,9 @@ class Gui;
 
 enum transform_modes
 {
-	TRANSFORM_NONE = -1,
-	TRANSFORM_MOVE,
-	TRANSFORM_SCALE
+	TRANSFORM_MODE_NONE = -1,
+	TRANSFORM_MODE_MOVE,
+	TRANSFORM_MODE_SCALE
 };
 
 enum transform_targets
@@ -233,7 +233,7 @@ private:
 	int draggingAxis = -1; // axis currently being dragged by the mouse
 	bool gridSnappingEnabled = true;
 	int gridSnapLevel = 0;
-	int transformMode = TRANSFORM_MOVE;
+	int transformMode = TRANSFORM_MODE_MOVE;
 	int transformTarget = TRANSFORM_OBJECT;
 	int pickMode = PICK_OBJECT;
 	bool showDragAxes = false;
@@ -246,7 +246,6 @@ private:
 	bool moveOrigin = true;
 	bool invalidSolid = false;
 	bool isTransformableSolid = false;
-	bool canTransform = false;
 	bool anyEdgeSelected = false;
 	bool anyVertSelected = false;
 
