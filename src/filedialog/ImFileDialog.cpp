@@ -783,12 +783,12 @@ namespace ifd
 			attrs = FILE_ATTRIBUTE_DIRECTORY;
 		}
 
-		SHFILEINFOA fileInfo = {0};
-		std::string spath = path.string();
+		SHFILEINFOW fileInfo = {0};
+		std::wstring spath = path.wstring();
 		for (int i = 0; i < spath.size(); i++)
 			if (spath[i] == '/')
 				spath[i] = '\\';
-		SHGetFileInfoA(spath.data(), attrs, &fileInfo, sizeof(SHFILEINFO), flags);
+		SHGetFileInfoW(spath.data(), attrs, &fileInfo, sizeof(SHFILEINFO), flags);
 
 		if (fileInfo.hIcon == nullptr)
 			return nullptr;
