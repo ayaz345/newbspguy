@@ -691,34 +691,35 @@ Renderer::Renderer()
 		return;
 	}
 
-	gui = new Gui(this);
-
 	g_settings.loadDefault();
 	g_settings.load();
+
+	gui = new Gui(this);
+
 	loadSettings();
+
 	glfwSetErrorCallback(error_callback);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
 	window = glfwCreateWindow(g_settings.windowWidth, g_settings.windowHeight, "bspguy", NULL, NULL);
 
-	if (g_settings.settingLoaded)
-	{
-		glfwSetWindowPos(window, g_settings.windowX, g_settings.windowY);
+	glfwSetWindowPos(window, g_settings.windowX, g_settings.windowY);
 
-		// setting size again to fix issue where window is too small because it was
-		// moved to a monitor with a different DPI than the one it was created for
-		glfwSetWindowSize(window, g_settings.windowWidth, g_settings.windowHeight);
-		if (g_settings.maximized)
-		{
-			glfwMaximizeWindow(window);
-		}
+	// setting size again to fix issue where window is too small because it was
+	// moved to a monitor with a different DPI than the one it was created for
+	glfwSetWindowSize(window, g_settings.windowWidth, g_settings.windowHeight);
+	if (g_settings.maximized)
+	{
+		glfwMaximizeWindow(window);
 	}
+
 	if (!window)
 	{
 		logf("Window creation failed. Maybe your PC doesn't support OpenGL 3.0\n");
 		return;
 	}
+
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -732,7 +733,6 @@ Renderer::Renderer()
 	// init to black screen instead of white
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glfwSwapBuffers(window);
-	glfwSwapInterval(1);
 	bspShader = new ShaderProgram(Shaders::g_shader_multitexture_vertex, Shaders::g_shader_multitexture_fragment);
 	bspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	bspShader->setMatrixNames(NULL, "modelViewProjection");
@@ -752,6 +752,10 @@ Renderer::Renderer()
 	clearSelection();
 
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
+
+
+	gui->init();
+
 	g_app = this;
 
 	g_progress.simpleMode = true;
@@ -760,7 +764,6 @@ Renderer::Renderer()
 
 	reloading = true;
 	fgdFuture = std::async(std::launch::async, &Renderer::loadFgds, this);
-	gui->init();
 	//cameraOrigin = vec3(51, 427, 234);
 	//cameraAngles = vec3(41, 0, -170);
 }
@@ -830,6 +833,8 @@ void Renderer::renderLoop()
 	curTime = oldTime;
 	double lastTitleTime = curTime;
 
+	glfwSwapInterval(g_settings.vsync);
+	static bool vsync = g_settings.vsync;
 	while (!glfwWindowShouldClose(window))
 	{
 		oldTime = curTime;
@@ -1056,6 +1061,11 @@ void Renderer::renderLoop()
 			gui->draw();
 
 		controls();
+		if (vsync != g_settings.vsync)
+		{
+			glfwSwapInterval(g_settings.vsync);
+			vsync = g_settings.vsync;
+		}
 
 		glfwSwapBuffers(window);
 
@@ -1073,6 +1083,8 @@ void Renderer::renderLoop()
 			}
 			reloading = reloadingGameDir = false;
 		}
+
+
 
 		int glerror = glGetError();
 		if (glerror != GL_NO_ERROR)
@@ -1186,9 +1198,6 @@ void Renderer::loadSettings()
 	moveSpeed = g_settings.moveSpeed;
 
 	gui->shouldReloadFonts = true;
-
-	glfwSwapInterval(gui->vsync ? 1 : 0);
-
 	gui->settingLoaded = true;
 }
 

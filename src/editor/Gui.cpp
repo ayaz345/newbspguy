@@ -2106,11 +2106,7 @@ void Gui::drawFpsOverlay()
 		ImGui::Text("%.0f FPS", imgui_io->Framerate);
 		if (ImGui::BeginPopupContextWindow())
 		{
-			if (ImGui::MenuItem("VSync", NULL, vsync))
-			{
-				vsync = !vsync;
-				glfwSwapInterval(vsync ? 1 : 0);
-			}
+			ImGui::Checkbox("VSync", &g_settings.vsync);
 			ImGui::EndPopup();
 		}
 	}
@@ -4313,10 +4309,7 @@ void Gui::drawSettings()
 		else if (settingsTab == 5)
 		{
 			ImGui::Text("Viewport:");
-			if (ImGui::Checkbox("VSync", &vsync))
-			{
-				glfwSwapInterval(vsync ? 1 : 0);
-			}
+			ImGui::Checkbox("VSync", &g_settings.vsync);
 			ImGui::DragFloat("Field of View", &app->fov, 0.1f, 1.0f, 150.0f, "%.1f degrees");
 			ImGui::DragFloat("Back Clipping plane", &app->zFar, 10.0f, -FLT_MAX_COORD, FLT_MAX_COORD, "%.0f", ImGuiSliderFlags_Logarithmic);
 			ImGui::Separator();
