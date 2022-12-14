@@ -389,33 +389,28 @@ namespace ifd
 
 		m_previewLoader = nullptr;
 		m_previewLoaderRunning = false;
-
 		m_setDirectory(std::filesystem::current_path(), false);
-
 		// favorites are available on every OS
 		FileTreeNode* quickAccess = new FileTreeNode("Quick Access");
 		quickAccess->Read = true;
 		m_treeCache.push_back(quickAccess);
-
 #ifdef _WIN32
-		char username[UNLEN + 1] = {0};
+		wchar_t username[UNLEN + 1] = {0};
 		DWORD username_len = UNLEN + 1;
-		GetUserName(username, &username_len);
+		GetUserNameW(username, &username_len);
 
 		std::string drivename = "C:";
 		if (std::getenv("SystemDrive"))
 		{
 			drivename = std::getenv("SystemDrive");
 		}
-
-		std::string userPath = drivename + "\\Users\\" + std::string(username) + "\\";
+		std::string userPath = drivename + "\\Users\\" + std::filesystem::path(username).string() + "\\";
 
 		// Quick Access / Bookmarks
 		quickAccess->Children.push_back(new FileTreeNode(userPath + "Desktop"));
 		quickAccess->Children.push_back(new FileTreeNode(userPath + "Documents"));
 		quickAccess->Children.push_back(new FileTreeNode(userPath + "Downloads"));
 		quickAccess->Children.push_back(new FileTreeNode(userPath + "Pictures"));
-
 		// OneDrive
 		FileTreeNode* oneDrive = new FileTreeNode(userPath + "OneDrive");
 		m_treeCache.push_back(oneDrive);
@@ -788,12 +783,12 @@ namespace ifd
 			attrs = FILE_ATTRIBUTE_DIRECTORY;
 		}
 
-		SHFILEINFO fileInfo = {0};
+		SHFILEINFOA fileInfo = {0};
 		std::string spath = path.string();
 		for (int i = 0; i < spath.size(); i++)
 			if (spath[i] == '/')
 				spath[i] = '\\';
-		SHGetFileInfo(spath.data(), attrs, &fileInfo, sizeof(SHFILEINFO), flags);
+		SHGetFileInfoA(spath.data(), attrs, &fileInfo, sizeof(SHFILEINFO), flags);
 
 		if (fileInfo.hIcon == nullptr)
 			return nullptr;

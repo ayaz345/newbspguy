@@ -77,12 +77,11 @@ std::string basename(const std::string& path);
 std::string stripExt(const std::string& filename);
 
 std::string stripFileName(const std::string& path);
+std::wstring stripFileName(const std::wstring& path);
 
 bool isNumeric(const std::string& s);
 
 void print_color(int colors);
-
-std::string getConfigDir();
 
 bool dirExists(const std::string& dirName);
 
@@ -154,6 +153,9 @@ void replaceAll(std::string& str, const std::string& from, const std::string& to
 
 void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int height, int bytesPerPixel);
 
+std::string getConfigDir();
+
+extern fs::path g_current_dir;
 std::string GetCurrentWorkingDir();
 
 bool VectorCompare(vec3 v1, vec3 v2);

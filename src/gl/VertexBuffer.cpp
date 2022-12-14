@@ -168,15 +168,17 @@ void VertexBuffer::setData(const void* _data, int _numVerts)
 {
 	data = (unsigned char*)_data;
 	numVerts = _numVerts;
+	deleteBuffer();
 }
 
-void VertexBuffer::upload() {
-	deleteBuffer();
-
+void VertexBuffer::upload() 
+{
 	shaderProgram->bind();
 	bindAttributes();
 
-	glGenBuffers(1, &vboId);
+	if (vboId == (GLuint)-1)
+		glGenBuffers(1, &vboId);
+
 	glBindBuffer(GL_ARRAY_BUFFER, vboId);
 	glBufferData(GL_ARRAY_BUFFER, elementSize * numVerts, data, GL_STATIC_DRAW);
 

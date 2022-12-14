@@ -39,12 +39,12 @@ std::string iniPath;
 Gui::Gui(Renderer* app)
 {
 	guiHoverAxis = 0;
-	iniPath = getConfigDir() + "imgui.ini";
 	this->app = app;
 }
 
 void Gui::init()
 {
+	iniPath = getConfigDir() + "imgui.ini";
 // Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
@@ -58,11 +58,10 @@ void Gui::init()
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
-	
+
 	// Setup Platform/Renderer bindings
 	ImGui_ImplGlfw_InitForOpenGL(app->window, true);
 	ImGui_ImplOpenGL3_Init("#version 130");
-
 	// ImFileDialog requires you to set the CreateTexture and DeleteTexture
 	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void* {
 		GLuint tex;
@@ -76,22 +75,18 @@ void Gui::init()
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, (fmt == 0) ? GL_BGRA : GL_RGBA, GL_UNSIGNED_BYTE, data);
 		//glGenerateMipmap(GL_TEXTURE_2D);
 		glBindTexture(GL_TEXTURE_2D, 0);
-
 		return (void*)(uint64_t)tex;
 	};
-
 	ifd::FileDialog::Instance().DeleteTexture = [](void* tex){
 		GLuint texID = (GLuint)((uintptr_t)tex);
 		glDeleteTextures(1, &texID);
 	};
-
 
 	loadFonts();
 
 	imgui_io->ConfigWindowsMoveFromTitleBarOnly = true;
 
 	clearLog();
-
 	// load icons
 	unsigned char* icon_data = NULL;
 	unsigned int w, h;
@@ -99,7 +94,6 @@ void Gui::init()
 	lodepng_decode32(&icon_data, &w, &h, object_icon, sizeof(object_icon));
 	objectIconTexture = new Texture(w, h, icon_data, "objIcon");
 	objectIconTexture->upload(GL_RGBA);
-
 	lodepng_decode32(&icon_data, &w, &h, face_icon, sizeof(face_icon));
 	faceIconTexture = new Texture(w, h, icon_data, "faceIcon");
 	faceIconTexture->upload(GL_RGBA);
@@ -4658,7 +4652,6 @@ void Gui::drawMergeWindow()
 
 					logf("\n");
 				}
-
 				BspMerger merger;
 				Bsp* result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript);
 

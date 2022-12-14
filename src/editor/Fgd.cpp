@@ -60,10 +60,8 @@ void Fgd::merge(Fgd* other)
 
 bool Fgd::parse()
 {
-
 	if (!fileExists(path))
 	{
-		logf("Missing FGD: %s\n", path.c_str());
 		return false;
 	}
 

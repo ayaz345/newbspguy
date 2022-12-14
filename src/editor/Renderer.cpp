@@ -210,7 +210,7 @@ void AppSettings::load()
 	std::ifstream file(g_settings_path);
 	if (!file.is_open())
 	{
-		logf("No access to settings file!\n");
+		logf("No access to settings file %s!\n", g_settings_path.c_str());
 		reset();
 		return;
 	}
@@ -559,9 +559,6 @@ void AppSettings::load()
 
 void AppSettings::save(std::string path)
 {
-	if (!g_settings.settingLoaded || !g_app->gui->settingLoaded)
-		return;
-
 	std::ostringstream file;
 
 	file << "window_width=" << g_settings.windowWidth << std::endl;
@@ -1102,11 +1099,14 @@ void Renderer::postLoadFgds()
 	delete fgd;
 
 	pointEntRenderer = swapPointEntRenderer;
-	fgd = pointEntRenderer->fgd;
-
+	if (pointEntRenderer)
+		fgd = pointEntRenderer->fgd;
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
-		mapRenderers[i]->pointEntRenderer = pointEntRenderer;
+		if (mapRenderers[i])
+		{
+			mapRenderers[i]->pointEntRenderer = pointEntRenderer;
+		}
 	}
 
 	swapPointEntRenderer = NULL;
@@ -1203,12 +1203,11 @@ void Renderer::loadSettings()
 
 void Renderer::loadFgds()
 {
-	Fgd* mergedFgd = NULL;
+	Fgd* mergedFgd = new Fgd();
 	for (int i = 0; i < g_settings.fgdPaths.size(); i++)
 	{
 		if (!g_settings.fgdPaths[i].enabled)
 			continue;
-
 		Fgd* tmp = new Fgd(g_settings.fgdPaths[i].path);
 		if (!tmp->parse())
 		{
@@ -1221,21 +1220,15 @@ void Renderer::loadFgds()
 					tmp->path = g_config_dir + g_settings.fgdPaths[i].path;
 					if (!tmp->parse())
 					{
+						logf("Missing fgd %s.\n", g_settings.fgdPaths[i].path.c_str());
 						continue;
 					}
 				}
 			}
 		}
 
-		if (i == 0 || !mergedFgd)
-		{
-			mergedFgd = tmp;
-		}
-		else
-		{
-			mergedFgd->merge(tmp);
-			delete tmp;
-		}
+		mergedFgd->merge(tmp);
+		delete tmp;
 	}
 
 	swapPointEntRenderer = new PointEntRenderer(mergedFgd, colorShader);

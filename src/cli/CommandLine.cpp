@@ -1,8 +1,9 @@
 #include "CommandLine.h"
-
+#ifdef WIN32
+#include <Windows.h>
+#endif
 CommandLine::CommandLine(int argc, char* argv[])
 {
-
 	askingForHelp = argc <= 1;
 
 	for (int i = 0; i < argc; i++)
@@ -16,7 +17,13 @@ CommandLine::CommandLine(int argc, char* argv[])
 		}
 		if (i == 2)
 		{
-			bspfile = larg;
+#ifdef WIN32
+			int nArgs;
+			LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+			bspfile = fs::path(szArglist[i]).string();
+#else 
+			bspfile = fs::path(argv[i]).string();
+#endif
 		}
 		if (i > 2)
 		{
@@ -50,7 +57,13 @@ CommandLine::CommandLine(int argc, char* argv[])
 
 	if (argc == 2)
 	{
-		bspfile = argv[1];
+#ifdef WIN32
+		int nArgs;
+		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		bspfile = fs::path(szArglist[1]).string();
+#else
+		bspfile = fs::path(argv[1]).string();
+#endif
 	}
 }
 

@@ -853,6 +853,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 #endif
 int main(int argc, char* argv[])
 {
+	setlocale(LC_ALL, ".utf8");
 #ifdef WIN32
 	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 #ifndef NDEBUG
@@ -861,14 +862,18 @@ int main(int argc, char* argv[])
 #endif
 	DisableProcessWindowsGhosting(); 
 #endif
+	
 	if (argv && argv[0] && argv[0][0] != '\0')
 	{
-		fs::path ph = argv[0];
-		if (!ph.empty())
-			fs::current_path(ph.parent_path());
+#ifdef WIN32
+		int nArgs;
+		LPWSTR* szArglist = CommandLineToArgvW(GetCommandLineW(), &nArgs);
+		g_current_dir = fs::path(szArglist[0]).parent_path().string();
+#else
+		g_current_dir = fs::path(argv[0]).parent_path().string();
+#endif
+		fs::current_path(g_current_dir);
 	}
-	std::setlocale(LC_ALL, ".UTF8");
-
 #ifdef WIN32
 	g_settings_path = GetCurrentWorkingDir() + "bspguy.cfg";
 	g_config_dir = GetCurrentWorkingDir();
@@ -940,7 +945,6 @@ int main(int argc, char* argv[])
 				return 0;
 			}
 		}
-
 		logf("%s\n", ("Start bspguy editor with map: " + cli.bspfile).c_str());
 		logf("Load settings from : %s\n", g_settings_path.c_str());
 		if (!start_viewer(cli.bspfile.c_str()))

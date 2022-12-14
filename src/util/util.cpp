@@ -75,7 +75,7 @@ void debugf(const char* format, ...)
 	g_log_mutex.unlock();
 }
 
-bool fileExists(const std::string& fileName)
+bool fileExists(const std::string & fileName)
 {
 	return fs::exists(fileName) && !fs::is_directory(fileName);
 }
@@ -104,6 +104,7 @@ bool writeFile(const std::string& fileName, const char* data, int len)
 		return false;
 	}
 	file.write(data, len);
+	file.flush();
 	return true;
 }
 
@@ -115,6 +116,7 @@ bool writeFile(const std::string& fileName, const std::string& data)
 		return false;
 	}
 	file.write(data.c_str(), strlen(data));
+	file.flush();
 	return true;
 }
 
@@ -254,6 +256,15 @@ std::string stripExt(const std::string& path)
 std::string stripFileName(const std::string& path)
 {
 	size_t lastSlash = path.find_last_of("\\/");
+	if (lastSlash != std::string::npos)
+	{
+		return path.substr(0, lastSlash);
+	}
+	return path;
+}
+std::wstring stripFileName(const std::wstring& path)
+{
+	size_t lastSlash = path.find_last_of(L"\\/");
 	if (lastSlash != std::string::npos)
 	{
 		return path.substr(0, lastSlash);
@@ -1138,10 +1149,10 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 	replaceAll(path, "\\", "/");
 	replaceAll(path, "//", "/");
 }
-
+fs::path g_current_dir = "./";
 std::string GetCurrentWorkingDir()
 {
-	return fs::current_path().string() + "/";
+	return g_current_dir.string() + "/";
 }
 
 #ifdef WIN32
@@ -1154,9 +1165,9 @@ void print_color(int colors)
 
 std::string getConfigDir()
 {
-	char path[MAX_PATH];
-	SHGetFolderPathA(NULL, CSIDL_PROFILE, NULL, 0, path);
-	return std::string(path) + "\\AppData\\Roaming\\bspguy\\";
+	wchar_t path[1024];
+	SHGetFolderPathW(NULL, CSIDL_PROFILE, NULL, 0, path);
+	return fs::path(path).string() + "/AppData/Roaming/bspguy/";
 }
 #else 
 void print_color(int colors)
@@ -1546,7 +1557,7 @@ void SimpeColorReduce(COLOR3* image, int size)
 {
 	// Fast change count of grayscale
 	std::vector<COLOR3> colorset;
-	for (int i = 255; i > 0; i--)
+	for (unsigned char i = 255; i > 0; i--)
 	{
 		colorset.push_back(COLOR3(i, i, i));
 	}
