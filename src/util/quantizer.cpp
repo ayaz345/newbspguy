@@ -169,7 +169,7 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t heigh
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
-				unsigned int k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
+				unsigned int k = GetNearestIndexFast(image[j], m_pPalette);
 
 				target[i] = k;
 
@@ -211,7 +211,7 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t heigh
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
-				unsigned int k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
+				unsigned int k = GetNearestIndexFast(image[j], m_pPalette);
 				target[i] = k;
 				int diff[3];
 				diff[0] = image[j].r - m_pPalette[k].r;
