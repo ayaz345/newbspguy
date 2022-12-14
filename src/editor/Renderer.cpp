@@ -208,301 +208,300 @@ void AppSettings::reset()
 void AppSettings::load()
 {
 	std::ifstream file(g_settings_path);
-	if (file.is_open())
+	if (!file.is_open())
 	{
-		int lines_readed = 0;
-		std::string line;
-		while (getline(file, line))
+		logf("No access to settings file!\n");
+		reset();
+		return;
+	}
+
+	int lines_readed = 0;
+	std::string line;
+	while (getline(file, line))
+	{
+		if (line.empty())
+			continue;
+
+		size_t eq = line.find('=');
+		if (eq == std::string::npos)
 		{
-			if (line.empty())
-				continue;
+			continue;
+		}
+		lines_readed++;
 
-			size_t eq = line.find('=');
-			if (eq == std::string::npos)
-			{
-				continue;
-			}
-			lines_readed++;
+		std::string key = trimSpaces(line.substr(0, eq));
+		std::string val = trimSpaces(line.substr(eq + 1));
 
-			std::string key = trimSpaces(line.substr(0, eq));
-			std::string val = trimSpaces(line.substr(eq + 1));
-
-			if (key == "window_width")
+		if (key == "window_width")
+		{
+			g_settings.windowWidth = atoi(val.c_str());
+		}
+		else if (key == "window_height")
+		{
+			g_settings.windowHeight = atoi(val.c_str());
+		}
+		else if (key == "window_x")
+		{
+			g_settings.windowX = atoi(val.c_str());
+		}
+		else if (key == "window_y")
+		{
+			g_settings.windowY = atoi(val.c_str());
+		}
+		else if (key == "window_maximized")
+		{
+			g_settings.maximized = atoi(val.c_str());
+		}
+		else if (key == "save_windows")
+		{
+			g_settings.save_windows = atoi(val.c_str()) != 0;
+		}
+		else if (key == "debug_open")
+		{
+			g_settings.debug_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "keyvalue_open")
+		{
+			g_settings.keyvalue_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "transform_open")
+		{
+			g_settings.transform_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "log_open")
+		{
+			g_settings.log_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "settings_open")
+		{
+			g_settings.settings_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "limits_open")
+		{
+			g_settings.limits_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "entreport_open")
+		{
+			g_settings.entreport_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "settings_tab")
+		{
+			if (save_windows)
+				g_settings.settings_tab = atoi(val.c_str());
+		}
+		else if (key == "vsync")
+		{
+			g_settings.vsync = atoi(val.c_str()) != 0;
+		}
+		else if (key == "show_transform_axes")
+		{
+			g_settings.show_transform_axes = atoi(val.c_str()) != 0;
+		}
+		else if (key == "verbose_logs")
+		{
+			g_settings.verboseLogs = atoi(val.c_str()) != 0;
+		}
+		else if (key == "fov")
+		{
+			g_settings.fov = (float)atof(val.c_str());
+		}
+		else if (key == "zfar")
+		{
+			g_settings.zfar = (float)atof(val.c_str());
+		}
+		else if (key == "move_speed")
+		{
+			g_settings.moveSpeed = (float)atof(val.c_str());
+			if (g_settings.moveSpeed < 100)
 			{
-				g_settings.windowWidth = atoi(val.c_str());
-			}
-			else if (key == "window_height")
-			{
-				g_settings.windowHeight = atoi(val.c_str());
-			}
-			else if (key == "window_x")
-			{
-				g_settings.windowX = atoi(val.c_str());
-			}
-			else if (key == "window_y")
-			{
-				g_settings.windowY = atoi(val.c_str());
-			}
-			else if (key == "window_maximized")
-			{
-				g_settings.maximized = atoi(val.c_str());
-			}
-			else if (key == "save_windows")
-			{
-				g_settings.save_windows = atoi(val.c_str()) != 0;
-			}
-			else if (key == "debug_open")
-			{
-				g_settings.debug_open = atoi(val.c_str()) != 0 && save_windows;
-			}
-			else if (key == "keyvalue_open")
-			{
-				g_settings.keyvalue_open = atoi(val.c_str()) != 0 && save_windows;
-			}
-			else if (key == "transform_open")
-			{
-				g_settings.transform_open = atoi(val.c_str()) != 0 && save_windows;
-			}
-			else if (key == "log_open")
-			{
-				g_settings.log_open = atoi(val.c_str()) != 0 && save_windows;
-			}
-			else if (key == "settings_open")
-			{
-				g_settings.settings_open = atoi(val.c_str()) != 0 && save_windows;
-			}
-			else if (key == "limits_open")
-			{
-				g_settings.limits_open = atoi(val.c_str()) != 0 && save_windows;
-			}
-			else if (key == "entreport_open")
-			{
-				g_settings.entreport_open = atoi(val.c_str()) != 0 && save_windows;
-			}
-			else if (key == "settings_tab")
-			{
-				if (save_windows)
-					g_settings.settings_tab = atoi(val.c_str());
-			}
-			else if (key == "vsync")
-			{
-				g_settings.vsync = atoi(val.c_str()) != 0;
-			}
-			else if (key == "show_transform_axes")
-			{
-				g_settings.show_transform_axes = atoi(val.c_str()) != 0;
-			}
-			else if (key == "verbose_logs")
-			{
-				g_settings.verboseLogs = atoi(val.c_str()) != 0;
-			}
-			else if (key == "fov")
-			{
-				g_settings.fov = (float)atof(val.c_str());
-			}
-			else if (key == "zfar")
-			{
-				g_settings.zfar = (float)atof(val.c_str());
-			}
-			else if (key == "move_speed")
-			{
-				g_settings.moveSpeed = (float)atof(val.c_str());
-				if (g_settings.moveSpeed < 100)
-				{
-					logf("Move speed can be 100 - 1000. Replaced to default value.\n");
-					g_settings.moveSpeed = 500;
-				}
-			}
-			else if (key == "rot_speed")
-			{
-				g_settings.rotSpeed = (float)atof(val.c_str());
-			}
-			else if (key == "render_flags")
-			{
-				g_settings.render_flags = atoi(val.c_str());
-			}
-			else if (key == "font_size")
-			{
-				g_settings.fontSize = (float)atof(val.c_str());
-			}
-			else if (key == "undo_levels")
-			{
-				g_settings.undoLevels = atoi(val.c_str());
-			}
-			else if (key == "gamedir")
-			{
-				g_settings.gamedir = val;
-			}
-			else if (key == "workingdir")
-			{
-				g_settings.workingdir = val;
-			}
-			else if (key == "lastdir")
-			{
-				g_settings.lastdir = val;
-			}
-			else if (key == "fgd")
-			{
-				if (val.find('?') == std::string::npos)
-					fgdPaths.push_back({val,true});
-				else
-				{
-					auto vals = splitString(val, "?");
-					if (vals.size() == 2)
-					{
-						fgdPaths.push_back({vals[1],vals[0] == "enabled"});
-					}
-				}
-			}
-			else if (key == "res")
-			{
-				if (val.find('?') == std::string::npos)
-					resPaths.push_back({val,true});
-				else
-				{
-					auto vals = splitString(val, "?");
-					if (vals.size() == 2)
-					{
-						resPaths.push_back({vals[1],vals[0] == "enabled"});
-					}
-				}
-			}
-			else if (key == "savebackup")
-			{
-				g_settings.backUpMap = atoi(val.c_str()) != 0;
-			}
-			else if (key == "save_crc")
-			{
-				g_settings.preserveCrc32 = atoi(val.c_str()) != 0;
-			}
-			else if (key == "auto_import_ent")
-			{
-				g_settings.autoImportEnt = atoi(val.c_str()) != 0;
-			}
-			else if (key == "same_dir_for_ent")
-			{
-				g_settings.sameDirForEnt = atoi(val.c_str()) != 0;
-			}
-			else if (key == "reload_ents_list")
-			{
-				entListReload = atoi(val.c_str()) != 0;
-			}
-			else if (key == "strip_wad_path")
-			{
-				stripWad = atoi(val.c_str()) != 0;
-			}
-			else if (key == "FLT_MAX_COORD")
-			{
-				FLT_MAX_COORD = (float)atof(val.c_str());
-			}
-			else if (key == "MAX_MAP_MODELS")
-			{
-				MAX_MAP_MODELS = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_NODES")
-			{
-				MAX_MAP_NODES = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_CLIPNODES")
-			{
-				MAX_MAP_CLIPNODES = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_LEAVES")
-			{
-				MAX_MAP_LEAVES = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_VISDATA")
-			{
-				MAX_MAP_VISDATA = atoi(val.c_str()) * (1024 * 1024);
-			}
-			else if (key == "MAX_MAP_ENTS")
-			{
-				MAX_MAP_ENTS = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_SURFEDGES")
-			{
-				MAX_MAP_SURFEDGES = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_EDGES")
-			{
-				MAX_MAP_EDGES = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_TEXTURES")
-			{
-				MAX_MAP_TEXTURES = atoi(val.c_str());
-			}
-			else if (key == "MAX_MAP_LIGHTDATA")
-			{
-				MAX_MAP_LIGHTDATA = atoi(val.c_str()) * (1024 * 1024);
-			}
-			else if (key == "MAX_TEXTURE_DIMENSION")
-			{
-				MAX_TEXTURE_DIMENSION = atoi(val.c_str());
-				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
-			}
-			else if (key == "TEXTURE_STEP")
-			{
-				TEXTURE_STEP = atoi(val.c_str());
-			}
-			else if (key == "optimizer_cond_ents")
-			{
-				conditionalPointEntTriggers.push_back(val);
-			}
-			else if (key == "optimizer_no_hulls_ents")
-			{
-				entsThatNeverNeedAnyHulls.push_back(val);
-			}
-			else if (key == "optimizer_no_collision_ents")
-			{
-				entsThatNeverNeedCollision.push_back(val);
-			}
-			else if (key == "optimizer_passable_ents")
-			{
-				passableEnts.push_back(val);
-			}
-			else if (key == "optimizer_player_hull_ents")
-			{
-				playerOnlyTriggers.push_back(val);
-			}
-			else if (key == "optimizer_monster_hull_ents")
-			{
-				monsterOnlyTriggers.push_back(val);
+				logf("Move speed can be 100 - 1000. Replaced to default value.\n");
+				g_settings.moveSpeed = 500;
 			}
 		}
-
-		if (g_settings.windowY == -32000 &&
-			g_settings.windowX == -32000)
+		else if (key == "rot_speed")
 		{
-			g_settings.windowY = 0;
-			g_settings.windowX = 0;
+			g_settings.rotSpeed = (float)atof(val.c_str());
 		}
+		else if (key == "render_flags")
+		{
+			g_settings.render_flags = atoi(val.c_str());
+		}
+		else if (key == "font_size")
+		{
+			g_settings.fontSize = (float)atof(val.c_str());
+		}
+		else if (key == "undo_levels")
+		{
+			g_settings.undoLevels = atoi(val.c_str());
+		}
+		else if (key == "gamedir")
+		{
+			g_settings.gamedir = val;
+		}
+		else if (key == "workingdir")
+		{
+			g_settings.workingdir = val;
+		}
+		else if (key == "lastdir")
+		{
+			g_settings.lastdir = val;
+		}
+		else if (key == "fgd")
+		{
+			if (val.find('?') == std::string::npos)
+				fgdPaths.push_back({val,true});
+			else
+			{
+				auto vals = splitString(val, "?");
+				if (vals.size() == 2)
+				{
+					fgdPaths.push_back({vals[1],vals[0] == "enabled"});
+				}
+			}
+		}
+		else if (key == "res")
+		{
+			if (val.find('?') == std::string::npos)
+				resPaths.push_back({val,true});
+			else
+			{
+				auto vals = splitString(val, "?");
+				if (vals.size() == 2)
+				{
+					resPaths.push_back({vals[1],vals[0] == "enabled"});
+				}
+			}
+		}
+		else if (key == "savebackup")
+		{
+			g_settings.backUpMap = atoi(val.c_str()) != 0;
+		}
+		else if (key == "save_crc")
+		{
+			g_settings.preserveCrc32 = atoi(val.c_str()) != 0;
+		}
+		else if (key == "auto_import_ent")
+		{
+			g_settings.autoImportEnt = atoi(val.c_str()) != 0;
+		}
+		else if (key == "same_dir_for_ent")
+		{
+			g_settings.sameDirForEnt = atoi(val.c_str()) != 0;
+		}
+		else if (key == "reload_ents_list")
+		{
+			entListReload = atoi(val.c_str()) != 0;
+		}
+		else if (key == "strip_wad_path")
+		{
+			stripWad = atoi(val.c_str()) != 0;
+		}
+		else if (key == "FLT_MAX_COORD")
+		{
+			FLT_MAX_COORD = (float)atof(val.c_str());
+		}
+		else if (key == "MAX_MAP_MODELS")
+		{
+			MAX_MAP_MODELS = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_NODES")
+		{
+			MAX_MAP_NODES = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_CLIPNODES")
+		{
+			MAX_MAP_CLIPNODES = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_LEAVES")
+		{
+			MAX_MAP_LEAVES = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_VISDATA")
+		{
+			MAX_MAP_VISDATA = atoi(val.c_str()) * (1024 * 1024);
+		}
+		else if (key == "MAX_MAP_ENTS")
+		{
+			MAX_MAP_ENTS = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_SURFEDGES")
+		{
+			MAX_MAP_SURFEDGES = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_EDGES")
+		{
+			MAX_MAP_EDGES = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_TEXTURES")
+		{
+			MAX_MAP_TEXTURES = atoi(val.c_str());
+		}
+		else if (key == "MAX_MAP_LIGHTDATA")
+		{
+			MAX_MAP_LIGHTDATA = atoi(val.c_str()) * (1024 * 1024);
+		}
+		else if (key == "MAX_TEXTURE_DIMENSION")
+		{
+			MAX_TEXTURE_DIMENSION = atoi(val.c_str());
+			MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
+		}
+		else if (key == "TEXTURE_STEP")
+		{
+			TEXTURE_STEP = atoi(val.c_str());
+		}
+		else if (key == "optimizer_cond_ents")
+		{
+			conditionalPointEntTriggers.push_back(val);
+		}
+		else if (key == "optimizer_no_hulls_ents")
+		{
+			entsThatNeverNeedAnyHulls.push_back(val);
+		}
+		else if (key == "optimizer_no_collision_ents")
+		{
+			entsThatNeverNeedCollision.push_back(val);
+		}
+		else if (key == "optimizer_passable_ents")
+		{
+			passableEnts.push_back(val);
+		}
+		else if (key == "optimizer_player_hull_ents")
+		{
+			playerOnlyTriggers.push_back(val);
+		}
+		else if (key == "optimizer_monster_hull_ents")
+		{
+			monsterOnlyTriggers.push_back(val);
+		}
+	}
+
+	if (g_settings.windowY == -32000 &&
+		g_settings.windowX == -32000)
+	{
+		g_settings.windowY = 0;
+		g_settings.windowX = 0;
+	}
 
 
 #ifdef WIN32
 		// Fix invisibled window header for primary screen.
-		if (g_settings.windowY >= 0 && g_settings.windowY < 30)
-		{
-			g_settings.windowY = 30;
-		}
+	if (g_settings.windowY >= 0 && g_settings.windowY < 30)
+	{
+		g_settings.windowY = 30;
+	}
 #endif
 
 		// Restore default window height if invalid.
-		if (windowHeight <= 0 || windowWidth <= 0)
-		{
-			windowHeight = 600;
-			windowWidth = 800;
-		}
-
-		if (lines_readed > 0)
-			g_settings.settingLoaded = true;
-		else
-			logf("Failed to load user config: %s\n", g_settings_path.c_str());
-	}
-	else
+	if (windowHeight <= 0 || windowWidth <= 0)
 	{
-		reset();
-		logf("Failed to open user config: %s\n", g_settings_path.c_str());
+		windowHeight = 600;
+		windowWidth = 800;
 	}
+
+	if (lines_readed > 0)
+		g_settings.settingLoaded = true;
+	else
+		logf("Failed to load user config: %s\n", g_settings_path.c_str());
 
 	if (entListReload)
 	{
@@ -686,20 +685,21 @@ void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 
 Renderer::Renderer()
 {
-	g_settings.loadDefault();
-	g_settings.load();
-
 	if (!glfwInit())
 	{
 		logf("GLFW initialization failed\n");
 		return;
 	}
 
+	gui = new Gui(this);
+
+	g_settings.loadDefault();
+	g_settings.load();
+	loadSettings();
 	glfwSetErrorCallback(error_callback);
 
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-
 	window = glfwCreateWindow(g_settings.windowWidth, g_settings.windowHeight, "bspguy", NULL, NULL);
 
 	if (g_settings.settingLoaded)
@@ -714,13 +714,11 @@ Renderer::Renderer()
 			glfwMaximizeWindow(window);
 		}
 	}
-
 	if (!window)
 	{
 		logf("Window creation failed. Maybe your PC doesn't support OpenGL 3.0\n");
 		return;
 	}
-
 	glfwMakeContextCurrent(window);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
@@ -731,15 +729,10 @@ Renderer::Renderer()
 	glfwSetWindowMaximizeCallback(window, window_maximize_callback);
 
 	glewInit();
-
 	// init to black screen instead of white
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 	glfwSwapBuffers(window);
 	glfwSwapInterval(1);
-
-
-	gui = new Gui(this);
-
 	bspShader = new ShaderProgram(Shaders::g_shader_multitexture_vertex, Shaders::g_shader_multitexture_fragment);
 	bspShader->setMatrixes(&matmodel, &matview, &projection, &modelView, &modelViewProjection);
 	bspShader->setMatrixNames(NULL, "modelViewProjection");
@@ -756,24 +749,18 @@ Renderer::Renderer()
 	colorShader->bind();
 	unsigned int colorMultId = glGetUniformLocation(colorShader->ID, "colorMult");
 	glUniform4f(colorMultId, 1, 1, 1, 1);
-
-
 	clearSelection();
 
-
 	oldLeftMouse = curLeftMouse = oldRightMouse = curRightMouse = 0;
-
 	g_app = this;
 
 	g_progress.simpleMode = true;
 
 	pointEntRenderer = new PointEntRenderer(NULL, colorShader);
 
-	loadSettings();
-
 	reloading = true;
 	fgdFuture = std::async(std::launch::async, &Renderer::loadFgds, this);
-
+	gui->init();
 	//cameraOrigin = vec3(51, 427, 234);
 	//cameraAngles = vec3(41, 0, -170);
 }

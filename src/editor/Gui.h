@@ -86,6 +86,7 @@ private:
 	int settingsTab = 0;
 	bool openSavedTabs = false;
 
+	ImFont* defaultFont;
 	ImFont* smallFont;
 	ImFont* largeFont;
 	ImFont* consoleFont;

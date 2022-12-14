@@ -41,7 +41,6 @@ Gui::Gui(Renderer* app)
 	guiHoverAxis = 0;
 	iniPath = getConfigDir() + "imgui.ini";
 	this->app = app;
-	init();
 }
 
 void Gui::init()
@@ -59,13 +58,10 @@ void Gui::init()
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
 	//ImGui::StyleColorsClassic();
-
+	
 	// Setup Platform/Renderer bindings
 	ImGui_ImplGlfw_InitForOpenGL(app->window, true);
-	ImGui_ImplOpenGL3_Init(NULL);
-
-	//ImGui::StyleColorsLight();
-
+	ImGui_ImplOpenGL3_Init("#version 130");
 
 	// ImFileDialog requires you to set the CreateTexture and DeleteTexture
 	ifd::FileDialog::Instance().CreateTexture = [](unsigned char* data, int w, int h, char fmt) -> void* {
@@ -115,7 +111,7 @@ void Gui::draw()
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
-
+	ImGui::PushFont(defaultFont);
 	drawMenuBar();
 
 	drawFpsOverlay();
@@ -204,10 +200,13 @@ void Gui::draw()
 
 	draw3dContextMenus();
 
+	ImGui::PopFont();
+
 	// Rendering
-	ImGui::Render();
 	glViewport(0, 0, app->windowWidth, app->windowHeight);
+	ImGui::Render();
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 
 	if (shouldReloadFonts)
 	{
@@ -3759,14 +3758,12 @@ void Gui::loadFonts()
 	config.RasterizerMultiply = 1.5f;
 	config.PixelSnapH = true;
 
-	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config);
-
+	defaultFont = imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config); 
 	config.MergeMode = true;
-
-	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesCyrillic());
-
 	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesDefault());
-
+	config.MergeMode = true;
+	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesCyrillic());
+	imgui_io->Fonts->Build();
 
 	smallFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)smallFontData, sizeof(robotomedium), fontSize, &config);
 	largeFont = imgui_io->Fonts->AddFontFromMemoryTTF((void*)largeFontData, sizeof(robotomedium), fontSize * 1.1f, &config);
@@ -3903,8 +3900,6 @@ void Gui::drawSettings()
 
 		float pathWidth = ImGui::GetWindowWidth() - 60.f;
 		float delWidth = 50.f;
-
-
 
 		if (ifd::FileDialog::Instance().IsDone("GameDir"))
 		{
@@ -4444,13 +4439,15 @@ void Gui::drawSettings()
 
 		if (g_settings.workingdir.find(':') == std::string::npos)
 		{
-			/* fixup workingdir */
+			/* fixup workingdir for relative to gamedir */
 			fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 		}
 		else
 		{
+			/* fixup absolute workdir */
 			fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 		}
+
 		for (auto& s : g_settings.fgdPaths)
 		{
 			if (s.path.find(':') == std::string::npos)
@@ -4837,7 +4834,7 @@ void Gui::drawImportMapWidget()
 									if (s->hasTexture(tex.szName))
 									{
 										WADTEX * wadTex = s->readTexture(tex.szName);
-										COLOR3* imageData = ConvertWadTexToRGB(wadTex);
+										COLOR3 * imageData = ConvertWadTexToRGB(wadTex);
 
 										texinfo.iMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
@@ -6598,7 +6595,7 @@ void Gui::drawTextureTool()
 
 		if (ImGui::InputText("##texname", textureName, MAXTEXTURENAME))
 		{
-			if (memcmp(textureName, textureName2, MAXTEXTURENAME) != 0)
+			if (std::strcmp(textureName, textureName2) != 0)
 			{
 				textureChanged = true;
 			}

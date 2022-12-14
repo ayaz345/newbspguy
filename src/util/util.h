@@ -76,6 +76,8 @@ std::string basename(const std::string& path);
 
 std::string stripExt(const std::string& filename);
 
+std::string stripFileName(const std::string& path);
+
 bool isNumeric(const std::string& s);
 
 void print_color(int colors);

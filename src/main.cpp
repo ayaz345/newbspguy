@@ -865,12 +865,17 @@ int main(int argc, char* argv[])
 	{
 		fs::path ph = argv[0];
 		if (!ph.empty())
-		fs::current_path(ph.parent_path());
+			fs::current_path(ph.parent_path());
 	}
+	std::setlocale(LC_ALL, ".UTF8");
 
-	g_settings_path = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() + "bspguy.cfg" : getConfigDir() + "bspguy.cfg";
-	g_config_dir = fileExists(GetCurrentWorkingDir() + "bspguy.cfg") ? GetCurrentWorkingDir() : getConfigDir();
-
+#ifdef WIN32
+	g_settings_path = GetCurrentWorkingDir() + "bspguy.cfg";
+	g_config_dir = GetCurrentWorkingDir();
+#else
+	g_settings_path = fileExists(getConfigDir() + "bspguy.cfg") ? getConfigDir() + "bspguy.cfg" : GetCurrentWorkingDir() + "bspguy.cfg";
+	g_config_dir = fileExists(getConfigDir() + "bspguy.cfg") ? getConfigDir() : GetCurrentWorkingDir();
+#endif
 	// test svencoop merge
 	//return test();
 

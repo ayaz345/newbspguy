@@ -398,33 +398,39 @@ namespace ifd
 		m_treeCache.push_back(quickAccess);
 
 #ifdef _WIN32
-		wchar_t username[UNLEN + 1] = {0};
+		char username[UNLEN + 1] = {0};
 		DWORD username_len = UNLEN + 1;
-		GetUserNameW(username, &username_len);
+		GetUserName(username, &username_len);
 
-		std::wstring userPath = L"C:\\Users\\" + std::wstring(username) + L"\\";
+		std::string drivename = "C:";
+		if (std::getenv("SystemDrive"))
+		{
+			drivename = std::getenv("SystemDrive");
+		}
+
+		std::string userPath = drivename + "\\Users\\" + std::string(username) + "\\";
 
 		// Quick Access / Bookmarks
-		quickAccess->Children.push_back(new FileTreeNode(userPath + L"Desktop"));
-		quickAccess->Children.push_back(new FileTreeNode(userPath + L"Documents"));
-		quickAccess->Children.push_back(new FileTreeNode(userPath + L"Downloads"));
-		quickAccess->Children.push_back(new FileTreeNode(userPath + L"Pictures"));
+		quickAccess->Children.push_back(new FileTreeNode(userPath + "Desktop"));
+		quickAccess->Children.push_back(new FileTreeNode(userPath + "Documents"));
+		quickAccess->Children.push_back(new FileTreeNode(userPath + "Downloads"));
+		quickAccess->Children.push_back(new FileTreeNode(userPath + "Pictures"));
 
 		// OneDrive
-		FileTreeNode* oneDrive = new FileTreeNode(userPath + L"OneDrive");
+		FileTreeNode* oneDrive = new FileTreeNode(userPath + "OneDrive");
 		m_treeCache.push_back(oneDrive);
 
 		// This PC
 		FileTreeNode* thisPC = new FileTreeNode("This PC");
 		thisPC->Read = true;
-		if (std::filesystem::exists(userPath + L"3D Objects"))
-			thisPC->Children.push_back(new FileTreeNode(userPath + L"3D Objects"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + L"Desktop"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + L"Documents"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + L"Downloads"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + L"Music"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + L"Pictures"));
-		thisPC->Children.push_back(new FileTreeNode(userPath + L"Videos"));
+		if (std::filesystem::exists(userPath + "3D Objects"))
+			thisPC->Children.push_back(new FileTreeNode(userPath + "3D Objects"));
+		thisPC->Children.push_back(new FileTreeNode(userPath + "Desktop"));
+		thisPC->Children.push_back(new FileTreeNode(userPath + "Documents"));
+		thisPC->Children.push_back(new FileTreeNode(userPath + "Downloads"));
+		thisPC->Children.push_back(new FileTreeNode(userPath + "Music"));
+		thisPC->Children.push_back(new FileTreeNode(userPath + "Pictures"));
+		thisPC->Children.push_back(new FileTreeNode(userPath + "Videos"));
 		DWORD d = GetLogicalDrives();
 		for (int i = 0; i < 26; i++)
 			if (d & (1 << i))
@@ -782,12 +788,12 @@ namespace ifd
 			attrs = FILE_ATTRIBUTE_DIRECTORY;
 		}
 
-		SHFILEINFOW fileInfo = {0};
-		std::wstring pathW = path.wstring();
-		for (int i = 0; i < pathW.size(); i++)
-			if (pathW[i] == '/')
-				pathW[i] = '\\';
-		SHGetFileInfoW(pathW.c_str(), attrs, &fileInfo, sizeof(SHFILEINFOW), flags);
+		SHFILEINFO fileInfo = {0};
+		std::string spath = path.string();
+		for (int i = 0; i < spath.size(); i++)
+			if (spath[i] == '/')
+				spath[i] = '\\';
+		SHGetFileInfo(spath.data(), attrs, &fileInfo, sizeof(SHFILEINFO), flags);
 
 		if (fileInfo.hIcon == nullptr)
 			return nullptr;
@@ -882,11 +888,11 @@ namespace ifd
 			m_icons[pathU8] = this->CreateTexture(invData, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE, 0);
 
 			free(invData);
-		}
+	}
 
 		return m_icons[pathU8];
 #endif
-	}
+}
 	void FileDialog::m_clearIcons()
 	{
 		std::vector<unsigned int> deletedIcons;
@@ -1194,7 +1200,7 @@ namespace ifd
 		{
 			if (ImGui::BeginTable("##contentTable", 3, /*ImGuiTableFlags_Resizable |*/ ImGuiTableFlags_Sortable, ImVec2(0, -FLT_MIN)))
 			{
-// header
+				// header
 				ImGui::TableSetupColumn("Name##filename", ImGuiTableColumnFlags_WidthStretch, 0.0f - 1.0f, 0);
 				ImGui::TableSetupColumn("Date modified##filedate", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f, 1);
 				ImGui::TableSetupColumn("Size##filesize", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, 0.0f, 2);
@@ -1504,7 +1510,7 @@ namespace ifd
 #else
 			(void)success;
 #endif
-		}
+	}
 		if (m_type != IFD_DIALOG_DIRECTORY)
 		{
 			ImGui::SameLine();

@@ -69,7 +69,6 @@ void Texture::upload(int _format, bool lightmap)
 
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, _format, GL_UNSIGNED_BYTE, data);
 
-
 	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB, width, height);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
 

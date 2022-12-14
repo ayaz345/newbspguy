@@ -91,7 +91,7 @@ public:
 
 private:
 	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
-	unsigned int vboId = (unsigned int)-1;
+	GLuint vboId = (GLuint)-1;
 	bool attributesBound = false;
 
 	// add attributes according to the attribute flags

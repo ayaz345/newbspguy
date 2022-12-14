@@ -55,7 +55,7 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const voi
 	this->primitive = primitive;
 	addAttributes(attFlags);
 	setData(dat, numVerts);
-	vboId = (unsigned int)-1;
+	vboId = (GLuint)-1;
 }
 
 VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive)
@@ -63,7 +63,7 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primi
 	attribs = std::vector<VertexAttr>();
 	numVerts = 0;
 	data = NULL;
-	vboId = (unsigned int)-1;
+	vboId = (GLuint)-1;
 	this->shaderProgram = shaderProgram;
 	this->primitive = primitive;
 	addAttributes(attFlags);
@@ -75,6 +75,8 @@ VertexBuffer::~VertexBuffer() {
 	if (ownData) {
 		delete[] data;
 	}
+	data = NULL;
+	numVerts = 0;
 }
 
 void VertexBuffer::addAttributes(int attFlags)
@@ -138,7 +140,7 @@ void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 	}
 
 	bindAttributes(hideErrors);
-	if (vboId != -1) {
+	if (vboId != (GLuint)-1) {
 		deleteBuffer();
 		upload();
 	}
@@ -169,6 +171,8 @@ void VertexBuffer::setData(const void* _data, int _numVerts)
 }
 
 void VertexBuffer::upload() {
+	deleteBuffer();
+
 	shaderProgram->bind();
 	bindAttributes();
 
@@ -194,9 +198,9 @@ void VertexBuffer::upload() {
 }
 
 void VertexBuffer::deleteBuffer() {
-	if (vboId != (unsigned int)-1)
+	if (vboId != (GLuint)-1)
 		glDeleteBuffers(1, &vboId);
-	vboId = (unsigned int)-1;
+	vboId = (GLuint)-1;
 }
 
 void VertexBuffer::drawRange(int _primitive, int start, int end)
@@ -205,7 +209,7 @@ void VertexBuffer::drawRange(int _primitive, int start, int end)
 	bindAttributes();
 
 	char* offsetPtr = (char*)data;
-	if (vboId != (unsigned int)-1) {
+	if (vboId != (GLuint)-1) {
 		glBindBuffer(GL_ARRAY_BUFFER, vboId);
 		offsetPtr = NULL;
 	}
@@ -232,7 +236,7 @@ void VertexBuffer::drawRange(int _primitive, int start, int end)
 	else
 		glDrawArrays(_primitive, start, end - start);
 
-	if (vboId != (unsigned int)-1) {
+	if (vboId != (GLuint)-1) {
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
 	}
 

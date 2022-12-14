@@ -904,8 +904,6 @@ void BspRenderer::loadClipnodes()
 	{
 		generateClipnodeBuffer(i);
 	}
-
-	updateClipnodeOpacity((g_render_flags & RENDER_TRANSPARENT) ? 128 : 255);
 }
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
@@ -1110,14 +1108,14 @@ void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 	{
 		for (int k = 0; k < MAX_MAP_HULLS; k++)
 		{
-			if (renderClipnodes[i].clipnodeBuffer[k])
+			VertexBuffer* clipBuf = renderClipnodes[i].clipnodeBuffer[k];
+			if (clipBuf && clipBuf->data && clipBuf->numVerts > 0 && clipBuf->attribs.size())
 			{
-				cVert* data = (cVert*)renderClipnodes[i].clipnodeBuffer[k]->data;
-				for (int v = 0; v < renderClipnodes[i].clipnodeBuffer[k]->numVerts; v++)
+				cVert* vertData = (cVert*)clipBuf->data;
+				for (int v = 0; v < clipBuf->numVerts; v++)
 				{
-					data[v].c.a = newValue;
+					vertData[v].c.a = newValue;
 				}
-				renderClipnodes[i].clipnodeBuffer[k]->deleteBuffer();
 				renderClipnodes[i].clipnodeBuffer[k]->upload();
 			}
 		}
@@ -1471,6 +1469,7 @@ void BspRenderer::delayLoadData()
 
 		clipnodesLoaded = true;
 		logf("Loaded %d clipnode leaves\n", clipnodeLeafCount);
+		updateClipnodeOpacity((g_render_flags & RENDER_TRANSPARENT) ? 128 : 255);
 	}
 }
 
@@ -1506,7 +1505,6 @@ void BspRenderer::highlightFace(int faceIdx, bool highlight)
 		rgroup->verts[rface->vertOffset + i].b = b;
 	}
 
-	rgroup->buffer->deleteBuffer();
 	rgroup->buffer->upload();
 }
 
@@ -1541,7 +1539,6 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 		}
 	}
 
-	rgroup->buffer->deleteBuffer();
 	rgroup->buffer->upload();
 }
 

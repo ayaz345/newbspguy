@@ -44,13 +44,13 @@ void logf(const char* format, ...)
 	vsnprintf(log_line, 4096, format, vl);
 	va_end(vl);
 
-	printf("%s", log_line);
-	g_log_buffer.push_back(log_line);
-
 #ifndef NDEBUG
 	std::ofstream outfile("log.txt", std::ios_base::app);
 	outfile << log_line;
 #endif
+
+	printf("%s", log_line);
+	g_log_buffer.push_back(log_line);
 
 	g_log_mutex.unlock();
 }
@@ -247,6 +247,16 @@ std::string stripExt(const std::string& path)
 	if (lastDot != std::string::npos)
 	{
 		return path.substr(0, lastDot);
+	}
+	return path;
+}
+
+std::string stripFileName(const std::string& path)
+{
+	size_t lastSlash = path.find_last_of("\\/");
+	if (lastSlash != std::string::npos)
+	{
+		return path.substr(0, lastSlash);
 	}
 	return path;
 }
@@ -1086,22 +1096,15 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 		return;
 	replaceAll(path, "\"", "");
 	replaceAll(path, "\'", "");
-#ifdef WIN32
 	replaceAll(path, "/", "\\");
 	replaceAll(path, "\\\\", "\\");
-#else
 	replaceAll(path, "\\", "/");
 	replaceAll(path, "//", "/");
-#endif
 	if (startslash == FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE)
 	{
 		if (path[0] != '\\' && path[0] != '/')
 		{
-#ifdef WIN32
-			path = "\\" + path;
-#else 
 			path = "/" + path;
-#endif
 		}
 	}
 	else if (startslash == FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE)
@@ -1116,11 +1119,7 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 	{
 		if (path.empty() || (path.back() != '\\' && path.back() != '/'))
 		{
-#ifdef WIN32
-			path = path + "\\";
-#else 
 			path = path + "/";
-#endif
 		}
 	}
 	else if (endslash == FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE)
@@ -1134,22 +1133,15 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 		}
 	}
 
-#ifdef WIN32
 	replaceAll(path, "/", "\\");
 	replaceAll(path, "\\\\", "\\");
-#else
 	replaceAll(path, "\\", "/");
 	replaceAll(path, "//", "/");
-#endif
 }
 
 std::string GetCurrentWorkingDir()
 {
-#ifdef WIN32
-	return fs::current_path().string() + "\\";
-#else 
 	return fs::current_path().string() + "/";
-#endif
 }
 
 #ifdef WIN32
