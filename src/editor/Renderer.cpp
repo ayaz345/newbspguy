@@ -2128,7 +2128,7 @@ void Renderer::pickObject()
 			pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
 		}
 	}
-	else /*if (pickMode == PICK_OBJECT)*/
+	else if (hoverAxis == -1)/*if (pickMode == PICK_OBJECT)*/
 	{
 		for (auto idx : pickInfo.selectedFaces)
 		{
