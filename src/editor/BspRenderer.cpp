@@ -1373,6 +1373,7 @@ BspRenderer::~BspRenderer()
 	clearRedoCommands();
 
 	if (lightmapFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
+		texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
 		clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
 	{
 		logf("ERROR: Deleted bsp renderer while it was loading\n");

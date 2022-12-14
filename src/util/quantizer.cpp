@@ -168,7 +168,7 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t heigh
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
-				unsigned int k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
+				unsigned int k = GetNearestIndexFast(image[j], m_pPalette);
 
 				target[i] = k;
 
@@ -210,7 +210,7 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t heigh
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
-				unsigned int k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
+				unsigned int k = GetNearestIndexFast(image[j], m_pPalette);
 				target[i] = k;
 				int diff[3];
 				diff[0] = image[j].r - m_pPalette[k].r;
@@ -250,7 +250,6 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t heigh
 
 void Quantizer::FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t height, unsigned char* target)
 {
-	int bytespp = 3;
 	for (int64_t y = 0; y < height; y++)
 	{
 		if (y % 2 == 1)
@@ -258,37 +257,39 @@ void Quantizer::FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t he
 			for (int64_t x = 0; x < width; x++)
 			{
 				int i = width * (height - y - 1) + x;
-				int j = (width * y + x) * bytespp;
-				unsigned char k = FixBounds(GetNearestIndexFast(*(COLOR3*)(image + j), m_pPalette));
-				int diff[3];
+				int j = width * y + x;
+				unsigned char k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
+
 				target[i] = k;
+
+				int diff[3];
 				diff[0] = image[j].r - m_pPalette[k].r;
-				diff[1] = image[j + 1].g - m_pPalette[k].g;
-				diff[2] = image[j + 2].b - m_pPalette[k].b;
+				diff[1] = image[j].g - m_pPalette[k].g;
+				diff[2] = image[j].b - m_pPalette[k].b;
 
 				if (y < height - 1)
 				{
-					image[j + (width * bytespp) + 0].r = FixBounds(image[j + (width * bytespp) + 0].r + (diff[0] * 5) / 16);
-					image[j + (width * bytespp) + 1].g = FixBounds(image[j + (width * bytespp) + 1].g + (diff[1] * 5) / 16);
-					image[j + (width * bytespp) + 2].b = FixBounds(image[j + (width * bytespp) + 2].b + (diff[2] * 5) / 16);
+					image[j + width].r = FixBounds(image[j + width].r + (diff[0] * 5) / 16);
+					image[j + width].g = FixBounds(image[j + width].g + (diff[1] * 5) / 16);
+					image[j + width].b = FixBounds(image[j + width].b + (diff[2] * 5) / 16);
 					if (x > 0)
 					{
-						image[j + ((width - 1) * bytespp) + 0].r = FixBounds(image[j + ((width - 1) * bytespp) + 0].r + (diff[0] * 3) / 16);
-						image[j + ((width - 1) * bytespp) + 1].g = FixBounds(image[j + ((width - 1) * bytespp) + 1].g + (diff[1] * 3) / 16);
-						image[j + ((width - 1) * bytespp) + 2].b = FixBounds(image[j + ((width - 1) * bytespp) + 2].b + (diff[2] * 3) / 16);
+						image[j + (width - 1)].r = FixBounds(image[j + (width - 1)].r + (diff[0] * 3) / 16);
+						image[j + (width - 1)].g = FixBounds(image[j + (width - 1)].g + (diff[1] * 3) / 16);
+						image[j + (width - 1)].b = FixBounds(image[j + (width - 1)].b + (diff[2] * 3) / 16);
 					}
 					if (x < width - 1)
 					{
-						image[j + ((width + 1) * bytespp) + 0].r = FixBounds(image[j + ((width + 1) * bytespp) + 0].r + (diff[0] * 1) / 16);
-						image[j + ((width + 1) * bytespp) + 1].g = FixBounds(image[j + ((width + 1) * bytespp) + 1].g + (diff[1] * 1) / 16);
-						image[j + ((width + 1) * bytespp) + 2].b = FixBounds(image[j + ((width + 1) * bytespp) + 2].b + (diff[2] * 1) / 16);
+						image[j + width + 1].r = FixBounds(image[j + width + 1].r + (diff[0] * 1) / 16);
+						image[j + width + 1].g = FixBounds(image[j + width + 1].g + (diff[1] * 1) / 16);
+						image[j + width + 1].b = FixBounds(image[j + width + 1].b + (diff[2] * 1) / 16);
 					}
 				}
 				if (x < width - 1)
 				{
-					image[j + bytespp + 0].r = FixBounds(image[j + bytespp + 0].r + (diff[0] * 7) / 16);
-					image[j + bytespp + 1].g = FixBounds(image[j + bytespp + 1].g + (diff[1] * 7) / 16);
-					image[j + bytespp + 2].b = FixBounds(image[j + bytespp + 2].b + (diff[2] * 7) / 16);
+					image[j + 1].r = FixBounds(image[j + 1].r + (diff[0] * 7) / 16);
+					image[j + 1].g = FixBounds(image[j + 1].g + (diff[1] * 7) / 16);
+					image[j + 1].b = FixBounds(image[j + 1].b + (diff[2] * 7) / 16);
 				}
 
 			}
@@ -298,37 +299,38 @@ void Quantizer::FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t he
 			for (int64_t x = width - 1; x >= 0; x--)
 			{
 				int i = width * (height - y - 1) + x;
-				int j = (width * y + x) * bytespp;
-				unsigned char k = FixBounds(GetNearestIndexFast(*(COLOR3*)(image + j), m_pPalette));
-				int diff[3];
+				int j = width * y + x;
+				unsigned char k = FixBounds(GetNearestIndexFast(image[j], m_pPalette));
 				target[i] = k;
+				int diff[3];
 				diff[0] = image[j].r - m_pPalette[k].r;
-				diff[1] = image[j + 1].g - m_pPalette[k].g;
-				diff[2] = image[j + 2].b - m_pPalette[k].b;
+				diff[1] = image[j].g - m_pPalette[k].g;
+				diff[2] = image[j].b - m_pPalette[k].b;
+
 
 				if (y < height - 1)
 				{
-					image[j + (width * bytespp) + 0].r = FixBounds(image[j + (width * bytespp) + 0].r + (diff[0] * 5) / 16);
-					image[j + (width * bytespp) + 1].g = FixBounds(image[j + (width * bytespp) + 1].g + (diff[1] * 5) / 16);
-					image[j + (width * bytespp) + 2].b = FixBounds(image[j + (width * bytespp) + 2].b + (diff[2] * 5) / 16);
+					image[j + width].r = FixBounds(image[j + width].r + (diff[0] * 5) / 16);
+					image[j + width].g = FixBounds(image[j + width].g + (diff[1] * 5) / 16);
+					image[j + width].b = FixBounds(image[j + width].b + (diff[2] * 5) / 16);
 					if (x > 0)
 					{
-						image[j + ((width - 1) * bytespp) + 0].r = FixBounds(image[j + ((width - 1) * bytespp) + 0].r + (diff[0] * 1) / 16);
-						image[j + ((width - 1) * bytespp) + 1].g = FixBounds(image[j + ((width - 1) * bytespp) + 1].g + (diff[1] * 1) / 16);
-						image[j + ((width - 1) * bytespp) + 2].b = FixBounds(image[j + ((width - 1) * bytespp) + 2].b + (diff[2] * 1) / 16);
+						image[j + (width - 1)].r = FixBounds(image[j + (width - 1)].r + (diff[0] * 3) / 16);
+						image[j + (width - 1)].g = FixBounds(image[j + (width - 1)].g + (diff[1] * 3) / 16);
+						image[j + (width - 1)].b = FixBounds(image[j + (width - 1)].b + (diff[2] * 3) / 16);
 					}
 					if (x < width - 1)
 					{
-						image[j + ((width + 1) * bytespp) + 0].r = FixBounds(image[j + ((width + 1) * bytespp) + 0].r + (diff[0] * 3) / 16);
-						image[j + ((width + 1) * bytespp) + 1].g = FixBounds(image[j + ((width + 1) * bytespp) + 1].g + (diff[1] * 3) / 16);
-						image[j + ((width + 1) * bytespp) + 2].b = FixBounds(image[j + ((width + 1) * bytespp) + 2].b + (diff[2] * 3) / 16);
+						image[j + width + 1].r = FixBounds(image[j + width + 1].r + (diff[0] * 1) / 16);
+						image[j + width + 1].g = FixBounds(image[j + width + 1].g + (diff[1] * 1) / 16);
+						image[j + width + 1].b = FixBounds(image[j + width + 1].b + (diff[1] * 1) / 16);
 					}
 				}
 				if (x > 0)
 				{
-					image[j - bytespp + 0].r = FixBounds(image[j - bytespp + 0].r + (diff[0] * 7) / 16);
-					image[j - bytespp + 1].g = FixBounds(image[j - bytespp + 1].g + (diff[1] * 7) / 16);
-					image[j - bytespp + 2].b = FixBounds(image[j - bytespp + 2].b + (diff[2] * 7) / 16);
+					image[j - 1].r = FixBounds(image[j - 1].r + (diff[0] * 7) / 16);
+					image[j - 1].g = FixBounds(image[j - 1].g + (diff[1] * 7) / 16);
+					image[j - 1].b = FixBounds(image[j - 1].b + (diff[2] * 7) / 16);
 				}
 
 			}
