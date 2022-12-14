@@ -194,24 +194,19 @@ void BspRenderer::loadTextures()
 			glTexturesSwap[i] = missingTex;
 			continue;
 		}
-		BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-
-		COLOR3* palette = NULL;
-		unsigned char* src = NULL;
-		int lastMipSize = (tex.nWidth / 8) * (tex.nHeight / 8);
+		BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
+		COLOR3* imageData = NULL;
 		WADTEX* wadTex = NULL;
-		if (tex.nOffsets[0] <= 0)
+		if (tex->nOffsets[0] <= 0)
 		{
 			bool foundInWad = false;
 			for (int k = 0; k < wads.size(); k++)
 			{
-				if (wads[k]->hasTexture(tex.szName))
+				if (wads[k]->hasTexture(tex->szName))
 				{
 					foundInWad = true;
-					wadTex = wads[k]->readTexture(tex.szName);
-					palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
-					src = wadTex->data;
-
+					wadTex = wads[k]->readTexture(tex->szName);
+					imageData = ConvertWadTexToRGB(wadTex);
 					wadTexCount++;
 					break;
 				}
@@ -226,23 +221,13 @@ void BspRenderer::loadTextures()
 		}
 		else
 		{
-			palette = (COLOR3*)(map->textures + texOffset + tex.nOffsets[3] + lastMipSize + 2);
-			src = map->textures + texOffset + tex.nOffsets[0];
+			imageData = ConvertMipTexToRGB(tex);
 			embedCount++;
 		}
-
-		COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
-
-		int sz = tex.nWidth * tex.nHeight;
-
-		if (src && palette)
-		{
-			for (int k = 0; k < sz; k++)
-			{
-				imageData[k] = palette[src[k]];
-			}
-		}
-		glTexturesSwap[i] = new Texture(tex.nWidth, tex.nHeight, (unsigned char*)imageData, tex.szName);
+		if (wadTex)
+			glTexturesSwap[i] = new Texture(wadTex->nWidth, wadTex->nHeight, (unsigned char*)imageData, wadTex->szName);
+		else
+			glTexturesSwap[i] = new Texture(tex->nWidth, tex->nHeight, (unsigned char*)imageData, tex->szName);
 
 		if (wadTex)
 			delete wadTex;
@@ -1720,7 +1705,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 			if (highlight)
 				yellowTex->bind(0);
-			else 
+			else
 			{
 				if (modelIdx > 0)
 					blueTex->bind(0);

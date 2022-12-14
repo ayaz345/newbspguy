@@ -3,6 +3,7 @@
 #include <string.h>
 #include "Wad.h"
 #include "util.h"
+#include "Renderer.h"
 
 Wad::Wad(void)
 {
@@ -200,7 +201,8 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	BSPMIPTEX mtex = BSPMIPTEX();
 	memcpy((char*)&mtex, &filedata[offset], sizeof(BSPMIPTEX));
 	offset += sizeof(BSPMIPTEX);
-
+	if (g_settings.verboseLogs)
+		logf("Load wad BSPMIPTEX name %s size %d/%d\n", mtex.szName, mtex.nWidth, mtex.nHeight);
 	int w = mtex.nWidth;
 	int h = mtex.nHeight;
 	int sz = w * h;	   // miptex 0
@@ -221,12 +223,14 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	tex->nHeight = mtex.nHeight;
 	tex->data = data;
 	tex->needclean = true;
+	if (g_settings.verboseLogs)
+		logf("Return WADTEX name %s size %d/%d\n", tex->szName, tex->nWidth, tex->nHeight);
 	return tex;
 }
 
 bool Wad::write(WADTEX** textures, size_t numTex)
 {
-	std::vector<WADTEX *> textList = std::vector<WADTEX *>(&textures[0], &textures[numTex]);
+	std::vector<WADTEX*> textList = std::vector<WADTEX*>(&textures[0], &textures[numTex]);
 	return write(filename, textList);
 }
 
@@ -324,7 +328,7 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 	return true;
 }
 
-WADTEX * create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
+WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 {
 	COLOR3 palette[256];
 	memset(&palette, 0, sizeof(COLOR3) * 256);
@@ -403,7 +407,7 @@ WADTEX * create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];
 	memset(newTexData, 0, sizeof(newTexLumpSize));
 
-	WADTEX * newMipTex = new WADTEX();
+	WADTEX* newMipTex = new WADTEX();
 	newMipTex->nWidth = width;
 	newMipTex->nHeight = height;
 
@@ -428,8 +432,10 @@ WADTEX * create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	return newMipTex;
 }
 
-COLOR3* ConvertWadTexToRGB(WADTEX * wadTex)
+COLOR3* ConvertWadTexToRGB(WADTEX* wadTex)
 {
+	if (g_settings.verboseLogs)
+		logf("Convert WADTEX to RGB name %s size %d/%d\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 
 	COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
@@ -444,13 +450,17 @@ COLOR3* ConvertWadTexToRGB(WADTEX * wadTex)
 		imageData[k] = palette[src[k]];
 	}
 
+	if (g_settings.verboseLogs)
+		logf("Converted WADTEX to RGB name %s size %d/%d\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
 	return imageData;
 }
-COLOR3* ConvertMipTexToRGB(BSPMIPTEX * tex)
+COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex)
 {
+	if (g_settings.verboseLogs)
+		logf("Convert BSPMIPTEX to RGB name %s size %d/%d\n", tex->szName, tex->nWidth, tex->nHeight);
 	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 
-	COLOR3* palette = (COLOR3*)(((unsigned char* )tex) + tex->nOffsets[3] + lastMipSize + 2);
+	COLOR3* palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
 	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 
 	COLOR3* imageData = new COLOR3[tex->nWidth * tex->nHeight];
@@ -462,5 +472,7 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX * tex)
 		imageData[k] = palette[src[k]];
 	}
 
+	if (g_settings.verboseLogs)
+		logf("Converted BSPMIPTEX to RGB name %s size %d/%d\n", tex->szName, tex->nWidth, tex->nHeight);
 	return imageData;
 }

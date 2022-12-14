@@ -4827,7 +4827,7 @@ void Gui::drawImportMapWidget()
 									}
 								}
 							}
-							if (newMiptex < 0)
+							if (newMiptex < 0 && bspModel->getBspRender()->wads.size())
 							{
 								for (auto& s : bspModel->getBspRender()->wads)
 								{

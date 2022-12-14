@@ -3,6 +3,7 @@
 #include "Texture.h"
 #include "lodepng.h"
 #include "util.h"
+#include "Renderer.h"
 
 Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 {
@@ -13,6 +14,8 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 	this->data = new unsigned char[(unsigned int)(width * height) * sizeof(COLOR3)];
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
+	if (g_settings.verboseLogs)
+		logf("Texture: %s %d/%d", name, width, height);
 }
 
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char* name)
@@ -24,6 +27,8 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->data = data;
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
+	if (g_settings.verboseLogs)
+		logf("Texture2 : %s %d/%d", name, width, height);
 }
 
 Texture::~Texture()
@@ -67,8 +72,10 @@ void Texture::upload(int _format, bool lightmap)
 
 	// TODO: load mipmaps from BSP/WAD
 
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, _format, GL_UNSIGNED_BYTE, data);
+	glTexImage2D(GL_TEXTURE_2D, 0, _format, width, height, 0, _format, GL_UNSIGNED_BYTE, data);
 
+	if (g_settings.verboseLogs)
+		logf("Load texture %s with %d/%d size\n", texName, width, height);
 	//glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGB, width, height);
 	//glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, width, height, format, GL_UNSIGNED_BYTE, data);
 
