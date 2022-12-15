@@ -246,7 +246,6 @@ struct BSPCLIPNODE
 	short iChildren[2]; // negative numbers are contents
 };
 
-
 /*
  * application types (not part of the BSP)
  */

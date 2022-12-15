@@ -906,12 +906,12 @@ void Renderer::renderLoop()
 		if (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount)
 		{
 			updatePickCount = true;
-			isTransformableSolid = modelIdx > 0 || pickInfo.selectedEnts.size() == 0;
+			isTransformableSolid = modelIdx > 0 || (entIdx >= 0 && map->ents[entIdx]->getBspModelIdx() < 0);
 
 			if (!isTransformableSolid && pickInfo.selectedEnts.size())
 			{
-				if (map && map->ents[pickInfo.selectedEnts[0]]->hasKey("classname") &&
-					map->ents[pickInfo.selectedEnts[0]]->keyvalues["classname"] == "worldspawn")
+				if (map && ent && ent->hasKey("classname") &&
+					ent->keyvalues["classname"] == "worldspawn")
 				{
 					isTransformableSolid = true;
 				}
@@ -940,8 +940,8 @@ void Renderer::renderLoop()
 
 			if (invalidSolid && pickInfo.selectedEnts.size())
 			{
-				if (map && map->ents[pickInfo.selectedEnts[0]]->hasKey("classname") &&
-					map->ents[pickInfo.selectedEnts[0]]->keyvalues["classname"] == "worldspawn")
+				if (map && ent && ent->hasKey("classname") &&
+					ent->keyvalues["classname"] == "worldspawn")
 				{
 					invalidSolid = false;
 				}
@@ -3104,7 +3104,7 @@ void Renderer::updateModelVerts()
 		scaleTexinfos.clear();
 		return;
 	}
-	
+
 	modelEdges = modelSolid.hullEdges;
 
 	size_t numCubes = modelVerts.size() + modelEdges.size();

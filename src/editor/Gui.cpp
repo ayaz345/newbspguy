@@ -3923,7 +3923,7 @@ void Gui::drawLog()
 
 void Gui::drawSettings()
 {
-	ImGui::SetNextWindowSize(ImVec2(790.f, 350.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSize(ImVec2(790.f, 340.f), ImGuiCond_FirstUseEver);
 
 	bool oldShowSettings = showSettingsWidget;
 
@@ -3954,7 +3954,17 @@ void Gui::drawSettings()
 				settingsTab = i;
 		}
 
+		ImGui::Separator();
+
+		ImGui::Dummy(ImVec2(0, 60));
+		if (ImGui::Button("Apply settings"))
+		{
+			oldShowSettings = !showSettingsWidget;
+		}
+
 		ImGui::EndChild();
+
+
 		ImGui::SameLine();
 
 		// right
@@ -4500,6 +4510,7 @@ void Gui::drawSettings()
 
 		ImGui::EndChild();
 		ImGui::EndChild();
+
 		ImGui::EndGroup();
 	}
 	ImGui::End();
