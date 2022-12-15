@@ -4706,7 +4706,6 @@ int Bsp::get_ent_from_model(int modelIdx)
 	if (modelIdx < 0)
 		return -1;
 
-	Entity* worldspawn = NULL;
 	for (int i = 0; i < ents.size(); i++)
 	{
 		if (ents[i]->getBspModelIdx() == modelIdx)
@@ -5447,7 +5446,7 @@ void Bsp::decalShoot(vec3 pos, const char* texname)
 	for (int faceIdx = 0; faceIdx < faceCount; faceIdx++)
 	{
 		FaceMath& face = renderer->faceMaths[faceIdx];
-		if (renderer->pickFaceMath(pos + (face.normal * 0.01), face.normal * -0.01, face, bestDir))
+		if (renderer->pickFaceMath(pos + (face.normal * 0.01f), face.normal * -0.01f, face, bestDir))
 		{
 			bestMath = faceIdx;
 		}

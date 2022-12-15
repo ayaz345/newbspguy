@@ -981,22 +981,36 @@ void Renderer::renderLoop()
 		{
 			if (debugClipnodes && modelIdx > 0)
 			{
+				colorShader->bind();
+				matmodel.loadIdentity();
+				colorShader->pushMatrix(MAT_MODEL);
+				vec3 offset = (map->getBspRender()->mapOffset + (entIdx > 0 ? map->ents[entIdx]->getOrigin() : vec3())).flip();
+				matmodel.translate(offset.x, offset.y, offset.z);
+				colorShader->updateMatrixes();
 				BSPMODEL& pickModel = map->models[modelIdx];
 				glDisable(GL_CULL_FACE);
 				int currentPlane = 0;
-				drawClipnodes(map, pickModel.iHeadnodes[1], currentPlane, debugInt);
+				drawClipnodes(map, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
 				debugIntMax = currentPlane - 1;
 				glEnable(GL_CULL_FACE);
+				colorShader->popMatrix(MAT_MODEL);
 			}
 
 			if (debugNodes && modelIdx > 0)
 			{
+				colorShader->bind();
+				matmodel.loadIdentity();
+				colorShader->pushMatrix(MAT_MODEL);
+				vec3 offset = (map->getBspRender()->mapOffset + (entIdx > 0  ? map->ents[entIdx]->getOrigin() : vec3())).flip();
+				matmodel.translate(offset.x, offset.y, offset.z);
+				colorShader->updateMatrixes();
 				BSPMODEL& pickModel = map->models[modelIdx];
 				glDisable(GL_CULL_FACE);
 				int currentPlane = 0;
-				drawNodes(map, pickModel.iHeadnodes[0], currentPlane, debugNode);
+				drawNodes(map, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
 				debugNodeMax = currentPlane - 1;
 				glEnable(GL_CULL_FACE);
+				colorShader->popMatrix(MAT_MODEL);
 			}
 
 			if (g_render_flags & RENDER_ORIGIN)
@@ -2608,9 +2622,8 @@ void Renderer::drawLine(const vec3& start, const vec3& end, COLOR4 color)
 	lineBuf->drawFull();
 }
 
-void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color)
+void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 {
-
 	vec3 ori = plane.vNormal * plane.fDist;
 	vec3 crossDir = abs(plane.vNormal.z) > 0.9f ? vec3(1, 0, 0) : vec3(0, 0, 1);
 	vec3 right = crossProduct(plane.vNormal, crossDir);
@@ -2632,18 +2645,18 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color)
 	plane_verts->v2 = bottomLeftVert;
 	plane_verts->v3 = topLeftVert;
 	plane_verts->v4 = topRightVert;
-
+	
 	planeBuf->drawFull();
 }
 
-void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane)
+void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset)
 {
 	if (iNode == -1)
 		return;
 	BSPCLIPNODE& node = map->clipnodes[iNode];
 
 	if (currentPlane == activePlane)
-		drawPlane(map->planes[node.iPlane], {255, 255, 255, 255});
+		drawPlane(map->planes[node.iPlane], {255, 255, 255, 255}, offset);
 	currentPlane++;
 
 	for (int i = 0; i < 2; i++)
@@ -2655,14 +2668,14 @@ void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activeP
 	}
 }
 
-void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane)
+void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset)
 {
 	if (iNode == -1)
 		return;
 	BSPNODE& node = map->nodes[iNode];
 
 	if (currentPlane == activePlane)
-		drawPlane(map->planes[node.iPlane], {255, 128, 128, 255});
+		drawPlane(map->planes[node.iPlane], {255, 128, 128, 255}, offset);
 	currentPlane++;
 
 	for (int i = 0; i < 2; i++)

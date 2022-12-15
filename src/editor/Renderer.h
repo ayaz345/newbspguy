@@ -329,9 +329,9 @@ private:
 	void drawTransformAxes();
 	void drawEntConnections();
 	void drawLine(const vec3& start, const vec3& end, COLOR4 color);
-	void drawPlane(BSPPLANE& plane, COLOR4 color);
-	void drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane);
-	void drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane);
+	void drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset = vec3());
+	void drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset = vec3());
+	void drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset = vec3());
 
 	vec3 getEntOrigin(Bsp* map, Entity* ent);
 	vec3 getEntOffset(Bsp* map, Entity* ent);
