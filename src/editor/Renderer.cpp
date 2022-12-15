@@ -868,7 +868,7 @@ void Renderer::renderLoop()
 			anyShiftPressed = pressed[GLFW_KEY_LEFT_SHIFT] || pressed[GLFW_KEY_RIGHT_SHIFT];
 
 			oldControl = canControl;
-			canControl = !gui->imgui_io->WantCaptureKeyboard && !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
+			canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
 		}
 
 		Bsp* map = SelectedMap;
@@ -1001,7 +1001,7 @@ void Renderer::renderLoop()
 				colorShader->bind();
 				matmodel.loadIdentity();
 				colorShader->pushMatrix(MAT_MODEL);
-				vec3 offset = (map->getBspRender()->mapOffset + (entIdx > 0  ? map->ents[entIdx]->getOrigin() : vec3())).flip();
+				vec3 offset = (map->getBspRender()->mapOffset + (entIdx > 0 ? map->ents[entIdx]->getOrigin() : vec3())).flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
 				BSPMODEL& pickModel = map->models[modelIdx];
@@ -1457,7 +1457,11 @@ void Renderer::controls()
 
 		cameraPickingControls();
 
-		shortcutControls();
+		if (!gui->imgui_io->WantCaptureKeyboard)
+		{
+			shortcutControls();
+			globalShortcutControls();
+		}
 	}
 	else
 	{
@@ -1467,11 +1471,6 @@ void Renderer::controls()
 			oldLeftMouse = GLFW_PRESS;
 			cameraPickingControls();
 		}
-	}
-
-	if (!gui->imgui_io->WantTextInput)
-	{
-		globalShortcutControls();
 	}
 
 	oldScroll = g_scroll;
@@ -2645,7 +2644,7 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 	plane_verts->v2 = bottomLeftVert;
 	plane_verts->v3 = topLeftVert;
 	plane_verts->v4 = topRightVert;
-	
+
 	planeBuf->drawFull();
 }
 
