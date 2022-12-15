@@ -5,11 +5,6 @@
 #include "util.h"
 #include "Renderer.h"
 
-#ifdef WIN32
-#define strcasecmp _stricmp
-#endif
-
-
 Wad::Wad(void)
 {
 	dirEntries.clear();

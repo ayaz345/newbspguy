@@ -214,6 +214,12 @@ public:
 
 	int get_model_from_face(int faceIdx);
 
+	bool is_worldspawn_ent(int entIdx);
+
+	int get_ent_from_model(int modelIdx);
+
+	void decalShoot(vec3 pos, const char * texname);
+
 	std::vector<STRUCTUSAGE*> get_sorted_model_infos(int sortMode);
 
 	// split structures that are shared between the target and other models

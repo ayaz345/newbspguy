@@ -99,14 +99,13 @@ size_t EditEntityCommand::memoryUsage()
 	return sizeof(EditEntityCommand) + oldEntData.getMemoryUsage() + newEntData.getMemoryUsage();
 }
 
-
 //
 // Delete entity
 //
-DeleteEntityCommand::DeleteEntityCommand(std::string desc, PickInfo& pickInfo)
+DeleteEntityCommand::DeleteEntityCommand(std::string desc, int entIdx)
 	: Command(desc, g_app->getSelectedMapId())
 {
-	this->entIdx = pickInfo.GetSelectedEnt();
+	this->entIdx = entIdx;
 	this->entData = new Entity();
 	*this->entData = *(g_app->getSelectedMap()->ents[entIdx]);
 	this->allowedDuringLoad = true;
@@ -240,16 +239,19 @@ size_t CreateEntityCommand::memoryUsage()
 //
 // Duplicate BSP Model command
 //
-DuplicateBspModelCommand::DuplicateBspModelCommand(std::string desc, PickInfo& pickInfo)
+DuplicateBspModelCommand::DuplicateBspModelCommand(std::string desc, int entIdx)
 	: Command(desc, g_app->getSelectedMapId())
 {
-	int modelIdx = -1;
-
-	int tmpentIdx = pickInfo.GetSelectedEnt();
-
-	if (tmpentIdx >= 0)
+	int tmpentIdx = entIdx;
+	int modelIdx = 0;
+	Bsp* map = g_app->getSelectedMap();
+	if (map && tmpentIdx >= 0)
 	{
-		modelIdx = g_app->getSelectedMap()->ents[tmpentIdx]->getBspModelIdx();
+		modelIdx = map->ents[tmpentIdx]->getBspModelIdx();
+		if (modelIdx < 0 && map->is_worldspawn_ent(tmpentIdx))
+		{
+			modelIdx = 0;
+		}
 	}
 
 	this->oldModelIdx = modelIdx;
@@ -453,7 +455,7 @@ int CreateBspModelCommand::getDefaultTextureIdx()
 		if (texOffset != -1)
 		{
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-			if (tex.szName[0] != '\0' && strcmp(tex.szName, "aaatrigger") == 0)
+			if (tex.szName[0] != '\0' && strcasecmp(tex.szName, "aaatrigger") == 0)
 			{
 				logf("Found default texture in map file.\n");
 				return i;
@@ -485,7 +487,7 @@ int CreateBspModelCommand::addDefaultTexture()
 //
 // Edit BSP model
 //
-EditBspModelCommand::EditBspModelCommand(std::string desc, PickInfo& pickInfo, LumpState oldLumps, LumpState newLumps,
+EditBspModelCommand::EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps,
 										 vec3 oldOrigin) : Command(desc, g_app->getSelectedMapId())
 {
 
@@ -494,14 +496,13 @@ EditBspModelCommand::EditBspModelCommand(std::string desc, PickInfo& pickInfo, L
 	this->allowedDuringLoad = false;
 	this->oldOrigin = oldOrigin;
 
-	int tmpentIdx = pickInfo.GetSelectedEnt();
-	this->entIdx = tmpentIdx;
+	this->entIdx = entIdx;
 
 	Bsp* map = g_app->getSelectedMap();
-	if (map && tmpentIdx >= 0)
+	if (map && entIdx >= 0)
 	{
-		this->modelIdx = map->ents[tmpentIdx]->getBspModelIdx();
-		this->newOrigin = map->ents[tmpentIdx]->getOrigin();
+		this->modelIdx = map->ents[entIdx]->getBspModelIdx();
+		this->newOrigin = map->ents[entIdx]->getOrigin();
 	}
 	else
 	{

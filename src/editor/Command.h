@@ -5,9 +5,7 @@
 #include "Bsp.h"
 #include "Entity.h"
 
-class PickInfo;
 // Undoable actions following the Command Pattern
-
 class Command
 {
 public:
@@ -50,7 +48,7 @@ public:
 	int entIdx;
 	Entity* entData;
 
-	DeleteEntityCommand(std::string desc, PickInfo& pickInfo);
+	DeleteEntityCommand(std::string desc, int entIdx);
 	~DeleteEntityCommand();
 
 	void execute() override;
@@ -84,7 +82,7 @@ public:
 	LumpState oldLumps = LumpState();
 	bool initialized = false;
 
-	DuplicateBspModelCommand(std::string desc, PickInfo& pickInfo);
+	DuplicateBspModelCommand(std::string desc, int entIdx);
 	~DuplicateBspModelCommand();
 
 	void execute() override;
@@ -125,7 +123,7 @@ public:
 	LumpState oldLumps = LumpState();
 	LumpState newLumps = LumpState();
 
-	EditBspModelCommand(std::string desc, PickInfo& pickInfo, LumpState oldLumps, LumpState newLumps, vec3 oldOrigin);
+	EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps, vec3 oldOrigin);
 	~EditBspModelCommand();
 
 	void execute() override;

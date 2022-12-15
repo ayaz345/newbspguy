@@ -4,6 +4,10 @@
 #include "bsplimits.h"
 #include <vector>
 
+#ifdef WIN32
+#define strcasecmp _stricmp
+#endif
+
 #pragma pack(push, 1)
 #define BSP_MODEL_BYTES 64 // size of a BSP model in bytes
 

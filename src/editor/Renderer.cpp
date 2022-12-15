@@ -3865,7 +3865,7 @@ void Renderer::cutEnt()
 	copiedEnt = new Entity();
 	*copiedEnt = *map->ents[entIdx];
 
-	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", pickInfo);
+	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", entIdx);
 	deleteCommand->execute();
 	map->getBspRender()->pushUndoCommand(deleteCommand);
 }
@@ -3928,13 +3928,7 @@ void Renderer::deleteEnt(int entIdx)
 	if (!map || (pickInfo.GetSelectedEnt() <= 0 && entIdx <= 0))
 		return;
 	PickInfo tmpPickInfo = pickInfo;
-
-	if (entIdx > 0 && SelectedMap)
-	{
-		tmpPickInfo.SetSelectedEnt(entIdx);
-	}
-
-	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", tmpPickInfo);
+	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Delete Entity", entIdx);
 	deleteCommand->execute();
 	map->getBspRender()->pushUndoCommand(deleteCommand);
 }
@@ -4058,7 +4052,23 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 		map->getBspRender()->saveLumpState(0xffffffff, true);
 	pickCount++; // force transform window update
 }
-
+void Renderer::goToFace(Bsp* map, int faceIdx)
+{
+	BSPFACE& face = map->faces[faceIdx];
+	if (face.iFirstEdge >= 0 && face.nEdges)
+	{
+		std::vector<vec3> edgeVerts;
+		for (int i = 0; i < face.nEdges; i++)
+		{
+			int edgeIdx = map->surfedges[face.iFirstEdge + i];
+			BSPEDGE& edge = map->edges[abs(edgeIdx)];
+			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
+			edgeVerts.push_back(map->verts[vertIdx]);
+		}
+		vec3 center = getCenter(edgeVerts) + (map->planes[face.iPlane].vNormal.normalize() * -250.0f);
+		goToCoords(center.x, center.y, center.z);
+	}
+}
 void Renderer::goToCoords(float x, float y, float z)
 {
 	cameraOrigin.x = x;

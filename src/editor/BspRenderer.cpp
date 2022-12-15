@@ -1414,6 +1414,8 @@ void BspRenderer::reuploadTextures()
 	texturesLoaded = true;
 
 	preRenderFaces();
+
+	needReloadDebugTextures = true;
 }
 
 void BspRenderer::delayLoadData()
@@ -2049,7 +2051,7 @@ bool BspRenderer::pickFaceMath(const vec3& start, const vec3& dir, FaceMath& fac
 	}
 
 	float t = dotProduct((faceMath.normal * faceMath.fdist) - start, faceMath.normal) / dot;
-	if (t < 0 || t >= bestDist)
+	if (t < EPSILON || t >= bestDist)
 	{
 		return false; // intersection behind camera, or not a better pick
 	}
@@ -2183,24 +2185,10 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 	}
 
 	int entIdx = g_app->pickInfo.GetSelectedEnt();
-	if (entIdx < 0)
+	if (entIdx < 0 && g_app->pickInfo.selectedFaces.size())
 	{
-		if (g_app->pickInfo.selectedFaces.size())
-		{
-			int modelIdx = map->get_model_from_face(g_app->pickInfo.selectedFaces[0]);
-
-			if (modelIdx > 0 && modelIdx < map->modelCount)
-			{
-				for (size_t i = 0; i < map->ents.size(); i++)
-				{
-					if (map->ents[i]->getBspModelIdx() == modelIdx)
-					{
-						entIdx = (int)i;
-						break;
-					}
-				}
-			}
-		}
+		int modelIdx = map->get_model_from_face(g_app->pickInfo.selectedFaces[0]);
+		entIdx = map->get_ent_from_model(modelIdx);
 	}
 	if (entIdx < 0)
 		entIdx = 0;
@@ -2240,7 +2228,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 		}
 	}
 
-	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, g_app->pickInfo, undoLumpState, newLumps, undoEntityState[entIdx].getOrigin());
+	EditBspModelCommand* editCommand = new EditBspModelCommand(actionDesc, entIdx, undoLumpState, newLumps, undoEntityState[entIdx].getOrigin());
 	pushUndoCommand(editCommand);
 	saveLumpState(0xffffffff, false);
 

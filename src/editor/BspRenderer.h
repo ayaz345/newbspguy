@@ -125,7 +125,7 @@ public:
 	int showLightFlag = -1;
 	std::vector<Wad*> wads;
 	bool texturesLoaded = false;
-
+	bool needReloadDebugTextures = false;
 
 	BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* fullBrightBspShader, ShaderProgram* colorShader, PointEntRenderer* pointEntRenderer);
 	~BspRenderer();

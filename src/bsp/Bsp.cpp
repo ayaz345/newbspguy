@@ -1854,7 +1854,7 @@ bool Bsp::has_hull2_ents()
 		std::string cname = ents[i]->keyvalues["classname"];
 		//std::string tname = ents[i]->keyvalues["targetname"];
 
-		if (cname.find("monster_") == 0)
+		if (cname.find("monster_") == std::string::npos)
 		{
 			vec3 minhull;
 			vec3 maxhull;
@@ -1959,7 +1959,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 				needsPlayerHulls = needsMonsterHulls = !(spawnflags & 8); // "Passable" or "Not solid" unchecked
 				needsVisibleHull = !(spawnflags & 8) || !is_invisible_solid(usageEnts[k]);
 			}
-			else if (cname.find("trigger_") == 0)
+			else if (cname.find("trigger_") == std::string::npos)
 			{
 				if (std::find(g_settings.conditionalPointEntTriggers.begin(), g_settings.conditionalPointEntTriggers.end(), cname) != g_settings.conditionalPointEntTriggers.end())
 				{
@@ -3607,7 +3607,7 @@ BSPMIPTEX* Bsp::find_embedded_texture(const char* name, int& texid)
 		if (oldOffset != -1)
 		{
 			BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
-			if (oldTex->szName[0] != '\0' && strcmp(name, oldTex->szName) == 0 && oldTex->nOffsets[0] > 0)
+			if (oldTex->szName[0] != '\0' && strcasecmp(name, oldTex->szName) == 0 && oldTex->nOffsets[0] > 0)
 			{
 				texid = i;
 				return oldTex;
@@ -3627,7 +3627,7 @@ BSPMIPTEX* Bsp::find_embedded_wad_texture(const char* name, int& texid)
 		if (oldOffset != -1)
 		{
 			BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
-			if (oldTex->szName[0] != '\0' && strcmp(name, oldTex->szName) == 0 && oldTex->nOffsets[0] == 0)
+			if (oldTex->szName[0] != '\0' && strcasecmp(name, oldTex->szName) == 0 && oldTex->nOffsets[0] == 0)
 			{
 				texid = i;
 				return oldTex;
@@ -4701,6 +4701,30 @@ bool Bsp::is_unique_texinfo(int faceIdx)
 	return true;
 }
 
+int Bsp::get_ent_from_model(int modelIdx)
+{
+	if (modelIdx < 0)
+		return -1;
+
+	Entity* worldspawn = NULL;
+	for (int i = 0; i < ents.size(); i++)
+	{
+		if (ents[i]->getBspModelIdx() == modelIdx)
+			return i;
+	}
+
+	if (modelIdx == 0)
+	{
+		for (int i = 0; i < ents.size(); i++)
+		{
+			if (ents[i]->hasKey("classname") && ents[i]->keyvalues["classname"] == "worldspawn")
+				return i;
+		}
+	}
+
+	return -1;
+}
+
 int Bsp::get_model_from_face(int faceIdx)
 {
 	for (int i = 0; i < modelCount; i++)
@@ -4712,6 +4736,16 @@ int Bsp::get_model_from_face(int faceIdx)
 		}
 	}
 	return -1;
+}
+
+bool Bsp::is_worldspawn_ent(int entIdx)
+{
+	if (entIdx < 0 || entIdx >= ents.size())
+		return true;
+	if (ents[entIdx]->hasKey("classname") && ents[entIdx]->keyvalues["classname"] == "worldspawn"
+		&& ents[entIdx]->getBspModelIdx() <= 0)
+		return true;
+	return false;
 }
 
 short Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
@@ -5111,7 +5145,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 
 		std::string groupname = std::string();
 
-		BspRenderer* bsprend = getBspRender();
+		BspRenderer* bsprend = renderer;
 
 		bsprend->reload();
 
@@ -5222,7 +5256,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 							{
 								foundInWad = true;
 
-								WADTEX * wadTex = rend->mapRenderers[r]->wads[k]->readTexture(tex.szName);
+								WADTEX* wadTex = rend->mapRenderers[r]->wads[k]->readTexture(tex.szName);
 								int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
 								unsigned char* src = wadTex->data;
@@ -5356,13 +5390,13 @@ void Bsp::ExportToMapWIP(const std::string& path)
 	{
 		fprintf(f, "// Exported using bspguy!\n");
 
-		BspRenderer* bsprend = getBspRender();
+		BspRenderer* bsprend = renderer;
 
 		bsprend->reload();
 
 		for (unsigned int entIdx = 0; entIdx < ents.size(); entIdx++)
 		{
-			int modelIdx = entIdx == 0 ? 0 : bsprend->renderEnts[entIdx].modelIdx;
+			int modelIdx = is_worldspawn_ent(entIdx) ? 0 : bsprend->renderEnts[entIdx].modelIdx;
 			if (modelIdx < 0 || modelIdx > bsprend->numRenderModels)
 				continue;
 
@@ -5388,4 +5422,41 @@ BspRenderer* Bsp::getBspRender()
 			if (g_app->mapRenderers[i]->map == this)
 				renderer = g_app->mapRenderers[i];
 	return renderer;
+}
+
+void Bsp::decalShoot(vec3 pos, const char* texname)
+{
+	if (!renderer || !renderer->faceMaths)
+		return;
+	WADTEX* texture = NULL;
+	for (auto& wad : renderer->wads)
+	{
+		if (wad->hasTexture(texname))
+		{
+			texture = wad->readTexture(texname);
+			break;
+		}
+	}
+
+	/*if (!texture)
+		return;*/
+
+	int bestMath = -1;
+	float bestDir = 1.01f;
+
+	for (int faceIdx = 0; faceIdx < faceCount; faceIdx++)
+	{
+		FaceMath& face = renderer->faceMaths[faceIdx];
+		if (renderer->pickFaceMath(pos + (face.normal * 0.01), face.normal * -0.01, face, bestDir))
+		{
+			bestMath = faceIdx;
+		}
+	}
+
+	if (bestMath > 0)
+	{
+		int modelidx = get_model_from_face(bestMath);
+		logf("Best %d %d %f\n", modelidx, bestMath, bestDir);
+		std::vector<vec3> worldVerts;
+	}
 }

@@ -807,11 +807,36 @@ void Gui::draw3dContextMenus()
 
 					ImGui::Separator();
 
-					if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && modelIdx >= 0 && app->pickInfo.selectedEnts.size() == 1))
+					bool allowDuplicate = modelIdx >= 0 && app->pickInfo.selectedEnts.size() > 0;
+					if (allowDuplicate && app->pickInfo.selectedEnts.size() > 1)
 					{
-						DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", app->pickInfo);
-						command->execute();
-						map->getBspRender()->pushUndoCommand(command);
+						for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+						{
+							if (tmpEntIdx < 0)
+							{
+								allowDuplicate = false;
+								break;
+							}
+							else
+							{
+								if (map->ents[tmpEntIdx]->getBspModelIdx() <= 0)
+								{
+									allowDuplicate = false;
+									break;
+								}
+							}
+						}
+					}
+
+					if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && allowDuplicate))
+					{
+						logf("Execute 'duplicate' for %d models.\n", app->pickInfo.selectedEnts.size());
+						for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+						{
+							DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", tmpEntIdx);
+							command->execute();
+							map->getBspRender()->pushUndoCommand(command);
+						}
 					}
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
@@ -819,12 +844,9 @@ void Gui::draw3dContextMenus()
 						ImGui::TextUnformatted("Create a copy of this BSP model and assign to this entity.\n\nThis lets you edit the model for this entity without affecting others.");
 						ImGui::EndTooltip();
 					}
-					if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && modelIdx >= 0 && app->pickInfo.selectedEnts.size() == 1))
+					if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && modelIdx >= 0))
 					{
-						if (modelIdx)
-						{
-							ExportModel(map, modelIdx, 0);
-						}
+						ExportModel(map, modelIdx, 0);
 					}
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
@@ -1529,9 +1551,26 @@ void Gui::drawMenuBar()
 		std::string redoTitle = redoCmd ? "Redo " + redoCmd->desc : "Can't redo";
 		bool canUndo = undoCmd && (!app->isLoading || undoCmd->allowedDuringLoad);
 		bool canRedo = redoCmd && (!app->isLoading || redoCmd->allowedDuringLoad);
-		bool entSelected = app->pickInfo.GetSelectedEnt() >= 0;
+		bool entSelected = app->pickInfo.selectedEnts.size();
 		bool mapSelected = map;
-		bool nonWorldspawnEntSelected = entSelected && app->pickInfo.GetSelectedEnt() != 0;
+		bool nonWorldspawnEntSelected = !entSelected;
+
+		if (!nonWorldspawnEntSelected)
+		{
+			for (auto& ent : app->pickInfo.selectedEnts)
+			{
+				if (ent < 0)
+				{
+					nonWorldspawnEntSelected = true;
+					break;
+				}
+				if (map->ents[ent]->hasKey("classname") && map->ents[ent]->keyvalues["classname"] == "worldspawn")
+				{
+					nonWorldspawnEntSelected = true;
+					break;
+				}
+			}
+		}
 
 		if (ImGui::MenuItem(undoTitle.c_str(), "Ctrl+Z", false, canUndo))
 		{
@@ -1567,12 +1606,39 @@ void Gui::drawMenuBar()
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Duplicate BSP model", 0, false, app->pickInfo.selectedEnts.size() == 1 && !app->isLoading && nonWorldspawnEntSelected))
+
+		bool allowDuplicate = app->pickInfo.selectedEnts.size() > 0;
+		if (allowDuplicate)
 		{
-			DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", app->pickInfo);
-			command->execute();
-			rend->pushUndoCommand(command);
+			for (auto& ent : app->pickInfo.selectedEnts)
+			{
+				if (ent < 0)
+				{
+					allowDuplicate = false;
+					break;
+				}
+				else
+				{
+					if (map->ents[ent]->getBspModelIdx() <= 0)
+					{
+						allowDuplicate = false;
+						break;
+					}
+				}
+			}
 		}
+
+		if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && allowDuplicate))
+		{
+			logf("Execute 'duplicate' for %d models.\n", app->pickInfo.selectedEnts.size());
+			for (auto& ent : app->pickInfo.selectedEnts)
+			{
+				DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", ent);
+				command->execute();
+				map->getBspRender()->pushUndoCommand(command);
+			}
+		}
+
 		if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "G", false, nonWorldspawnEntSelected))
 		{
 			if (!app->movingEnt)
@@ -2486,12 +2552,22 @@ void Gui::drawDebugWidget()
 
 
 		}
+
+		if (ImGui::Button("PRESS ME TO DECAL"))
+		{
+			for (auto& ent : map->ents)
+			{
+				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "infodecal")
+				{
+					map->decalShoot(ent->getOrigin(), "Hello world");
+				}
+			}
+		}
 	}
 
-	if (
-		((app->curTime - lastupdate > 5.0 && showDebugWidget) || (oldShowDebugWidget && !showDebugWidget))
-		&& map && renderer)
+	if (renderer->needReloadDebugTextures)
 	{
+		renderer->needReloadDebugTextures = false;
 		lastupdate = app->curTime;
 		mapTexsUsage.clear();
 
@@ -3320,15 +3396,7 @@ void Gui::drawGOTOWidget()
 				}
 				else if (faceid > 0 && faceid < map->faceCount)
 				{
-					if (map->faces[faceid].iFirstEdge)
-					{
-						int edgeIdx = map->surfedges[map->faces[faceid].iFirstEdge];
-						BSPEDGE& edge = map->edges[abs(edgeIdx)];
-						int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
-						vec3& vert = map->verts[vertIdx];
-						app->goToCoords(vert.x, vert.y, vert.z);
-					}
-
+					app->goToFace(map, faceid);
 					int modelIdx = map->get_model_from_face(faceid);
 					if (modelIdx >= 0)
 					{
@@ -4812,7 +4880,7 @@ void Gui::drawImportMapWidget()
 								if (tex2Offset != -1)
 								{
 									BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + tex2Offset));
-									if (strcmp(tex.szName, tex2.szName) == 0)
+									if (strcasecmp(tex.szName, tex2.szName) == 0)
 									{
 										newMiptex = i;
 										break;
@@ -5205,7 +5273,7 @@ void Gui::drawEntityReport()
 
 					if (!classFilter.empty() && classFilter != "(none)")
 					{
-						if (toLowerCase(cname) != toLowerCase(classFilter))
+						if (strcasecmp(cname.c_str(),classFilter.c_str()) != 0)
 						{
 							visible = false;
 						}
@@ -6587,7 +6655,7 @@ void Gui::drawTextureTool()
 
 		if (ImGui::InputText("##texname", textureName, MAXTEXTURENAME))
 		{
-			if (std::strcmp(textureName, textureName2) != 0)
+			if (strcasecmp(textureName, textureName2) != 0)
 			{
 				textureChanged = true;
 			}
@@ -6632,7 +6700,7 @@ void Gui::drawTextureTool()
 					if (texOffset != -1)
 					{
 						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-						if (strcmp(tex.szName, textureName) == 0)
+						if (strcasecmp(tex.szName, textureName) == 0)
 						{
 							validTexture = true;
 							newMiptex = i;

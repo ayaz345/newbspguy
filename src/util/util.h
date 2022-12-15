@@ -14,7 +14,6 @@ namespace fs = std::filesystem;
 #include "ProgressMeter.h"
 #include "bsptypes.h"
 
-
 extern std::string g_version_string;
 
 #ifndef WIN32
