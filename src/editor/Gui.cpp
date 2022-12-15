@@ -2313,8 +2313,6 @@ void Gui::drawDebugWidget()
 	BspRenderer* renderer = map ? map->getBspRender() : NULL;
 	int entIdx = app->pickInfo.GetSelectedEnt();
 
-	bool oldShowDebugWidget = showDebugWidget;
-
 	if (ImGui::Begin("Debug info", &showDebugWidget))
 	{
 
@@ -2360,7 +2358,7 @@ void Gui::drawDebugWidget()
 						ImGui::SliderInt("Node", &app->debugNode, 0, app->debugNodeMax);
 					}
 
-					if (app->pickInfo.selectedFaces.size() == 1)
+					if (app->pickInfo.selectedFaces.size())
 					{
 						BSPFACE& face = map->faces[app->pickInfo.selectedFaces[0]];
 

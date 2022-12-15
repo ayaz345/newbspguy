@@ -3996,10 +3996,10 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 			vec3(0, 0, 1) // top
 		};
 		vec3 faceUp[6]{
-			vec3(0, 0, 1),	// left
-			vec3(0, 0, 1), // right
-			vec3(0, 0, 1), // front
-			vec3(0, 0, 1), // back
+			vec3(0, 0, -1),	// left
+			vec3(0, 0, -1), // right
+			vec3(0, 0, -1), // front
+			vec3(0, 0, -1), // back
 			vec3(0, -1, 0), // bottom
 			vec3(0, 1, 0) // top
 		};
