@@ -1607,7 +1607,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 				activeShader->updateMatrixes();
 
-				drawModel(&renderEnts[i], drawTransparentFaces, std::find(highlightEnts.begin(), highlightEnts.end(), i) != highlightEnts.end(), false);
+				drawModel(&renderEnts[i], drawTransparentFaces, g_app->pickInfo.IsSelectedEnt(i), false);
 
 				activeShader->popMatrix(MAT_MODEL);
 			}
@@ -1644,7 +1644,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 					colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 					colorShader->updateMatrixes();
 
-					bool hightlighted = std::find(highlightEnts.begin(), highlightEnts.end(), i) != highlightEnts.end();
+					bool hightlighted = g_app->pickInfo.IsSelectedEnt(i);
 
 					if (hightlighted)
 					{
@@ -1875,7 +1875,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
 
-		if (std::find(highlightEnts.begin(), highlightEnts.end(), i) != highlightEnts.end())
+		if (g_app->pickInfo.IsSelectedEnt(i))
 		{
 			*colorShader->modelMat = renderEnts[i].modelMat;
 			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);

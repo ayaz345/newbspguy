@@ -1391,12 +1391,15 @@ void Renderer::drawTransformAxes()
 			scaleAxes.buffer->drawFull();
 		}
 	}
-	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE && (transformTarget == TRANSFORM_OBJECT || transformTarget == TRANSFORM_ORIGIN))
+	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE)
 	{
-		vec3 ori = moveAxes.origin;
-		matmodel.translate(ori.x, ori.z, -ori.y);
-		colorShader->updateMatrixes();
-		moveAxes.buffer->drawFull();
+		if ((transformTarget == TRANSFORM_VERTEX && (anyVertSelected || anyEdgeSelected)) || transformTarget != TRANSFORM_VERTEX)
+		{
+			vec3 ori = moveAxes.origin;
+			matmodel.translate(ori.x, ori.z, -ori.y);
+			colorShader->updateMatrixes();
+			moveAxes.buffer->drawFull();
+		}
 	}
 	dragDelta = vec3();
 }
@@ -1629,7 +1632,18 @@ void Renderer::revertInvalidSolid(Bsp* map, int entIdx)
 		int modelIdx = map->ents[entIdx]->getBspModelIdx();
 		if (modelIdx >= 0)
 		{
-			invalidSolid = !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
+			invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
+			if (!invalidSolid && modelVerts.size())
+			{
+				std::vector<TransformVert> tmpVerts;
+				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+				Solid modelSolid;
+				if (!getModelSolid(tmpVerts, map, modelSolid))
+				{
+					invalidSolid = true;
+				}
+			}
 			map->getBspRender()->refreshModel(modelIdx);
 		}
 	}
@@ -1640,7 +1654,7 @@ void Renderer::applyTransform(bool forceUpdate)
 {
 	Bsp* map = SelectedMap;
 
-	if (!map || !isTransformableSolid || (modelUsesSharedStructures && transformMode != TRANSFORM_MODE_MOVE))
+	if (!map || !isTransformableSolid || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT))
 	{
 		updateModelVerts();
 		return;
@@ -1671,7 +1685,18 @@ void Renderer::applyTransform(bool forceUpdate)
 
 		if (anyVertsChanged && (transformingVerts || scalingObject || forceUpdate))
 		{
-			invalidSolid = !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
+			invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
+			if (!invalidSolid && modelVerts.size())
+			{
+				std::vector<TransformVert> tmpVerts;
+				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+				Solid modelSolid;
+				if (!getModelSolid(tmpVerts, map, modelSolid))
+				{
+					invalidSolid = true;
+				}
+			}
 			gui->reloadLimits();
 
 			for (int i = 0; i < modelVerts.size(); i++)
@@ -1722,12 +1747,9 @@ void Renderer::applyTransform(bool forceUpdate)
 							map->getBspRender()->pushEntityUndoState("Move origin", pickInfo.selectedEnts[i]);
 						}
 					}
-
 				}
 			}
 		}
-
-		updateModelVerts();
 	}
 }
 
@@ -1776,7 +1798,7 @@ void Renderer::cameraObjectHovering()
 {
 	originHovered = false;
 	Bsp* map = SelectedMap;
-	if (!map || (modelUsesSharedStructures && transformMode != TRANSFORM_MODE_MOVE))
+	if (!map || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT))
 		return;
 
 	int modelIdx = -1;
@@ -2232,7 +2254,7 @@ bool Renderer::transformAxisControls()
 
 		if (transformMode == TRANSFORM_MODE_MOVE)
 		{
-			if (transformTarget == TRANSFORM_VERTEX)
+			if (transformTarget == TRANSFORM_VERTEX && anyVertSelected)
 			{
 				moveSelectedVerts(delta);
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
@@ -3008,17 +3030,21 @@ void Renderer::updateModelVerts()
 	}
 
 	scaleTexinfos = map->getScalableTexinfos(modelIdx);
+
 	map->getModelPlaneIntersectVerts(modelIdx, modelVerts); // for vertex manipulation + scaling
+
 	modelFaceVerts = map->getModelVerts(modelIdx); // for scaling only
 
 	Solid modelSolid;
 	if (!getModelSolid(modelVerts, map, modelSolid))
 	{
+		invalidSolid = true;
 		modelVerts.clear();
 		modelFaceVerts.clear();
 		scaleTexinfos.clear();
 		return;
-	};
+	}
+	
 	modelEdges = modelSolid.hullEdges;
 
 	size_t numCubes = modelVerts.size() + modelEdges.size();
@@ -3423,7 +3449,18 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 	}
 
 	// update planes for picking
-	invalidSolid = !map->vertex_manipulation_sync(modelIdx, modelVerts, false, false);
+	invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, false);
+	if (!invalidSolid && modelVerts.size())
+	{
+		std::vector<TransformVert> tmpVerts;
+		map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+		Solid modelSolid;
+		if (!getModelSolid(tmpVerts, map, modelSolid))
+		{
+			invalidSolid = true;
+		}
+	}
 
 	updateSelectionSize();
 
@@ -3533,7 +3570,22 @@ void Renderer::moveSelectedVerts(const vec3& delta)
 	if (map && entIdx >= 0)
 	{
 		Entity* ent = map->ents[entIdx];
-		invalidSolid = !map->vertex_manipulation_sync(ent->getBspModelIdx(), modelVerts, true, false);
+		invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(ent->getBspModelIdx(), modelVerts, true, false);
+		if (!invalidSolid && modelVerts.size())
+		{
+			int modelIdx = ent->getBspModelIdx();
+			if (modelIdx > 0)
+			{
+				std::vector<TransformVert> tmpVerts;
+				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+				Solid modelSolid;
+				if (!getModelSolid(tmpVerts, map, modelSolid))
+				{
+					invalidSolid = true;
+				}
+			}
+		}
 		map->getBspRender()->refreshModel(ent->getBspModelIdx());
 	}
 }
@@ -3814,7 +3866,18 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 		{
 			modelIdx = map->ents[entIdx]->getBspModelIdx();
 		}
-		invalidSolid = !map->vertex_manipulation_sync(modelIdx, modelVerts, true, false);
+		invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, true, false);
+		if (!invalidSolid && modelVerts.size())
+		{
+			std::vector<TransformVert> tmpVerts;
+			map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+			Solid modelSolid;
+			if (!getModelSolid(tmpVerts, map, modelSolid))
+			{
+				invalidSolid = true;
+			}
+		}
 		if (entIdx >= 0)
 		{
 			Entity* ent = map->ents[entIdx];

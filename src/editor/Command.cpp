@@ -222,7 +222,7 @@ void CreateEntityCommand::undo()
 
 void CreateEntityCommand::refresh()
 {
-	BspRenderer* renderer = getBspRenderer(); 
+	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
 
@@ -293,9 +293,15 @@ void DuplicateBspModelCommand::execute()
 	renderer->preRenderEnts();
 	renderer->reloadLightmaps();
 	renderer->addClipnodeModel(newModelIdx);
-	g_app->gui->refresh();
 
-	g_app->deselectObject();
+	g_app->pickInfo.selectedFaces.clear();
+	if (g_app->pickInfo.selectedEnts.size())
+		g_app->pickInfo.SetSelectedEnt(g_app->pickInfo.selectedEnts[0]);
+
+	g_app->pickCount++;
+	g_app->vertPickCount++;
+
+	g_app->gui->refresh();
 	/*
 	if (g_app->pickInfo.entIdx[0] == entIdx) {
 		g_modelIdx = newModelIdx;
@@ -394,7 +400,7 @@ void CreateBspModelCommand::execute()
 
 	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
 	vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
-	int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx,solid);
+	int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, solid);
 
 	if (!initialized)
 	{
@@ -638,7 +644,7 @@ void CleanMapCommand::refresh()
 	renderer->reload();
 	g_app->deselectObject();
 	g_app->gui->refresh();
-	renderer->saveLumpState( 0xffffffff, true);
+	renderer->saveLumpState(0xffffffff, true);
 }
 
 size_t CleanMapCommand::memoryUsage()
