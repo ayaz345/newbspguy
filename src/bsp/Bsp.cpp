@@ -838,29 +838,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 		memset(oldLightmaps, 0, sizeof(LIGHTMAP) * faceCount);
 		memset(newLightmaps, 0, sizeof(LIGHTMAP) * faceCount);
 
-		for (int i = 0; i < faceCount; i++)
-		{
-			int size[2];
-			GetFaceLightmapSize(this, i, size);
-
-			int lightmapSz = size[0] * size[1];
-			int lightmapCount = lightmap_count(i);
-			oldLightmaps[i].layers = lightmapCount;
-			lightmapSz *= lightmapCount;
-
-			oldLightmaps[i].width = size[0];
-			oldLightmaps[i].height = size[1];
-
-			bool skipResize = i < target.iFirstFace || i >= target.iFirstFace + target.nFaces;
-
-			if (!skipResize)
-			{
-				oldLightmaps[i].luxelFlags = new unsigned char[size[0] * size[1]];
-				qrad_get_lightmap_flags(this, i, oldLightmaps[i].luxelFlags);
-			}
-			if (logged)
-				g_progress.tick();
-		}
+		get_lightmaps(oldLightmaps, &target, logged);
 	}
 
 	if (logged)
@@ -1011,7 +989,9 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 
 	if (hasLighting && oldLightmaps && newLightmaps)
 	{
-		resize_lightmaps(oldLightmaps, newLightmaps);
+		int newLightmapsSize = 0;
+		resize_lightmaps(oldLightmaps, newLightmaps, newLightmapsSize);
+		replace_lump(LUMP_LIGHTING, newLightmaps, newLightmapsSize);
 
 		for (int i = 0; i < faceCount; i++)
 		{
@@ -1072,9 +1052,38 @@ void Bsp::move_texinfo(int idx, vec3 offset)
 	}
 }
 
-void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps)
+void Bsp::get_lightmaps(LIGHTMAP* outLightmaps, BSPMODEL* target, bool logged)
+{
+	for (int i = 0; i < faceCount; i++)
+	{
+		int size[2];
+		GetFaceLightmapSize(this, i, size);
+
+		int lightmapSz = size[0] * size[1];
+		int lightmapCount = lightmap_count(i);
+		outLightmaps[i].layers = lightmapCount;
+		lightmapSz *= lightmapCount;
+
+		outLightmaps[i].width = size[0];
+		outLightmaps[i].height = size[1];
+
+		bool skipResize = target ? (i < target->iFirstFace || i >= target->iFirstFace + target->nFaces) : false;
+
+		if (!skipResize)
+		{
+			outLightmaps[i].luxelFlags = new unsigned char[size[0] * size[1]];
+			qrad_get_lightmap_flags(this, i, outLightmaps[i].luxelFlags);
+		}
+		if (logged)
+			g_progress.tick();
+	}
+}
+
+void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int& newLightmapSize)
 {
 	g_progress.update("Recalculate lightmaps", faceCount);
+
+	int lightmapOffset = 0;
 
 	// calculate new lightmap sizes
 	int newLightDataSz = 0;
@@ -1114,7 +1123,6 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps)
 		int newColorCount = newLightDataSz / sizeof(COLOR3);
 		COLOR3* newLightData = new COLOR3[newColorCount];
 		memset(newLightData, 255, newColorCount * sizeof(COLOR3));
-		int lightmapOffset = 0;
 
 		for (int i = 0; i < faceCount; i++)
 		{
@@ -1190,9 +1198,8 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps)
 			face.nLightmapOffset = lightmapOffset;
 			lightmapOffset += newSz;
 		}
-
-		replace_lump(LUMP_LIGHTING, newLightData, lightmapOffset);
 	}
+	newLightmapSize = lightmapOffset;
 }
 
 void Bsp::split_shared_model_structures(int modelIdx)

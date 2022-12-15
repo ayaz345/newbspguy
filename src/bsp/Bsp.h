@@ -56,6 +56,8 @@ public:
 	Bsp* parentMap = NULL;
 	void selectModelEnt();
 
+	int clipnodetype; // 0 - default; 1 - 
+
 	int planeCount;
 	int texinfoCount;
 	int leafCount;
@@ -254,7 +256,8 @@ private:
 	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes);
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
-	void resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps);
+	void get_lightmaps(LIGHTMAP* outLightmaps, BSPMODEL* target, bool logged = false);
+	void resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int & newLightmapSize);
 
 	bool load_lumps(std::string fname);
 
