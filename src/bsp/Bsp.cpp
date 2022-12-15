@@ -688,6 +688,9 @@ std::vector<ScalableTexinfo> Bsp::getScalableTexinfos(int modelIdx)
 
 bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hullVerts, bool convexCheckOnly, bool regenClipnodes)
 {
+	if (modelIdx < 0)
+		return false;
+
 	std::set<int> affectedPlanes;
 
 	std::map<int, std::vector<vec3>> planeVerts;
@@ -723,7 +726,8 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		BSPPLANE newPlane;
 		if (!getPlaneFromVerts(tverts, newPlane.vNormal, newPlane.fDist))
 		{
-			logf("Verts not planar\n");
+			if (g_settings.verboseLogs)
+				logf("Verts not planar\n");
 			return false; // verts not planar
 		}
 
@@ -798,7 +802,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 	return true;
 }
 
-bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove)
+bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool logged)
 {
 	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
@@ -817,7 +821,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove)
 	// So, don't move leaves for submodels.
 	bool dontMoveLeaves = !movingWorld;
 
-	if (!forceMove)
+	if (!forceMove && does_model_use_shared_structures(modelIdx))
 		split_shared_model_structures(modelIdx);
 
 	bool hasLighting = lightDataLength > 0;
@@ -826,7 +830,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove)
 
 	if (hasLighting)
 	{
-		g_progress.update("Calculate lightmaps", faceCount);
+		if (logged)
+			g_progress.update("Calculate lightmaps", faceCount);
 
 		oldLightmaps = new LIGHTMAP[faceCount];
 		newLightmaps = new LIGHTMAP[faceCount];
@@ -853,27 +858,23 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove)
 				oldLightmaps[i].luxelFlags = new unsigned char[size[0] * size[1]];
 				qrad_get_lightmap_flags(this, i, oldLightmaps[i].luxelFlags);
 			}
-
-			g_progress.tick();
+			if (logged)
+				g_progress.tick();
 		}
 	}
 
-	g_progress.update("Moving structures", (int)(ents.size() - 1));
+	if (logged)
+		g_progress.update("Moving structures", (int)(ents.size() - 1));
 
 	if (movingWorld)
 	{
 		for (int i = 1; i < ents.size(); i++)
 		{ // don't move the world entity
-			g_progress.tick();
+			if (logged)
+				g_progress.tick();
 
-			vec3 ori;
-			if (ents[i]->hasKey("origin"))
-			{
-				ori = parseVector(ents[i]->keyvalues["origin"]);
-			}
+			vec3 ori = ents[i]->getOrigin();
 			ori += offset;
-
-			ents[i]->setOrAddKeyvalue("origin", ori.toKeyvalueString());
 
 			if (ents[i]->hasKey("spawnorigin"))
 			{
@@ -885,6 +886,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove)
 					ents[i]->setOrAddKeyvalue("spawnorigin", (spawnori + offset).toKeyvalueString());
 				}
 			}
+
+			ents[i]->setOrAddKeyvalue("origin", ori.toKeyvalueString());
 		}
 
 		update_ent_lump();
@@ -904,7 +907,6 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove)
 
 	STRUCTUSAGE shouldBeMoved(this);
 	mark_model_structures(modelIdx, &shouldBeMoved, dontMoveLeaves);
-
 
 	for (int i = 0; i < nodeCount; i++)
 	{
@@ -1026,7 +1028,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove)
 		delete[] newLightmaps;
 	}
 
-	g_progress.clear();
+	if (logged)
+		g_progress.clear();
 
 	return true;
 }

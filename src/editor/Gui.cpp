@@ -2191,7 +2191,7 @@ void Gui::drawStatusMessage()
 		{
 			if (app->modelUsesSharedStructures)
 			{
-				if (app->transformMode == TRANSFORM_MODE_MOVE)
+				if (app->transformMode == TRANSFORM_MODE_MOVE && !app->moveOrigin)
 					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA (EDIT ONLY VISUAL DATA WITHOUT COLLISION)");
 				else
 					ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "SHARED DATA");
@@ -2216,7 +2216,7 @@ void Gui::drawStatusMessage()
 					ImGui::EndTooltip();
 				}
 			}
-			if (app->invalidSolid)
+			if (app->invalidSolid && app->pickInfo.selectedEnts.size() > 0 && app->pickInfo.selectedEnts[0] >= 0)
 			{
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "INVALID SOLID");
 				if (ImGui::IsItemHovered())
@@ -2533,7 +2533,7 @@ void Gui::drawDebugWidget()
 
 			bool isScalingObject = app->transformMode == TRANSFORM_MODE_SCALE && app->transformTarget == TRANSFORM_OBJECT;
 			bool isMovingOrigin = app->transformMode == TRANSFORM_MODE_MOVE && app->transformTarget == TRANSFORM_ORIGIN && app->originSelected;
-			bool isTransformingValid = !(app->modelUsesSharedStructures && (app->transformMode != TRANSFORM_MODE_MOVE || app->transformTarget == TRANSFORM_VERTEX)) && (app->isTransformableSolid || isScalingObject);
+			bool isTransformingValid = !(app->modelUsesSharedStructures && app->transformMode != TRANSFORM_MODE_MOVE) && (app->isTransformableSolid || isScalingObject);
 			bool isTransformingWorld = entIdx == 0 && app->transformTarget != TRANSFORM_OBJECT;
 
 			ImGui::Text("isTransformableSolid %d", app->isTransformableSolid);
@@ -3645,8 +3645,16 @@ void Gui::drawTransformWidget()
 				ImGui::BeginDisabled();
 			}
 			ImGui::RadioButton("Object", &app->transformTarget, TRANSFORM_OBJECT); ImGui::NextColumn();
+			if (app->transformMode == TRANSFORM_MODE_SCALE)
+			{
+				ImGui::BeginDisabled();
+			}
 			ImGui::RadioButton("Vertex", &app->transformTarget, TRANSFORM_VERTEX); ImGui::NextColumn();
 			ImGui::RadioButton("Origin", &app->transformTarget, TRANSFORM_ORIGIN); ImGui::NextColumn();
+			if (app->transformMode == TRANSFORM_MODE_SCALE)
+			{
+				ImGui::EndDisabled();
+			}
 			if (app->transformMode == TRANSFORM_MODE_NONE)
 			{
 				ImGui::EndDisabled();
@@ -3655,6 +3663,11 @@ void Gui::drawTransformWidget()
 			ImGui::RadioButton("Hide", &app->transformMode, TRANSFORM_MODE_NONE); ImGui::NextColumn();
 			ImGui::RadioButton("Move", &app->transformMode, TRANSFORM_MODE_MOVE); ImGui::NextColumn();
 			ImGui::RadioButton("Scale", &app->transformMode, TRANSFORM_MODE_SCALE); ImGui::NextColumn();
+
+			if (app->transformMode == TRANSFORM_MODE_SCALE)
+			{
+				app->transformTarget = TRANSFORM_OBJECT;
+			}
 
 			ImGui::Columns(1);
 
@@ -3747,7 +3760,7 @@ void Gui::drawTransformWidget()
 							z = fz;
 						}
 
-						ent->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString(!app->gridSnappingEnabled));
+						ent->setOrAddKeyvalue("origin", newOrigin.toKeyvalueString());
 						map->getBspRender()->refreshEnt(entIdx);
 						app->updateEntConnectionPositions();
 					}

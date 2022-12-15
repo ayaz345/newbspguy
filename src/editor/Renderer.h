@@ -323,6 +323,7 @@ private:
 	void applyTransform(bool forceUpdate = false);
 	void setupView();
 	void getPickRay(vec3& start, vec3& pickDir);
+	void revertInvalidSolid(Bsp* map, int entIdx);
 
 	void drawModelVerts();
 	void drawModelOrigin();

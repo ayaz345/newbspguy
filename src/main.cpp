@@ -854,6 +854,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, ".utf8");
+	setlocale(LC_NUMERIC, "C");
 #ifdef WIN32
 	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 #ifndef NDEBUG
