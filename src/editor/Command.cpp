@@ -90,7 +90,7 @@ void EditEntityCommand::refresh()
 		renderer->refreshPointEnt(entIdx);
 	}
 	renderer->updateEntityState(entIdx);
-	g_app->pickCount++; // force GUI update
+	pickCount++; // force GUI update
 	g_app->updateModelVerts();
 }
 
@@ -298,8 +298,8 @@ void DuplicateBspModelCommand::execute()
 	if (g_app->pickInfo.selectedEnts.size())
 		g_app->pickInfo.SetSelectedEnt(g_app->pickInfo.selectedEnts[0]);
 
-	g_app->pickCount++;
-	g_app->vertPickCount++;
+	pickCount++;
+	vertPickCount++;
 
 	g_app->gui->refresh();
 	/*

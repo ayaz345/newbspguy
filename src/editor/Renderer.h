@@ -136,6 +136,10 @@ extern vec2 mousePos;
 extern vec3 cameraOrigin;
 extern vec3 cameraAngles;
 
+
+extern int pickCount; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
+extern int vertPickCount;
+
 class Renderer
 {
 	friend class Gui;
@@ -249,7 +253,6 @@ private:
 	bool anyEdgeSelected = false;
 	bool anyVertSelected = false;
 
-
 	std::vector<TransformVert> modelVerts; // control points for invisible plane intersection verts in HULL 0
 	std::vector<TransformVert> modelFaceVerts; // control points for visible face verts
 	std::vector<HullEdge> modelEdges;
@@ -296,9 +299,6 @@ private:
 
 	bool canControl;
 	bool oldControl;
-
-	int pickCount = 0; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
-	int vertPickCount = 0;
 
 	int debugInt = 0;
 	int debugIntMax = 0;

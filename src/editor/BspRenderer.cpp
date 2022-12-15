@@ -2343,6 +2343,7 @@ int PickInfo::GetSelectedEnt()
 void PickInfo::AddSelectedEnt(int entIdx)
 {
 	selectedEnts.push_back(entIdx);
+	pickCount++;
 }
 
 void PickInfo::SetSelectedEnt(int entIdx)
@@ -2355,6 +2356,7 @@ void PickInfo::DelSelectedEnt(int entIdx)
 {
 	if (IsSelectedEnt(entIdx))
 	{
+		pickCount++;
 		selectedEnts.erase(std::find(selectedEnts.begin(), selectedEnts.end(), entIdx));
 	}
 }

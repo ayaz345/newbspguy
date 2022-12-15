@@ -20,6 +20,9 @@ vec2 mousePos;
 vec3 cameraOrigin;
 vec3 cameraAngles;
 
+int pickCount = 0; // used to give unique IDs to text inputs so switching ents doesn't update keys accidentally
+int vertPickCount = 0;
+
 
 // everything except VIS, ENTITIES, MARKSURFS
 
@@ -832,6 +835,14 @@ void Renderer::renderLoop()
 
 	glfwSwapInterval(g_settings.vsync);
 	static bool vsync = g_settings.vsync;
+
+	static int tmpPickIdx = -1, tmpVertPickIdx = -1;
+
+	static bool isScalingObject = false;
+	static bool isMovingOrigin = false;
+	static bool isTransformingValid = false;
+	static bool isTransformingWorld = false;
+
 	while (!glfwWindowShouldClose(window))
 	{
 		oldTime = curTime;
@@ -883,20 +894,59 @@ void Renderer::renderLoop()
 
 		int modelIdx = -1;
 		int entIdx = pickInfo.GetSelectedEnt();
-
+		Entity* ent = NULL;
 		if (map && entIdx >= 0 && entIdx < map->ents.size())
 		{
-			modelIdx = map->ents[entIdx]->getBspModelIdx();
+			ent = map->ents[entIdx];
+			modelIdx = ent->getBspModelIdx();
 		}
 
-		isTransformableSolid = entIdx >= 0;
-		modelUsesSharedStructures = modelIdx >= 0 && map->does_model_use_shared_structures(modelIdx);
+		bool updatePickCount = false;
 
-		bool isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
-		bool isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
-		bool isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) && (isTransformableSolid || isScalingObject);
-		bool isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
+		if (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount)
+		{
+			updatePickCount = true;
+			isTransformableSolid = modelIdx > 0 || pickInfo.selectedEnts.size() == 0;
 
+			if (!isTransformableSolid && pickInfo.selectedEnts.size())
+			{
+				if (map && map->ents[pickInfo.selectedEnts[0]]->hasKey("classname") &&
+					map->ents[pickInfo.selectedEnts[0]]->keyvalues["classname"] == "worldspawn")
+				{
+					isTransformableSolid = true;
+				}
+			}
+
+			modelUsesSharedStructures = modelIdx >= 0 && map->does_model_use_shared_structures(modelIdx);
+
+			isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
+			isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
+			isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) || (isTransformableSolid && isScalingObject);
+			isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
+
+			invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
+			if (!invalidSolid && modelVerts.size())
+			{
+				std::vector<TransformVert> tmpVerts;
+				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+
+				Solid modelSolid;
+				if (!getModelSolid(tmpVerts, map, modelSolid))
+				{
+					invalidSolid = true;
+				}
+			}
+
+
+			if (invalidSolid && pickInfo.selectedEnts.size())
+			{
+				if (map && map->ents[pickInfo.selectedEnts[0]]->hasKey("classname") &&
+					map->ents[pickInfo.selectedEnts[0]]->keyvalues["classname"] == "worldspawn")
+				{
+					invalidSolid = false;
+				}
+			}
+		}
 		matmodel.loadIdentity();
 		matmodel.rotateZ((float)oldTime);
 		matmodel.rotateX((float)curTime);
@@ -1074,6 +1124,7 @@ void Renderer::renderLoop()
 			gui->draw();
 
 		controls();
+
 		if (vsync != g_settings.vsync)
 		{
 			glfwSwapInterval(g_settings.vsync);
@@ -1097,12 +1148,16 @@ void Renderer::renderLoop()
 			reloading = reloadingGameDir = false;
 		}
 
-
-
 		int glerror = glGetError();
 		if (glerror != GL_NO_ERROR)
 		{
 			logf("Got OpenGL Error: %d\n", glerror);
+		}
+
+		if (updatePickCount)
+		{
+			tmpPickIdx = pickCount;
+			tmpVertPickIdx = vertPickCount;
 		}
 	}
 
@@ -1254,11 +1309,21 @@ void Renderer::drawModelVerts()
 {
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
-	if (!modelVertBuff || modelVerts.empty() || !map || entIdx < 0)
+	if (!modelVertBuff || !map || entIdx < 0)
 		return;
-	glClear(GL_DEPTH_BUFFER_BIT);
 
 	Entity* ent = map->ents[entIdx];
+
+	if (ent->getBspModelIdx() <= 0)
+		return;
+
+	if (modelVerts.empty())
+	{
+		updateModelVerts();
+	}
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
 	vec3 mapOffset = map->getBspRender()->mapOffset;
 	vec3 renderOffset = mapOffset.flip();
 	vec3 localCameraOrigin = cameraOrigin - mapOffset;
@@ -1598,7 +1663,6 @@ void Renderer::cameraPickingControls()
 			}
 
 			pickObject();
-			pickCount++;
 		}
 		oldTransforming = transforming;
 	}
@@ -1632,18 +1696,6 @@ void Renderer::revertInvalidSolid(Bsp* map, int entIdx)
 		int modelIdx = map->ents[entIdx]->getBspModelIdx();
 		if (modelIdx >= 0)
 		{
-			invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
-			if (!invalidSolid && modelVerts.size())
-			{
-				std::vector<TransformVert> tmpVerts;
-				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-				Solid modelSolid;
-				if (!getModelSolid(tmpVerts, map, modelSolid))
-				{
-					invalidSolid = true;
-				}
-			}
 			map->getBspRender()->refreshModel(modelIdx);
 		}
 	}
@@ -1685,18 +1737,6 @@ void Renderer::applyTransform(bool forceUpdate)
 
 		if (anyVertsChanged && (transformingVerts || scalingObject || forceUpdate))
 		{
-			invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
-			if (!invalidSolid && modelVerts.size())
-			{
-				std::vector<TransformVert> tmpVerts;
-				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-				Solid modelSolid;
-				if (!getModelSolid(tmpVerts, map, modelSolid))
-				{
-					invalidSolid = true;
-				}
-			}
 			gui->reloadLimits();
 
 			for (int i = 0; i < modelVerts.size(); i++)
@@ -1725,28 +1765,6 @@ void Renderer::applyTransform(bool forceUpdate)
 					scaleTexinfos[i].oldShiftT = info.shiftT;
 					scaleTexinfos[i].oldS = info.vS;
 					scaleTexinfos[i].oldT = info.vT;
-				}
-			}
-		}
-
-		if (movingOrigin)
-		{
-			if (oldOrigin != transformedOrigin)
-			{
-				vec3 delta = transformedOrigin - oldOrigin;
-				oldOrigin = transformedOrigin;
-				if (delta != vec3())
-				{
-					for (int i = 0; i < pickInfo.selectedEnts.size(); i++)
-					{
-						if (pickInfo.selectedEnts[i] >= 0)
-						{
-							Entity* ent = map->ents[pickInfo.selectedEnts[i]];
-							ent->setOrAddKeyvalue("origin", (ent->getOrigin() + delta).toKeyvalueString());
-							map->getBspRender()->refreshEnt(i);
-							map->getBspRender()->pushEntityUndoState("Move origin", pickInfo.selectedEnts[i]);
-						}
-					}
 				}
 			}
 		}
@@ -1798,7 +1816,7 @@ void Renderer::cameraObjectHovering()
 {
 	originHovered = false;
 	Bsp* map = SelectedMap;
-	if (!map || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT))
+	if (!map || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT && transformTarget != TRANSFORM_ORIGIN))
 		return;
 
 	int modelIdx = -1;
@@ -2082,6 +2100,7 @@ void Renderer::globalShortcutControls()
 
 void Renderer::pickObject()
 {
+	pickCount++;
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (!map)
@@ -2256,7 +2275,7 @@ bool Renderer::transformAxisControls()
 		{
 			if (transformTarget == TRANSFORM_VERTEX && anyVertSelected)
 			{
-				moveSelectedVerts(delta);
+				vertPickCount++;
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
 					if (invalidSolid)
@@ -2264,6 +2283,8 @@ bool Renderer::transformAxisControls()
 					else
 						map->getBspRender()->pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
 				}
+				else
+					moveSelectedVerts(delta);
 			}
 			else if (transformTarget == TRANSFORM_OBJECT)
 			{
@@ -2301,11 +2322,7 @@ bool Renderer::transformAxisControls()
 				else
 				{
 					axisDragStart += delta;
-
-					map->move(delta, ent->getBspModelIdx(), true, false, false);
-					map->getBspRender()->refreshEnt(entIdx);
-					map->getBspRender()->refreshModel(ent->getBspModelIdx());
-					updateEntConnectionPositions();
+					vertPickCount++;
 					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
 						if (invalidSolid)
@@ -2313,17 +2330,58 @@ bool Renderer::transformAxisControls()
 						else
 							map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
 					}
+					else
+					{
+						map->move(delta, ent->getBspModelIdx(), true, false, false);
+						map->getBspRender()->refreshEnt(entIdx);
+						map->getBspRender()->refreshModel(ent->getBspModelIdx());
+						updateEntConnectionPositions();
+					}
 				}
 			}
 			else if (transformTarget == TRANSFORM_ORIGIN)
 			{
-				transformedOrigin = (oldOrigin + delta);
-				transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
-				map->getBspRender()->refreshEnt(entIdx);
-				updateEntConnectionPositions();
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
-					map->getBspRender()->pushEntityUndoState("Move Origin", pickInfo.GetSelectedEnt());
+					if (oldOrigin != transformedOrigin)
+					{
+						vec3 origin_delta = transformedOrigin - oldOrigin;
+						oldOrigin = transformedOrigin;
+						if (origin_delta != vec3())
+						{
+							for (int i = 0; i < pickInfo.selectedEnts.size(); i++)
+							{
+								if (pickInfo.selectedEnts[i] >= 0)
+								{
+									pickCount++;
+									vertPickCount++;
+									g_progress.hide = true;
+									g_progress.hide = false;
+
+									Entity* tmpent = map->ents[pickInfo.selectedEnts[i]];
+									tmpent->setOrAddKeyvalue("origin", (tmpent->getOrigin() + origin_delta).toKeyvalueString());
+									map->getBspRender()->refreshEnt(pickInfo.selectedEnts[i]);
+									if (tmpent->getBspModelIdx() >= 0)
+									{
+										map->move(origin_delta * -1, tmpent->getBspModelIdx());
+										map->getBspRender()->pushModelUndoState("Move origin of model", EDIT_MODEL_LUMPS | ENTITIES);
+									}
+									else
+									{
+										map->getBspRender()->pushEntityUndoState("Move model origin", pickInfo.selectedEnts[i]);
+									}
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					transformedOrigin = (oldOrigin + delta);
+					transformedOrigin = gridSnappingEnabled ? snapToGrid(transformedOrigin) : transformedOrigin;
+					map->getBspRender()->refreshEnt(entIdx);
+					map->getBspRender()->refreshModel(ent->getBspModelIdx());
+					updateEntConnectionPositions();
 				}
 			}
 
@@ -2340,15 +2398,18 @@ bool Renderer::transformAxisControls()
 					vec3(0, -1, 0),
 					vec3(0, 0, -1),
 				};
-
-				scaleSelectedObject(delta, scaleDirs[draggingAxis]);
-				map->getBspRender()->refreshModel(ent->getBspModelIdx());
+				vertPickCount++;
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
 					if (invalidSolid)
 						revertInvalidSolid(map, entIdx);
 					else
 						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
+				}
+				else
+				{
+					scaleSelectedObject(delta, scaleDirs[draggingAxis]);
+					map->getBspRender()->refreshModel(ent->getBspModelIdx());
 				}
 			}
 		}
@@ -3038,7 +3099,6 @@ void Renderer::updateModelVerts()
 	Solid modelSolid;
 	if (!getModelSolid(modelVerts, map, modelSolid))
 	{
-		invalidSolid = true;
 		modelVerts.clear();
 		modelFaceVerts.clear();
 		scaleTexinfos.clear();
@@ -3448,20 +3508,6 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 		modelIdx = map->ents[entIdx]->getBspModelIdx();
 	}
 
-	// update planes for picking
-	invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, false);
-	if (!invalidSolid && modelVerts.size())
-	{
-		std::vector<TransformVert> tmpVerts;
-		map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-		Solid modelSolid;
-		if (!getModelSolid(tmpVerts, map, modelSolid))
-		{
-			invalidSolid = true;
-		}
-	}
-
 	updateSelectionSize();
 
 	//
@@ -3570,22 +3616,6 @@ void Renderer::moveSelectedVerts(const vec3& delta)
 	if (map && entIdx >= 0)
 	{
 		Entity* ent = map->ents[entIdx];
-		invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(ent->getBspModelIdx(), modelVerts, true, false);
-		if (!invalidSolid && modelVerts.size())
-		{
-			int modelIdx = ent->getBspModelIdx();
-			if (modelIdx > 0)
-			{
-				std::vector<TransformVert> tmpVerts;
-				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-				Solid modelSolid;
-				if (!getModelSolid(tmpVerts, map, modelSolid))
-				{
-					invalidSolid = true;
-				}
-			}
-		}
 		map->getBspRender()->refreshModel(ent->getBspModelIdx());
 	}
 }
@@ -3865,18 +3895,6 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 		if (map && entIdx >= 0)
 		{
 			modelIdx = map->ents[entIdx]->getBspModelIdx();
-		}
-		invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, true, false);
-		if (!invalidSolid && modelVerts.size())
-		{
-			std::vector<TransformVert> tmpVerts;
-			map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
-
-			Solid modelSolid;
-			if (!getModelSolid(tmpVerts, map, modelSolid))
-			{
-				invalidSolid = true;
-			}
 		}
 		if (entIdx >= 0)
 		{

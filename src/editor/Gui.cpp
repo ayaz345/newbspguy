@@ -533,7 +533,7 @@ void Gui::draw3dContextMenus()
 			{
 				app->transformedOrigin = app->getEntOrigin(map, ent);
 				app->applyTransform();
-				app->pickCount++; // force gui refresh
+				pickCount++; // force gui refresh
 			}
 
 			if (ent && ImGui::BeginMenu("Align"))
@@ -544,39 +544,39 @@ void Gui::draw3dContextMenus()
 				{
 					app->transformedOrigin.z = app->oldOrigin.z + model.nMaxs.z;
 					app->applyTransform();
-					app->pickCount++;
+					pickCount++;
 				}
 				if (ImGui::MenuItem("Bottom"))
 				{
 					app->transformedOrigin.z = app->oldOrigin.z + model.nMins.z;
 					app->applyTransform();
-					app->pickCount++;
+					pickCount++;
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Left"))
 				{
 					app->transformedOrigin.x = app->oldOrigin.x + model.nMins.x;
 					app->applyTransform();
-					app->pickCount++;
+					pickCount++;
 				}
 				if (ImGui::MenuItem("Right"))
 				{
 					app->transformedOrigin.x = app->oldOrigin.x + model.nMaxs.x;
 					app->applyTransform();
-					app->pickCount++;
+					pickCount++;
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Back"))
 				{
 					app->transformedOrigin.y = app->oldOrigin.y + model.nMins.y;
 					app->applyTransform();
-					app->pickCount++;
+					pickCount++;
 				}
 				if (ImGui::MenuItem("Front"))
 				{
 					app->transformedOrigin.y = app->oldOrigin.y + model.nMaxs.y;
 					app->applyTransform();
-					app->pickCount++;
+					pickCount++;
 				}
 				ImGui::EndMenu();
 			}
@@ -2152,7 +2152,7 @@ void Gui::FaceSelectePressed()
 		app->deselectObject();
 
 	app->pickMode = PICK_FACE;
-	app->pickCount++; // force texture tool refresh
+	pickCount++; // force texture tool refresh
 }
 
 void Gui::drawFpsOverlay()
@@ -2180,6 +2180,7 @@ void Gui::drawStatusMessage()
 	static float loadingWindowHeight = 32;
 
 	bool showStatus = app->invalidSolid || !app->isTransformableSolid || badSurfaceExtents || lightmapTooLarge || app->modelUsesSharedStructures;
+
 	if (showStatus)
 	{
 		ImVec2 window_pos = ImVec2((app->windowWidth - windowWidth) / 2.f, app->windowHeight - 10.f);
@@ -2204,7 +2205,7 @@ void Gui::drawStatusMessage()
 					ImGui::EndTooltip();
 				}
 			}
-			if (!app->isTransformableSolid)
+			if (!app->isTransformableSolid && app->pickInfo.selectedEnts.size() > 0 && app->pickInfo.selectedEnts[0] >= 0)
 			{
 				ImGui::TextColored(ImVec4(1.0f, 0.0f, 0.0f, 1.0f), "CONCAVE SOLID");
 				if (ImGui::IsItemHovered())
@@ -2951,7 +2952,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 			ImGui::NextColumn();
 		}
 
-		lastPickCount = app->pickCount;
+		lastPickCount = pickCount;
 	}
 
 	ImGui::Columns(1);
@@ -3131,7 +3132,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 		}
 	}
 
-	if (lastPickCount != app->pickCount)
+	if (lastPickCount != pickCount)
 	{
 		for (int i = 0; i < MAX_KEYS_PER_ENT; i++)
 		{
@@ -3198,7 +3199,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 		}
 
 		{
-			bool invalidKey = lastPickCount == app->pickCount;
+			bool invalidKey = lastPickCount == pickCount;
 
 			keyIds[i].idx = i;
 			keyIds[i].entIdx = app->pickInfo.GetSelectedEnt();
@@ -3294,7 +3295,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 	wasKeyDragging = keyDragging;
 
-	lastPickCount = app->pickCount;
+	lastPickCount = pickCount;
 
 	ImGui::Columns(1);
 
@@ -3467,11 +3468,11 @@ void Gui::drawTransformWidget()
 
 			if (!shouldUpdateUi)
 			{
-				shouldUpdateUi = lastPickCount != app->pickCount ||
+				shouldUpdateUi = lastPickCount != pickCount ||
 					app->draggingAxis != -1 ||
 					app->movingEnt ||
 					oldSnappingEnabled != app->gridSnappingEnabled ||
-					lastVertPickCount != app->vertPickCount;
+					lastVertPickCount != vertPickCount;
 			}
 
 			if (shouldUpdateUi)
@@ -3515,8 +3516,8 @@ void Gui::drawTransformWidget()
 			}
 
 			oldSnappingEnabled = app->gridSnappingEnabled;
-			lastVertPickCount = app->vertPickCount;
-			lastPickCount = app->pickCount;
+			lastVertPickCount = vertPickCount;
+			lastPickCount = pickCount;
 
 			bool scaled = false;
 			bool originChanged = false;
@@ -6400,7 +6401,7 @@ void Gui::drawTextureTool()
 			return;
 		}
 
-		if (lastPickCount != app->pickCount && app->pickMode == PICK_FACE)
+		if (lastPickCount != pickCount && app->pickMode == PICK_FACE)
 		{
 			edgeVerts.clear();
 			if (app->pickInfo.selectedFaces.size())
@@ -6494,7 +6495,7 @@ void Gui::drawTextureTool()
 
 			checkFaceErrors();
 		}
-		lastPickCount = app->pickCount;
+		lastPickCount = pickCount;
 
 		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
@@ -6699,7 +6700,7 @@ void Gui::drawTextureTool()
 			(updatedFaceVec || scaledX || scaledY || shiftedX || shiftedY || textureChanged || stylesChanged || refreshSelectedFaces || toggledFlags || updatedTexVec))
 		{
 			unsigned int newMiptex = 0;
-			app->pickCount++;
+			pickCount++;
 			map->getBspRender()->saveLumpState(0xffffffff, false);
 			if (textureChanged)
 			{
