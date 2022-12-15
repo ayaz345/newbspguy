@@ -3645,13 +3645,34 @@ void Gui::drawTransformWidget()
 			{
 				ImGui::BeginDisabled();
 			}
-			ImGui::RadioButton("Object", &app->transformTarget, TRANSFORM_OBJECT); ImGui::NextColumn();
+
+			if (ImGui::RadioButton("Object", &app->transformTarget, TRANSFORM_OBJECT))
+			{
+				pickCount++;
+				vertPickCount++;
+			}
+			
+			ImGui::NextColumn();
 			if (app->transformMode == TRANSFORM_MODE_SCALE)
 			{
 				ImGui::BeginDisabled();
 			}
-			ImGui::RadioButton("Vertex", &app->transformTarget, TRANSFORM_VERTEX); ImGui::NextColumn();
-			ImGui::RadioButton("Origin", &app->transformTarget, TRANSFORM_ORIGIN); ImGui::NextColumn();
+
+			if (ImGui::RadioButton("Vertex", &app->transformTarget, TRANSFORM_VERTEX))
+			{
+				pickCount++;
+				vertPickCount++;
+			}
+			
+			ImGui::NextColumn();
+			
+			if (ImGui::RadioButton("Origin", &app->transformTarget, TRANSFORM_ORIGIN))
+			{
+				pickCount++;
+				vertPickCount++;
+			}
+
+			ImGui::NextColumn();
 			if (app->transformMode == TRANSFORM_MODE_SCALE)
 			{
 				ImGui::EndDisabled();
@@ -3956,6 +3977,7 @@ void Gui::drawSettings()
 
 		ImGui::Separator();
 
+		
 		ImGui::Dummy(ImVec2(0, 60));
 		if (ImGui::Button("Apply settings"))
 		{

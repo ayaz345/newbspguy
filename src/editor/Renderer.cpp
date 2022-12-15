@@ -1309,7 +1309,7 @@ void Renderer::drawModelVerts()
 {
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
-	if (!modelVertBuff || !map || entIdx < 0)
+	if ( !map || entIdx < 0)
 		return;
 
 	Entity* ent = map->ents[entIdx];
@@ -1317,7 +1317,7 @@ void Renderer::drawModelVerts()
 	if (ent->getBspModelIdx() <= 0)
 		return;
 
-	if (modelVerts.empty())
+	if (!modelVertBuff ||modelVerts.empty())
 	{
 		updateModelVerts();
 	}
