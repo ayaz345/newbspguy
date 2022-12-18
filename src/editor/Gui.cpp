@@ -2579,7 +2579,7 @@ void Gui::drawDebugWidget()
 
 		}
 
-		if (ImGui::Button("PRESS ME TO DECAL"))
+		if (map && ImGui::Button("PRESS ME TO DECAL"))
 		{
 			for (auto& ent : map->ents)
 			{
@@ -2591,7 +2591,7 @@ void Gui::drawDebugWidget()
 		}
 	}
 
-	if (renderer->needReloadDebugTextures)
+	if (renderer && map && renderer->needReloadDebugTextures)
 	{
 		renderer->needReloadDebugTextures = false;
 		lastupdate = app->curTime;
@@ -2631,6 +2631,19 @@ void Gui::drawDebugWidget()
 						if (!mapTexsUsage["internal"].count(tex.szName))
 							mapTexsUsage["internal"].insert(tex.szName);
 					}
+				}
+			}
+		}
+
+		for (size_t i = 0; i < map->ents.size(); i++)
+		{
+			if (map->ents[i]->hasKey("classname") && map->ents[i]->keyvalues["classname"] == "infodecal")
+			{
+				if (map->ents[i]->hasKey("texture"))
+				{
+					std::string texture = map->ents[i]->keyvalues["texture"];
+					if (!mapTexsUsage["decals.wad"].count(texture))
+						mapTexsUsage["decals.wad"].insert(texture);
 				}
 			}
 		}
