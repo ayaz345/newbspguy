@@ -514,7 +514,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	{
 		tmpMap->update_ent_lump();
 		tmpMap->update_lump_pointers();
-		tmpMap->write(GetWorkDir() + "_" + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
+		tmpMap->write(GetWorkDir() + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
 	}
 }
 
