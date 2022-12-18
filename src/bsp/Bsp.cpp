@@ -5452,6 +5452,11 @@ BspRenderer* Bsp::getBspRender()
 	return renderer;
 }
 
+void Bsp::setBspRender(BspRenderer * rnd)
+{
+	renderer = rnd;
+}
+
 void Bsp::decalShoot(vec3 pos, const char* texname)
 {
 	if (!renderer || !renderer->faceMaths)

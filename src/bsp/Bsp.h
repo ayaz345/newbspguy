@@ -242,7 +242,8 @@ public:
 
 	void update_lump_pointers();
 
-	BspRenderer* getBspRender();
+	BspRenderer* getBspRender(); 
+	void setBspRender(BspRenderer* rnd);
 
 	void ExportToObjWIP(const std::string & path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1);
 

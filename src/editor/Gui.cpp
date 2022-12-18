@@ -3381,7 +3381,7 @@ void Gui::drawGOTOWidget()
 			ImGui::PopItemWidth();
 			if (ImGui::Button("Go to##2"))
 			{
-				if (modelid > 0 && modelid < map->modelCount)
+				if (modelid >= 0 && modelid < map->modelCount)
 				{
 					for (size_t i = 0; i < map->ents.size(); i++)
 					{
@@ -4870,6 +4870,7 @@ void Gui::drawImportMapWidget()
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_BSP)
 				{
 					Bsp* bspModel = new Bsp(mapPath);
+					BspRenderer* mapRenderer = new BspRenderer(bspModel, NULL, NULL, NULL, NULL);
 					Bsp* map = app->getSelectedMap();
 
 					std::vector<BSPPLANE> newPlanes;
@@ -4932,7 +4933,7 @@ void Gui::drawImportMapWidget()
 									}
 								}
 							}
-							if (newMiptex < 0 && bspModel->getBspRender()->wads.size())
+							if (newMiptex < 0 && bspModel->getBspRender() && bspModel->getBspRender()->wads.size())
 							{
 								for (auto& s : bspModel->getBspRender()->wads)
 								{
@@ -4994,7 +4995,7 @@ void Gui::drawImportMapWidget()
 					app->updateEnts();
 
 					map->getBspRender()->reload();
-					delete bspModel;
+					delete mapRenderer;
 				}
 				else if (showImportMapWidget_Type == SHOW_IMPORT_MODEL_ENTITY)
 				{
@@ -5275,8 +5276,6 @@ void Gui::drawEntityReport()
 	ImGui::SetNextWindowSize(ImVec2(550.f, 630.f), ImGuiCond_FirstUseEver);
 	Bsp* map = app->getSelectedMap();
 
-	ImGuiContext& g = *GImGui;
-
 	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
 
 	if (ImGui::Begin((title + "###entreport").c_str(), &showEntityReport))
@@ -5423,7 +5422,7 @@ void Gui::drawEntityReport()
 					int i = line;
 					int entIdx = visibleEnts[i];
 					Entity* ent = map->ents[entIdx];
-					std::string cname = ent->hasKey("classname") ? ent->keyvalues["classname"] : "UNKNOWN_CLASSNAME";
+					std::string cname = ent->hasKey("classname") && ent->keyvalues["classname"].size() ? ent->keyvalues["classname"] : "UNKNOWN_CLASSNAME";
 					bool isSelectableSelcted = false;
 					if (cname.size() && !app->fgd->getFgdClass(cname))
 					{

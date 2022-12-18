@@ -148,7 +148,7 @@ void VertexBuffer::setShader(ShaderProgram* program, bool hideErrors) {
 }
 
 void VertexBuffer::bindAttributes(bool hideErrors) {
-	if (attributesBound)
+	if (attributesBound || !shaderProgram)
 		return;
 
 	for (int i = 0; i < attribs.size(); i++)
@@ -174,6 +174,8 @@ void VertexBuffer::setData(const void* _data, int _numVerts)
 
 void VertexBuffer::upload()
 {
+	if (!shaderProgram)
+		return;
 	shaderProgram->bind();
 	bindAttributes();
 

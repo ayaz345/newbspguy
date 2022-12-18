@@ -14,6 +14,7 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 						 ShaderProgram* _colorShader, PointEntRenderer* _pointEntRenderer)
 {
 	this->map = _map;
+	this->map->setBspRender(this);
 	this->bspShader = _bspShader;
 	this->fullBrightBspShader = _fullBrightBspShader;
 	this->colorShader = _colorShader;
@@ -55,30 +56,39 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	calcFaceMaths();
 	preRenderFaces();
 	preRenderEnts();
-	bspShader->bind();
-
-	unsigned int sTexId = glGetUniformLocation(bspShader->ID, "sTex");
-	glUniform1i(sTexId, 0);
-	for (int s = 0; s < MAXLIGHTMAPS; s++)
+	if (bspShader)
 	{
-		unsigned int sLightmapTexIds = glGetUniformLocation(bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
+		bspShader->bind();
 
-		// assign lightmap texture units (skips the normal texture unit)
-		glUniform1i(sLightmapTexIds, s + 1);
+		unsigned int sTexId = glGetUniformLocation(bspShader->ID, "sTex");
+		glUniform1i(sTexId, 0);
+		for (int s = 0; s < MAXLIGHTMAPS; s++)
+		{
+			unsigned int sLightmapTexIds = glGetUniformLocation(bspShader->ID, ("sLightmapTex" + std::to_string(s)).c_str());
+
+			// assign lightmap texture units (skips the normal texture unit)
+			glUniform1i(sLightmapTexIds, s + 1);
+		}
 	}
+	if (fullBrightBspShader)
+	{
+		fullBrightBspShader->bind();
 
-	fullBrightBspShader->bind();
-
-	unsigned int sTexId2 = glGetUniformLocation(fullBrightBspShader->ID, "sTex");
-	glUniform1i(sTexId2, 0);
-
-	colorShaderMultId = glGetUniformLocation(colorShader->ID, "colorMult");
-
-	numRenderClipnodes = map->modelCount;
-	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
-	texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
-	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
-
+		unsigned int sTexId2 = glGetUniformLocation(fullBrightBspShader->ID, "sTex");
+		glUniform1i(sTexId2, 0);
+	}
+	if (colorShader)
+	{
+		colorShaderMultId = glGetUniformLocation(colorShader->ID, "colorMult");
+		numRenderClipnodes = map->modelCount;
+		lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
+		texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
+		clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
+	}
+	else
+	{
+		loadTextures();
+	}
 	// cache ent targets so first selection doesn't lag
 	for (int i = 0; i < map->ents.size(); i++)
 	{
@@ -289,7 +299,7 @@ void BspRenderer::addClipnodeModel(int modelIdx)
 	{
 		newRenderClipnodes[i] = renderClipnodes[i];
 	}
-	memset(&newRenderClipnodes[numRenderClipnodes],0,sizeof(RenderClipnodes));
+	memset(&newRenderClipnodes[numRenderClipnodes], 0, sizeof(RenderClipnodes));
 	numRenderClipnodes++;
 	renderClipnodes = newRenderClipnodes;
 
@@ -1228,7 +1238,7 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 
 void BspRenderer::refreshEnt(int entIdx)
 {
-	if (entIdx < 0)
+	if (entIdx < 0 || !pointEntRenderer)
 		return;
 	Entity* ent = map->ents[entIdx];
 	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
@@ -1357,9 +1367,9 @@ BspRenderer::~BspRenderer()
 	clearUndoCommands();
 	clearRedoCommands();
 
-	if (lightmapFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
-		texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
-		clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
+	if (lightmapFuture.valid() && lightmapFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
+		texturesFuture.valid() && texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
+		clipnodesFuture.valid() && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
 	{
 		logf("ERROR: Deleted bsp renderer while it was loading\n");
 	}
@@ -1393,6 +1403,7 @@ BspRenderer::~BspRenderer()
 	delete blackTex;
 	delete blueTex;
 	delete missingTex;
+	map->setBspRender(NULL);
 	delete map;
 	map = NULL;
 
@@ -1600,7 +1611,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 
 		drawModel(0, drawTransparentFaces, false, false);
 
-		for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+		for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
 		{
 			if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 			{
@@ -1872,7 +1883,7 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 	// skip worldspawn
 	colorShader->pushMatrix(MAT_MODEL);
 
-	for (size_t i = 1, sz = map->ents.size(); i < sz; i++)
+	for (int i = 1, sz = (int)map->ents.size(); i < sz; i++)
 	{
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
