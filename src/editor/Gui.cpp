@@ -5422,9 +5422,9 @@ void Gui::drawEntityReport()
 					int i = line;
 					int entIdx = visibleEnts[i];
 					Entity* ent = map->ents[entIdx];
-					std::string cname = ent->hasKey("classname") && ent->keyvalues["classname"].size() ? ent->keyvalues["classname"] : "UNKNOWN_CLASSNAME";
+					std::string cname = ent && ent->hasKey("classname") && !ent->keyvalues["classname"].empty() ? ent->keyvalues["classname"] : "UNKNOWN_CLASSNAME";
 					bool isSelectableSelcted = false;
-					if (cname.size() && !app->fgd->getFgdClass(cname))
+					if (!app->fgd->getFgdClass(cname))
 					{
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255, 0, 0, 255));
 						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
@@ -5437,7 +5437,7 @@ void Gui::drawEntityReport()
 						ImGui::PopStyleColor();
 					}
 					else
-						isSelectableSelcted = cname.size() && ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
+						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
 					if (isSelectableSelcted)
 					{
 						if (expected_key_mod_flags & ImGuiModFlags_Ctrl)

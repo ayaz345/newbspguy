@@ -30,11 +30,11 @@ Fgd::~Fgd()
 
 FgdClass* Fgd::getFgdClass(const std::string& cname)
 {
-	if (classMap.find(cname) == classMap.end())
+	if (classMap.size() && cname.size() && classMap.find(cname) != classMap.end())
 	{
-		return NULL;
+		return classMap[cname];
 	}
-	return classMap[cname];
+	return NULL;
 }
 
 void Fgd::merge(Fgd* other)
