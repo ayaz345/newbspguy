@@ -175,3 +175,5 @@ size_t strlen(std::string str);
 int GetImageColors(COLOR3* image, int size);
 int ColorDistance(COLOR3 color, COLOR3 other);
 void SimpeColorReduce(COLOR3* image, int size);
+
+bool IsTextureTransparent(const char* texname);

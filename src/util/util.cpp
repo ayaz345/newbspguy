@@ -1574,3 +1574,9 @@ void SimpeColorReduce(COLOR3* image, int size)
 		}
 	}
 }
+
+
+bool IsTextureTransparent(const char* texname)
+{
+	return true;
+}

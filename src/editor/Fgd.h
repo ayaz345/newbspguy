@@ -120,7 +120,7 @@ public:
 	bool parse();
 	void merge(Fgd* other);
 
-	FgdClass* getFgdClass(const std::string& cname);
+	FgdClass* getFgdClass(std::string cname);
 
 private:
 	int lineNum;

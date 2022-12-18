@@ -28,7 +28,7 @@ Fgd::~Fgd()
 	}
 }
 
-FgdClass* Fgd::getFgdClass(const std::string& cname)
+FgdClass* Fgd::getFgdClass(std::string cname)
 {
 	if (classMap.size() && cname.size() && classMap.find(cname) != classMap.end())
 	{

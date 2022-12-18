@@ -5422,9 +5422,15 @@ void Gui::drawEntityReport()
 					int i = line;
 					int entIdx = visibleEnts[i];
 					Entity* ent = map->ents[entIdx];
-					std::string cname = ent && ent->hasKey("classname") && !ent->keyvalues["classname"].empty() ? ent->keyvalues["classname"] : "UNKNOWN_CLASSNAME";
+					std::string cname = "UNKNOWN_CLASSNAME";
+
+					if (ent && ent->hasKey("classname") && !ent->keyvalues["classname"].empty())
+					{
+						cname = ent->keyvalues["classname"];
+					}
+
 					bool isSelectableSelcted = false;
-					if (!app->fgd->getFgdClass(cname))
+					if (!app->fgd || !app->fgd->getFgdClass(cname))
 					{
 						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255, 0, 0, 255));
 						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);

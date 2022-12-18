@@ -627,14 +627,15 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		int faceIdx = model.iFirstFace + i;
 		BSPFACE& face = map->faces[faceIdx];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+		BSPMIPTEX * tex = NULL;
 
 		int texWidth, texHeight;
 		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 		if (texOffset != -1 && texinfo.iMiptex != -1)
 		{
-			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-			texWidth = tex.nWidth;
-			texHeight = tex.nHeight;
+			tex = ((BSPMIPTEX*)(map->textures + texOffset));
+			texWidth = tex->nWidth;
+			texHeight = tex->nHeight;
 		}
 		else
 		{
@@ -670,7 +671,9 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			lightmapAtlas[0] = whiteTex;
 		}
 
-		float opacity = isSpecial ? 0.5f : 1.0f;
+		bool isOpacity = isSpecial || IsTextureTransparent(tex->szName);
+
+		float opacity = isOpacity ? 0.45f : 1.0f;
 
 		for (int e = 0; e < face.nEdges; e++)
 		{
