@@ -4008,7 +4008,8 @@ void Gui::drawSettings()
 		ImGui::Dummy(ImVec2(0, 60));
 		if (ImGui::Button("Apply settings"))
 		{
-			oldShowSettings = !showSettingsWidget;
+			oldShowSettings = true;
+			showSettingsWidget = false;
 		}
 
 		ImGui::EndChild();
@@ -4701,7 +4702,7 @@ void Gui::drawSettings()
 			}
 			app->reloading = false;
 		}
-		showSettingsWidget = false;
+		oldShowSettings = showSettingsWidget = false;
 	}
 }
 
