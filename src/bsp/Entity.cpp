@@ -182,6 +182,11 @@ bool Entity::isBspModel()
 	return getBspModelIdx() >= 0;
 }
 
+bool Entity::isWorldSpawn()
+{
+	return hasKey("classname") && keyvalues["classname"] == "worldspawn";
+}
+
 vec3 Entity::getOrigin()
 {
 	return hasKey("origin") ? parseVector(keyvalues["origin"]) : vec3();

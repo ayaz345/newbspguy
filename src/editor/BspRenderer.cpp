@@ -627,7 +627,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		int faceIdx = model.iFirstFace + i;
 		BSPFACE& face = map->faces[faceIdx];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-		BSPMIPTEX * tex = NULL;
+		BSPMIPTEX* tex = NULL;
 
 		int texWidth, texHeight;
 		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
@@ -671,7 +671,10 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			lightmapAtlas[0] = whiteTex;
 		}
 
-		bool isOpacity = isSpecial || IsTextureTransparent(tex->szName);
+		int entIdx = map->get_ent_from_model(modelIdx);
+		Entity* ent = entIdx >= 0 ? map->ents[entIdx] : NULL;
+
+		bool isOpacity = isSpecial || (tex && IsTextureTransparent(tex->szName)) || (ent && ent->hasKey("classname") && g_app->isEntTransparent(ent->keyvalues["classname"].c_str()));
 
 		float opacity = isOpacity ? 0.45f : 1.0f;
 
@@ -689,7 +692,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			verts[e].r = 1.0f;
 			verts[e].g = 1.0f;
 			verts[e].b = 1.0f;
-			verts[e].a = isSpecial ? 0.5f : 1.0f;
+			verts[e].a = opacity;
 
 			// texture coords
 			float tw = 1.0f / (float)texWidth;
@@ -804,6 +807,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			newGroup.vertCount = 0;
 			newGroup.verts = NULL;
 			newGroup.transparent = isTransparent;
+			newGroup.special = isSpecial;
 			newGroup.texture = texturesLoaded && texinfo.iMiptex != -1 ? glTextures[texinfo.iMiptex] : greyTex;
 			for (int s = 0; s < MAXLIGHTMAPS; s++)
 			{
@@ -1647,7 +1651,7 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 
 		if (g_render_flags & RENDER_ENT_CLIPNODES)
 		{
-			for (size_t i = 0, sz = map->ents.size(); i < sz; i++)
+			for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
 			{
 				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
@@ -1745,7 +1749,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 		if (rgroup.transparent != transparent)
 			continue;
 
-		if (rgroup.transparent)
+		if (rgroup.special)
 		{
 			if (modelIdx == 0 && !(g_render_flags & RENDER_SPECIAL))
 			{
@@ -1947,7 +1951,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			bool isSpecial = false;
 			for (int k = 0; k < renderModels[renderEnts[i].modelIdx].groupCount; k++)
 			{
-				if (renderModels[renderEnts[i].modelIdx].renderGroups[k].transparent)
+				if (renderModels[renderEnts[i].modelIdx].renderGroups[k].special)
 				{
 					isSpecial = true;
 					break;

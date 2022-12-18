@@ -5191,7 +5191,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 		for (int i = 0; i < faceCount; i++)
 		{
 			int mdlid = get_model_from_face(i);
-
+			int entid = get_ent_from_model(mdlid);
 			RenderFace* rface;
 			RenderGroup* rgroup;
 
@@ -5312,13 +5312,13 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 
 			for (int e = 0; e < entIds.size(); e++)
 			{
-				int entid = entIds[e];
-				Entity* ent = ents[entid];
+				int tmpentid = entIds[e];
+				Entity* ent = ents[tmpentid];
 				vec3 origin_offset = ent->getOrigin().flip();
 
-				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(entid) != groupname)
+				if ("Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid) != groupname)
 				{
-					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(entid);
+					groupname = "Model_" + std::to_string(mdlid) + "_ent_" + std::to_string(tmpentid);
 					fprintf(f, "\no %s\n\n", groupname.c_str());
 					fprintf(f, "\ng %s\n\n", groupname.c_str());
 				}

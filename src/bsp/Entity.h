@@ -39,6 +39,8 @@ public:
 
 	bool isBspModel();
 
+	bool isWorldSpawn();
+
 	vec3 getOrigin();
 
 	bool hasKey(const std::string key);

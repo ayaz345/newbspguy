@@ -73,6 +73,7 @@ struct RenderGroup
 	VertexBuffer* buffer;
 	VertexBuffer* wireframeBuffer;
 	bool transparent;
+	bool special;
 };
 
 struct RenderFace

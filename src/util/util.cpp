@@ -1522,7 +1522,7 @@ size_t strlen(std::string str)
 
 int ColorDistance(COLOR3 color, COLOR3 other)
 {
-	return std::hypot(std::hypot(color.r - other.r, color.b - other.b), color.g - other.g);
+	return (int)std::hypot(std::hypot(color.r - other.r, color.b - other.b), color.g - other.g);
 }
 
 int GetImageColors(COLOR3* image, int size)
@@ -1573,10 +1573,4 @@ void SimpeColorReduce(COLOR3* image, int size)
 			}
 		}
 	}
-}
-
-
-bool IsTextureTransparent(const char* texname)
-{
-	return true;
 }

@@ -138,6 +138,10 @@ void AppSettings::loadDefault()
 	playerOnlyTriggers.clear();
 	monsterOnlyTriggers.clear();
 	entsNegativePitchPrefix.clear();
+	transparentTextures.clear();
+	transparentEntities.clear();
+
+	defaultIsEmpty = true;
 
 	entListReload = true;
 	stripWad = false;
@@ -206,6 +210,12 @@ void AppSettings::reset()
 	entsNegativePitchPrefix.push_back("weaponbox");
 	entsNegativePitchPrefix.push_back("worlditems");
 	entsNegativePitchPrefix.push_back("xen_");
+
+	transparentTextures.clear();
+	transparentTextures.push_back("AAATRIGGER");
+
+	transparentEntities.clear();
+	transparentEntities.push_back("func_buyzone");
 }
 
 void AppSettings::load()
@@ -399,6 +409,10 @@ void AppSettings::load()
 		{
 			stripWad = atoi(val.c_str()) != 0;
 		}
+		else if (key == "default_is_empty")
+		{
+			defaultIsEmpty = atoi(val.c_str()) != 0;
+		}
 		else if (key == "FLT_MAX_COORD")
 		{
 			FLT_MAX_COORD = (float)atof(val.c_str());
@@ -480,6 +494,14 @@ void AppSettings::load()
 		{
 			entsNegativePitchPrefix.push_back(val);
 		}
+		else if (key == "transparent_textures")
+		{
+			transparentTextures.push_back(val);
+		}
+		else if (key == "transparent_entities")
+		{
+			transparentEntities.push_back(val);
+		}
 	}	
 
 	if (g_settings.windowY == -32000 &&
@@ -510,57 +532,94 @@ void AppSettings::load()
 	else
 		logf("Failed to load user config: %s\n", g_settings_path.c_str());
 
-	if (entListReload)
+	if (defaultIsEmpty && fgdPaths.empty())
 	{
-		conditionalPointEntTriggers.clear();
-		conditionalPointEntTriggers.push_back("trigger_once");
-		conditionalPointEntTriggers.push_back("trigger_multiple");
-		conditionalPointEntTriggers.push_back("trigger_counter");
-		conditionalPointEntTriggers.push_back("trigger_gravity");
-		conditionalPointEntTriggers.push_back("trigger_teleport");
-
-		entsThatNeverNeedAnyHulls.clear();
-		entsThatNeverNeedAnyHulls.push_back("env_bubbles");
-		entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
-		entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
-		entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
-		entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
-		entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
-
-		entsThatNeverNeedCollision.clear();
-		entsThatNeverNeedCollision.push_back("func_illusionary");
-		entsThatNeverNeedCollision.push_back("func_mortar_field");
-
-		passableEnts.clear();
-		passableEnts.push_back("func_door");
-		passableEnts.push_back("func_door_rotating");
-		passableEnts.push_back("func_pendulum");
-		passableEnts.push_back("func_tracktrain");
-		passableEnts.push_back("func_train");
-		passableEnts.push_back("func_water");
-		passableEnts.push_back("momentary_door");
-
-		playerOnlyTriggers.clear();
-		playerOnlyTriggers.push_back("func_ladder");
-		playerOnlyTriggers.push_back("game_zone_player");
-		playerOnlyTriggers.push_back("player_respawn_zone");
-		playerOnlyTriggers.push_back("trigger_cdaudio");
-		playerOnlyTriggers.push_back("trigger_changelevel");
-		playerOnlyTriggers.push_back("trigger_transition");
-
-		monsterOnlyTriggers.clear();
-		monsterOnlyTriggers.push_back("func_monsterclip");
-		monsterOnlyTriggers.push_back("trigger_monsterjump");
-
-		entsNegativePitchPrefix.clear();
-		entsNegativePitchPrefix.push_back("ammo_");
-		entsNegativePitchPrefix.push_back("cycler");
-		entsNegativePitchPrefix.push_back("item_");
-		entsNegativePitchPrefix.push_back("monster_");
-		entsNegativePitchPrefix.push_back("weaponbox");
-		entsNegativePitchPrefix.push_back("worlditems");
-		entsNegativePitchPrefix.push_back("xen_");
+		fgdPaths.push_back({"/moddir/GameDefinitionFile.fgd",true});
 	}
+
+	if (defaultIsEmpty && resPaths.empty())
+	{
+		resPaths.push_back({"/moddir/",true});
+		resPaths.push_back({"/moddir_addon/",true});
+	}
+
+	if (entListReload || defaultIsEmpty)
+	{
+		if ((defaultIsEmpty && conditionalPointEntTriggers.empty()) || entListReload)
+		{
+			conditionalPointEntTriggers.clear();
+			conditionalPointEntTriggers.push_back("trigger_once");
+			conditionalPointEntTriggers.push_back("trigger_multiple");
+			conditionalPointEntTriggers.push_back("trigger_counter");
+			conditionalPointEntTriggers.push_back("trigger_gravity");
+			conditionalPointEntTriggers.push_back("trigger_teleport");
+		}
+		if ((defaultIsEmpty && entsThatNeverNeedAnyHulls.empty()) || entListReload)
+		{
+			entsThatNeverNeedAnyHulls.clear();
+			entsThatNeverNeedAnyHulls.push_back("env_bubbles");
+			entsThatNeverNeedAnyHulls.push_back("func_tankcontrols");
+			entsThatNeverNeedAnyHulls.push_back("func_traincontrols");
+			entsThatNeverNeedAnyHulls.push_back("func_vehiclecontrols");
+			entsThatNeverNeedAnyHulls.push_back("trigger_autosave"); // obsolete in sven
+			entsThatNeverNeedAnyHulls.push_back("trigger_endsection"); // obsolete in sven
+		}
+		if ((defaultIsEmpty && entsThatNeverNeedCollision.empty()) || entListReload)
+		{
+			entsThatNeverNeedCollision.clear();
+			entsThatNeverNeedCollision.push_back("func_illusionary");
+			entsThatNeverNeedCollision.push_back("func_mortar_field");
+		}
+		if ((defaultIsEmpty && passableEnts.empty()) || entListReload)
+		{
+			passableEnts.clear();
+			passableEnts.push_back("func_door");
+			passableEnts.push_back("func_door_rotating");
+			passableEnts.push_back("func_pendulum");
+			passableEnts.push_back("func_tracktrain");
+			passableEnts.push_back("func_train");
+			passableEnts.push_back("func_water");
+			passableEnts.push_back("momentary_door");
+		}
+		if ((defaultIsEmpty && playerOnlyTriggers.empty()) || entListReload)
+		{
+			playerOnlyTriggers.clear();
+			playerOnlyTriggers.push_back("func_ladder");
+			playerOnlyTriggers.push_back("game_zone_player");
+			playerOnlyTriggers.push_back("player_respawn_zone");
+			playerOnlyTriggers.push_back("trigger_cdaudio");
+			playerOnlyTriggers.push_back("trigger_changelevel");
+			playerOnlyTriggers.push_back("trigger_transition");
+		}
+		if ((defaultIsEmpty && monsterOnlyTriggers.empty()) || entListReload)
+		{
+			monsterOnlyTriggers.clear();
+			monsterOnlyTriggers.push_back("func_monsterclip");
+			monsterOnlyTriggers.push_back("trigger_monsterjump");
+		}
+		if ((defaultIsEmpty && entsNegativePitchPrefix.empty()) || entListReload)
+		{
+			entsNegativePitchPrefix.clear();
+			entsNegativePitchPrefix.push_back("ammo_");
+			entsNegativePitchPrefix.push_back("cycler");
+			entsNegativePitchPrefix.push_back("item_");
+			entsNegativePitchPrefix.push_back("monster_");
+			entsNegativePitchPrefix.push_back("weaponbox");
+			entsNegativePitchPrefix.push_back("worlditems");
+			entsNegativePitchPrefix.push_back("xen_");
+		}
+	}
+
+	if (defaultIsEmpty && transparentTextures.empty())
+	{
+		transparentTextures.push_back("AAATRIGGER");
+	}
+
+	if (defaultIsEmpty && transparentEntities.empty())
+	{
+		transparentEntities.push_back("func_buyzone");
+	}
+
 	entListReload = false;
 }
 
@@ -634,6 +693,16 @@ void AppSettings::save(std::string path)
 		file << "negative_pitch_ents=" << entsNegativePitchPrefix[i] << std::endl;
 	}
 
+	for (int i = 0; i < transparentTextures.size(); i++)
+	{
+		file << "transparent_textures=" << transparentTextures[i] << std::endl;
+	}
+
+	for (int i = 0; i < transparentEntities.size(); i++)
+	{
+		file << "transparent_entities=" << transparentEntities[i] << std::endl;
+	}
+
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "show_transform_axes=" << g_settings.show_transform_axes << std::endl;
 	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;
@@ -650,6 +719,7 @@ void AppSettings::save(std::string path)
 	file << "same_dir_for_ent=" << g_settings.sameDirForEnt << std::endl;
 	file << "reload_ents_list=" << g_settings.entListReload << std::endl;
 	file << "strip_wad_path=" << g_settings.stripWad << std::endl;
+	file << "default_is_empty=" << g_settings.defaultIsEmpty << std::endl;
 
 	file << "FLT_MAX_COORD=" << FLT_MAX_COORD << std::endl;
 	file << "MAX_MAP_MODELS=" << MAX_MAP_MODELS << std::endl;
@@ -1663,7 +1733,6 @@ void Renderer::cameraPickingControls()
 		{
 			if (map && entIdx >= 0)
 			{
-				int modelIdx = map->ents[entIdx]->getBspModelIdx();
 				applyTransform(map);
 			}
 			pickObject();
@@ -1676,7 +1745,6 @@ void Renderer::cameraPickingControls()
 		if (draggingAxis != -1)
 		{
 			draggingAxis = -1;
-			int modelIdx = map->ents[entIdx]->getBspModelIdx();
 			applyTransform(map, true);
 		}
 	}
@@ -4231,4 +4299,16 @@ void Renderer::updateEnts()
 		g_app->updateEntConnections();
 		g_app->updateEntConnectionPositions();
 	}
+}
+
+bool  Renderer::isEntTransparent(const char* classname)
+{
+	if (!classname)
+		return false;
+	for (auto const& s : g_settings.transparentEntities)
+	{
+		if (strcasecmp(s.c_str(), classname) == 0)
+			return true;
+	}
+	return false;
 }

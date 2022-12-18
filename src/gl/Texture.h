@@ -12,6 +12,7 @@ public:
 	unsigned int format; // format of the data
 	unsigned int iformat; // format of the data when uploaded to GL
 	char texName[64];
+	bool transparent;
 
 	Texture(GLsizei width, GLsizei height, const char* name);
 	Texture(GLsizei width, GLsizei height, unsigned char* data, const char* name);
@@ -27,3 +28,5 @@ public:
 
 	bool uploaded = false;
 };
+
+bool IsTextureTransparent(const char* texname);

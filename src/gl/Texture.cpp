@@ -15,7 +15,8 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
-		logf("Texture: %s %d/%d", name, width, height);
+		logf("Texture: %s %d/%d is loaded.", name, width, height);
+	this->transparent = IsTextureTransparent(name);
 }
 
 Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const char* name)
@@ -28,7 +29,8 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
-		logf("Texture2 : %s %d/%d", name, width, height);
+		logf("Texture2 : %s %d/%dis loaded.", name, width, height);
+	this->transparent = IsTextureTransparent(name);
 }
 
 Texture::~Texture()
@@ -69,7 +71,6 @@ void Texture::upload(int _format, bool lightmap)
 	}
 
 	//glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
-
 	// TODO: load mipmaps from BSP/WAD
 
 	glTexImage2D(GL_TEXTURE_2D, 0, _format, width, height, 0, _format, GL_UNSIGNED_BYTE, data);
@@ -86,4 +87,16 @@ void Texture::bind(GLuint texnum)
 {
 	glActiveTexture(GL_TEXTURE0 + texnum);
 	glBindTexture(GL_TEXTURE_2D, id);
+}
+
+bool IsTextureTransparent(const char* texname)
+{
+	if (!texname)
+		return false;
+	for (auto const& s : g_settings.transparentTextures)
+	{
+		if (strcasecmp(s.c_str(), texname) == 0)
+			return true;
+	}
+	return false;
 }

@@ -4131,6 +4131,15 @@ void Gui::drawSettings()
 				ImGui::EndTooltip();
 			}
 
+			ImGui::Checkbox("Load default list is empty", &g_settings.defaultIsEmpty);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("If enabled, load default settings lists, if list is empty.");
+				ImGui::TextUnformatted("(example entities list, res paths, etc)");
+				ImGui::EndTooltip();
+			}
+			ImGui::Separator();
+
 			if (ImGui::Button("RESET ALL SETTINGS"))
 			{
 				g_settings.reset();
@@ -4523,6 +4532,82 @@ void Gui::drawSettings()
 			}
 
 			ImGui::Columns(1);
+
+			ImGui::Separator();
+			ImGui::Text("Transparent Textures:");
+
+			for (int i = 0; i < g_settings.transparentTextures.size(); i++)
+			{
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##transTex" + std::to_string(i)).c_str(), &g_settings.transparentTextures[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##transTex" + std::to_string(i)).c_str()))
+				{
+					g_settings.transparentTextures.erase(g_settings.transparentTextures.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+			}
+
+			if (ImGui::Button("Add new 'Transparent Texture'"))
+			{
+				g_settings.transparentTextures.emplace_back(std::string());
+			}
+
+			ImGui::Separator();
+			ImGui::Text("Transparent Entities:");
+
+			for (int i = 0; i < g_settings.transparentEntities.size(); i++)
+			{
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##transEnt" + std::to_string(i)).c_str(), &g_settings.transparentEntities[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##transEnt" + std::to_string(i)).c_str()))
+				{
+					g_settings.transparentEntities.erase(g_settings.transparentEntities.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+			}
+
+			if (ImGui::Button("Add new 'Transparent Entity'"))
+			{
+				g_settings.transparentEntities.emplace_back(std::string());
+			}
+
+
+			ImGui::Separator();
+			ImGui::Text("Reverse Pitch Entities:");
+
+			for (int i = 0; i < g_settings.entsNegativePitchPrefix.size(); i++)
+			{
+				ImGui::SetNextItemWidth(pathWidth);
+				ImGui::InputText(("##invPitch" + std::to_string(i)).c_str(), &g_settings.entsNegativePitchPrefix[i]);
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(delWidth);
+				ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor::HSV(0, 0.6f, 0.6f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, (ImVec4)ImColor::HSV(0, 0.7f, 0.7f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, (ImVec4)ImColor::HSV(0, 0.8f, 0.8f));
+				if (ImGui::Button((" X ##invPitch" + std::to_string(i)).c_str()))
+				{
+					g_settings.entsNegativePitchPrefix.erase(g_settings.entsNegativePitchPrefix.begin() + i);
+				}
+				ImGui::PopStyleColor(3);
+			}
+
+			if (ImGui::Button("Add new 'Reverse Pitch Entity'"))
+			{
+				g_settings.entsNegativePitchPrefix.emplace_back(std::string());
+			}
 		}
 		else if (settingsTab == 6)
 		{

@@ -105,6 +105,8 @@ struct AppSettings
 	bool entListReload;
 	bool stripWad;
 
+	bool defaultIsEmpty;
+
 	std::vector<PathToggleStruct> fgdPaths;
 	std::vector<PathToggleStruct> resPaths;
 
@@ -117,6 +119,8 @@ struct AppSettings
 	std::vector<std::string> playerOnlyTriggers;
 	std::vector<std::string> monsterOnlyTriggers;
 	std::vector<std::string> entsNegativePitchPrefix;
+	std::vector<std::string> transparentTextures;
+	std::vector<std::string> transparentEntities;
 
 	void loadDefault();
 	void load();
@@ -194,6 +198,7 @@ public:
 	void deselectMap();
 	void clearSelection();
 	void updateEnts();
+	bool isEntTransparent(const char* classname);
 private:
 	Bsp* SelectedMap = NULL;
 
