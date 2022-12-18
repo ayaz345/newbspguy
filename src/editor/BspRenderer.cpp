@@ -1256,7 +1256,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	renderEnts[entIdx].angles = vec3();
 	renderEnts[entIdx].needAngles = false;
 	renderEnts[entIdx].pointEntCube = pointEntRenderer->getEntCube(ent);
-
+	renderEnts[entIdx].hide = ent->hide;
 	bool setAngles = false;
 
 	if (ent->hasKey("origin"))
@@ -1599,6 +1599,8 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 		{
 			if (highlightEnt > 0 && renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 			{
+				if (renderEnts[highlightEnt].hide)
+					continue;
 				activeShader->pushMatrix(MAT_MODEL);
 				*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
 				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
@@ -1622,6 +1624,8 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 		{
 			if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 			{
+				if (renderEnts[i].hide)
+					continue;
 				activeShader->pushMatrix(MAT_MODEL);
 				*activeShader->modelMat = renderEnts[i].modelMat;
 				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
@@ -1655,6 +1659,8 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 			{
 				if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 				{
+					if (renderEnts[i].hide)
+						continue;
 					if (clipnodeHull == -1 && renderModels[renderEnts[i].modelIdx].groupCount > 0)
 					{
 						continue; // skip rendering for models that have faces, if in auto mode
@@ -1692,6 +1698,8 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 		{
 			if (highlightEnt > 0 && renderEnts[highlightEnt].modelIdx >= 0 && renderEnts[highlightEnt].modelIdx < map->modelCount)
 			{
+				if (renderEnts[highlightEnt].hide)
+					continue;
 				activeShader->pushMatrix(MAT_MODEL);
 				*activeShader->modelMat = renderEnts[highlightEnt].modelMat;
 				activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
@@ -1894,6 +1902,8 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 	{
 		if (renderEnts[i].modelIdx >= 0)
 			continue;
+		if (renderEnts[i].hide)
+			continue;
 
 		if (g_app->pickInfo.IsSelectedEnt(i))
 		{
@@ -1946,6 +1956,8 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 
 	for (int i = 0; i < sz; i++)
 	{
+		if (renderEnts[i].hide)
+			continue;
 		if (renderEnts[i].modelIdx >= 0 && renderEnts[i].modelIdx < map->modelCount)
 		{
 			bool isSpecial = false;

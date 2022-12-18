@@ -60,6 +60,7 @@ struct RenderEnt
 	int modelIdx; // -1 = point entity
 	EntCube* pointEntCube;
 	bool needAngles = false;
+	bool hide = false;
 };
 
 struct RenderGroup

@@ -5492,3 +5492,25 @@ void Bsp::decalShoot(vec3 pos, const char* texname)
 		std::vector<vec3> worldVerts;
 	}
 }
+
+
+void Bsp::hideEnts(bool hide)
+{
+	if (!hide)
+	{
+		for (size_t i = 0; i < ents.size(); i++)
+		{
+			ents[i]->hide = false;
+		}
+	}
+	else
+	{
+		for (auto& i : g_app->pickInfo.selectedEnts)
+		{
+			if (i >= 0)
+			{
+				ents[i]->hide = true;
+			}
+		}
+	}
+}

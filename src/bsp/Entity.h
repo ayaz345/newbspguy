@@ -13,7 +13,7 @@ public:
 	int cachedModelIdx = -2; // -2 = not cached
 	std::vector<std::string> cachedTargets;
 	bool targetsCached = false;
-
+	bool hide = false;
 	Entity(void) = default;
 	Entity(const std::string& classname);
 	~Entity(void)

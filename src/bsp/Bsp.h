@@ -251,6 +251,7 @@ public:
 
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 
+	void hideEnts(bool hide = true);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, int oldLeafCount, int oldLeavesMemSize); // called after removing unused leaves

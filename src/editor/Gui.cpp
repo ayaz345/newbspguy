@@ -650,6 +650,15 @@ void Gui::draw3dContextMenus()
 				app->deleteEnts();
 			}
 
+			if (ImGui::MenuItem("Hide", "Ctrl+H"))
+			{
+				map->hideEnts();
+				app->clearSelection(); 
+				map->getBspRender()->preRenderEnts();
+				app->updateEntConnections();
+				pickCount++;
+			}
+
 			ImGui::Separator();
 			if (map && entIdx >= 0 && entIdx < map->ents.size() && app->pickInfo.selectedEnts.size() == 1)
 			{
@@ -1602,6 +1611,13 @@ void Gui::drawMenuBar()
 		if (ImGui::MenuItem("Delete", "Del", false, nonWorldspawnEntSelected))
 		{
 			app->deleteEnts();
+		}
+		if (ImGui::MenuItem("Unhide all", "CTRL+ALT+H"))
+		{
+			map->hideEnts(false);
+			map->getBspRender()->preRenderEnts();
+			app->updateEntConnections();
+			pickCount++;
 		}
 
 		ImGui::Separator();
