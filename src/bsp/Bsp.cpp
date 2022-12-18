@@ -4333,8 +4333,8 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 		vec3 min = mins - default_hull_extents[i];
 		vec3 max = maxs + default_hull_extents[i];
 
-		size_t clipnodeIdx = clipnodeCount + addNodes.size();
-		size_t planeIdx = planeCount + addPlanes.size();
+		int clipnodeIdx = clipnodeCount + (int)addNodes.size();
+		int planeIdx = planeCount + (int)addPlanes.size();
 
 		addPlanes.push_back({vec3(1, 0, 0), min.x, PLANE_X}); // left
 		addPlanes.push_back({vec3(1, 0, 0), max.x, PLANE_X}); // right
@@ -5191,7 +5191,6 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 		for (int i = 0; i < faceCount; i++)
 		{
 			int mdlid = get_model_from_face(i);
-			int entid = get_ent_from_model(mdlid);
 			RenderFace* rface;
 			RenderGroup* rgroup;
 

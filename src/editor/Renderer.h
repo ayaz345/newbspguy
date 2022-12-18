@@ -84,7 +84,6 @@ struct AppSettings
 	bool keyvalue_open;
 	bool transform_open;
 	bool log_open;
-	bool settings_open;
 	bool limits_open;
 	bool entreport_open;
 	int settings_tab;

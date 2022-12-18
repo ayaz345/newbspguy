@@ -107,7 +107,6 @@ void AppSettings::loadDefault()
 	keyvalue_open = false;
 	transform_open = false;
 	log_open = false;
-	settings_open = false;
 	limits_open = false;
 	entreport_open = false;
 	show_transform_axes = false;
@@ -284,10 +283,6 @@ void AppSettings::load()
 		else if (key == "log_open")
 		{
 			g_settings.log_open = atoi(val.c_str()) != 0 && save_windows;
-		}
-		else if (key == "settings_open")
-		{
-			g_settings.settings_open = atoi(val.c_str()) != 0 && save_windows;
 		}
 		else if (key == "limits_open")
 		{
@@ -638,7 +633,6 @@ void AppSettings::save(std::string path)
 	file << "keyvalue_open=" << g_settings.keyvalue_open << std::endl;
 	file << "transform_open=" << g_settings.transform_open << std::endl;
 	file << "log_open=" << g_settings.log_open << std::endl;
-	file << "settings_open=" << g_settings.settings_open << std::endl;
 	file << "limits_open=" << g_settings.limits_open << std::endl;
 	file << "entreport_open=" << g_settings.entreport_open << std::endl;
 
@@ -1310,7 +1304,6 @@ void Renderer::saveSettings()
 	g_settings.keyvalue_open = gui->showKeyvalueWidget;
 	g_settings.transform_open = gui->showTransformWidget;
 	g_settings.log_open = gui->showLogWidget;
-	g_settings.settings_open = gui->showSettingsWidget;
 	g_settings.limits_open = gui->showLimitsWidget;
 	g_settings.entreport_open = gui->showEntityReport;
 	g_settings.settings_tab = gui->settingsTab;
@@ -1331,7 +1324,6 @@ void Renderer::loadSettings()
 	gui->showKeyvalueWidget = g_settings.keyvalue_open;
 	gui->showTransformWidget = g_settings.transform_open;
 	gui->showLogWidget = g_settings.log_open;
-	gui->showSettingsWidget = g_settings.settings_open;
 	gui->showLimitsWidget = g_settings.limits_open;
 	gui->showEntityReport = g_settings.entreport_open;
 

@@ -2179,7 +2179,18 @@ void Gui::drawStatusMessage()
 	static float loadingWindowWidth = 32;
 	static float loadingWindowHeight = 32;
 
-	bool showStatus = app->invalidSolid || !app->isTransformableSolid || badSurfaceExtents || lightmapTooLarge || app->modelUsesSharedStructures;
+	bool selectedEntity = false;
+	Bsp* map = app->getSelectedMap();
+	for (auto& i : app->pickInfo.selectedEnts)
+	{
+		if (map && i >= 0 && (map->ents[i]->getBspModelIdx() < 0 || map->ents[i]->isWorldSpawn()))
+		{
+			selectedEntity = true;
+			break;
+		}
+	}
+
+	bool showStatus = (app->invalidSolid && !selectedEntity) || !app->isTransformableSolid || badSurfaceExtents || lightmapTooLarge || app->modelUsesSharedStructures;
 
 	if (showStatus)
 	{
@@ -4674,6 +4685,7 @@ void Gui::drawSettings()
 			}
 			app->reloading = false;
 		}
+		showSettingsWidget = false;
 	}
 }
 
