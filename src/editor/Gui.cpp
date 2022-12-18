@@ -500,6 +500,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	while (tmpMap->models[0].nVisLeafs >= tmpMap->leafCount)
 		tmpMap->create_leaf(CONTENTS_EMPTY);
 
+	tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
 
 	tmpMap->move(-modelOrigin, 0, true, true);
 
@@ -513,7 +514,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	{
 		tmpMap->update_ent_lump();
 		tmpMap->update_lump_pointers();
-		tmpMap->write(GetWorkDir() + "model" + std::to_string(id) + "(test1).bsp");
+		tmpMap->write(GetWorkDir() + "_" + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
 	}
 }
 
