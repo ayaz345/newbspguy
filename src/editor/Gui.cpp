@@ -904,16 +904,16 @@ bool ExportWad(Bsp* map)
 	if (map->textureCount > 0)
 	{
 		Wad* tmpWad = new Wad(map->bsp_path);
-		std::vector<WADTEX *> tmpWadTex;
+		std::vector<WADTEX*> tmpWadTex;
 		for (int i = 0; i < map->textureCount; i++)
 		{
 			int oldOffset = ((int*)map->textures)[i + 1];
 			if (oldOffset != -1)
 			{
-				BSPMIPTEX * bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
+				BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
 				if (bspTex->nOffsets[0] <= 0)
 					continue;
-				WADTEX * oldTex = new WADTEX(bspTex);
+				WADTEX* oldTex = new WADTEX(bspTex);
 				tmpWadTex.push_back(oldTex);
 			}
 		}
@@ -951,7 +951,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 	{
 		for (int i = 0; i < (int)tmpWad->dirEntries.size(); i++)
 		{
-			WADTEX * wadTex = tmpWad->readTexture(i);
+			WADTEX* wadTex = tmpWad->readTexture(i);
 			COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 			map->add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
@@ -1292,7 +1292,7 @@ void Gui::drawMenuBar()
 
 						for (int i = 0; i < (int)wad->dirEntries.size(); i++)
 						{
-							WADTEX * texture =wad->readTexture(i);
+							WADTEX* texture = wad->readTexture(i);
 
 							if (texture->szName[0] != '\0' && strlen(texture->szName) < MAXTEXTURENAME)
 							{
@@ -1425,34 +1425,34 @@ void Gui::drawMenuBar()
 							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto& file)
 							{
 								logf("Importing %s from workdir %s wad.\n", basename(file).c_str(), basename(wad->filename).c_str());
-								unsigned char* image_bytes;
-								unsigned int w2, h2;
-								auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, file.c_str());
-								if (error == 0 && image_bytes)
+							unsigned char* image_bytes;
+							unsigned int w2, h2;
+							auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, file.c_str());
+							if (error == 0 && image_bytes)
+							{
+								int oldcolors = 0;
+								if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
 								{
-									int oldcolors = 0;
-									if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
-									{
-										logf("Need apply quantizer to %s\n", basename(file).c_str());
-										Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+									logf("Need apply quantizer to %s\n", basename(file).c_str());
+									Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 
-										if (ditheringEnabled)
-											tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
-										else
-											tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
+									if (ditheringEnabled)
+										tmpCQuantizer->ApplyColorTableDither((COLOR3*)image_bytes, w2, h2);
+									else
+										tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
 
-										logf("Reduce color of image from >%d to %d\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2* h2));
+									logf("Reduce color of image from >%d to %d\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
 
-										delete tmpCQuantizer;
-									}
-									std::string tmpTexName = stripExt(basename(file));
-
-									WADTEX * tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-									g_log_mutex2.lock();
-									textureList.push_back(tmpWadTex);
-									g_log_mutex2.unlock();
-									free(image_bytes);
+									delete tmpCQuantizer;
 								}
+								std::string tmpTexName = stripExt(basename(file));
+
+								WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
+								g_log_mutex2.lock();
+								textureList.push_back(tmpWadTex);
+								g_log_mutex2.unlock();
+								free(image_bytes);
+							}
 							});
 							logf("Success load all textures\n");
 
@@ -3651,7 +3651,7 @@ void Gui::drawTransformWidget()
 				pickCount++;
 				vertPickCount++;
 			}
-			
+
 			ImGui::NextColumn();
 			if (app->transformMode == TRANSFORM_MODE_SCALE)
 			{
@@ -3663,9 +3663,9 @@ void Gui::drawTransformWidget()
 				pickCount++;
 				vertPickCount++;
 			}
-			
+
 			ImGui::NextColumn();
-			
+
 			if (ImGui::RadioButton("Origin", &app->transformTarget, TRANSFORM_ORIGIN))
 			{
 				pickCount++;
@@ -3855,7 +3855,7 @@ void Gui::loadFonts()
 	config.RasterizerMultiply = 1.5f;
 	config.PixelSnapH = true;
 
-	defaultFont = imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config); 
+	defaultFont = imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config);
 	config.MergeMode = true;
 	imgui_io->Fonts->AddFontFromMemoryCompressedTTF((const char*)compressed_data, compressed_size, fontSize, &config, imgui_io->Fonts->GetGlyphRangesDefault());
 	config.MergeMode = true;
@@ -3977,7 +3977,7 @@ void Gui::drawSettings()
 
 		ImGui::Separator();
 
-		
+
 		ImGui::Dummy(ImVec2(0, 60));
 		if (ImGui::Button("Apply settings"))
 		{
@@ -4938,8 +4938,8 @@ void Gui::drawImportMapWidget()
 								{
 									if (s->hasTexture(tex.szName))
 									{
-										WADTEX * wadTex = s->readTexture(tex.szName);
-										COLOR3 * imageData = ConvertWadTexToRGB(wadTex);
+										WADTEX* wadTex = s->readTexture(tex.szName);
+										COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 										texinfo.iMiptex = map->add_texture(tex.szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
@@ -5275,6 +5275,8 @@ void Gui::drawEntityReport()
 	ImGui::SetNextWindowSize(ImVec2(550.f, 630.f), ImGuiCond_FirstUseEver);
 	Bsp* map = app->getSelectedMap();
 
+	ImGuiContext& g = *GImGui;
+
 	std::string title = map ? "Entity Report - " + map->bsp_name : "Entity Report";
 
 	if (ImGui::Begin((title + "###entreport").c_str(), &showEntityReport))
@@ -5318,7 +5320,7 @@ void Gui::drawEntityReport()
 
 					if (!classFilter.empty() && classFilter != "(none)")
 					{
-						if (strcasecmp(cname.c_str(),classFilter.c_str()) != 0)
+						if (strcasecmp(cname.c_str(), classFilter.c_str()) != 0)
 						{
 							visible = false;
 						}
@@ -5421,9 +5423,23 @@ void Gui::drawEntityReport()
 					int i = line;
 					int entIdx = visibleEnts[i];
 					Entity* ent = map->ents[entIdx];
-					std::string cname = ent->hasKey("classname") ? ent->keyvalues["classname"] : "";
-
-					if (cname.size() && ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick))
+					std::string cname = ent->hasKey("classname") ? ent->keyvalues["classname"] : "UNKNOWN_CLASSNAME";
+					bool isSelectableSelcted = false;
+					if (cname.size() && !app->fgd->getFgdClass(cname))
+					{
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255, 0, 0, 255));
+						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
+						if (ImGui::IsItemHovered())
+						{
+							ImGui::BeginTooltip();
+							ImGui::Text("Classname \"%s\" not found in fgd files!\n", cname.c_str());
+							ImGui::EndTooltip();
+						}
+						ImGui::PopStyleColor();
+					}
+					else
+						isSelectableSelcted = cname.size() && ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
+					if (isSelectableSelcted)
 					{
 						if (expected_key_mod_flags & ImGuiModFlags_Ctrl)
 						{
@@ -6759,7 +6775,7 @@ void Gui::drawTextureTool()
 					{
 						if (s->hasTexture(textureName))
 						{
-							WADTEX * wadTex = s->readTexture(textureName);
+							WADTEX* wadTex = s->readTexture(textureName);
 							COLOR3* imageData = ConvertWadTexToRGB(wadTex);
 
 							validTexture = true;
