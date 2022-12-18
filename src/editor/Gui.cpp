@@ -651,10 +651,19 @@ void Gui::draw3dContextMenus()
 				app->deleteEnts();
 			}
 
-			if (ImGui::MenuItem("Hide", "Ctrl+H"))
+			if (entIdx >= 0 && map && map->ents[entIdx]->hide)
+			{
+				if (ImGui::MenuItem("Unhide", "Ctrl+H"))
+				{
+					map->ents[entIdx]->hide = false;
+					map->getBspRender()->preRenderEnts();
+					app->updateEntConnections();
+				}
+			}
+			else if (ImGui::MenuItem("Hide", "Ctrl+H"))
 			{
 				map->hideEnts();
-				app->clearSelection(); 
+				app->clearSelection();
 				map->getBspRender()->preRenderEnts();
 				app->updateEntConnections();
 				pickCount++;
@@ -5558,14 +5567,28 @@ void Gui::drawEntityReport()
 					}
 
 					bool isSelectableSelcted = false;
-					if (!app->fgd || !app->fgd->getFgdClass(cname))
+					if (!app->fgd || !app->fgd->getFgdClass(cname) || ent->hide)
 					{
-						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255, 0, 0, 255));
+						if (!app->fgd || !app->fgd->getFgdClass(cname))
+						{
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(255, 0, 0, 255));
+						}
+						else
+						{
+							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 255, 255, 255));
+						}
 						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
 						if (ImGui::IsItemHovered())
 						{
 							ImGui::BeginTooltip();
-							ImGui::Text("Classname \"%s\" not found in fgd files!\n", cname.c_str());
+							if (!app->fgd || !app->fgd->getFgdClass(cname))
+							{
+								ImGui::Text("Classname \"%s\" not found in fgd files!", cname.c_str());
+							}
+							else
+							{
+								ImGui::Text("%s", "This entity is hidden on map, press 'unhide' to show it!");
+							}
 							ImGui::EndTooltip();
 						}
 						ImGui::PopStyleColor();
