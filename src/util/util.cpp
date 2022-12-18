@@ -657,9 +657,9 @@ std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes)
 				vec3& n0 = planes[i].vNormal;
 				vec3& n1 = planes[j].vNormal;
 				vec3& n2 = planes[k].vNormal;
-				float d0 = planes[i].fDist;
-				float d1 = planes[j].fDist;
-				float d2 = planes[k].fDist;
+				float& d0 = planes[i].fDist;
+				float& d1 = planes[j].fDist;
+				float& d2 = planes[k].fDist;
 
 				float t = n0.x * (n1.y * n2.z - n1.z * n2.y) +
 					n0.y * (n1.z * n2.x - n1.x * n2.z) +
@@ -708,7 +708,7 @@ bool vertsAllOnOneSide(std::vector<vec3>& verts, BSPPLANE& plane)
 	for (int k = 0; k < verts.size(); k++)
 	{
 		float d = dotProduct(verts[k], plane.vNormal) - plane.fDist;
-		if (d < -EPSILON)
+		if (d < -0.04f)
 		{
 			if (planeSide == 1)
 			{
@@ -716,7 +716,7 @@ bool vertsAllOnOneSide(std::vector<vec3>& verts, BSPPLANE& plane)
 			}
 			planeSide = -1;
 		}
-		if (d >= EPSILON)
+		if (d > 0.04f)
 		{
 			if (planeSide == -1)
 			{

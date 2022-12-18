@@ -532,7 +532,7 @@ void Gui::draw3dContextMenus()
 			if (ImGui::MenuItem("Center", ""))
 			{
 				app->transformedOrigin = app->getEntOrigin(map, ent);
-				app->applyTransform();
+				app->applyTransform(map);
 				pickCount++; // force gui refresh
 			}
 
@@ -543,39 +543,39 @@ void Gui::draw3dContextMenus()
 				if (ImGui::MenuItem("Top"))
 				{
 					app->transformedOrigin.z = app->oldOrigin.z + model.nMaxs.z;
-					app->applyTransform();
+					app->applyTransform(map);
 					pickCount++;
 				}
 				if (ImGui::MenuItem("Bottom"))
 				{
 					app->transformedOrigin.z = app->oldOrigin.z + model.nMins.z;
-					app->applyTransform();
+					app->applyTransform(map);
 					pickCount++;
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Left"))
 				{
 					app->transformedOrigin.x = app->oldOrigin.x + model.nMins.x;
-					app->applyTransform();
+					app->applyTransform(map);
 					pickCount++;
 				}
 				if (ImGui::MenuItem("Right"))
 				{
 					app->transformedOrigin.x = app->oldOrigin.x + model.nMaxs.x;
-					app->applyTransform();
+					app->applyTransform(map);
 					pickCount++;
 				}
 				ImGui::Separator();
 				if (ImGui::MenuItem("Back"))
 				{
 					app->transformedOrigin.y = app->oldOrigin.y + model.nMins.y;
-					app->applyTransform();
+					app->applyTransform(map);
 					pickCount++;
 				}
 				if (ImGui::MenuItem("Front"))
 				{
 					app->transformedOrigin.y = app->oldOrigin.y + model.nMaxs.y;
-					app->applyTransform();
+					app->applyTransform(map);
 					pickCount++;
 				}
 				ImGui::EndMenu();
@@ -1903,7 +1903,7 @@ void Gui::drawMenuBar()
 				snapSize = 16;
 			}
 
-			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
+			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
 			command->execute();
 			delete newEnt;
 			rend->pushUndoCommand(command);
@@ -1936,7 +1936,7 @@ void Gui::drawMenuBar()
 				snapSize = 16;
 			}
 
-			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
+			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
 			command->execute();
 			delete newEnt;
 			rend->pushUndoCommand(command);
@@ -1966,7 +1966,7 @@ void Gui::drawMenuBar()
 				snapSize = 16;
 			}
 
-			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, true);
+			CreateBspModelCommand* command = new CreateBspModelCommand("Create Model", app->getSelectedMapId(), newEnt, snapSize, false);
 			command->execute();
 			delete newEnt;
 			rend->pushUndoCommand(command);
@@ -3608,7 +3608,7 @@ void Gui::drawTransformWidget()
 
 				if (transformingEnt)
 				{
-					app->applyTransform(true);
+					app->applyTransform(map, true);
 
 					if (app->gridSnappingEnabled)
 					{

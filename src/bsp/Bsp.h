@@ -137,7 +137,7 @@ public:
 	// fixes up the model planes/nodes after vertex posisions have been modified
 	// returns false if the model has non-planar faces
 	// TODO: split any planes shared with other models
-	bool vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hullVerts, bool convexCheckOnly, bool regenClipnodes);
+	bool vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hullVerts, bool convexCheckOnly);
 
 	void load_ents();
 
@@ -167,7 +167,7 @@ public:
 	bool validate();
 
 	// creates a solid cube
-	int create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool solid = true);
+	int create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool empty = false);
 
 	// creates a new solid from the given solid definition (must be convex).
 	int create_solid(Solid& solid, int targetModelIdx = -1);
@@ -176,7 +176,7 @@ public:
 	void create_node_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int textureIdx);
 	void create_nodes(Solid& solid, BSPMODEL* targetModel);
 	// returns index of the solid node
-	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool solid = false);
+	int create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull = 0, bool skipEmpty = false, bool empty = false);
 	// copies a model from the sourceMap into this one
 	void add_model(Bsp* sourceMap, int modelIdx);
 

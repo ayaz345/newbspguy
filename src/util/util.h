@@ -25,10 +25,6 @@ extern std::string g_version_string;
 #define PRINT_RED		4
 #define PRINT_BRIGHT	8
 
-#define PI 3.141592f
-
-#define EPSILON 0.0001f // NORMAL_EPSILON from rad.h / 10
-
 
 #define mDotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
 

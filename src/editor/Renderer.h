@@ -320,10 +320,10 @@ private:
 	void globalShortcutControls(); // these work even with the UI selected
 	void pickObject(); // select stuff with the mouse
 	bool transformAxisControls(); // true if grabbing axes
-	void applyTransform(bool forceUpdate = false);
+	void applyTransform(Bsp* map, bool forceUpdate = false);
 	void setupView();
 	void getPickRay(vec3& start, vec3& pickDir);
-	void revertInvalidSolid(Bsp* map, int entIdx);
+	void revertInvalidSolid(Bsp* map, int modelIdx);
 
 	void drawModelVerts();
 	void drawModelOrigin();

@@ -242,6 +242,10 @@ Bsp::~Bsp()
 
 	for (int i = 0; i < ents.size(); i++)
 		delete ents[i];
+	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
+		replacedLump[i] = false;
+	}
 }
 
 
@@ -366,6 +370,8 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 
 	BSPMODEL& model = models[modelIdx];
 
+	outVerts.clear();
+
 	// TODO: model center doesn't have to be inside all planes, even for convex objects(?)
 	vec3 modelCenter = model.nMins + (model.nMaxs - model.nMins) * 0.5f;
 	for (int i = 0; i < nodePlaneIndexes.size(); i++)
@@ -396,7 +402,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 			if (i == k)
 				continue;
 
-			if (nodePlanes[i].vNormal == nodePlanes[k].vNormal && nodePlanes[i].fDist - nodePlanes[k].fDist < EPSILON)
+			if (nodePlanes[i].vNormal == nodePlanes[k].vNormal && abs(nodePlanes[i].fDist - nodePlanes[k].fDist) < EPSILON)
 			{
 				return false;
 			}
@@ -412,7 +418,6 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 		}
 	}
 
-	outVerts.clear();
 	for (int k = 0; k < nodeVerts.size(); k++)
 	{
 		vec3 v = nodeVerts[k];
@@ -425,7 +430,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 		for (int i = 0; i < nodePlanes.size(); i++)
 		{
 			BSPPLANE& p = nodePlanes[i];
-			if (abs(dotProduct(v, p.vNormal) - p.fDist) < EPSILON)
+			if (abs(dotProduct(v, p.vNormal) - p.fDist) < ON_EPSILON)
 			{
 				hullVert.iPlanes.push_back(nodePlaneIndexes[i]);
 			}
@@ -686,7 +691,7 @@ std::vector<ScalableTexinfo> Bsp::getScalableTexinfos(int modelIdx)
 	return scalable;
 }
 
-bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hullVerts, bool convexCheckOnly, bool regenClipnodes)
+bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hullVerts, bool convexCheckOnly)
 {
 	if (modelIdx < 0)
 		return false;
@@ -719,7 +724,8 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 
 		if (tverts.size() < 3)
 		{
-			logf("Face has less than 3 verts\n");
+			if (g_settings.verboseLogs)
+				logf("Face has less than 3 verts\n");
 			return false; // invalid solid
 		}
 
@@ -793,12 +799,6 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 
 	BSPMODEL& model = models[modelIdx];
 	getBoundingBox(allVertPos, model.nMins, model.nMaxs);
-
-	if (!regenClipnodes)
-		return true;
-
-	regenerate_clipnodes(modelIdx, -1);
-
 	return true;
 }
 
@@ -3569,14 +3569,14 @@ void Bsp::delete_model(int modelIdx)
 	}
 }
 
-int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool solid)
+int Bsp::create_solid(const vec3& mins, const vec3& maxs, int textureIdx, bool empty)
 {
 	int newModelIdx = create_model();
 	BSPMODEL& newModel = models[newModelIdx];
 
 
 	create_node_box(mins, maxs, &newModel, textureIdx);
-	create_clipnode_box(mins, maxs, &newModel, 0, false, solid);
+	create_clipnode_box(mins, maxs, &newModel, 0, false, empty);
 
 	//remove_unused_model_structures(); // will also resize VIS data for new leaf count
 
@@ -4313,7 +4313,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 	}
 }
 
-int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull, bool skipEmpty, bool solid)
+int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targetModel, int targetHull, bool skipEmpty, bool empty)
 {
 	std::vector<BSPPLANE> addPlanes;
 	std::vector<BSPCLIPNODE> addNodes;
@@ -4350,23 +4350,24 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 			BSPCLIPNODE node = BSPCLIPNODE();
 			node.iPlane = (int)planeIdx++;
 
-			int insideContents = k == 5 ? (solid ? CONTENTS_SOLID : CONTENTS_EMPTY) : (int)(clipnodeIdx + 1);
 
-			if (insideContents == (solid ? CONTENTS_SOLID : k == 5 ? CONTENTS_EMPTY : CONTENTS_SOLID))
-				solidNodeIdx = (int)clipnodeIdx;
+			int insideContents = k == 5 ? CONTENTS_SOLID : clipnodeIdx + 1;
+
+			if (insideContents == CONTENTS_SOLID)
+				solidNodeIdx = clipnodeIdx;
 
 			clipnodeIdx++;
 
 			// can't have negative normals on planes so children are swapped instead
 			if (k % 2 == 0)
 			{
-				node.iChildren[0] = (short)insideContents;
+				node.iChildren[0] = empty ? CONTENTS_EMPTY : (short)insideContents;
 				node.iChildren[1] = CONTENTS_EMPTY;
 			}
 			else
 			{
 				node.iChildren[0] = CONTENTS_EMPTY;
-				node.iChildren[1] = (short)insideContents;
+				node.iChildren[1] = empty ? CONTENTS_EMPTY : (short)insideContents;
 			}
 
 			addNodes.push_back(node);
@@ -4845,6 +4846,7 @@ short Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 	return (short)newClipnodeIdx;
 }
 
+
 void Bsp::regenerate_clipnodes(int modelIdx, int hullIdx)
 {
 	BSPMODEL& model = models[modelIdx];
@@ -5078,27 +5080,44 @@ void Bsp::update_lump_pointers()
 	lightDataLength = bsp_header.lump[LUMP_LIGHTING].nLength;
 	visDataLength = bsp_header.lump[LUMP_VISIBILITY].nLength;
 
-	if (planeCount > MAX_MAP_PLANES) logf("Overflowed Planes !!!\n");
-	if (texinfoCount > MAX_MAP_TEXINFOS) logf("Overflowed texinfos !!!\n");
-	if (leafCount > (int)MAX_MAP_LEAVES) logf("Overflowed leaves !!!\n");
-	if (modelCount > (int)MAX_MAP_MODELS) logf("Overflowed models !!!\n");
-	if (texinfoCount > MAX_MAP_TEXINFOS) logf("Overflowed texinfos !!!\n");
-	if (nodeCount > (int)MAX_MAP_NODES) logf("Overflowed nodes !!!\n");
-	if (vertCount > MAX_MAP_VERTS) logf("Overflowed verts !!!\n");
-	if (faceCount > MAX_MAP_FACES) logf("Overflowed faces !!!\n");
-	if (clipnodeCount > (int)MAX_MAP_CLIPNODES) logf("Overflowed clipnodes !!!\n");
-	if (marksurfCount > MAX_MAP_MARKSURFS) logf("Overflowed marksurfs !!!\n");
-	if (surfedgeCount > (int)MAX_MAP_SURFEDGES) logf("Overflowed surfedges !!!\n");
-	if (edgeCount > (int)MAX_MAP_EDGES) logf("Overflowed edges !!!\n");
-	if (textureCount > (int)MAX_MAP_TEXTURES) logf("Overflowed textures !!!\n");
-	if (lightDataLength > (int)MAX_MAP_LIGHTDATA) logf("Overflowed lightdata !!!\n");
-	if (visDataLength > (int)MAX_MAP_VISDATA) logf("Overflowed visdata !!!\n");
+	if (planeCount > MAX_MAP_PLANES)
+		logf("Overflowed Planes !!!\n");
+	if (texinfoCount > MAX_MAP_TEXINFOS)
+		logf("Overflowed texinfos !!!\n");
+	if (leafCount > (int)MAX_MAP_LEAVES)
+		logf("Overflowed leaves !!!\n");
+	if (modelCount > (int)MAX_MAP_MODELS)
+		logf("Overflowed models !!!\n");
+	if (texinfoCount > MAX_MAP_TEXINFOS)
+		logf("Overflowed texinfos !!!\n");
+	if (nodeCount > (int)MAX_MAP_NODES)
+		logf("Overflowed nodes !!!\n");
+	if (vertCount > MAX_MAP_VERTS)
+		logf("Overflowed verts !!!\n");
+	if (faceCount > MAX_MAP_FACES)
+		logf("Overflowed faces !!!\n");
+	if (clipnodeCount > (int)MAX_MAP_CLIPNODES)
+		logf("Overflowed clipnodes !!!\n");
+	if (marksurfCount > MAX_MAP_MARKSURFS)
+		logf("Overflowed marksurfs !!!\n");
+	if (surfedgeCount > (int)MAX_MAP_SURFEDGES)
+		logf("Overflowed surfedges !!!\n");
+	if (edgeCount > (int)MAX_MAP_EDGES)
+		logf("Overflowed edges !!!\n");
+	if (textureCount > (int)MAX_MAP_TEXTURES)
+		logf("Overflowed textures !!!\n");
+	if (lightDataLength > (int)MAX_MAP_LIGHTDATA)
+		logf("Overflowed lightdata !!!\n");
+	if (visDataLength > (int)MAX_MAP_VISDATA)
+		logf("Overflowed visdata !!!\n");
 }
 
 void Bsp::replace_lump(int lumpIdx, void* newData, size_t newLength)
 {
-	if (replacedLump[lumpIdx])
+	if (replacedLump[lumpIdx] && lumps[lumpIdx])
+	{
 		delete[] lumps[lumpIdx];
+	}
 	lumps[lumpIdx] = (unsigned char*)newData;
 	bsp_header.lump[lumpIdx].nLength = (int)newLength;
 	replacedLump[lumpIdx] = true;

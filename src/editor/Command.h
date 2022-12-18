@@ -98,9 +98,9 @@ public:
 	LumpState oldLumps = LumpState();
 	bool initialized = false;
 	float mdl_size;
-	bool solid = false;
+	bool empty = false;
 
-	CreateBspModelCommand(std::string desc, int mapIdx, Entity* entData, float size, bool solid);
+	CreateBspModelCommand(std::string desc, int mapIdx, Entity* entData, float size, bool empty);
 	~CreateBspModelCommand();
 
 	void execute() override;

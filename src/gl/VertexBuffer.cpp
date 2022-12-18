@@ -70,7 +70,8 @@ VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primi
 }
 
 VertexBuffer::~VertexBuffer() {
-	attribs.clear();
+	if (attribs.size())
+		attribs.clear();
 	deleteBuffer();
 	if (ownData) {
 		delete[] data;
@@ -171,7 +172,7 @@ void VertexBuffer::setData(const void* _data, int _numVerts)
 	deleteBuffer();
 }
 
-void VertexBuffer::upload() 
+void VertexBuffer::upload()
 {
 	shaderProgram->bind();
 	bindAttributes();

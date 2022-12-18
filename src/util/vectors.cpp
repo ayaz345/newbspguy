@@ -147,7 +147,7 @@ void vec3::operator/=(float f)
 	z /= f;
 }
 
-vec3 crossProduct(const vec3& v1, const vec3& v2)
+vec3 crossProduct(const vec3 & v1,const vec3 & v2)
 {
 	float x = v1.y * v2.z - v2.y * v1.z;
 	float y = v2.x * v1.z - v1.x * v2.z;

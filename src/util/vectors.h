@@ -2,17 +2,44 @@
 
 #include <string>
 
+#define PI 3.141592f
+
+#define EPSILON 0.0001f // NORMAL_EPSILON from rad.h / 10
+
+#define NORMAL_EPSILON   0.00001
+
+#define ON_EPSILON       0.04 // we should ensure that (float)BOGUS_RANGE < (float)(BOGUA_RANGE + 0.2 * ON_EPSILON)
+
+
 struct vec3
 {
 	float x, y, z;
-	vec3() : x(0), y(0), z(0)
-	{}
+	vec3() : x(+0.0f), y(+0.0f), z(+0.0f)
+	{
+
+	}
+	vec3(const vec3 & other) : x(other.x), y(other.y), z(other.z)
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+		if (abs(z) < EPSILON)
+			z = +0.0f;
+	}
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
-	{}
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+		if (abs(z) < EPSILON)
+			z = +0.0f;
+	}
 	vec3 normalize(float length = 1.0f);
 	float length();
 	bool IsZero();
-	vec3 invert();
+	vec3 invert(); 
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
 	std::string toString();
 	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
@@ -86,9 +113,19 @@ struct vec2
 {
 	float x, y;
 	vec2() : x(0), y(0)
-	{}
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+	}
 	vec2(float x, float y) : x(x), y(y)
-	{}
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+	}
 	vec2 normalize(float length = 1.0f);
 	float length();
 
@@ -120,14 +157,40 @@ struct vec4
 {
 	float x, y, z, w;
 
-	vec4() : x(0), y(0), z(0), w(0)
-	{}
+	vec4() : x(+0.0f), y(+0.0f), z(+0.0f), w(+0.0f)
+	{
+	}
 	vec4(float x, float y, float z) : x(x), y(y), z(z), w(1)
-	{}
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+		if (abs(z) < EPSILON)
+			z = +0.0f;
+	}
 	vec4(float x, float y, float z, float w) : x(x), y(y), z(z), w(w)
-	{}
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+		if (abs(z) < EPSILON)
+			z = +0.0f;
+		if (abs(w) < EPSILON)
+			w = +0.0f;
+	}
 	vec4(vec3 v, float a) : x(v.x), y(v.y), z(v.z), w(a)
-	{}
+	{
+		if (abs(x) < EPSILON)
+			x = +0.0f;
+		if (abs(y) < EPSILON)
+			y = +0.0f;
+		if (abs(z) < EPSILON)
+			z = +0.0f;
+		if (abs(w) < EPSILON)
+			w = +0.0f;
+	}
 	vec3 xyz();
 	vec2 xy();
 

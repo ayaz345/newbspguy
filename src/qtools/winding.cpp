@@ -4,10 +4,6 @@
 #include "rad.h"
 #include "Bsp.h"
 
-#undef ON_EPSILON
-
-#define ON_EPSILON epsilon
-
 Winding& Winding::operator=(const Winding& other)
 {
 	if (&other == this)

@@ -95,6 +95,24 @@ struct RenderClipnodes
 	VertexBuffer* clipnodeBuffer[MAX_MAP_HULLS];
 	VertexBuffer* wireframeClipnodeBuffer[MAX_MAP_HULLS];
 	std::vector<FaceMath> faceMaths[MAX_MAP_HULLS];
+	RenderClipnodes()
+	{
+		for (int i = 0; i < MAX_MAP_HULLS; i++)
+		{
+			clipnodeBuffer[i] = NULL;
+			wireframeClipnodeBuffer[i] = NULL;
+			faceMaths[i].clear();
+		}
+	}
+	~RenderClipnodes()
+	{
+		for (int i = 0; i < MAX_MAP_HULLS; i++)
+		{
+			clipnodeBuffer[i] = NULL;
+			wireframeClipnodeBuffer[i] = NULL;
+			faceMaths[i].clear();
+		}
+	}
 };
 
 class PickInfo

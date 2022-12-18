@@ -476,7 +476,11 @@ void AppSettings::load()
 		{
 			monsterOnlyTriggers.push_back(val);
 		}
-	}
+		else if (key == "negative_pitch_ents")
+		{
+			entsNegativePitchPrefix.push_back(val);
+		}
+	}	
 
 	if (g_settings.windowY == -32000 &&
 		g_settings.windowX == -32000)
@@ -836,7 +840,8 @@ void Renderer::renderLoop()
 	glfwSwapInterval(g_settings.vsync);
 	static bool vsync = g_settings.vsync;
 
-	static int tmpPickIdx = -1, tmpVertPickIdx = -1;
+
+	static int tmpPickIdx = -1, tmpVertPickIdx = -1, tmpTransformTarget = -1, tmpModelIdx = -1;
 
 	static bool isScalingObject = false;
 	static bool isMovingOrigin = false;
@@ -903,8 +908,17 @@ void Renderer::renderLoop()
 
 		bool updatePickCount = false;
 
-		if (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount)
+		if (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount || transformTarget != tmpTransformTarget || tmpModelIdx != modelIdx)
 		{
+			if (transformTarget != tmpTransformTarget && transformTarget == TRANSFORM_VERTEX)
+			{
+				updateModelVerts();
+			}
+			else if (!modelVerts.size() || tmpModelIdx != modelIdx)
+			{
+				updateModelVerts();
+			}
+
 			updatePickCount = true;
 			isTransformableSolid = modelIdx > 0 || (entIdx >= 0 && map->ents[entIdx]->getBspModelIdx() < 0);
 
@@ -924,8 +938,8 @@ void Renderer::renderLoop()
 			isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) || (isTransformableSolid && isScalingObject);
 			isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
-			invalidSolid = modelVerts.size() && !map->vertex_manipulation_sync(modelIdx, modelVerts, false, true);
-			if (!invalidSolid && modelVerts.size())
+			invalidSolid = !modelVerts.size() || !map->vertex_manipulation_sync(modelIdx, modelVerts, false);
+			if (!invalidSolid)
 			{
 				std::vector<TransformVert> tmpVerts;
 				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
@@ -936,15 +950,9 @@ void Renderer::renderLoop()
 					invalidSolid = true;
 				}
 			}
-
-
-			if (invalidSolid && pickInfo.selectedEnts.size())
+			else
 			{
-				if (map && ent && ent->hasKey("classname") &&
-					ent->keyvalues["classname"] == "worldspawn")
-				{
-					invalidSolid = false;
-				}
+				invalidSolid = true;
 			}
 		}
 		matmodel.loadIdentity();
@@ -1156,6 +1164,8 @@ void Renderer::renderLoop()
 
 		if (updatePickCount)
 		{
+			tmpModelIdx = modelIdx;
+			tmpTransformTarget = transformTarget;
 			tmpPickIdx = pickCount;
 			tmpVertPickIdx = vertPickCount;
 		}
@@ -1309,17 +1319,16 @@ void Renderer::drawModelVerts()
 {
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
-	if ( !map || entIdx < 0)
+	if (!map || entIdx < 0)
 		return;
 
 	Entity* ent = map->ents[entIdx];
-
-	if (ent->getBspModelIdx() <= 0)
+	if (ent->getBspModelIdx() < 0)
 		return;
 
-	if (!modelVertBuff ||modelVerts.empty())
+	if (!modelVertBuff || modelVertBuff->numVerts == 0 || !modelVerts.size())
 	{
-		updateModelVerts();
+		return;
 	}
 
 	glClear(GL_DEPTH_BUFFER_BIT);
@@ -1591,7 +1600,9 @@ void Renderer::vertexEditControls()
 void Renderer::cameraPickingControls()
 {
 	static bool oldTransforming = false;
+	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
+
 	if (curLeftMouse == GLFW_PRESS || oldLeftMouse == GLFW_PRESS)
 	{
 		bool transforming = transformAxisControls();
@@ -1632,7 +1643,6 @@ void Renderer::cameraPickingControls()
 				}
 
 				vertPickCount++;
-				applyTransform();
 			}
 
 			transforming = true;
@@ -1651,17 +1661,11 @@ void Renderer::cameraPickingControls()
 		// object picking
 		if (!transforming)
 		{
-			applyTransform();
-			if (!transforming && oldTransforming)
+			if (map && entIdx >= 0)
 			{
-				Bsp* map = SelectedMap;
-				if (map && invalidSolid)
-				{
-					revertInvalidSolid(map, entIdx);
-					invalidSolid = false;
-				}
+				int modelIdx = map->ents[entIdx]->getBspModelIdx();
+				applyTransform(map);
 			}
-
 			pickObject();
 		}
 		oldTransforming = transforming;
@@ -1672,12 +1676,13 @@ void Renderer::cameraPickingControls()
 		if (draggingAxis != -1)
 		{
 			draggingAxis = -1;
-			applyTransform();
+			int modelIdx = map->ents[entIdx]->getBspModelIdx();
+			applyTransform(map, true);
 		}
 	}
 }
 
-void Renderer::revertInvalidSolid(Bsp* map, int entIdx)
+void Renderer::revertInvalidSolid(Bsp* map, int modelIdx)
 {
 	for (int i = 0; i < modelVerts.size(); i++)
 	{
@@ -1686,88 +1691,65 @@ void Renderer::revertInvalidSolid(Bsp* map, int entIdx)
 	for (int i = 0; i < modelFaceVerts.size(); i++)
 	{
 		modelFaceVerts[i].pos = modelFaceVerts[i].startPos = modelFaceVerts[i].undoPos;
-		if (modelFaceVerts[i].ptr)
-		{
+		if (modelFaceVerts[i].ptr) {
 			*modelFaceVerts[i].ptr = modelFaceVerts[i].pos;
 		}
 	}
-	if (entIdx >= 0 && map)
+	if (map && modelIdx >= 0)
 	{
-		int modelIdx = map->ents[entIdx]->getBspModelIdx();
-		if (modelIdx >= 0)
-		{
-			map->getBspRender()->refreshModel(modelIdx);
-		}
+		map->vertex_manipulation_sync(modelIdx, modelVerts, false);
+		map->getBspRender()->refreshModel(modelIdx);
 	}
 	gui->reloadLimits();
 }
 
-void Renderer::applyTransform(bool forceUpdate)
+void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 {
-	Bsp* map = SelectedMap;
+	bool transformingVerts = transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_MOVE;
+	bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_SCALE;
+	bool movingOrigin = transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE;
 
-	if (!map || !isTransformableSolid || (modelUsesSharedStructures && transformTarget != TRANSFORM_OBJECT))
+	bool anyVertsChanged = false;
+	for (int i = 0; i < modelVerts.size(); i++)
 	{
-		updateModelVerts();
-		return;
+		if (modelVerts[i].pos != modelVerts[i].startPos || modelVerts[i].pos != modelVerts[i].undoPos)
+		{
+			anyVertsChanged = true;
+		}
 	}
 
-	int modelIdx = -1;
-	int entIdx = pickInfo.GetSelectedEnt();
-
-	if (map && entIdx >= 0)
+	if (anyVertsChanged && (transformingVerts || scalingObject || forceUpdate))
 	{
-		modelIdx = map->ents[entIdx]->getBspModelIdx();
-	}
-
-	if (modelIdx > 0 && pickMode == PICK_OBJECT)
-	{
-		bool transformingVerts = transformTarget == TRANSFORM_VERTEX && transformMode == TRANSFORM_MODE_MOVE;
-		bool scalingObject = transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_SCALE;
-		bool movingOrigin = transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE;
-
-		bool anyVertsChanged = false;
 		for (int i = 0; i < modelVerts.size(); i++)
 		{
-			if (modelVerts[i].pos != modelVerts[i].startPos || modelVerts[i].pos != modelVerts[i].undoPos)
+			modelVerts[i].startPos = modelVerts[i].pos;
+			if (!invalidSolid)
 			{
-				anyVertsChanged = true;
+				modelVerts[i].undoPos = modelVerts[i].pos;
 			}
 		}
-
-		if (anyVertsChanged && (transformingVerts || scalingObject || forceUpdate))
+		for (int i = 0; i < modelFaceVerts.size(); i++)
 		{
-			gui->reloadLimits();
-
-			for (int i = 0; i < modelVerts.size(); i++)
+			modelFaceVerts[i].startPos = modelFaceVerts[i].pos;
+			if (!invalidSolid)
 			{
-				modelVerts[i].startPos = modelVerts[i].pos;
-				if (!invalidSolid)
-				{
-					modelVerts[i].undoPos = modelVerts[i].pos;
-				}
-			}
-			for (int i = 0; i < modelFaceVerts.size(); i++)
-			{
-				modelFaceVerts[i].startPos = modelFaceVerts[i].pos;
-				if (!invalidSolid)
-				{
-					modelFaceVerts[i].undoPos = modelFaceVerts[i].pos;
-				}
-			}
-
-			if (scalingObject)
-			{
-				for (int i = 0; i < scaleTexinfos.size(); i++)
-				{
-					BSPTEXTUREINFO& info = map->texinfos[scaleTexinfos[i].texinfoIdx];
-					scaleTexinfos[i].oldShiftS = info.shiftS;
-					scaleTexinfos[i].oldShiftT = info.shiftT;
-					scaleTexinfos[i].oldS = info.vS;
-					scaleTexinfos[i].oldT = info.vT;
-				}
+				modelFaceVerts[i].undoPos = modelFaceVerts[i].pos;
 			}
 		}
+
+		if (scalingObject && map)
+		{
+			for (int i = 0; i < scaleTexinfos.size(); i++)
+			{
+				BSPTEXTUREINFO& info = map->texinfos[scaleTexinfos[i].texinfoIdx];
+				scaleTexinfos[i].oldShiftS = info.shiftS;
+				scaleTexinfos[i].oldShiftT = info.shiftT;
+				scaleTexinfos[i].oldS = info.vS;
+				scaleTexinfos[i].oldT = info.vT;
+			}
+		}
+
+		gui->reloadLimits();
 	}
 }
 
@@ -2100,7 +2082,6 @@ void Renderer::globalShortcutControls()
 
 void Renderer::pickObject()
 {
-	pickCount++;
 	Bsp* map = SelectedMap;
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (!map)
@@ -2147,6 +2128,7 @@ void Renderer::pickObject()
 			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], false);
 		}
 		map->selectModelEnt();
+		pickCount++;
 		return;
 	}
 
@@ -2170,6 +2152,7 @@ void Renderer::pickObject()
 
 		if (tmpPickInfo.selectedFaces.size() > 0)
 		{
+			pickCount++;
 			map->getBspRender()->highlightFace(tmpPickInfo.selectedFaces[0], true);
 			pickInfo.selectedFaces.push_back(tmpPickInfo.selectedFaces[0]);
 		}
@@ -2204,7 +2187,10 @@ void Renderer::pickObject()
 		updateEntConnections();
 
 		if (curLeftMouse == GLFW_PRESS && oldLeftMouse == GLFW_RELEASE)
+		{
+			pickCount++;
 			selectEnt(SelectedMap, tmpPickInfo.GetSelectedEnt(), anyCtrlPressed);
+		}
 	}
 }
 
@@ -2226,12 +2212,13 @@ bool Renderer::transformAxisControls()
 		return false;
 	}
 
+	Entity* ent = map->ents[entIdx];
+	int modelIdx = ent->getBspModelIdx();
 	// axis handle dragging
 	if (showDragAxes && !movingEnt && hoverAxis != -1 && draggingAxis == -1)
 	{
 		draggingAxis = hoverAxis;
-
-		Entity* ent = map->ents[entIdx];
+		;
 
 		axisDragEntOriginStart = getEntOrigin(map, ent);
 		axisDragStart = getAxisDragPoint(axisDragEntOriginStart);
@@ -2239,8 +2226,6 @@ bool Renderer::transformAxisControls()
 
 	if (showDragAxes && !movingEnt && draggingAxis >= 0)
 	{
-		Entity* ent = map->ents[entIdx];
-
 		activeAxes.model[draggingAxis].setColor(activeAxes.hoverColor[draggingAxis]);
 
 		vec3 dragPoint = getAxisDragPoint(axisDragEntOriginStart);
@@ -2278,10 +2263,16 @@ bool Renderer::transformAxisControls()
 				vertPickCount++;
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
+					map->regenerate_clipnodes(modelIdx, -1);
 					if (invalidSolid)
-						revertInvalidSolid(map, entIdx);
+						revertInvalidSolid(map, modelIdx);
 					else
+					{
 						map->getBspRender()->pushModelUndoState("Move verts", EDIT_MODEL_LUMPS);
+					}
+					map->getBspRender()->refreshModel(modelIdx);
+					map->getBspRender()->refreshModelClipnodes(modelIdx);
+					applyTransform(map, true);
 				}
 				else
 					moveSelectedVerts(delta);
@@ -2326,9 +2317,13 @@ bool Renderer::transformAxisControls()
 					if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 					{
 						if (invalidSolid)
-							revertInvalidSolid(map, entIdx);
+							revertInvalidSolid(map, modelIdx);
 						else
 							map->getBspRender()->pushModelUndoState("Move Model", EDIT_MODEL_LUMPS | ENTITIES);
+						map->getBspRender()->refreshEnt(entIdx);
+						map->getBspRender()->refreshModel(modelIdx);
+						map->getBspRender()->refreshModelClipnodes(modelIdx);
+						applyTransform(map, true);
 					}
 					else
 					{
@@ -2401,10 +2396,18 @@ bool Renderer::transformAxisControls()
 				vertPickCount++;
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
 				{
+					map->regenerate_clipnodes(modelIdx, -1);
 					if (invalidSolid)
-						revertInvalidSolid(map, entIdx);
+					{
+						revertInvalidSolid(map, modelIdx);
+					}
 					else
+					{
 						map->getBspRender()->pushModelUndoState("Scale Model", EDIT_MODEL_LUMPS);
+					}
+					map->getBspRender()->refreshModel(modelIdx);
+					map->getBspRender()->refreshModelClipnodes(modelIdx);
+					applyTransform(map, true);
 				}
 				else
 				{
@@ -3062,11 +3065,16 @@ void Renderer::updateModelVerts()
 		delete[] modelVertCubes;
 		modelVertBuff = NULL;
 		modelVertCubes = NULL;
-		modelOriginBuff = NULL;
 		scaleTexinfos.clear();
 		modelEdges.clear();
 		modelVerts.clear();
 		modelFaceVerts.clear();
+	}
+
+	if (modelOriginBuff)
+	{
+		delete modelOriginBuff;
+		modelOriginBuff = NULL;
 	}
 
 	if (modelIdx < 0)
@@ -3076,10 +3084,7 @@ void Renderer::updateModelVerts()
 		return;
 	}
 
-	if (modelOriginBuff)
-	{
-		delete modelOriginBuff;
-	}
+	map->getBspRender()->refreshModel(modelIdx);
 
 	modelOriginBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &modelOriginCube, 6 * 6, GL_TRIANGLES);
 
@@ -3322,7 +3327,8 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 		BSPPLANE& plane = map->planes[iPlane];
 		if (verts.size() < 2)
 		{
-			logf("Plane with less than 2 verts!?\n"); // hl_c00 pipe in green water place
+			if (g_settings.verboseLogs)
+				logf("Plane with less than 2 verts!?\n"); // hl_c00 pipe in green water place
 			return false;
 		}
 
@@ -3348,14 +3354,15 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 		vec3 faceNormal = plane.vNormal;
 		vec3 planeDir = ((plane.vNormal * plane.fDist) - centroid).normalize();
 		face.planeSide = 1;
-		if (dotProduct(planeDir, plane.vNormal) > 0)
+
+		if (dotProduct(planeDir, plane.vNormal) > EPSILON)
 		{
 			faceNormal = faceNormal.invert();
 			face.planeSide = 0;
 		}
 
 		// reverse vert order if not CCW when viewed from outside the solid
-		if (dotProduct(orderedVertsNormal, faceNormal) < 0)
+		if (dotProduct(orderedVertsNormal, faceNormal) < EPSILON)
 		{
 			reverse(orderedVerts.begin(), orderedVerts.end());
 		}
@@ -3364,6 +3371,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 		{
 			face.verts.push_back(orderedVerts[i]);
 		}
+
 		face.iTextureInfo = 1; // TODO
 		outSolid.faces.push_back(face);
 
@@ -3382,7 +3390,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 				int iPlane2 = it2->first;
 				BSPPLANE& p = map->planes[iPlane2];
 				float dist = dotProduct(midPoint, p.vNormal) - p.fDist;
-				if (abs(dist) < EPSILON)
+				if (abs(dist) < 0.035)
 				{
 					edge.planes[planeCount % 2] = iPlane2;
 					planeCount++;
@@ -3390,7 +3398,8 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			}
 			if (planeCount != 2)
 			{
-				logf("ERROR: Edge connected to %d planes!\n", planeCount);
+				if (g_settings.verboseLogs)
+					logf("ERROR: Edge connected to %d planes!\n", planeCount);
 				return false;
 			}
 

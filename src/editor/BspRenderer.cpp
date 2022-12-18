@@ -285,11 +285,11 @@ void BspRenderer::addClipnodeModel(int modelIdx)
 	if (modelIdx < 0)
 		return;
 	RenderClipnodes* newRenderClipnodes = new RenderClipnodes[numRenderClipnodes + 1];
-	newRenderClipnodes[numRenderClipnodes] = RenderClipnodes();
 	for (int i = 0; i < numRenderClipnodes; i++)
 	{
 		newRenderClipnodes[i] = renderClipnodes[i];
 	}
+	memset(&newRenderClipnodes[numRenderClipnodes],0,sizeof(RenderClipnodes));
 	numRenderClipnodes++;
 	renderClipnodes = newRenderClipnodes;
 
@@ -1228,6 +1228,8 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 
 void BspRenderer::refreshEnt(int entIdx)
 {
+	if (entIdx < 0)
+		return;
 	Entity* ent = map->ents[entIdx];
 	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
