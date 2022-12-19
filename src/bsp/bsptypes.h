@@ -355,7 +355,9 @@ struct COLOR4
 	COLOR4() : r(0), g(0), b(0), a(0){};
 	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a)
 	{}
-	COLOR4(COLOR3 c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
+	COLOR4(const COLOR3 & c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
+	{}
+	COLOR4(const COLOR3 & c) : r(c.r), g(c.g), b(c.b), a(255)
 	{}
 };
 

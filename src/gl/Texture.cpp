@@ -72,9 +72,26 @@ void Texture::upload(int _format, bool lightmap)
 		
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, this->nearFilter);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, this->nearFilter);
+
 		if (texName[0] == '{')
 		{
-			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+			if (_format == GL_RGB)
+			{
+				_format = GL_RGBA;
+				COLOR3* rgbData = (COLOR3 *)data;
+				int pixelCount = width * height;
+				COLOR4* rgbaData = new COLOR4[pixelCount];
+				for (int i = 0; i < pixelCount; i++)
+				{
+					rgbaData[i] = rgbData[i];
+					if (rgbaData[i].r == 0 && rgbaData[i].g == 0 && rgbaData[i].b == 255)
+					{
+						rgbaData[i] = COLOR4(0, 0, 0, 0);
+					}
+				}
+				delete [] data;
+				data = (unsigned char*)rgbaData;
+			}
 		}
 	}
 
