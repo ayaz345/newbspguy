@@ -5693,20 +5693,26 @@ void Gui::drawEntityReport()
 
 			ImGuiListClipper clipper;
 			clipper.Begin((int)visibleEnts.size());
-
+			static bool needhover = true;
 			while (clipper.Step())
 			{
 				for (int line = clipper.DisplayStart; line < clipper.DisplayEnd && line < visibleEnts.size() && visibleEnts[line] < map->ents.size(); line++)
 				{
 					int i = line;
-					int entIdx = visibleEnts[i];
-					Entity* ent = map->ents[entIdx];
+					Entity* ent = map->ents[visibleEnts[i]];
 					std::string cname = "UNKNOWN_CLASSNAME";
 
 					if (ent && ent->hasKey("classname") && !ent->keyvalues["classname"].empty())
 					{
 						cname = ent->keyvalues["classname"];
 					}
+					bool isHovered = false;
+					if (ImGui::IsItemHovered() && needhover)
+					{
+						isHovered = true;
+					}
+					if (g_app->curRightMouse == GLFW_RELEASE)
+						needhover = true;
 
 					bool isSelectableSelcted = false;
 					if (!app->fgd || !app->fgd->getFgdClass(cname) || ent->hide)
@@ -5720,7 +5726,7 @@ void Gui::drawEntityReport()
 							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 255, 255, 255));
 						}
 						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
-						if (ImGui::IsItemHovered())
+						if (isHovered)
 						{
 							ImGui::BeginTooltip();
 							if (!app->fgd || !app->fgd->getFgdClass(cname))
@@ -5737,8 +5743,16 @@ void Gui::drawEntityReport()
 					}
 					else
 						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
-					if (isSelectableSelcted)
+
+					bool isForceOpen = (isHovered && g_app->oldRightMouse == GLFW_RELEASE && g_app->curRightMouse == GLFW_PRESS);
+
+					if (isSelectableSelcted || isForceOpen)
 					{
+						if (isForceOpen)
+						{
+							i--;
+							needhover = false;
+						}
 						if (expected_key_mod_flags & ImGuiModFlags_Ctrl)
 						{
 							selectedItems[i] = !selectedItems[i];
@@ -5783,17 +5797,18 @@ void Gui::drawEntityReport()
 							selectedItems[i] = true;
 							lastSelect = i;
 							app->pickInfo.selectedEnts.clear();
-							app->selectEnt(map, entIdx, true);
+							app->selectEnt(map, visibleEnts[i], true);
 							if (ImGui::IsMouseDoubleClicked(0) || app->pressed[GLFW_KEY_SPACE])
 							{
-								app->goToEnt(map, entIdx);
+								app->goToEnt(map, visibleEnts[i]);
 							}
 						}
-
-					}
-					if (selectedItems[i] && ImGui::IsItemHovered() && ImGui::IsMouseReleased(1))
-					{
-						ImGui::OpenPopup("ent_context");
+						if (isForceOpen)
+						{
+							i--;
+							needhover = false;
+							ImGui::OpenPopup("ent_context");
+						}
 					}
 				}
 			}
