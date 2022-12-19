@@ -795,7 +795,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 
 		// add face to a render group (faces that share that same textures and opacity flag)
-		bool isTransparent = opacity < 1.0f;
+		bool isTransparent = opacity < 1.0f || tex->szName[0] == '{';
 		int groupIdx = -1;
 		for (int k = 0; k < renderGroups.size(); k++)
 		{
