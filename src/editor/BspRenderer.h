@@ -53,7 +53,7 @@ struct FaceMath
 
 struct RenderEnt
 {
-	mat4x4 modelMat; // model matrix for rendering with angles
+	mat4x4 modelMatAngles; // model matrix for rendering with angles
 	mat4x4 modelMatOrigin; // model matrix for render origin
 	vec3 offset; // vertex transformations for picking
 	vec3 angles; // support angles
@@ -266,4 +266,6 @@ public:
 	void calcUndoMemoryUsage();
 	void updateEntityState(int entIdx);
 	void saveLumpState(int targetLumps, bool deleteOldState);
+
+	void SetRenderMode(RenderEnt* ent);
 };

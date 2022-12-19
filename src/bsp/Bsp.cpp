@@ -4727,7 +4727,7 @@ int Bsp::get_ent_from_model(int modelIdx)
 	{
 		for (int i = 0; i < ents.size(); i++)
 		{
-			if (ents[i]->hasKey("classname") && ents[i]->keyvalues["classname"] == "worldspawn")
+			if (ents[i]->isWorldSpawn())
 				return i;
 		}
 	}

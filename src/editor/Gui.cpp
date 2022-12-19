@@ -2919,13 +2919,56 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 					{
 						KeyvalueChoice& choice = keyvalue.choices[k];
 						bool selected = choice.svalue == value || (value.empty() && choice.svalue == keyvalue.defaultValue);
-
+						bool needrefreshmodel = false;
 						if (ImGui::Selectable(choice.name.c_str(), selected))
 						{
+							if (key == "renderamt")
+							{
+								if (ent->hasKey("renderamt") && ent->keyvalues["renderamt"] != choice.svalue)
+								{
+									needrefreshmodel = true;
+								}
+							}
+							if (key == "rendermode")
+							{
+								if (ent->hasKey("rendermode") && ent->keyvalues["rendermode"] != choice.svalue)
+								{
+									needrefreshmodel = true;
+								}
+							}
+							if (key == "renderfx")
+							{
+								if (ent->hasKey("renderfx") && ent->keyvalues["renderfx"] != choice.svalue)
+								{
+									needrefreshmodel = true;
+								}
+							}
+							if (key == "rendercolor")
+							{
+								if (ent->hasKey("rendercolor") && ent->keyvalues["rendercolor"] != choice.svalue)
+								{
+									needrefreshmodel = true;
+								}
+							}
+
 							ent->setOrAddKeyvalue(key, choice.svalue);
 							map->getBspRender()->refreshEnt(entIdx);
-							app->updateEntConnections();
 							map->getBspRender()->pushEntityUndoState("Edit Keyvalue", entIdx);
+
+							inputData->bspRenderer->refreshEnt(inputData->entIdx);
+							pickCount++;
+							vertPickCount++;
+
+							if (needrefreshmodel)
+							{
+								if (map && ent->getBspModelIdx() > 0)
+								{
+									map->getBspRender()->refreshModel(ent->getBspModelIdx());
+									map->getBspRender()->preRenderEnts();
+									g_app->updateEntConnections();
+								}
+							}
+							g_app->updateEntConnections();
 						}
 					}
 
@@ -2957,6 +3000,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 						std::string newVal = data->Buf;
 
 						bool needReloadModel = false;
+						bool needRefreshModel = false;
 
 						if (!g_app->reloading && !g_app->isModelsReloading && linputData->key == "model")
 						{
@@ -2965,6 +3009,36 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 								needReloadModel = true;
 							}
 						}
+
+						if (linputData->key == "renderamt")
+						{
+							if (ent->hasKey("renderamt") && ent->keyvalues["renderamt"] != newVal)
+							{
+								needRefreshModel = true;
+							}
+						}
+						if (linputData->key == "rendermode")
+						{
+							if (ent->hasKey("rendermode") && ent->keyvalues["rendermode"] != newVal)
+							{
+								needRefreshModel = true;
+							}
+						}
+						if (linputData->key == "renderfx")
+						{
+							if (ent->hasKey("renderfx") && ent->keyvalues["renderfx"] != newVal)
+							{
+								needRefreshModel = true;
+							}
+						}
+						if (linputData->key == "rendercolor")
+						{
+							if (ent->hasKey("rendercolor") && ent->keyvalues["rendercolor"] != newVal)
+							{
+								needRefreshModel = true;
+							}
+						}
+
 
 						if (!strlen(newVal))
 						{
@@ -2977,8 +3051,21 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 
 						linputData->bspRenderer->refreshEnt(linputData->entIdx);
 
+						pickCount++;
+						vertPickCount++;
 						if (needReloadModel)
 							g_app->reloadBspModels();
+						
+						if (needRefreshModel)
+						{
+							Bsp* map = g_app->getSelectedMap();
+							if (map && ent->getBspModelIdx() > 0)
+							{
+								map->getBspRender()->refreshModel(ent->getBspModelIdx());
+								map->getBspRender()->preRenderEnts();
+							}
+						}
+
 						g_app->updateEntConnections();
 
 						return 1;
@@ -3151,16 +3238,70 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 			if (ent->keyvalues[key] != data->Buf)
 			{
-				ent->setOrAddKeyvalue(key, data->Buf);
-				inputData->bspRenderer->refreshEnt(inputData->entIdx);
+				bool needrefreshmodel = false;
 				if (key == "model")
 				{
-					g_app->reloadBspModels();
-					inputData->bspRenderer->preRenderEnts();
-					if (g_app->SelectedMap)
-						g_app->SelectedMap->getBspRender()->saveLumpState(0xffffffff, false);
+					if (ent->hasKey("model") && ent->keyvalues["model"] != data->Buf)
+					{
+						ent->setOrAddKeyvalue(key, data->Buf);
+						inputData->bspRenderer->refreshEnt(inputData->entIdx);
+						pickCount++;
+						vertPickCount++;
+						g_app->updateEntConnections();
+						g_app->reloadBspModels();
+						inputData->bspRenderer->preRenderEnts();
+						if (g_app->SelectedMap)
+							g_app->SelectedMap->getBspRender()->saveLumpState(0xffffffff, false);
+						return 1;
+					}
 				}
+				if (key == "renderamt")
+				{
+					if (ent->hasKey("renderamt") && ent->keyvalues["renderamt"] != data->Buf)
+					{
+						needrefreshmodel = true;
+					}
+				}
+				if (key == "rendermode")
+				{
+					if (ent->hasKey("rendermode") && ent->keyvalues["rendermode"] != data->Buf)
+					{
+						needrefreshmodel = true;
+					}
+				}
+				if (key == "renderfx")
+				{
+					if (ent->hasKey("renderfx") && ent->keyvalues["renderfx"] != data->Buf)
+					{
+						needrefreshmodel = true;
+					}
+				}
+				if (key == "rendercolor")
+				{
+					if (ent->hasKey("rendercolor") && ent->keyvalues["rendercolor"] != data->Buf)
+					{
+						needrefreshmodel = true;
+					}
+				}
+
+				ent->setOrAddKeyvalue(key, data->Buf);
+				inputData->bspRenderer->refreshEnt(inputData->entIdx);
+				pickCount++;
+				vertPickCount++;
 				g_app->updateEntConnections();
+
+				if (needrefreshmodel)
+				{
+					Bsp* map = g_app->getSelectedMap();
+					if (map && ent->getBspModelIdx() > 0)
+					{
+						map->getBspRender()->refreshModel(ent->getBspModelIdx());
+						map->getBspRender()->preRenderEnts();
+						g_app->updateEntConnections();
+						return 1;
+					}
+				}
+
 			}
 
 			return 1;

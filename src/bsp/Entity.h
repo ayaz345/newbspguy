@@ -14,15 +14,27 @@ public:
 	std::vector<std::string> cachedTargets;
 	bool targetsCached = false;
 	bool hide = false;
-	Entity(void) = default;
+	Entity(void)
+	{
+		cachedModelIdx = -2;
+		targetsCached = false;
+		rendermode = kRenderNormal;
+		renderamt = 255;
+		renderfx = kRenderFxNone;
+		rendercolor = vec3(255, 255, 255);
+	}
 	Entity(const std::string& classname);
 	~Entity(void)
 	{
 		cachedTargets.clear();
 		keyOrder.clear();
 		keyvalues.clear();
-		cachedModelIdx = 0;
+		cachedModelIdx = -2;
 		targetsCached = false;
+		rendermode = kRenderNormal;
+		renderamt = 255;
+		renderfx = kRenderFxNone;
+		rendercolor = vec3(255, 255, 255);
 	}
 
 	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
@@ -51,6 +63,13 @@ public:
 
 	void renameTargetnameValues(const std::string& oldTargetname, const std::string& newTargetname);
 
+	void updateRenderModes();
+
 	size_t getMemoryUsage(); // aproximate
+
+	int rendermode = kRenderNormal;
+	float renderamt = 255;
+	int renderfx = kRenderFxNone;
+	vec3 rendercolor = vec3(255, 255, 255);
 };
 

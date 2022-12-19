@@ -96,7 +96,6 @@ namespace Shaders
 		"	fColor = vColor;\n"
 		"}\n";
 
-
 	const char* g_shader_multitexture_fragment =
 		"varying vec2 fTex;\n"
 		"varying vec3 fLightmapTex0;\n"
@@ -113,14 +112,31 @@ namespace Shaders
 
 		"void main()\n"
 		"{\n"
+		"	vec3 color = texture2D(sTex, fTex).rgb;\n"
+		"	vec4 fcolor = fColor.rgba;\n"
+		"	if (fcolor.g == 5.0)\n"
+		"	{\n"
+		"		if (color.b == 1.0 && color.rg == vec2(0.0,0.0))\n"
+		"		{\n"
+		"			gl_FragColor = vec4(0.0, 0.0, 0.0, 0.0); \n"
+		"			return;\n"
+		"		}\n"
+		"	}\n"
+		"	if (fcolor.g == 6.0)\n"
+		"	{\n"
+		"		color.rgb = color.rgb * fcolor.a;\n"
+		"	}\n"
+		"   if (fcolor.g > 1.0)\n"
+		"	{\n"
+		"		fcolor.g = 1.0;"
+		"	}\n"
 		"	vec3 lightmap = texture2D(sLightmapTex0, fLightmapTex0.xy).rgb * fLightmapTex0.z;\n"
 		"	lightmap += texture2D(sLightmapTex1, fLightmapTex1.xy).rgb * fLightmapTex1.z;\n"
 		"	lightmap += texture2D(sLightmapTex2, fLightmapTex2.xy).rgb * fLightmapTex2.z;\n"
 		"	lightmap += texture2D(sLightmapTex3, fLightmapTex3.xy).rgb * fLightmapTex3.z;\n"
-		"	vec3 color = texture2D(sTex, fTex).rgb * lightmap * fColor.rgb;\n"
-
+		"	color = color * lightmap * fcolor.rgb; \n"
 		"	float gamma = 1.5;\n"
-		"	gl_FragColor = vec4(pow(color, vec3(1.0/gamma)), fColor.a);\n"
+		"	gl_FragColor = vec4(pow(color, vec3(1.0/gamma)), fcolor.a);\n"
 		"}\n";
 
 	const char* g_shader_fullbright_vertex =
@@ -153,6 +169,11 @@ namespace Shaders
 
 		"void main()\n"
 		"{\n"
-		"	gl_FragColor = texture2D(sTex, fTex) * fColor;\n"
+		"	vec4 fcolor = fColor;\n"
+		"   if (fcolor.g > 1.0)\n"
+		"	{\n"
+		"		fcolor.g = 1.0;"
+		"	}\n"
+		"	gl_FragColor = texture2D(sTex, fTex) * fcolor;\n"
 		"}\n";
 }

@@ -177,7 +177,7 @@ void VertexBuffer::upload()
 	if (!shaderProgram)
 		return;
 	shaderProgram->bind();
-	bindAttributes();
+	bindAttributes(true);
 
 	if (vboId == (GLuint)-1)
 		glGenBuffers(1, &vboId);

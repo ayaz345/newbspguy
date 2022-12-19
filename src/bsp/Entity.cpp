@@ -6,6 +6,12 @@
 
 Entity::Entity(const std::string& classname)
 {
+	cachedModelIdx = -2;
+	targetsCached = false;
+	rendermode = kRenderNormal;
+	renderamt = 255;
+	renderfx = kRenderFxNone;
+	rendercolor = vec3(255, 255, 255);
 	addKeyvalue("classname", classname);
 }
 
@@ -13,6 +19,7 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 {
 	if (!strlen(key))
 		return;
+
 	int dup = 1;
 	if (keyvalues.find(key) == keyvalues.end())
 	{
@@ -55,6 +62,8 @@ void Entity::addKeyvalue(const std::string key, const std::string value, bool mu
 
 	cachedModelIdx = -2;
 	targetsCached = false;
+
+	updateRenderModes();
 }
 
 void Entity::setOrAddKeyvalue(const std::string key, const std::string value)
@@ -74,7 +83,8 @@ void Entity::removeKeyvalue(const std::string key)
 	if (keyvalues.find(key) != keyvalues.end())
 		keyvalues.erase(key);
 	cachedModelIdx = -2;
-	targetsCached = false;
+	targetsCached = false; 
+	updateRenderModes();
 }
 
 bool Entity::renameKey(int idx, const std::string& newName)
@@ -96,6 +106,7 @@ bool Entity::renameKey(int idx, const std::string& newName)
 	keyOrder[idx] = newName;
 	cachedModelIdx = -2;
 	targetsCached = false;
+	updateRenderModes();
 	return true;
 }
 
@@ -132,7 +143,7 @@ int Entity::getBspModelIdx()
 	{
 		return cachedModelIdx;
 	}
-
+	
 	if (!hasKey("model"))
 	{
 		cachedModelIdx = -1;
@@ -511,4 +522,30 @@ size_t Entity::getMemoryUsage()
 	}
 
 	return size;
+}
+
+void Entity::updateRenderModes()
+{
+	rendermode = kRenderNormal;
+	if (hasKey("rendermode"))
+	{
+		rendermode = atoi(keyvalues["rendermode"].c_str());
+	}
+	renderamt = 255;
+	if (hasKey("renderamt"))
+	{
+		renderamt = atoi(keyvalues["renderamt"].c_str());
+	}
+	renderfx = kRenderFxNone;
+	if (hasKey("renderfx"))
+	{
+		renderfx = atoi(keyvalues["renderfx"].c_str());
+	}
+	rendercolor = vec3(1.0, 1.0, 1.0);
+	if (hasKey("rendercolor"))
+	{
+		vec3 color = parseVector(keyvalues["rendercolor"]);
+		rendercolor = vec3(color[0] / 255.f, color[1] / 255.f, color[2] / 255.f);
+	}
+
 }

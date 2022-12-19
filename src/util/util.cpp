@@ -341,10 +341,9 @@ vec3 parseVector(const std::string& s)
 	vec3 v;
 	std::vector<std::string> parts = splitString(s, " ");
 
-	if (parts.size() != 3)
+	while (parts.size()< 3)
 	{
-		logf("Not enough coordinates in std::vector %s. Size:%u\n", s.c_str(), (unsigned int)parts.size());
-		return v;
+		parts.push_back("0");
 	}
 
 	v.x = (float)atof(parts[0].c_str());
