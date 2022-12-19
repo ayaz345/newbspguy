@@ -877,7 +877,7 @@ void Gui::draw3dContextMenus()
 				}
 			}
 
-			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "G"))
+			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "ALT+G"))
 			{
 				if (!app->movingEnt)
 					app->grabEnt();
@@ -1665,7 +1665,7 @@ void Gui::drawMenuBar()
 			}
 		}
 
-		if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "G", false, nonWorldspawnEntSelected))
+		if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "ALT+G", false, nonWorldspawnEntSelected))
 		{
 			if (!app->movingEnt)
 				app->grabEnt();
@@ -3525,6 +3525,7 @@ void Gui::drawGOTOWidget()
 
 	if (ImGui::Begin("GO TO MENU", &showGOTOWidget, 0))
 	{
+		entid = g_app->pickInfo.GetSelectedEnt();
 		ImGuiStyle& style = ImGui::GetStyle();
 		float padding = style.WindowPadding.x * 2 + style.FramePadding.x * 2;
 		float inputWidth = (ImGui::GetWindowWidth() - (padding + style.ScrollbarSize)) * 0.33f;
