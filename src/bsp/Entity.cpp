@@ -9,7 +9,7 @@ Entity::Entity(const std::string& classname)
 	cachedModelIdx = -2;
 	targetsCached = false;
 	rendermode = kRenderNormal;
-	renderamt = 255;
+	renderamt = 0;
 	renderfx = kRenderFxNone;
 	rendercolor = vec3(255, 255, 255);
 	addKeyvalue("classname", classname);
@@ -531,7 +531,7 @@ void Entity::updateRenderModes()
 	{
 		rendermode = atoi(keyvalues["rendermode"].c_str());
 	}
-	renderamt = 255;
+	renderamt = 0;
 	if (hasKey("renderamt"))
 	{
 		renderamt = atoi(keyvalues["renderamt"].c_str());

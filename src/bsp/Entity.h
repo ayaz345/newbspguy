@@ -19,7 +19,7 @@ public:
 		cachedModelIdx = -2;
 		targetsCached = false;
 		rendermode = kRenderNormal;
-		renderamt = 255;
+		renderamt = 0;
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(255, 255, 255);
 	}
@@ -32,7 +32,7 @@ public:
 		cachedModelIdx = -2;
 		targetsCached = false;
 		rendermode = kRenderNormal;
-		renderamt = 255;
+		renderamt = 0;
 		renderfx = kRenderFxNone;
 		rendercolor = vec3(255, 255, 255);
 	}
@@ -68,7 +68,7 @@ public:
 	size_t getMemoryUsage(); // aproximate
 
 	int rendermode = kRenderNormal;
-	float renderamt = 255;
+	float renderamt = 0;
 	int renderfx = kRenderFxNone;
 	vec3 rendercolor = vec3(255, 255, 255);
 };
