@@ -678,6 +678,19 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		float opacity = isOpacity ? 0.50f : 1.0f;
 
+
+		if (ent)
+		{
+			if (ent->rendermode != kRenderNormal)
+			{
+				opacity = ent->renderamt / 255.f;
+				if (opacity > 0.8f && isOpacity)
+					opacity = 0.8f;
+				else if (opacity < 0.2f)
+					opacity = 0.2f;
+			}
+		}
+
 		for (int e = 0; e < face.nEdges; e++)
 		{
 			int edgeIdx = map->surfedges[face.iFirstEdge + e];
@@ -690,22 +703,16 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			verts[e].z = -vert.y;
 
 			verts[e].r = 1.0f;
-			verts[e].g = 1.0f;
-			verts[e].b = 1.0f;
-			verts[e].a = opacity;
-
 			if (ent)
 			{
-				if (ent->rendermode != kRenderNormal)
-				{
-					verts[e].g = 1.0f + abs((float)ent->rendermode);
-					verts[e].a = ent->renderamt / 255.f;
-					if (verts[e].a > 0.8f && isOpacity)
-						verts[e].a = 0.8f;
-					else if (verts[e].a < 0.2f)
-						verts[e].a = 0.2f;
-				}
+				verts[e].g = 1.0f + abs((float)ent->rendermode);
 			}
+			else
+			{
+				verts[e].g = 1.0f;
+			}
+			verts[e].b = 1.0f;
+			verts[e].a = opacity;
 
 			// texture coords
 			float tw = 1.0f / (float)texWidth;
