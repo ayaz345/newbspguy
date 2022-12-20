@@ -2716,24 +2716,22 @@ void Gui::drawKeyvalueEditor()
 				ImGui::Text("Change Class");
 				ImGui::Separator();
 
-				std::vector<FgdGroup>* targetGroup = &app->fgd->pointEntGroups;
+				std::vector<FgdGroup> targetGroup = app->fgd->pointEntGroups;
 
 				if (fgdClass)
 				{
 					if (fgdClass->classType == FGD_CLASS_TYPES::FGD_CLASS_SOLID)
 					{
-						targetGroup = &app->fgd->solidEntGroups;
+						targetGroup = app->fgd->solidEntGroups;
 					}
 				}
 				else if (ent->hasKey("model") && ent->keyvalues["model"].starts_with('*'))
 				{
-					targetGroup = &app->fgd->solidEntGroups;
+					targetGroup = app->fgd->solidEntGroups;
 				}
 
-				for (int i = 0; i < targetGroup->size(); i++)
+				for (FgdGroup & group : targetGroup)
 				{
-					FgdGroup& group = targetGroup->at(i);
-
 					if (ImGui::BeginMenu(group.groupName.c_str()))
 					{
 						for (int k = 0; k < group.classes.size(); k++)

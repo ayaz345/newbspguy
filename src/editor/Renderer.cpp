@@ -497,7 +497,7 @@ void AppSettings::load()
 		{
 			transparentEntities.push_back(val);
 		}
-	}	
+	}
 
 	if (g_settings.windowY == -32000 &&
 		g_settings.windowX == -32000)
@@ -1346,7 +1346,7 @@ void Renderer::loadSettings()
 
 void Renderer::loadFgds()
 {
-	Fgd* mergedFgd = new Fgd();
+	Fgd* mergedFgd = NULL;
 	for (int i = 0; i < g_settings.fgdPaths.size(); i++)
 	{
 		if (!g_settings.fgdPaths[i].enabled)
@@ -1369,9 +1369,15 @@ void Renderer::loadFgds()
 				}
 			}
 		}
-
-		mergedFgd->merge(tmp);
-		delete tmp;
+		if (mergedFgd == NULL)
+		{
+			mergedFgd = tmp;
+		}
+		else
+		{
+			mergedFgd->merge(tmp);
+			delete tmp;
+		}
 	}
 
 	swapPointEntRenderer = new PointEntRenderer(mergedFgd, colorShader);

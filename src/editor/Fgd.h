@@ -114,7 +114,10 @@ public:
 
 
 	Fgd(std::string path);
-	Fgd() = default;
+	Fgd()
+	{
+
+	}
 	~Fgd();
 
 	bool parse();

@@ -39,10 +39,17 @@ FgdClass* Fgd::getFgdClass(std::string cname)
 
 void Fgd::merge(Fgd* other)
 {
-	for (auto it = other->classMap.begin(); it != other->classMap.end(); ++it)
+	if (path.empty() && other->path.size())
 	{
-		std::string className = it->first;
-		FgdClass* fgdClass = it->second;
+		this->path = other->path;
+		this->name = stripExt(basename(path));
+		this->lineNum = 0;
+	}
+
+	for (auto it : other->classMap)
+	{
+		std::string className = it.first;
+		FgdClass* fgdClass = it.second;
 
 		if (classMap.find(className) != classMap.end())
 		{
@@ -575,23 +582,23 @@ void Fgd::createEntGroups()
 
 		bool isPointEnt = classes[i]->classType == FGD_CLASS_POINT;
 
-		std::set<std::string>* targetSet = isPointEnt ? &addedPointGroups : &addedSolidGroups;
-		std::vector<FgdGroup>* targetGroup = isPointEnt ? &pointEntGroups : &solidEntGroups;
+		std::set<std::string> & targetSet = isPointEnt ? addedPointGroups : addedSolidGroups;
+		std::vector<FgdGroup> & targetGroup = isPointEnt ? pointEntGroups : solidEntGroups;
 
-		if (targetSet->find(groupName) == targetSet->end())
+		if (targetSet.find(groupName) == targetSet.end())
 		{
 			FgdGroup newGroup;
 			newGroup.groupName = groupName;
 
-			targetGroup->push_back(newGroup);
-			targetSet->insert(groupName);
+			targetGroup.push_back(newGroup);
+			targetSet.insert(groupName);
 		}
 
-		for (int k = 0; k < targetGroup->size(); k++)
+		for (int k = 0; k < targetGroup.size(); k++)
 		{
-			if (targetGroup->at(k).groupName == groupName)
+			if (targetGroup[k].groupName == groupName)
 			{
-				targetGroup->at(k).classes.push_back(classes[i]);
+				targetGroup[k].classes.push_back(classes[i]);
 				break;
 			}
 		}
