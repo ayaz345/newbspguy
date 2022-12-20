@@ -5573,6 +5573,7 @@ void Gui::drawEntityReport()
 			static bool partialMatches = true;
 			static std::vector<int> visibleEnts;
 			static std::vector<bool> selectedItems;
+			static bool selectAllItems = false;
 
 			const ImGuiKeyChord expected_key_mod_flags = imgui_io->KeyMods;
 
@@ -5683,8 +5684,20 @@ void Gui::drawEntityReport()
 				selectedItems.resize(visibleEnts.size());
 				for (int k = 0; k < selectedItems.size(); k++)
 				{
-					selectedItems[k] = app->pickInfo.IsSelectedEnt(visibleEnts[k]);
+					if (selectAllItems)
+					{
+						selectedItems[k] = true;
+						if (!app->pickInfo.IsSelectedEnt(visibleEnts[k]))
+						{
+							app->selectEnt(map, visibleEnts[k], true);
+						}
+					}
+					else
+					{
+						selectedItems[k] = app->pickInfo.IsSelectedEnt(visibleEnts[k]);
+					}
 				}
+				selectAllItems = false;
 			}
 
 			filterNeeded = false;
@@ -5699,6 +5712,7 @@ void Gui::drawEntityReport()
 					int i = line;
 					Entity* ent = map->ents[visibleEnts[i]];
 					std::string cname = "UNKNOWN_CLASSNAME";
+
 
 					if (ent && ent->hasKey("classname") && !ent->keyvalues["classname"].empty())
 					{
@@ -5806,6 +5820,14 @@ void Gui::drawEntityReport()
 							i--;
 							needhover = false;
 							ImGui::OpenPopup("ent_context");
+						}
+					}
+					if (isHovered)
+					{
+						if (!app->pressed[GLFW_KEY_A] && app->oldPressed[GLFW_KEY_A] && app->anyCtrlPressed)
+						{
+							selectAllItems = true;
+							filterNeeded = true;
 						}
 					}
 				}
@@ -5957,6 +5979,13 @@ void Gui::drawEntityReport()
 			if (ImGui::Checkbox("Partial Matching", &partialMatches))
 			{
 				filterNeeded = true;
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("GO TO"))
+			{
+				app->goToEnt(map,app->pickInfo.GetSelectedEnt());
 			}
 
 			ImGui::EndChild();
