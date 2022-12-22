@@ -319,7 +319,7 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 	map->update_ent_lump();
 
 	Bsp tmpMap = Bsp(map->bsp_path);
-	tmpMap.is_model = true;
+	tmpMap.is_bsp_model = true;
 
 	BSPMODEL tmpModel = map->models[id];
 
@@ -1074,6 +1074,13 @@ void Gui::drawMenuBar()
 					}
 				}
 			}
+			else if (pathlowercase.ends_with(".mdl"))
+			{
+				Bsp* tmpMap = new Bsp();
+				tmpMap->is_mdl_model = true;
+				tmpMap->mdl = new StudioModel(res.string());
+				app->addMap(tmpMap);
+			}
 			else
 			{
 				app->addMap(new Bsp(res.string()));
@@ -1096,10 +1103,10 @@ void Gui::drawMenuBar()
 		}
 		if (ImGui::BeginMenu("Open"))
 		{
-			if (ImGui::MenuItem("Map"))
+			if (ImGui::MenuItem("MAP"))
 			{
 				filterNeeded = true;
-				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select map path", "Map file (*.bsp){.bsp},Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
+				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select map path", "Map file (*.bsp){.bsp}", false, g_settings.lastdir);
 			}
 
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1109,10 +1116,23 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
+			if (ImGui::MenuItem("MDL"))
+			{
+				filterNeeded = true;
+				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select model path", "Model file (*.mdl){.mdl}", false, g_settings.lastdir);
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Open model in new Window");
+				ImGui::EndTooltip();
+			}
+
 			if (ImGui::MenuItem("Wad"))
 			{
 				filterNeeded = true;
-				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select wad path", "Wad file (*.wad){.wad},.*", false, g_settings.lastdir);
+				ifd::FileDialog::Instance().Open("MapOpenDialog", "Select wad path", "Wad file (*.wad){.wad}", false, g_settings.lastdir);
 			}
 
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1143,7 +1163,7 @@ void Gui::drawMenuBar()
 
 		if (ImGui::BeginMenu("Export", !app->isLoading))
 		{
-			if (ImGui::MenuItem("Entity file", NULL))
+			if ((map && !map->is_mdl_model) && ImGui::MenuItem("Entity file", NULL))
 			{
 				if (map)
 				{
@@ -1176,7 +1196,7 @@ void Gui::drawMenuBar()
 					logf("Select map first\n");
 				}
 			}
-			if (ImGui::MenuItem("All embedded textures to wad", NULL))
+			if ((map && !map->is_mdl_model) && ImGui::MenuItem("All embedded textures to wad", NULL))
 			{
 				if (map)
 				{
@@ -1202,54 +1222,60 @@ void Gui::drawMenuBar()
 			}
 			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]"))
 			{
-				if (ImGui::MenuItem("Scale 1x", NULL))
+				if (map && map->is_mdl_model)
 				{
-					if (map)
-					{
-						map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, 1);
-					}
-					else
-					{
-						logf("Select map first\n");
-					}
+					ImGui::MenuItem("MDL.obj", NULL, false, false);
 				}
-
-				for (int scale = 2; scale < 10; scale++, scale++)
+				else
 				{
-					std::string scaleitem = "UpScale x" + std::to_string(scale);
-					if (ImGui::MenuItem(scaleitem.c_str(), NULL))
+					if (ImGui::MenuItem("Scale 1x", NULL))
 					{
 						if (map)
 						{
-							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, scale);
+							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, 1);
 						}
 						else
 						{
 							logf("Select map first\n");
 						}
 					}
-				}
 
-				for (int scale = 16; scale > 0; scale--, scale--)
-				{
-					std::string scaleitem = "DownScale x" + std::to_string(scale);
-					if (ImGui::MenuItem(scaleitem.c_str(), NULL))
+					for (int scale = 2; scale < 10; scale++, scale++)
 					{
-						if (map)
+						std::string scaleitem = "UpScale x" + std::to_string(scale);
+						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
 						{
-							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, -scale);
+							if (map)
+							{
+								map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, scale);
+							}
+							else
+							{
+								logf("Select map first\n");
+							}
 						}
-						else
+					}
+
+					for (int scale = 16; scale > 0; scale--, scale--)
+					{
+						std::string scaleitem = "DownScale x" + std::to_string(scale);
+						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
 						{
-							logf("Select map first\n");
+							if (map)
+							{
+								map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, -scale);
+							}
+							else
+							{
+								logf("Select map first\n");
+							}
 						}
 					}
 				}
-
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL))
+			if ((map && !map->is_mdl_model) && ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL))
 			{
 				if (map)
 				{
@@ -1261,14 +1287,14 @@ void Gui::drawMenuBar()
 				}
 			}
 
-			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			if ((map && !map->is_mdl_model) && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Export map geometry without textures");
 				ImGui::EndTooltip();
 			}
 
-			if (ImGui::BeginMenu(".bsp MODEL with collision"))
+			if ((map && !map->is_mdl_model) && ImGui::BeginMenu(".bsp MODEL with collision"))
 			{
 				if (map)
 				{
@@ -1294,7 +1320,7 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
-			if (ImGui::BeginMenu("WAD"))
+			if ((map && !map->is_mdl_model) && ImGui::BeginMenu("WAD"))
 			{
 				std::string hash = "##1";
 				for (auto& wad : map->getBspRender()->wads)
@@ -1332,7 +1358,7 @@ void Gui::drawMenuBar()
 
 			ImGui::EndMenu();
 		}
-		if (ImGui::BeginMenu("Import", !app->isLoading))
+		if ((map && !map->is_mdl_model) && ImGui::BeginMenu("Import", !app->isLoading))
 		{
 			if (ImGui::MenuItem("BSP model(native)", NULL))
 			{
@@ -1562,7 +1588,7 @@ void Gui::drawMenuBar()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::BeginMenu("Edit"))
+	if (ImGui::BeginMenu("Edit", (map && !map->is_mdl_model)))
 	{
 		Command* undoCmd = !rend->undoHistory.empty() ? rend->undoHistory[rend->undoHistory.size() - 1] : NULL;
 		Command* redoCmd = !rend->redoHistory.empty() ? rend->redoHistory[rend->redoHistory.size() - 1] : NULL;
@@ -1689,7 +1715,7 @@ void Gui::drawMenuBar()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::BeginMenu("Map"))
+	if (ImGui::BeginMenu("Map", (map && !map->is_mdl_model)))
 	{
 		if (ImGui::MenuItem("Entity Report", NULL))
 		{
@@ -1896,7 +1922,7 @@ void Gui::drawMenuBar()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::BeginMenu("Create"))
+	if (ImGui::BeginMenu("Create", (map && !map->is_mdl_model)))
 	{
 		if (ImGui::MenuItem("Entity", 0, false, map))
 		{
@@ -2012,41 +2038,56 @@ void Gui::drawMenuBar()
 
 	if (ImGui::BeginMenu("Widgets"))
 	{
-		if (ImGui::MenuItem("Debug", NULL, showDebugWidget))
+		if (map && map->is_mdl_model)
 		{
-			showDebugWidget = !showDebugWidget;
+			if (ImGui::MenuItem("Go to", "Ctrl+G", showGOTOWidget))
+			{
+				showGOTOWidget = !showGOTOWidget;
+				showGOTOWidget_update = true;
+			}
+			if (ImGui::MenuItem("Log", "", showLogWidget))
+			{
+				showLogWidget = !showLogWidget;
+			}
 		}
-		if (ImGui::MenuItem("Keyvalue Editor", "Alt+Enter", showKeyvalueWidget))
+		else
 		{
-			showKeyvalueWidget = !showKeyvalueWidget;
-		}
-		if (ImGui::MenuItem("Transform", "Ctrl+M", showTransformWidget))
-		{
-			showTransformWidget = !showTransformWidget;
-		}
-		if (ImGui::MenuItem("Go to", "Ctrl+G", showGOTOWidget))
-		{
-			showGOTOWidget = !showGOTOWidget;
-			showGOTOWidget_update = true;
-		}
+			if (ImGui::MenuItem("Debug", NULL, showDebugWidget))
+			{
+				showDebugWidget = !showDebugWidget;
+			}
+			if (ImGui::MenuItem("Keyvalue Editor", "Alt+Enter", showKeyvalueWidget))
+			{
+				showKeyvalueWidget = !showKeyvalueWidget;
+			}
+			if (ImGui::MenuItem("Transform", "Ctrl+M", showTransformWidget))
+			{
+				showTransformWidget = !showTransformWidget;
+			}
+			if (ImGui::MenuItem("Go to", "Ctrl+G", showGOTOWidget))
+			{
+				showGOTOWidget = !showGOTOWidget;
+				showGOTOWidget_update = true;
+			}
 
-		if (ImGui::MenuItem("Face Properties", "", showTextureWidget))
-		{
-			showTextureWidget = !showTextureWidget;
-		}
-		if (ImGui::MenuItem("LightMap Editor (WIP)", "", showLightmapEditorWidget))
-		{
-			showLightmapEditorWidget = !showLightmapEditorWidget;
-			FaceSelectePressed();
-			showLightmapEditorUpdate = true;
-		}
-		if (ImGui::MenuItem("Map merge", "", showMergeMapWidget))
-		{
-			showMergeMapWidget = !showMergeMapWidget;
-		}
-		if (ImGui::MenuItem("Log", "", showLogWidget))
-		{
-			showLogWidget = !showLogWidget;
+			if (ImGui::MenuItem("Face Properties", "", showTextureWidget))
+			{
+				showTextureWidget = !showTextureWidget;
+			}
+			if (ImGui::MenuItem("LightMap Editor (WIP)", "", showLightmapEditorWidget))
+			{
+				showLightmapEditorWidget = !showLightmapEditorWidget;
+				FaceSelectePressed();
+				showLightmapEditorUpdate = true;
+			}
+			if (ImGui::MenuItem("Map merge", "", showMergeMapWidget))
+			{
+				showMergeMapWidget = !showMergeMapWidget;
+			}
+			if (ImGui::MenuItem("Log", "", showLogWidget))
+			{
+				showLogWidget = !showLogWidget;
+			}
 		}
 		ImGui::EndMenu();
 	}
@@ -2056,7 +2097,7 @@ void Gui::drawMenuBar()
 		for (BspRenderer* bspRend : app->mapRenderers)
 		{
 			Bsp* selectedMap = app->getSelectedMap();
-			if (bspRend->map && !bspRend->map->is_model)
+			if (bspRend->map && !bspRend->map->is_bsp_model)
 			{
 				if (ImGui::MenuItem(bspRend->map->bsp_name.c_str(), NULL, selectedMap == bspRend->map))
 				{
@@ -2730,7 +2771,7 @@ void Gui::drawKeyvalueEditor()
 					targetGroup = app->fgd->solidEntGroups;
 				}
 
-				for (FgdGroup & group : targetGroup)
+				for (FgdGroup& group : targetGroup)
 				{
 					if (ImGui::BeginMenu(group.groupName.c_str()))
 					{
@@ -3053,7 +3094,7 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 						vertPickCount++;
 						if (needReloadModel)
 							g_app->reloadBspModels();
-						
+
 						if (needRefreshModel)
 						{
 							Bsp* map = g_app->getSelectedMap();
@@ -3561,7 +3602,7 @@ void Gui::drawGOTOWidget()
 		}
 		ImGui::PopStyleColor(3);
 		Bsp* map = app->getSelectedMap();
-		if (map)
+		if (map && !map->is_mdl_model)
 		{
 			ImGui::Separator();
 			ImGui::PushItemWidth(inputWidth);
@@ -5832,8 +5873,10 @@ void Gui::drawEntityReport()
 					}
 				}
 			}
-
-			draw3dContextMenus();
+			if (map && !map->is_mdl_model)
+			{
+				draw3dContextMenus();
+			}
 
 			clipper.End();
 
@@ -5985,7 +6028,7 @@ void Gui::drawEntityReport()
 
 			if (ImGui::Button("GO TO"))
 			{
-				app->goToEnt(map,app->pickInfo.GetSelectedEnt());
+				app->goToEnt(map, app->pickInfo.GetSelectedEnt());
 			}
 
 			ImGui::EndChild();

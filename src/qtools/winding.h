@@ -17,16 +17,16 @@ class Winding
 {
 public:
 	int  m_NumPoints;
-	vec3_t* m_Points;
+	vec3* m_Points;
 
-	Winding(Bsp* bsp, const BSPFACE& face, vec_t epsilon = ON_EPSILON);
+	Winding(Bsp* bsp, const BSPFACE& face, float epsilon = ON_EPSILON);
 	Winding(int numpoints);
 	Winding(const Winding& other);
 	virtual ~Winding();
 	Winding& operator=(const Winding& other);
 
-	void RemoveColinearPoints(vec_t epsilon = ON_EPSILON);
-	bool Clip(const BSPPLANE& split, bool keepon, vec_t epsilon = ON_EPSILON);
+	void RemoveColinearPoints(float epsilon = ON_EPSILON);
+	bool Clip(const BSPPLANE& split, bool keepon, float epsilon = ON_EPSILON);
 
 
 protected:

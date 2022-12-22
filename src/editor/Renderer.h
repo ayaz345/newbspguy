@@ -167,6 +167,10 @@ public:
 	vec3 debugVec2;
 	vec3 debugVec3;
 
+	ShaderProgram* bspShader;
+	ShaderProgram* fullBrightBspShader;
+	ShaderProgram* colorShader;
+
 	Gui* gui;
 
 	bool hideGui = false;
@@ -205,9 +209,6 @@ private:
 	Bsp* SelectedMap = NULL;
 
 	GLFWwindow* window;
-	ShaderProgram* bspShader;
-	ShaderProgram* fullBrightBspShader;
-	ShaderProgram* colorShader;
 	PointEntRenderer* pointEntRenderer;
 	PointEntRenderer* swapPointEntRenderer = NULL;
 

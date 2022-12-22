@@ -12,8 +12,8 @@ Winding& Winding::operator=(const Winding& other)
 	m_NumPoints = other.m_NumPoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
 
-	m_Points = new vec3_t[m_MaxPoints];
-	memcpy(m_Points, other.m_Points, sizeof(vec3_t) * m_NumPoints);
+	m_Points = new vec3[m_MaxPoints];
+	memcpy(m_Points, other.m_Points, sizeof(vec3) * m_NumPoints);
 	return *this;
 }
 
@@ -22,8 +22,8 @@ Winding::Winding(int numpoints)
 	m_NumPoints = numpoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
 
-	m_Points = new vec3_t[m_MaxPoints];
-	memset(m_Points, 0, sizeof(vec3_t) * m_NumPoints);
+	m_Points = new vec3[m_MaxPoints];
+	memset(m_Points, 0, sizeof(vec3) * m_NumPoints);
 }
 
 Winding::Winding(const Winding& other)
@@ -31,8 +31,8 @@ Winding::Winding(const Winding& other)
 	m_NumPoints = other.m_NumPoints;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
 
-	m_Points = new vec3_t[m_MaxPoints];
-	memcpy(m_Points, other.m_Points, sizeof(vec3_t) * m_NumPoints);
+	m_Points = new vec3[m_MaxPoints];
+	memcpy(m_Points, other.m_Points, sizeof(vec3) * m_NumPoints);
 }
 
 Winding::~Winding()
@@ -40,7 +40,7 @@ Winding::~Winding()
 	delete[] m_Points;
 }
 
-Winding::Winding(Bsp* bsp, const BSPFACE& face, vec_t epsilon)
+Winding::Winding(Bsp* bsp, const BSPFACE& face, float epsilon)
 {
 	int             se;
 	vec3* dv;
@@ -48,7 +48,7 @@ Winding::Winding(Bsp* bsp, const BSPFACE& face, vec_t epsilon)
 
 	m_NumPoints = face.nEdges;
 	m_MaxPoints = (m_NumPoints + 3) & ~3;
-	m_Points = new vec3_t[m_NumPoints];
+	m_Points = new vec3[m_NumPoints];
 
 	unsigned i;
 	for (i = 0; i < face.nEdges; i++)
@@ -64,7 +64,7 @@ Winding::Winding(Bsp* bsp, const BSPFACE& face, vec_t epsilon)
 		}
 
 		dv = &bsp->verts[v];
-		VectorCopy((vec_t*)dv, m_Points[i]);
+		VectorCopy((float*)dv, m_Points[i]);
 	}
 
 	RemoveColinearPoints(
@@ -73,11 +73,11 @@ Winding::Winding(Bsp* bsp, const BSPFACE& face, vec_t epsilon)
 }
 
 // Remove the colinear point of any three points that forms a triangle which is thinner than ON_EPSILON
-void Winding::RemoveColinearPoints(vec_t epsilon)
+void Winding::RemoveColinearPoints(float epsilon)
 {
 	int	i;
-	vec3_t			v1, v2;
-	vec_t* p1, * p2, * p3;
+	vec3 v1, v2;
+	vec3 p1,  p2,  p3;
 	for (i = 0; i < m_NumPoints; i++)
 	{
 		p1 = m_Points[(i + m_NumPoints - 1) % m_NumPoints];
@@ -101,12 +101,12 @@ void Winding::RemoveColinearPoints(vec_t epsilon)
 	}
 }
 
-bool Winding::Clip(const BSPPLANE& split, bool keepon, vec_t epsilon)
+bool Winding::Clip(const BSPPLANE& split, bool keepon, float epsilon)
 {
-	vec_t           dists[MAX_POINTS_ON_WINDING];
+	float           dists[MAX_POINTS_ON_WINDING];
 	int             sides[MAX_POINTS_ON_WINDING];
 	int             counts[3];
-	vec_t           dot;
+	float           dot;
 	int             i, j;
 
 	counts[0] = counts[1] = counts[2] = 0;
@@ -115,7 +115,7 @@ bool Winding::Clip(const BSPPLANE& split, bool keepon, vec_t epsilon)
 	// do this exactly, with no epsilon so tiny portals still work
 	for (i = 0; i < m_NumPoints; i++)
 	{
-		dot = DotProduct(m_Points[i], ((vec_t*)&split.vNormal));
+		dot = DotProduct(m_Points[i], ((float*)&split.vNormal));
 		dot -= split.fDist;
 		dists[i] = dot;
 		if (dot > ON_EPSILON)
@@ -155,12 +155,12 @@ bool Winding::Clip(const BSPPLANE& split, bool keepon, vec_t epsilon)
 
 	unsigned maxpts = m_NumPoints + 4;                            // can't use counts[0]+2 because of fp grouping errors
 	unsigned newNumPoints = 0;
-	vec3_t* newPoints = new vec3_t[maxpts];
-	memset(newPoints, 0, sizeof(vec3_t) * maxpts);
+	vec3* newPoints = new vec3[maxpts];
+	memset(newPoints, 0, sizeof(vec3) * maxpts);
 
 	for (i = 0; i < m_NumPoints; i++)
 	{
-		vec_t* p1 = m_Points[i];
+		vec3 p1 = m_Points[i];
 
 		if (sides[i] == SIDE_ON)
 		{
@@ -180,19 +180,19 @@ bool Winding::Clip(const BSPPLANE& split, bool keepon, vec_t epsilon)
 		}
 
 		// generate a split point
-		vec3_t mid;
+		vec3 mid;
 		unsigned int tmp = i + 1;
 		if (tmp >= m_NumPoints)
 		{
 			tmp = 0;
 		}
-		vec_t* p2 = m_Points[tmp];
+		vec3 p2 = m_Points[tmp];
 		dot = dists[i] / (dists[i] - dists[i + 1]);
 		for (j = 0; j < 3; j++)
 		{                                                  // avoid round off error when possible
-			if (abs(((vec_t*)&split.vNormal)[j] - 1.0) < EPSILON)
+			if (abs(((float*)&split.vNormal)[j] - 1.0) < EPSILON)
 				mid[j] = split.fDist;
-			else if (abs(((vec_t*)&split.vNormal)[j] - -1) < EPSILON)
+			else if (abs(((float*)&split.vNormal)[j] - -1) < EPSILON)
 				mid[j] = -split.fDist;
 			else
 				mid[j] = p1[j] + dot * (p2[j] - p1[j]);

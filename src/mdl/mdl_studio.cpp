@@ -21,34 +21,7 @@
 
 #include "util.h"
 #include "mdl_studio.h"
-
-
-#include <GLFW/glfw3.h>
-
-vec3 g_vright;		// needs to be set to viewer's right in order for chrome to work
-float g_lambert;		// modifier for pseudo-hemispherical lighting
-
-
-vec3			g_xformverts[MAXSTUDIOVERTS];	// transformed vertices
-vec3			g_lightvalues[MAXSTUDIOVERTS];	// light surface normals
-vec3* g_pxformverts;
-vec3* g_pvlightvalues;
-
-vec3			g_lightvec;						// light vector in model reference frame
-vec3			g_blightvec[MAXSTUDIOBONES];	// light vectors in bone reference frames
-int				g_ambientlight;					// ambient world light
-float			g_shadelight;					// direct world light
-vec3			g_lightcolor;
-
-int				g_smodels_total;				// cookie
-
-float			g_bonetransform[MAXSTUDIOBONES][3][4];	// bone transformation matrix
-
-int				g_chrome[MAXSTUDIOVERTS][2];	// texture coords for surface normals
-int				g_chromeage[MAXSTUDIOBONES];	// last time chrome vectors were updated
-vec3			g_chromeup[MAXSTUDIOBONES];		// chrome vector "up" in bone reference frames
-vec3			g_chromeright[MAXSTUDIOBONES];	// chrome vector "right" in bone reference frames
-
+#include "Renderer.h"
 ////////////////////////////////////////////////////////////////////////
 
 void StudioModel::CalcBoneAdj()
@@ -423,7 +396,8 @@ void StudioModel::Lighting(float* lv, int bone, int flags, vec3 normal)
 		illum += g_shadelight;
 
 		r = g_lambert;
-		if (r <= 1.0) r = 1.0;
+		if (r <= 1.0)
+		r = 1.0;
 
 		lightcos = (lightcos + (r - 1.0)) / r; 		// do modified hemispherical lighting
 		if (lightcos > 0.0)
@@ -488,17 +462,6 @@ outputs:
 void StudioModel::SetupLighting()
 {
 	int i;
-	g_ambientlight = 32;
-	g_shadelight = 192;
-
-	g_lightvec[0] = 0;
-	g_lightvec[1] = 0;
-	g_lightvec[2] = -1.0;
-
-	g_lightcolor[0] = 1.0;
-	g_lightcolor[1] = 1.0;
-	g_lightcolor[2] = 1.0;
-
 	// TODO: only do it for bones that actually have textures
 	for (i = 0; i < m_pstudiohdr->numbones; i++)
 	{
@@ -564,8 +527,8 @@ void StudioModel::UpdateModelMeshList()
 
 	SetupLighting();
 
-	if (!mdl_meshes.size())
-		mdl_meshes.resize(m_pstudiohdr->numbodyparts);
+	if (!mdl_mesh_groups.size())
+		mdl_mesh_groups.resize(m_pstudiohdr->numbodyparts);
 
 	for (i = 0; i < m_pstudiohdr->numbodyparts; i++)
 	{
@@ -627,17 +590,29 @@ void StudioModel::RefreshMeshList(int body)
 
 			// FIX: move this check out of the inner loop
 			if (flags & STUDIO_NF_CHROME)
-				Chrome(g_chrome[&lv[i] - g_pvlightvalues], *pnormbone, *pstudionorms);
+				Chrome(g_chrome[i], *pnormbone, *pstudionorms);
 
-			lv[i][0] = g_lightcolor[0] * lv_tmp;
-			lv[i][1] = g_lightcolor[1] * lv_tmp;
-			lv[i][2] = g_lightcolor[2] * lv_tmp;
+			g_pvlightvalues[i][0] = g_lightcolor[0] * lv_tmp;
+			g_pvlightvalues[i][1] = g_lightcolor[1] * lv_tmp;
+			g_pvlightvalues[i][2] = g_lightcolor[2] * lv_tmp;
 		}
 	}
 
-	if (mdl_meshes[body].empty())
+	if (mdl_mesh_groups[body].empty())
 	{
-		mdl_meshes[body].resize(m_pmodel->nummesh);
+		mdl_mesh_groups[body].resize(m_pmodel->nummesh);
+
+		for (j = 0; j < m_pmodel->nummesh; j++)
+		{
+			auto tmpBuff = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
+			tmpBuff->addAttribute(TEX_2F, "vTex");
+			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
+			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
+			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
+			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
+			tmpBuff->addAttribute(4, GL_FLOAT, 0, "vColor");
+			tmpBuff->addAttribute(POS_3F, "vPosition");
+		}
 	}
 
 	for (j = 0; j < m_pmodel->nummesh; j++)
@@ -652,16 +627,16 @@ void StudioModel::RefreshMeshList(int body)
 		{
 			if (texidx < mdl_textures.size())
 			{
-				mdl_meshes[body][j].tex = mdl_textures[texidx];
+				mdl_mesh_groups[body][j].texure = mdl_textures[texidx];
 			}
 			else
 			{
-				logf("Out of range texture id %d of %d\n", texidx, (int)mdl_textures.size());
+				mdl_mesh_groups[body][j].texure = NULL;
 			}
 		}
 		else
 		{
-			mdl_meshes[body][j].tex = NULL;
+			mdl_mesh_groups[body][j].texure = NULL;
 		}
 
 		const int MAX_TRIS_PER_BODYGROUP = 4080;
@@ -794,10 +769,10 @@ void StudioModel::RefreshMeshList(int body)
 			}
 
 		}
-		if (mdl_meshes[body][j].verts.empty())
+		if (mdl_mesh_groups[body][j].verts.empty())
 		{
-			mdl_meshes[body][j].verts.resize(totalElements);
-			for (auto& vert : mdl_meshes[body][j].verts)
+			mdl_mesh_groups[body][j].verts.resize(totalElements);
+			for (auto& vert : mdl_mesh_groups[body][j].verts)
 			{
 				vert.r = vert.g = vert.b = vert.a = 1.0;
 				vert.luv[0][2] = 1.0f;
@@ -805,81 +780,40 @@ void StudioModel::RefreshMeshList(int body)
 				vert.luv[2][2] = 0.0f;
 				vert.luv[3][2] = 0.0f;
 			}
+			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)mdl_mesh_groups[body][j].verts.size());
 		}
-		for (int z = 0; z < (int)mdl_meshes[body][j].verts.size(); z++)
+		for (int z = 0; z < (int)mdl_mesh_groups[body][j].verts.size(); z++)
 		{
-			mdl_meshes[body][j].verts[z].u = texCoordData[z * 2 + 0];
-			mdl_meshes[body][j].verts[z].v = texCoordData[z * 2 + 1];
-			mdl_meshes[body][j].verts[z].r = colorData[z * 4 + 0];
-			mdl_meshes[body][j].verts[z].g = colorData[z * 4 + 1];
-			mdl_meshes[body][j].verts[z].b = colorData[z * 4 + 2];
-			mdl_meshes[body][j].verts[z].x = vertexData[z * 3 + 0];
-			mdl_meshes[body][j].verts[z].y = vertexData[z * 3 + 2];
-			mdl_meshes[body][j].verts[z].z = -vertexData[z * 3 + 1];
+			mdl_mesh_groups[body][j].verts[z].u = texCoordData[z * 2 + 0];
+			mdl_mesh_groups[body][j].verts[z].v = texCoordData[z * 2 + 1];
+			mdl_mesh_groups[body][j].verts[z].r = colorData[z * 4 + 0];
+			mdl_mesh_groups[body][j].verts[z].g = colorData[z * 4 + 1];
+			mdl_mesh_groups[body][j].verts[z].b = colorData[z * 4 + 2];
+			mdl_mesh_groups[body][j].verts[z].a = 1.0;
+			mdl_mesh_groups[body][j].verts[z].x = vertexData[z * 3 + 0];
+			mdl_mesh_groups[body][j].verts[z].y = vertexData[z * 3 + 2];
+			mdl_mesh_groups[body][j].verts[z].z = -vertexData[z * 3 + 1];
 		}
 	}
 }
 
 
-void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, unsigned char* pal)
+void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, COLOR3* pal)
 {
-	// unsigned *in, int inwidth, int inheight, unsigned *out,  int outwidth, int outheight;
-	int outwidth, outheight;
-	int		i, j;
-	int		row1[256], row2[256], col1[256], col2[256];
-	unsigned char* pix1, * pix2, * pix3, * pix4;
-	unsigned char* tex, * out;
+	int texsize = ptexture->width * ptexture->height ;
 
-	// convert texture to power of 2
-	for (outwidth = 1; outwidth < ptexture->width; outwidth <<= 1)
-		;
+	COLOR4 * out = new COLOR4[texsize];
 
-	if (outwidth > 256)
-		outwidth = 256;
-
-	for (outheight = 1; outheight < ptexture->height; outheight <<= 1)
-		;
-
-	if (outheight > 256)
-		outheight = 256;
-
-	tex = out = new unsigned char[outwidth * outheight * 4];
-
-	for (i = 0; i < outwidth; i++)
+	for (int i = 0; i < texsize; i++)
 	{
-		col1[i] = (i + 0.25) * (ptexture->width / (float)outwidth);
-		col2[i] = (i + 0.75) * (ptexture->width / (float)outwidth);
-	}
-
-	for (i = 0; i < outheight; i++)
-	{
-		row1[i] = (int)((i + 0.25) * (ptexture->height / (float)outheight)) * ptexture->width;
-		row2[i] = (int)((i + 0.75) * (ptexture->height / (float)outheight)) * ptexture->width;
-	}
-
-	// scale down and convert to 32bit RGB
-	for (i = 0; i < outheight; i++)
-	{
-		for (j = 0; j < outwidth; j++, out += 4)
-		{
-			pix1 = &pal[data[row1[i] + col1[j]] * 3];
-			pix2 = &pal[data[row1[i] + col2[j]] * 3];
-			pix3 = &pal[data[row2[i] + col1[j]] * 3];
-			pix4 = &pal[data[row2[i] + col2[j]] * 3];
-
-			out[0] = (pix1[0] + pix2[0] + pix3[0] + pix4[0]) >> 2;
-			out[1] = (pix1[1] + pix2[1] + pix3[1] + pix4[1]) >> 2;
-			out[2] = (pix1[2] + pix2[2] + pix3[2] + pix4[2]) >> 2;
-			out[3] = 0xFF;
-		}
+		out[i] = pal[data[i]];
 	}
 	// ptexture->width = outwidth;
 	// ptexture->height = outheight;
-	auto texture = new Texture(outwidth, outheight, tex, ptexture->name);
+	auto texture = new Texture(ptexture->width, ptexture->height, (unsigned char*)out, ptexture->name);
 	texture->upload(GL_RGBA);
 	ptexture->index = (int)mdl_textures.size();
 	mdl_textures.push_back(texture);
-	delete [] tex;
 }
 
 
@@ -891,7 +825,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname)
 	void* buffer = loadFile(modelname, size);
 	if (!buffer)
 	{
-		logf("unable to open %s\n", modelname.c_str());
+		logf("Unable to open %s\n", modelname.c_str());
 		return NULL;
 	}
 	int i;
@@ -909,7 +843,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname)
 		{
 			// strncpy( name, mod->name );
 			// strncpy( name, ptexture[i].name );
-			UploadTexture(&ptexture[i], pin + ptexture[i].index, pin + (ptexture[i].width * ptexture[i].height + ptexture[i].index));
+			UploadTexture(&ptexture[i], pin + ptexture[i].index, (COLOR3*)(pin + (ptexture[i].width * ptexture[i].height + ptexture[i].index)));
 		}
 	}
 
@@ -920,18 +854,116 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname)
 studioseqhdr_t* StudioModel::LoadDemandSequences(std::string modelname, int seqid)
 {
 	std::ostringstream str;
-	str << std::setw(2) << std::setfill('0') << seqid << ".mdl";
+	str << modelname.substr(0, modelname.size() - 4) << std::setw(2) << std::setfill('0') << seqid << ".mdl";
 
 	int size;
 	void* buffer = loadFile(str.str(), size);
 	if (!buffer)
 	{
-		logf("unable to open %s\n", modelname.c_str());
+		logf("Unable to open sequence: %s\n", str.str().c_str());
 		return NULL;
 	}
 	return (studioseqhdr_t*)buffer;
 }
 
+void StudioModel::DrawModel(int bodynum, int subbodynum, int skinnum, int meshnum)
+{
+	SetBlending(0, 0.5);
+	SetBlending(1, 0.5);
+
+	if (SetBodygroup(bodynum, subbodynum) != -1)
+	{
+		// Need clear all model data and refresh it for new subbody
+		for (auto& body : mdl_mesh_groups)
+		{
+			//for (auto& subbody : body)
+			{
+				//for (auto& submesh : subbody)
+				for (auto& submesh : body)
+				{
+					if (submesh.buffer)
+					{
+						delete submesh.buffer;
+					}
+				}
+			}
+		}
+		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
+	}
+	SetSkin(skinnum);
+	UpdateModelMeshList();
+
+	Texture* validTexture = NULL;
+
+	if (meshnum >= 0)
+	{
+		if (meshnum < mdl_mesh_groups[bodynum].size())
+		{
+			if (validTexture == NULL && mdl_mesh_groups[bodynum][meshnum].texure)
+				validTexture = mdl_mesh_groups[bodynum][meshnum].texure;
+
+			if (mdl_mesh_groups[bodynum][meshnum].texure)
+			{
+				mdl_mesh_groups[bodynum][meshnum].texure->bind(0);
+				whiteTex->bind(1);
+				whiteTex->bind(2);
+				whiteTex->bind(3);
+				whiteTex->bind(4);
+			}
+			else if (validTexture)
+			{
+				validTexture->bind(0);
+				whiteTex->bind(1);
+				whiteTex->bind(2);
+				whiteTex->bind(3);
+				whiteTex->bind(4);
+			}
+			else
+			{
+				whiteTex->bind(0);
+				whiteTex->bind(1);
+				whiteTex->bind(2);
+				whiteTex->bind(3);
+				whiteTex->bind(4);
+			}
+			mdl_mesh_groups[bodynum][meshnum].buffer->drawFull();
+		}
+	}
+	else
+	{
+		for (int meshid = 0; meshid < mdl_mesh_groups[bodynum].size(); meshid++)
+		{
+			if (validTexture == NULL && mdl_mesh_groups[bodynum][meshid].texure)
+				validTexture = mdl_mesh_groups[bodynum][meshid].texure;
+
+			if (mdl_mesh_groups[bodynum][meshid].texure)
+			{
+				mdl_mesh_groups[bodynum][meshid].texure->bind(0);
+				whiteTex->bind(1);
+				whiteTex->bind(2);
+				whiteTex->bind(3);
+				whiteTex->bind(4);
+			}
+			else if (validTexture)
+			{
+				validTexture->bind(0);
+				whiteTex->bind(1);
+				whiteTex->bind(2);
+				whiteTex->bind(3);
+				whiteTex->bind(4);
+			}
+			else
+			{
+				whiteTex->bind(0);
+				whiteTex->bind(1);
+				whiteTex->bind(2);
+				whiteTex->bind(3);
+				whiteTex->bind(4);
+			}
+			mdl_mesh_groups[bodynum][meshid].buffer->drawFull();
+		}
+	}
+}
 
 void StudioModel::Init(std::string modelname)
 {
@@ -1153,8 +1185,10 @@ float StudioModel::SetBlending(int iBlender, float flValue)
 
 int StudioModel::SetBodygroup(int iGroup, int iValue)
 {
-	if (iGroup > m_pstudiohdr->numbodyparts)
+	if (iGroup > m_pstudiohdr->numbodyparts || (iGroup == m_iGroup && iValue == m_iGroupValue))
 		return -1;
+	m_iGroup = iGroup;
+	m_iGroupValue = iValue;
 
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + iGroup;
 

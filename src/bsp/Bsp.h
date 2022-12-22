@@ -9,6 +9,7 @@
 #include "remap.h"
 #include <set>
 #include "bsptypes.h"
+#include "mdl_studio.h"
 
 class BspRenderer;
 
@@ -52,7 +53,10 @@ public:
 	bool replacedLump[32];
 
 
-	bool is_model = false;
+	bool is_bsp_model;	
+	bool is_mdl_model;
+	StudioModel* mdl;
+
 	Bsp* parentMap = NULL;
 	void selectModelEnt();
 

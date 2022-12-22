@@ -17,7 +17,7 @@
 #define qmax(a,b)            (((a) > (b)) ? (a) : (b)) // changed 'max' to 'qmax'. --vluzacn
 #define qmin(a,b)            (((a) < (b)) ? (a) : (b)) // changed 'min' to 'qmin'. --vluzacn
 
-// HLCSG_HLBSP_DOUBLEPLANE: We could use smaller epsilon for hlcsg and hlbsp (hlcsg and hlbsp use double as vec_t), which will totally eliminate all epsilon errors. But we choose this big epsilon to tolerate the imprecision caused by Hammer. Basically, this is a balance between precision and flexibility.
+// HLCSG_HLBSP_DOUBLEPLANE: We could use smaller epsilon for hlcsg and hlbsp (hlcsg and hlbsp use double as float), which will totally eliminate all epsilon errors. But we choose this big epsilon to tolerate the imprecision caused by Hammer. Basically, this is a balance between precision and flexibility.
 
 //
 // Vector Math
@@ -36,12 +36,9 @@
 #define VectorCopy(a,b) { (b)[0]=(a)[0]; (b)[1]=(a)[1]; (b)[2]=(a)[2]; }
 #define VectorMA(a, scale, b, dest) { (dest)[0] = (a)[0] + (scale) * (b)[0]; (dest)[1] = (a)[1] + (scale) * (b)[1];  (dest)[2] = (a)[2] + (scale) * (b)[2]; }
 
-typedef float vec_t;
-typedef vec_t  vec3_t[3]; // x,y,z
-
 typedef struct
 {
-	vec_t v[4][3];
+	float v[4][3];
 }
 matrix_t;
 

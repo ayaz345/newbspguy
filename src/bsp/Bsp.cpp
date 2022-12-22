@@ -86,7 +86,7 @@ void Bsp::init_empty_bsp()
 
 void Bsp::selectModelEnt()
 {
-	if (!is_model || !ents.size())
+	if (!is_bsp_model || !ents.size())
 		return;
 	for (int i = 0; i < g_app->mapRenderers.size(); i++)
 	{
@@ -114,11 +114,19 @@ void Bsp::selectModelEnt()
 
 Bsp::Bsp()
 {
+	is_bsp_model = false;
+	is_mdl_model = false;
+	mdl = NULL;
+
 	init_empty_bsp();
 }
 
 Bsp::Bsp(std::string fpath)
 {
+	is_bsp_model = false;
+	is_mdl_model = false;
+	mdl = NULL;
+
 	if (fpath.empty())
 	{
 		fpath = "newmap.bsp";
@@ -236,15 +244,26 @@ Bsp::Bsp(std::string fpath)
 Bsp::~Bsp()
 {
 	for (int i = 0; i < HEADER_LUMPS; i++)
+	{
 		if (lumps[i] && replacedLump[i])
+		{
 			delete[] lumps[i];
+		}
+	}
 	delete[] lumps;
 
 	for (int i = 0; i < ents.size(); i++)
+	{
 		delete ents[i];
+	}
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		replacedLump[i] = false;
+	}
+
+	if (mdl)
+	{
+		delete mdl;
 	}
 }
 
@@ -5135,11 +5154,11 @@ void Bsp::append_lump(int lumpIdx, void* newData, size_t appendLength)
 	replace_lump(lumpIdx, newLump, oldLen + appendLength);
 }
 
-bool Bsp::isModelHasFaceIdx(const BSPMODEL& mdl, int faceid)
+bool Bsp::isModelHasFaceIdx(const BSPMODEL& bspmdl, int faceid)
 {
-	if (faceid < mdl.iFirstFace)
+	if (faceid < bspmdl.iFirstFace)
 		return false;
-	if (faceid >= mdl.iFirstFace + mdl.nFaces)
+	if (faceid >= bspmdl.iFirstFace + bspmdl.nFaces)
 		return false;
 	return true;
 }

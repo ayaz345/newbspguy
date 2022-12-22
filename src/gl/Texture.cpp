@@ -102,7 +102,14 @@ void Texture::upload(int _format, bool lightmap)
 
 	//glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);
 	// TODO: load mipmaps from BSP/WAD
-
+	/*if (_format == GL_RGB)
+	{
+		lodepng_encode24_file((GetWorkDir() + std::string(texName) + "_24bit.png").c_str(), data, width, height);
+	}
+	else
+	{
+		lodepng_encode32_file((GetWorkDir() + std::string(texName) + "_32bit.png").c_str(), data, width, height);
+	}*/
 	glTexImage2D(GL_TEXTURE_2D, 0, _format, width, height, 0, _format, GL_UNSIGNED_BYTE, data);
 
 	if (g_settings.verboseLogs)

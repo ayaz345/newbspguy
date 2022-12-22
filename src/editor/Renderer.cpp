@@ -975,22 +975,27 @@ void Renderer::renderLoop()
 			canControl = /*!gui->imgui_io->WantCaptureKeyboard && */ !gui->imgui_io->WantTextInput && !gui->imgui_io->WantCaptureMouseUnlessPopupClose;
 		}
 
-		Bsp* map = SelectedMap;
 		if (curTime - lastTitleTime > 0.5)
 		{
 			lastTitleTime = curTime;
-			if (map)
+			if (SelectedMap)
 			{
-				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + map->bsp_path).c_str());
+				glfwSetWindowTitle(window, std::string(std::string("bspguy - ") + SelectedMap->bsp_path).c_str());
 			}
+		}
+
+		if (SelectedMap && SelectedMap->mdl)
+		{
+			SelectedMap->mdl->AdvanceFrame(curTime - oldTime);
+			SelectedMap->mdl->UpdateModelMeshList();
 		}
 
 		int modelIdx = -1;
 		int entIdx = pickInfo.GetSelectedEnt();
 		Entity* ent = NULL;
-		if (map && entIdx >= 0 && entIdx < map->ents.size())
+		if (SelectedMap && entIdx >= 0 && entIdx < SelectedMap->ents.size())
 		{
-			ent = map->ents[entIdx];
+			ent = SelectedMap->ents[entIdx];
 			modelIdx = ent->getBspModelIdx();
 		}
 
@@ -1008,32 +1013,33 @@ void Renderer::renderLoop()
 			}
 
 			updatePickCount = true;
-			isTransformableSolid = modelIdx > 0 || (entIdx >= 0 && map->ents[entIdx]->getBspModelIdx() < 0);
+			isTransformableSolid = modelIdx > 0 || (entIdx >= 0 && SelectedMap->ents[entIdx]->getBspModelIdx() < 0);
 
 			if (!isTransformableSolid && pickInfo.selectedEnts.size())
 			{
-				if (map && ent && ent->hasKey("classname") &&
+				if (SelectedMap && ent && ent->hasKey("classname") &&
 					ent->keyvalues["classname"] == "worldspawn")
 				{
 					isTransformableSolid = true;
 				}
 			}
 
-			modelUsesSharedStructures = modelIdx >= 0 && map->does_model_use_shared_structures(modelIdx);
+			modelUsesSharedStructures = modelIdx >= 0 && SelectedMap->does_model_use_shared_structures(modelIdx);
 
 			isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
 			isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
-			isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) || (isTransformableSolid && isScalingObject);
+			isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) 
+				|| (isTransformableSolid && isScalingObject);
 			isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
-			invalidSolid = !modelVerts.size() || !map->vertex_manipulation_sync(modelIdx, modelVerts, false);
+			invalidSolid = !modelVerts.size() || !SelectedMap->vertex_manipulation_sync(modelIdx, modelVerts, false);
 			if (!invalidSolid)
 			{
 				std::vector<TransformVert> tmpVerts;
-				map->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
+				SelectedMap->getModelPlaneIntersectVerts(modelIdx, tmpVerts); // for vertex manipulation + scaling
 
 				Solid modelSolid;
-				if (!getModelSolid(tmpVerts, map, modelSolid))
+				if (!getModelSolid(tmpVerts, SelectedMap, modelSolid))
 				{
 					invalidSolid = true;
 				}
@@ -1048,14 +1054,14 @@ void Renderer::renderLoop()
 		matmodel.rotateX((float)curTime);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
+		
+		if(SelectedMap->is_mdl_model)
+			glClearColor(0.25, 0.25, 0.25, 1.0);
 		setupView();
 
 		drawEntConnections();
 
 		isLoading = reloading;
-
-		Bsp* selectedMap = SelectedMap;
 
 		for (size_t i = 0; i < mapRenderers.size(); i++)
 		{
@@ -1065,20 +1071,30 @@ void Renderer::renderLoop()
 			if (!curMap || !curMap->bsp_name.size())
 				continue;
 
-			if (map == curMap && pickMode == PICK_OBJECT)
+			if (SelectedMap == curMap && pickMode == PICK_OBJECT)
 			{
 				highlightEnts = pickInfo.selectedEnts;
 			}
 
-			if (selectedMap && getSelectedMap() != curMap && (!curMap->is_model || curMap->parentMap != selectedMap))
+			if (SelectedMap && getSelectedMap() != curMap && (!curMap->is_bsp_model || curMap->parentMap != SelectedMap))
 			{
 				continue;
 			}
+
+			if (SelectedMap->is_mdl_model && SelectedMap->mdl)
+			{
+				bspShader->bind();
+				bspShader->modelMat->loadIdentity();
+				bspShader->updateMatrixes();
+				SelectedMap->mdl->DrawModel(0, 0, 0);
+				continue;
+			}
+
 			std::set<int> modelidskip;
 
 			if (curMap->ents.size() && !isLoading)
 			{
-				if (curMap->is_model)
+				if (curMap->is_bsp_model)
 				{
 					for (size_t n = 0; n < mapRenderers.size(); n++)
 					{
@@ -1123,20 +1139,20 @@ void Renderer::renderLoop()
 		matmodel.loadIdentity();
 		colorShader->bind();
 
-		if (map)
+		if (SelectedMap)
 		{
 			if (debugClipnodes && modelIdx > 0)
 			{
 				colorShader->bind();
 				matmodel.loadIdentity();
 				colorShader->pushMatrix(MAT_MODEL);
-				vec3 offset = (map->getBspRender()->mapOffset + (entIdx > 0 ? map->ents[entIdx]->getOrigin() : vec3())).flip();
+				vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx > 0 ? SelectedMap->ents[entIdx]->getOrigin() : vec3())).flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
-				BSPMODEL& pickModel = map->models[modelIdx];
+				BSPMODEL& pickModel = SelectedMap->models[modelIdx];
 				int currentPlane = 0;
 				glDisable(GL_CULL_FACE);
-				drawClipnodes(map, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
+				drawClipnodes(SelectedMap, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
 				glEnable(GL_CULL_FACE);
 				debugIntMax = currentPlane - 1;
 				colorShader->popMatrix(MAT_MODEL);
@@ -1147,13 +1163,13 @@ void Renderer::renderLoop()
 				colorShader->bind();
 				matmodel.loadIdentity();
 				colorShader->pushMatrix(MAT_MODEL);
-				vec3 offset = (map->getBspRender()->mapOffset + (entIdx > 0 ? map->ents[entIdx]->getOrigin() : vec3())).flip();
+				vec3 offset = (SelectedMap->getBspRender()->mapOffset + (entIdx > 0 ? SelectedMap->ents[entIdx]->getOrigin() : vec3())).flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
-				BSPMODEL& pickModel = map->models[modelIdx];
+				BSPMODEL& pickModel = SelectedMap->models[modelIdx];
 				int currentPlane = 0;
 				glDisable(GL_CULL_FACE);
-				drawNodes(map, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
+				drawNodes(SelectedMap, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
 				glEnable(GL_CULL_FACE);
 				debugNodeMax = currentPlane - 1;
 				colorShader->popMatrix(MAT_MODEL);
@@ -1164,7 +1180,7 @@ void Renderer::renderLoop()
 				colorShader->bind();
 				matmodel.loadIdentity();
 				colorShader->pushMatrix(MAT_MODEL);
-				vec3 offset = map->getBspRender()->mapOffset.flip();
+				vec3 offset = SelectedMap->getBspRender()->mapOffset.flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
 				drawLine(debugPoint - vec3(32, 0, 0), debugPoint + vec3(32, 0, 0), {128, 128, 255, 255});
@@ -1193,9 +1209,9 @@ void Renderer::renderLoop()
 
 		if (entIdx <= 0)
 		{
-			if (map && map->is_model)
+			if (SelectedMap && SelectedMap->is_bsp_model)
 			{
-				map->selectModelEnt();
+				SelectedMap->selectModelEnt();
 			}
 		}
 		if (modelIdx > 0 && pickMode == PICK_OBJECT)
@@ -2687,7 +2703,7 @@ void Renderer::reloadBspModels()
 
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
-		if (mapRenderers[i]->map->is_model)
+		if (mapRenderers[i]->map->is_bsp_model)
 		{
 			modelcount++;
 		}
@@ -2703,7 +2719,7 @@ void Renderer::reloadBspModels()
 
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
-		if (!mapRenderers[i]->map->is_model)
+		if (!mapRenderers[i]->map->is_bsp_model)
 		{
 			sorted_renders.push_back(mapRenderers[i]);
 		}
@@ -2745,7 +2761,7 @@ void Renderer::reloadBspModels()
 							if (fileExists(tryPath))
 							{
 								Bsp* tmpBsp = new Bsp(tryPath);
-								tmpBsp->is_model = true;
+								tmpBsp->is_bsp_model = true;
 								tmpBsp->parentMap = bsprend->map;
 								if (tmpBsp->bsp_valid)
 								{
@@ -2772,7 +2788,7 @@ void Renderer::addMap(Bsp* map)
 		return;
 	}
 
-	if (!map->is_model)
+	if (!map->is_bsp_model)
 	{
 		deselectObject();
 		clearSelection();

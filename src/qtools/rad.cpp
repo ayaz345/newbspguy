@@ -28,11 +28,10 @@ void qrad_get_lightmap_flags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut
 
 
 // ApplyMatrix: (x y z 1)T -> matrix * (x y z 1)T
-void ApplyMatrix(const matrix_t& m, const vec3_t in, vec3_t& out)
+void ApplyMatrix(const matrix_t& m, const vec3 in, vec3& out)
 {
 	int i;
 
-	hlassume(&in[0] != &out[0], assume_first);
 	VectorCopy(m.v[3], out);
 	for (i = 0; i < 3; i++)
 	{
@@ -126,8 +125,8 @@ void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 	ti = &bsp->texinfos[f->iTextureInfo];
 	for (i = 0; i < 3; i++)
 	{
-		m.v[i][0] = ((vec_t*)&ti->vS)[i];
-		m.v[i][1] = ((vec_t*)&ti->vT)[i];
+		m.v[i][0] = ((float*)&ti->vS)[i];
+		m.v[i][1] = ((float*)&ti->vT)[i];
 	}
 	m.v[0][2] = fp.vNormal.x;
 	m.v[1][2] = fp.vNormal.y;
@@ -140,7 +139,7 @@ void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 
 bool CanFindFacePosition(Bsp* bsp, int facenum)
 {
-	vec_t texmins[2]{}, texmaxs[2]{};
+	float texmins[2]{}, texmaxs[2]{};
 	int imins[2]{}, imaxs[2]{};
 
 	matrix_t worldtotex;
@@ -198,19 +197,19 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 	return true;
 }
 
-static bool TestSampleFrag(Bsp* bsp, int facenum, vec_t s, vec_t t, const vec_t square[2][2], int maxsize)
+static bool TestSampleFrag(Bsp* bsp, int facenum, float s, float t, const float square[2][2], int maxsize)
 {
-	const vec3_t v_s = {s, 0, 0};
-	const vec3_t v_t = {0, t, 0};
+	const vec3 v_s = {s, 0, 0};
+	const vec3 v_t = {0, t, 0};
 
 	samplefrag_t head;
 
 	head.facenum = facenum;
 
-	VectorScale(v_s, 1, (vec_t*)&head.rect.planes[0].vNormal); head.rect.planes[0].fDist = square[0][0]; // smin
-	VectorScale(v_s, -1, (vec_t*)&head.rect.planes[1].vNormal); head.rect.planes[1].fDist = -square[1][0]; // smax
-	VectorScale(v_t, 1, (vec_t*)&head.rect.planes[2].vNormal); head.rect.planes[2].fDist = square[0][1]; // tmin
-	VectorScale(v_t, -1, (vec_t*)&head.rect.planes[3].vNormal); head.rect.planes[3].fDist = -square[1][1]; // tmax
+	VectorScale(v_s, 1, (float*)&head.rect.planes[0].vNormal); head.rect.planes[0].fDist = square[0][0]; // smin
+	VectorScale(v_s, -1, (float*)&head.rect.planes[1].vNormal); head.rect.planes[1].fDist = -square[1][0]; // smax
+	VectorScale(v_t, 1, (float*)&head.rect.planes[2].vNormal); head.rect.planes[2].fDist = square[0][1]; // tmin
+	VectorScale(v_t, -1, (float*)&head.rect.planes[3].vNormal); head.rect.planes[3].fDist = -square[1][1]; // tmax
 
 	// ChopFrag
 	// get the shape of the fragment by clipping the face using the boundaries
@@ -309,7 +308,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 		for (int j = 0; j < 2; j++)
 		{
 			float* axis = j == 0 ? (float*)&tex.vS : (float*)&tex.vT;
-			val = CalculatePointVecsProduct((vec_t*)&v, axis);
+			val = CalculatePointVecsProduct((float*)&v, axis);
 
 			if (val < mins[j])
 			{
@@ -374,7 +373,7 @@ bool GetFaceExtentsX(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 			// The counterpart of game engine is the function CalcFaceExtents in HLSDK.
 			// So we must also know how Valve compiles HLSDK. I think Valve compiles HLSDK with VC6.0 in the past.
 			vec3& axis = j == 0 ? tex->vS : tex->vT;
-			val = CalculatePointVecsProduct((vec_t*)v, (vec_t*)&axis);
+			val = CalculatePointVecsProduct((float*)v, (float*)&axis);
 
 			if (val < mins[j])
 			{
@@ -420,8 +419,8 @@ void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
 {
 	const int       h = l->texsize[1] + 1;
 	const int       w = l->texsize[0] + 1;
-	const vec_t     starts = l->texmins[0] * TEXTURE_STEP * 1.0f;
-	const vec_t     startt = l->texmins[1] * TEXTURE_STEP * 1.0f;
+	const float     starts = l->texmins[0] * TEXTURE_STEP * 1.0f;
+	const float     startt = l->texmins[1] * TEXTURE_STEP * 1.0f;
 	unsigned char* pLuxelFlags;
 
 	for (int t = 0; t < h; t++)
@@ -429,9 +428,9 @@ void CalcPoints(Bsp* bsp, lightinfo_t* l, unsigned char* LuxelFlags)
 		for (int s = 0; s < w; s++)
 		{
 			pLuxelFlags = &LuxelFlags[s + w * t];
-			vec_t us = starts + s * TEXTURE_STEP * 1.0f;
-			vec_t ut = startt + t * TEXTURE_STEP * 1.0f;
-			vec_t square[2][2]{};
+			float us = starts + s * TEXTURE_STEP * 1.0f;
+			float ut = startt + t * TEXTURE_STEP * 1.0f;
+			float square[2][2]{};
 			square[0][0] = us - TEXTURE_STEP;
 			square[0][1] = ut - TEXTURE_STEP;
 			square[1][0] = us + TEXTURE_STEP;

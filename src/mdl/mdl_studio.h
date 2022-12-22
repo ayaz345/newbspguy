@@ -365,7 +365,8 @@ typedef struct mstudioevent_s
 #pragma pack(pop)
 struct StudioMesh
 {
-	Texture* tex;
+	VertexBuffer* buffer;
+	Texture* texure;
 	std::vector<lightmapVert> verts;
 };
 
@@ -377,9 +378,35 @@ public:
 	int m_sequence;			// sequence index
 	int m_bodynum;			// bodypart selection	
 	int m_skinnum;			// skin group selection
+	int m_iGroup;
+	int m_iGroupValue;      // subbody 
+
 	unsigned char m_controller[4];	// bone controllers
 	unsigned char m_blending[2];		// animation blending
 	unsigned char m_mouth;			// mouth position
+
+	vec3			g_xformverts[MAXSTUDIOVERTS];	// transformed vertices
+	vec3			g_lightvalues[MAXSTUDIOVERTS];	// light surface normals
+	vec3* g_pxformverts;
+	vec3* g_pvlightvalues;
+
+	vec3			g_lightvec;						// light vector in model reference frame
+	vec3			g_blightvec[MAXSTUDIOBONES];	// light vectors in bone reference frames
+	int				g_ambientlight;					// ambient world light
+	float			g_shadelight;					// direct world light
+	vec3			g_lightcolor;
+
+	int				g_smodels_total;				// cookie
+
+	float			g_bonetransform[MAXSTUDIOBONES][3][4];	// bone transformation matrix
+
+	int				g_chrome[MAXSTUDIOVERTS][2];	// texture coords for surface normals
+	int				g_chromeage[MAXSTUDIOBONES];	// last time chrome vectors were updated
+	vec3			g_chromeup[MAXSTUDIOBONES];		// chrome vector "up" in bone reference frames
+	vec3			g_chromeright[MAXSTUDIOBONES];	// chrome vector "right" in bone reference frames
+
+	vec3 g_vright;		// needs to be set to viewer's right in order for chrome to work
+	float g_lambert;		// modifier for pseudo-hemispherical lighting
 
 	// internal data
 	studiohdr_t* m_pstudiohdr;
@@ -390,13 +417,18 @@ public:
 
 	vec4 m_adj;				// FIX: non persistant, make static
 	std::vector<Texture*> mdl_textures;
-	std::vector<std::vector<StudioMesh>> mdl_meshes;
+	std::vector<std::vector<StudioMesh>> mdl_mesh_groups;
+	Texture* whiteTex;
 
 	StudioModel(std::string modelname)
 	{
+		g_vright = vec3();
+		g_lambert = 1.0f;
 		mdl_textures = std::vector<Texture*>();
-		mdl_meshes = std::vector<std::vector<StudioMesh>>();
-
+		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
+		whiteTex = new Texture(1, 1, "white");
+		*((COLOR3*)(whiteTex->data)) = {255, 255, 255};
+		whiteTex->upload(GL_RGB);
 		m_sequence = m_bodynum = m_skinnum = 0;
 		m_frame = 0.0f;
 		m_mouth = 0;
@@ -421,19 +453,36 @@ public:
 		SetController(2, 0.0);
 		SetController(3, 0.0);
 		SetMouth(0);
+
+		g_ambientlight = 32;
+		g_shadelight = 192;
+
+		g_lightvec[0] = 0;
+		g_lightvec[1] = 0;
+		g_lightvec[2] = -1.0;
+
+		g_lightcolor[0] = 1.0;
+		g_lightcolor[1] = 1.0;
+		g_lightcolor[2] = 1.0;
+
+		for (int i = 0; i < 2048; i++)
+		{
+			g_lightvalues[i][0] = 1.0f;
+			g_lightvalues[i][1] = 1.0f;
+			g_lightvalues[i][2] = 1.0f;
+		}
 	}
 	~StudioModel()
 	{
+		if (whiteTex)
+			delete whiteTex;
 		if (m_pstudiohdr)
 			delete[] m_pstudiohdr;
-		if (m_pmodel)
-			delete[] m_pmodel;
 
 		for (auto& tex : mdl_textures)
 		{
 			delete tex;
 		}
-
 		for (int i = 0; i < 32; i++)
 		{
 			if (m_panimhdr[i])
@@ -441,28 +490,41 @@ public:
 				delete[] m_panimhdr[i];
 			}
 		}
+		for (auto& body : mdl_mesh_groups)
+		{
+			//for (auto& subbody : body)
+			{
+				//for (auto& submesh : subbody)
+				for (auto& submesh : body)
+				{
+					if (submesh.buffer)
+					{
+						delete submesh.buffer;
+					}
+				}
+			}
+		}
 	}
+
+	void DrawModel(int body, int subbody, int skin, int mesh = -1);
+
 	void Init(std::string modelname);
 	void RefreshMeshList(int body);
 	void UpdateModelMeshList(void);
+
+
 	void AdvanceFrame(float dt);
-
 	void ExtractBbox(float* mins, float* maxs);
-
 	int SetSequence(int iSequence);
 	int GetSequence(void);
 	void GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed);
-
 	float SetController(int iController, float flValue);
 	float SetMouth(float flValue);
 	float SetBlending(int iBlender, float flValue);
 	int SetBodygroup(int iGroup, int iValue);
 	int SetSkin(int iValue);
-
 	studiohdr_t* LoadModel(std::string modelname);
-
 	studioseqhdr_t* LoadDemandSequences(std::string modelname, int seqid);
-
 	void CalcBoneAdj(void);
 	void CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q);
 	void CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec3& pos);
@@ -474,5 +536,5 @@ public:
 	void Chrome(int* chrome, int bone, vec3 normal);
 	void SetupLighting(void);
 	void SetupModel(int bodypart);
-	void UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, unsigned char* pal);
+	void UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, COLOR3* pal);
 };
