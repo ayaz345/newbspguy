@@ -9,7 +9,6 @@
 #include <sstream>
 #include "filedialog/ImFileDialog.h"
 
-
 AppSettings g_settings;
 std::string g_settings_path = "";
 std::string g_config_dir = "";
@@ -841,11 +840,33 @@ Renderer::~Renderer()
 	glfwTerminate();
 }
 
+VertexBuffer* tempmodelBuff;
+StudioModel * tempmodel;
 void Renderer::renderLoop()
 {
+	/*tempmodel = new StudioModel("d:\\Games\\CS16\\cstrike\\models\\arcticorange.mdl");
+	tempmodel->SetSequence(0);
+	tempmodel->SetController(0, 0.0);
+	tempmodel->SetController(1, 0.0);
+	tempmodel->SetController(2, 0.0);
+	tempmodel->SetController(3, 0.0);
+	tempmodel->SetMouth(0);
+	tempmodelBuff = new VertexBuffer(bspShader, 0, GL_TRIANGLES);
+	tempmodelBuff->addAttribute(TEX_2F, "vTex");
+	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
+	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
+	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
+	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
+	tempmodelBuff->addAttribute(4, GL_FLOAT, 0, "vColor");
+	tempmodelBuff->addAttribute(POS_3F, "vPosition");
+	tempmodel->UpdateModelMeshList();
+	tempmodelBuff->setData(&tempmodel->mdl_meshes[0][0].verts[0], tempmodel->mdl_meshes[0][0].verts.size());*/
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
 	{
 		line_verts = new cVert[2];
@@ -921,6 +942,9 @@ void Renderer::renderLoop()
 		mousePos = vec2((float)xpos, (float)ypos);
 
 		glfwPollEvents();
+
+		/*tempmodel->AdvanceFrame(curTime - oldTime);
+		tempmodel->UpdateModelMeshList();*/
 
 
 		{//Update keyboard / mouse state 
@@ -1027,9 +1051,6 @@ void Renderer::renderLoop()
 
 		setupView();
 
-		glEnable(GL_CULL_FACE);
-		glEnable(GL_DEPTH_TEST);
-
 		drawEntConnections();
 
 		isLoading = reloading;
@@ -1097,6 +1118,7 @@ void Renderer::renderLoop()
 				isLoading = true;
 			}
 		}
+	
 
 		matmodel.loadIdentity();
 		colorShader->bind();
@@ -1112,11 +1134,11 @@ void Renderer::renderLoop()
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
 				BSPMODEL& pickModel = map->models[modelIdx];
-				glDisable(GL_CULL_FACE);
 				int currentPlane = 0;
+				glDisable(GL_CULL_FACE);
 				drawClipnodes(map, pickModel.iHeadnodes[1], currentPlane, debugInt, pickModel.vOrigin);
-				debugIntMax = currentPlane - 1;
 				glEnable(GL_CULL_FACE);
+				debugIntMax = currentPlane - 1;
 				colorShader->popMatrix(MAT_MODEL);
 			}
 
@@ -1129,11 +1151,11 @@ void Renderer::renderLoop()
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
 				BSPMODEL& pickModel = map->models[modelIdx];
-				glDisable(GL_CULL_FACE);
 				int currentPlane = 0;
+				glDisable(GL_CULL_FACE);
 				drawNodes(map, pickModel.iHeadnodes[0], currentPlane, debugNode, pickModel.vOrigin);
-				debugNodeMax = currentPlane - 1;
 				glEnable(GL_CULL_FACE);
+				debugNodeMax = currentPlane - 1;
 				colorShader->popMatrix(MAT_MODEL);
 			}
 
@@ -1520,27 +1542,32 @@ void Renderer::drawModelOrigin()
 
 void Renderer::drawTransformAxes()
 {
-	glClear(GL_DEPTH_BUFFER_BIT);
-	updateDragAxes();
-	glDisable(GL_CULL_FACE);
 	if (SelectedMap && pickInfo.selectedEnts.size() == 1 && pickInfo.selectedEnts[0] >= 0 && transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT && !modelUsesSharedStructures && !invalidSolid)
 	{
 		if (SelectedMap->ents[pickInfo.selectedEnts[0]]->getBspModelIdx() > 0)
 		{
+			glClear(GL_DEPTH_BUFFER_BIT);
+			updateDragAxes();
 			vec3 ori = scaleAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
 			colorShader->updateMatrixes();
+			glDisable(GL_CULL_FACE);
 			scaleAxes.buffer->drawFull();
+			glEnable(GL_CULL_FACE);
 		}
 	}
 	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE)
 	{
 		if ((transformTarget == TRANSFORM_VERTEX && (anyVertSelected || anyEdgeSelected)) || transformTarget != TRANSFORM_VERTEX)
 		{
+			glClear(GL_DEPTH_BUFFER_BIT);
+			updateDragAxes();
 			vec3 ori = moveAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
 			colorShader->updateMatrixes();
+			glDisable(GL_CULL_FACE);
 			moveAxes.buffer->drawFull();
+			glEnable(GL_CULL_FACE);
 		}
 	}
 	dragDelta = vec3();

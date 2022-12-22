@@ -234,6 +234,9 @@
     <ClInclude Include="..\src\util\quantizer.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
+    <ClInclude Include=".\..\src\mdlviewer\studio_render.h">
+      <Filter>Header Files\mdlviewer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">
@@ -289,6 +292,9 @@
     </Filter>
     <Filter Include="Source Files\filedialog">
       <UniqueIdentifier>{2b9a5fbb-9952-479d-8ae7-1c306192ad68}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\mdlviewer">
+      <UniqueIdentifier>{1e59c77c-7333-419c-b12d-0c9011dfc10a}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

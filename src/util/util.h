@@ -13,6 +13,7 @@ namespace fs = std::filesystem;
 #include <mutex>
 #include "ProgressMeter.h"
 #include "bsptypes.h"
+#include <math.h>
 
 extern std::string g_version_string;
 
@@ -24,10 +25,6 @@ extern std::string g_version_string;
 #define PRINT_GREEN		2
 #define PRINT_RED		4
 #define PRINT_BRIGHT	8
-
-
-#define mDotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
-
 
 static const vec3  s_baseaxis[18] = {
 	{0, 0, 1}, {1, 0, 0}, {0, -1, 0},                      // floor
@@ -152,19 +149,6 @@ std::string getConfigDir();
 
 extern fs::path g_current_dir;
 std::string GetCurrentWorkingDir();
-
-bool VectorCompare(vec3 v1, vec3 v2);
-
-void QuaternionSlerp(const vec4& p, vec4 q, float t, vec4& qt);
-void AngleQuaternion(const vec3& angles, vec4& quaternion);
-void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4]);
-void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4]);
-void VectorScale(vec3 v, float scale, vec3& out);
-float VectorNormalize(vec3 v);
-void mCrossProduct(vec3 v1, vec3 v2, vec3& cross);
-void VectorIRotate(const vec3& in1, const float in2[3][4], vec3& out);
-void VectorTransform(const vec3& in1, const float in2[3][4], vec3& out);
-
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);

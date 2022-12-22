@@ -12,12 +12,15 @@
 #include "Command.h"
 #include <GLFW/glfw3.h>
 #include <GL/glew.h>
-
+#include "studio_render.h"
 #define EDIT_MODEL_LUMPS (PLANES | TEXTURES | VERTICES | NODES | TEXINFO | FACES | LIGHTING | CLIPNODES | LEAVES | EDGES | SURFEDGES | MODELS)
 
 extern std::string g_settings_path;
 extern std::string g_config_dir;
 
+
+extern StudioModel * tempmodel;
+extern VertexBuffer* tempmodelBuff;
 class Gui;
 
 enum transform_modes

@@ -357,6 +357,8 @@
     <ClCompile Include=".\..\imgui\misc\cpp\imgui_stdlib.cpp" />
     <ClInclude Include=".\..\src\util\lodepng.h" />
     <ClCompile Include=".\..\src\util\lodepng.cpp" />
+    <ClInclude Include=".\..\src\mdlviewer\studio_render.h" />
+    <ClCompile Include=".\..\src\mdlviewer\studio_render.cpp" />
     <ClInclude Include=".\..\src\filedialog\stb_image.h" />
     <ClInclude Include=".\..\src\filedialog\ImFileDialog.h" />
     <ClCompile Include=".\..\src\filedialog\ImFileDialog.cpp" />

@@ -1607,10 +1607,6 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 	activeShader->modelMat->loadIdentity();
 	activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	activeShader->updateMatrixes();
-
-	glEnable(GL_BLEND);
-	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
 	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
 	if (highlightEnts.size() && !highlightAlwaysOnTop)
 	{
@@ -1865,27 +1861,34 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 				}
 			}
 		}
-
+		/*if (!ent)
+		{
+			//test 
+			tempmodel->mdl_meshes[0][0].tex->bind(0);
+			whiteTex->bind(1);
+			whiteTex->bind(2);
+			whiteTex->bind(3);
+			whiteTex->bind(4);
+			tempmodelBuff->drawFull();
+		}
+		else*/
 		rgroup.buffer->drawFull();
 
-		if (ent && ent->needAngles)
+		if (ent)
 		{
 			for (int s = 0; s < MAXLIGHTMAPS; s++)
 			{
 				whiteTex->bind(s + 1);
 			}
 
-			glPushAttrib(GL_ALL_ATTRIB_BITS);
-			glBlendFunc(GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR);
-			glEnable(GL_BLEND);
-
 			activeShader->pushMatrix(MAT_MODEL);
 			*activeShader->modelMat = ent->modelMatOrigin;
 			activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 			activeShader->updateMatrixes();
+			glBlendFunc(GL_SRC_ALPHA_SATURATE, GL_SRC_COLOR);
 			rgroup.buffer->drawFull();
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 			activeShader->popMatrix(MAT_MODEL);
-			glPopAttrib();
 		}
 	}
 }
