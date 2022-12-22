@@ -9,7 +9,7 @@
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
 #include <future>
-#include "studio_render.h"
+#include "mdl_studio.h"
 
 #define LIGHTMAP_ATLAS_SIZE 512
 

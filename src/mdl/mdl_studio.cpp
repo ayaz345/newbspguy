@@ -20,7 +20,7 @@
 #pragma warning( disable : 4244 ) // double to float
 
 #include "util.h"
-#include "studio_render.h"
+#include "mdl_studio.h"
 
 
 #include <GLFW/glfw3.h>

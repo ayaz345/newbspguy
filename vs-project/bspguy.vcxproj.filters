@@ -127,6 +127,9 @@
     <ClCompile Include="..\src\util\quantizer.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\mdl\mdl_studio.cpp">
+      <Filter>Source Files\mdl</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -234,8 +237,8 @@
     <ClInclude Include="..\src\util\quantizer.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include=".\..\src\mdlviewer\studio_render.h">
-      <Filter>Header Files\mdlviewer</Filter>
+    <ClInclude Include="..\src\mdl\mdl_studio.h">
+      <Filter>Header Files\mdl</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -293,8 +296,11 @@
     <Filter Include="Source Files\filedialog">
       <UniqueIdentifier>{2b9a5fbb-9952-479d-8ae7-1c306192ad68}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\mdlviewer">
+    <Filter Include="Source Files\mdl">
       <UniqueIdentifier>{1e59c77c-7333-419c-b12d-0c9011dfc10a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\mdl">
+      <UniqueIdentifier>{2e824899-a531-420a-9366-e0eff9a74666}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
