@@ -19,14 +19,16 @@ jobs:
     linux_build:
         strategy:
           matrix:
-            cxx: [GCC-11]
+            compiler: gcc
+            gcc: 11
 
         name: "Linux"
         needs: get_time_build
         runs-on: ubuntu-latest
         
         env:
-            CXX: ${{ matrix.cxx }}
+            CC: gcc-${{ matrix.gcc }}
+            CXX: g++-${{ matrix.gcc }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         outputs:
