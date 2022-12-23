@@ -2,6 +2,10 @@ name: C/C++ CI
 
 on: [push, pull_request]
 
+strategy:
+  matrix:
+    compiler: [gcc]
+    
 jobs:
     get_time_build:
         name: "TAG NAME"
@@ -17,18 +21,13 @@ jobs:
                echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" >> $GITHUB_OUTPUT
             
     linux_build:
-        strategy:
-          matrix:
-            compiler: gcc
-            gcc: 10
-
         name: "Linux"
         needs: get_time_build
         runs-on: ubuntu-latest
         
         env:
-            CC: gcc-${{ matrix.gcc }}
-            CXX: g++-${{ matrix.gcc }}
+            CC: ${{ matrix.compiler }}
+            CXX: ${{ matrix.compiler }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         outputs:
