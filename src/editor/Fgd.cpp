@@ -229,12 +229,16 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			{
 				logf("ERROR: Expected 3 components in color() property (line {}) in FGD {}\n", lineNum, name);
 			}
-
 			fgdClass.colorSet = true;
 		}
 		else if (lpart.find("studio(") == 0)
 		{
-			fgdClass.model = getValueInParens(typeParts[i]);
+			std::string mdlpath = getValueInParens(typeParts[i]);
+			if (mdlpath.size())
+			{
+				fgdClass.model = mdlpath;
+				fixupPath(fgdClass.model, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+			}
 			fgdClass.isModel = true;
 		}
 		else if (lpart.find("sequence(") == 0)
@@ -244,6 +248,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		else if (lpart.find("iconsprite(") == 0)
 		{
 			fgdClass.iconSprite = getValueInParens(typeParts[i]);
+			fixupPath(fgdClass.iconSprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 		}
 		else if (lpart.find("sprite(") == 0)
 		{
@@ -542,6 +547,22 @@ void Fgd::processClassInheritance()
 							{
 								choise = choiseOld;
 							}
+						}
+					}
+				}
+			}
+
+			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
+			{
+				if (classes[i]->keyvalues[c].iType == FGD_KEY_CHOICES)
+				{
+					if (classes[i]->keyvalues[c].name == "model")
+					{
+						if (!classes[i]->model.size())
+						{
+							classes[i]->model = classes[i]->keyvalues[c].defaultValue;
+							fixupPath(classes[i]->model, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+							//classes[i]->isModel = true;
 						}
 					}
 				}

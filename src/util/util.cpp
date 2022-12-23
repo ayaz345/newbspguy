@@ -1389,7 +1389,16 @@ bool FindPathInAssets(const std::string& path, std::string& outpath, bool traces
 		outpath = GetWorkDir() + path;
 		return true;
 	}
-	
+	if (tracesearch)
+	{
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetGameDir() + path) << "]\n";
+	}
+	if (fileExists(GetGameDir() + path))
+	{
+		outpath = GetGameDir() + path;
+		return true;
+	}
+
 	for (auto const& dir : g_settings.resPaths)
 	{
 		if (dir.enabled)
@@ -1423,6 +1432,16 @@ bool FindPathInAssets(const std::string& path, std::string& outpath, bool traces
 				outpath = GetCurrentDir() + dir.path + path;
 				return true;
 			}
+			if (tracesearch)
+			{
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (GetGameDir() + dir.path + path) << "]\n";
+			}
+			if (fileExists(GetGameDir() + dir.path + path))
+			{
+				outpath = GetGameDir() + dir.path + path;
+				return true;
+			}
+
 #endif
 		}
 	}
@@ -1433,4 +1452,52 @@ bool FindPathInAssets(const std::string& path, std::string& outpath, bool traces
 		logf("{}", outTrace.str());
 	}
 	return false;
+}
+
+
+void FixupAllSystemPaths()
+{
+	/* fixup gamedir can be only like C:/gamedir/ or /gamedir/ */
+	fixupPath(g_settings.gamedir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+
+	if (g_settings.workingdir.find(':') == std::string::npos)
+	{
+		/* fixup workingdir for relative to gamedir 
+			like ./workidr/ or workir/
+		*/
+		
+		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+	}
+	else
+	{
+		/* fixup absolute workdir like C:/Gamedir/ */
+		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+	}
+
+	for (auto& s : g_settings.fgdPaths)
+	{
+		if (s.path.find(':') == std::string::npos)
+		{
+			// relative like relative/to/fgdname.fgd
+			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+		}
+		else
+		{
+			// absolute like c:/absolute/to/fgdname.fgd
+			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
+		}
+	}
+	for (auto& s : g_settings.resPaths)
+	{
+		if (s.path.find(':') == std::string::npos)
+		{
+			// relative like ./cstrike/ or valve/
+			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		}
+		else
+		{
+			// absolute like c:/absolute/dirname/
+			fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
+		}
+	}
 }

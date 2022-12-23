@@ -374,6 +374,8 @@ class StudioModel
 {
 public:
 	// entity settings
+	float fps;
+	float frametime;        //for small fps render
 	float m_frame;			// frame
 	int m_sequence;			// sequence index
 	int m_bodynum;			// bodypart selection	
@@ -424,6 +426,8 @@ public:
 
 	StudioModel(std::string modelname)
 	{
+		fps = 30.0;
+		frametime = 99999.0f;
 		filename = modelname;
 		g_vright = vec3();
 		g_lambert = 1.0f;

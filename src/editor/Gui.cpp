@@ -4855,42 +4855,7 @@ void Gui::drawSettings()
 
 	if (oldShowSettings && !showSettingsWidget)
 	{
-		/* fixup gamedir */
-		fixupPath(g_settings.gamedir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-
-		if (g_settings.workingdir.find(':') == std::string::npos)
-		{
-			/* fixup workingdir for relative to gamedir */
-			fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-		}
-		else
-		{
-			/* fixup absolute workdir */
-			fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-		}
-
-		for (auto& s : g_settings.fgdPaths)
-		{
-			if (s.path.find(':') == std::string::npos)
-			{
-				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-			}
-			else
-			{
-				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-			}
-		}
-		for (auto& s : g_settings.resPaths)
-		{
-			if (s.path.find(':') == std::string::npos)
-			{
-				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-			}
-			else
-			{
-				fixupPath(s.path, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
-			}
-		}
+		FixupAllSystemPaths();
 		g_settings.save();
 		if (!app->reloading)
 		{

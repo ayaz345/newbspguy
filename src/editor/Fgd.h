@@ -73,7 +73,8 @@ struct FgdClass
 	FgdClass()
 	{
 		classType = FGD_CLASS_POINT;
-		name = "???";
+		name = "";
+		model = "";
 		isSprite = false;
 		isModel = false;
 		isDecal = false;

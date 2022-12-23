@@ -174,6 +174,8 @@ public:
 
 	Gui* gui;
 
+	GLFWwindow* window;
+
 	Fgd* fgd = NULL;
 
 	bool hideGui = false;
@@ -210,8 +212,6 @@ public:
 	bool isEntTransparent(const char* classname);
 private:
 	Bsp* SelectedMap = NULL;
-
-	GLFWwindow* window;
 	PointEntRenderer* pointEntRenderer;
 	PointEntRenderer* swapPointEntRenderer = NULL;
 

@@ -869,6 +869,8 @@ void StudioModel::GetModelMeshes(int& bodies, int& subbodies, int& skins, int& m
 
 void StudioModel::DrawModel(int bodynum, int subbodynum, int skinnum, int meshnum)
 {
+	this->frametime += g_app->curTime - g_app->oldTime;
+
 	if (SetBodygroup(bodynum, subbodynum) != -1)
 	{
 		// Need clear all model data and refresh it for new subbody
@@ -889,7 +891,13 @@ void StudioModel::DrawModel(int bodynum, int subbodynum, int skinnum, int meshnu
 		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
 	}
 	SetSkin(skinnum);
-	UpdateModelMeshList();
+
+	if (this->frametime > (1.0f / fps))
+	{
+		AdvanceFrame(this->frametime);
+		UpdateModelMeshList();
+		this->frametime = 0.0f;
+	}
 
 	Texture* validTexture = NULL;
 

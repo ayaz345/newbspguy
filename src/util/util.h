@@ -179,3 +179,4 @@ int ColorDistance(COLOR3 color, COLOR3 other);
 void SimpeColorReduce(COLOR3* image, int size);
 
 bool FindPathInAssets(const std::string& path, std::string& outpath, bool tracesearch = false);
+void FixupAllSystemPaths();

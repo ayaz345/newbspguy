@@ -605,6 +605,9 @@ void AppSettings::load()
 		transparentEntities.push_back("func_buyzone");
 	}
 
+
+	FixupAllSystemPaths();
+
 	entListReload = false;
 }
 
@@ -975,10 +978,10 @@ void Renderer::renderLoop()
 			}
 		}
 
-		if (SelectedMap && SelectedMap->mdl)
-		{
-			SelectedMap->mdl->AdvanceFrame(curTime - oldTime);
-		}
+		//if (SelectedMap && SelectedMap->mdl)
+		//{
+		//	SelectedMap->mdl->AdvanceFrame(curTime - oldTime);
+		//}
 
 		int modelIdx = -1;
 		int entIdx = pickInfo.GetSelectedEnt();
@@ -2727,7 +2730,7 @@ void Renderer::reloadBspModels()
 				if (entity->hasKey("model"))
 				{
 					std::string modelPath = entity->keyvalues["model"];
-					if (toLowerCase(modelPath).find(".bsp") != std::string::npos)
+					if (toLowerCase(modelPath).ends_with(".bsp"))
 					{
 						std::string newBspPath;
 						if (FindPathInAssets(modelPath, newBspPath))

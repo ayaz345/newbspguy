@@ -63,6 +63,7 @@ struct RenderEnt
 	bool needAngles = false;
 	bool hide = false;
 	StudioModel* mdl;
+	std::string mdlFileName;
 	RenderEnt()
 	{
 		modelMatAngles = modelMatOrigin = mat4x4();
@@ -70,11 +71,14 @@ struct RenderEnt
 		modelIdx = 0;
 		pointEntCube = NULL;
 		mdl = NULL;
+		mdlFileName = "";
 	}
 	~RenderEnt()
 	{
 		if (mdl)
 			delete mdl;
+
+		mdl = NULL;
 	}
 };
 

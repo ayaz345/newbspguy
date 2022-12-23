@@ -1292,36 +1292,56 @@ void BspRenderer::refreshEnt(int entIdx)
 	{
 		if (ent->hasKey("model") || g_app->fgd)
 		{
-			std::string modelpath;
-			if (ent->hasKey("model"))
+			std::string modelpath = std::string();
+
+			if (ent->hasKey("model") && modelpath.size())
 			{
 				modelpath = ent->keyvalues["model"];
 			}
+
 			if (g_app->fgd && modelpath.empty())
 			{
 				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
-				if (fgdClass)
+				if (fgdClass && !fgdClass->model.empty())
 				{
 					modelpath = fgdClass->model;
 				}
 			}
 
-			if (!renderEnts[entIdx].mdl || renderEnts[entIdx].mdl->filename != modelpath)
+			if (renderEnts[entIdx].mdlFileName.size() && !modelpath.size() || renderEnts[entIdx].mdlFileName != modelpath)
 			{
+				renderEnts[entIdx].mdlFileName = modelpath;
 				std::string lowerpath = toLowerCase(modelpath);
+				std::string newModelPath;
 				if (lowerpath.ends_with(".mdl"))
 				{
-					std::string newModelPath;
 					if (FindPathInAssets(modelpath, newModelPath))
 					{
 						if (renderEnts[entIdx].mdl)
+						{
 							delete renderEnts[entIdx].mdl;
+							renderEnts[entIdx].mdl = NULL;
+						}
 						renderEnts[entIdx].mdl = new StudioModel(newModelPath);
 						renderEnts[entIdx].mdl->UpdateModelMeshList();
 					}
 					else
 					{
-
+						if (modelpath.size())
+							FindPathInAssets(modelpath, newModelPath, true);
+						if (renderEnts[entIdx].mdl)
+						{
+							delete renderEnts[entIdx].mdl;
+							renderEnts[entIdx].mdl = NULL;
+						}
+					}
+				}
+				else 
+				{
+					if (renderEnts[entIdx].mdl)
+					{
+						delete renderEnts[entIdx].mdl;
+						renderEnts[entIdx].mdl = NULL;
 					}
 				}
 			}
@@ -1648,13 +1668,13 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 	activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	activeShader->updateMatrixes();
 
-	for (size_t i = 0; i < map->ents.size(); i++)
-	{
-		if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
-		{
-			renderEnts[i].mdl->AdvanceFrame(g_app->curTime - g_app->oldTime);
-		}
-	}
+	//for (size_t i = 0; i < map->ents.size(); i++)
+	//{
+	//	if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+	//	{
+	//		renderEnts[i].mdl->AdvanceFrame(g_app->curTime - g_app->oldTime);
+	//	}
+	//}
 
 	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
 	if (highlightEnts.size() && !highlightAlwaysOnTop)
@@ -2008,9 +2028,8 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 			}
 			else
 			{
-				renderEnts[i].pointEntCube->selectBuffer->drawFull();
+				renderEnts[i].pointEntCube->buffer->drawFull();
 			}
-			renderEnts[i].pointEntCube->buffer->drawFull();
 			//renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 		}
 	}
