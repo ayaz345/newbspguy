@@ -19,7 +19,7 @@ jobs:
     linux_build:
         strategy:
           matrix:
-            compiler: gcc
+            compiler: [gcc]
 
         name: "Linux"
         needs: get_time_build
