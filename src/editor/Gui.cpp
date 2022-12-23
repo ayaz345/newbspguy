@@ -2395,11 +2395,11 @@ void Gui::drawDebugWidget()
 
 		if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
 		{
-			ImGui::Text("Origin: {} {} {}", (int)cameraOrigin.x, (int)cameraOrigin.y, (int)cameraOrigin.z);
-			ImGui::Text("Angles: {} {} {}", (int)cameraAngles.x, (int)cameraAngles.y, (int)cameraAngles.z);
+			ImGui::Text(fmt::format("Origin: {} {} {}", (int)cameraOrigin.x, (int)cameraOrigin.y, (int)cameraOrigin.z).c_str());
+			ImGui::Text(fmt::format("Angles: {} {} {}", (int)cameraAngles.x, (int)cameraAngles.y, (int)cameraAngles.z).c_str());
 
-			ImGui::Text("Selected faces: {}", (unsigned int)app->pickInfo.selectedFaces.size());
-			ImGui::Text("PickMode: {}", app->pickMode);
+			ImGui::Text(fmt::format("Selected faces: {}", (unsigned int)app->pickInfo.selectedFaces.size()).c_str());
+			ImGui::Text(fmt::format("PickMode: {}", app->pickMode).c_str());
 		}
 		if (ImGui::CollapsingHeader("Map", ImGuiTreeNodeFlags_DefaultOpen))
 		{
@@ -2409,13 +2409,13 @@ void Gui::drawDebugWidget()
 			}
 			else
 			{
-				ImGui::Text("Name: {}", map->bsp_name.c_str());
+				ImGui::Text(fmt::format("Name: {}", map->bsp_name.c_str()).c_str());
 
 				if (ImGui::CollapsingHeader("Selection", ImGuiTreeNodeFlags_DefaultOpen))
 				{
 					if (app->pickInfo.selectedEnts.size())
 					{
-						ImGui::Text("Entity ID: {}", entIdx);
+						ImGui::Text(fmt::format("Entity ID: {}", entIdx).c_str());
 					}
 
 					int modelIdx = -1;
@@ -2442,13 +2442,13 @@ void Gui::drawDebugWidget()
 						if (modelIdx > 0)
 						{
 							BSPMODEL& model = map->models[modelIdx];
-							ImGui::Text("Model ID: {}", modelIdx);
+							ImGui::Text(fmt::format("Model ID: {}", modelIdx).c_str());
 
-							ImGui::Text("Model polies: {}", model.nFaces);
+							ImGui::Text(fmt::format("Model polies: {}", model.nFaces).c_str());
 						}
 
-						ImGui::Text("Face ID: {}", app->pickInfo.selectedFaces[0]);
-						ImGui::Text("Plane ID: {}", face.iPlane);
+						ImGui::Text(fmt::format("Face ID: {}", app->pickInfo.selectedFaces[0]).c_str());
+						ImGui::Text(fmt::format("Plane ID: {}", face.iPlane).c_str());
 
 						if (face.iTextureInfo < map->texinfoCount)
 						{
@@ -2457,27 +2457,28 @@ void Gui::drawDebugWidget()
 							if (texOffset != -1 && info.iMiptex != -1)
 							{
 								BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-								ImGui::Text("Texinfo ID: {}", face.iTextureInfo);
-								ImGui::Text("Texture ID: {}", info.iMiptex);
-								ImGui::Text("Texture: {} ({}x{})", tex.szName, tex.nWidth, tex.nHeight);
+								ImGui::Text(fmt::format("Texinfo ID: {}", face.iTextureInfo).c_str());
+								ImGui::Text(fmt::format("Texture ID: {}", info.iMiptex).c_str());
+								ImGui::Text(fmt::format("Texture: {} ({}x{})", tex.szName, tex.nWidth, tex.nHeight).c_str());
 							}
 							BSPPLANE& plane = map->planes[face.iPlane];
 							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 							float anglex, angley;
 							vec3 xv, yv;
 							int val = TextureAxisFromPlane(plane, xv, yv);
-							ImGui::Text("Plane type {} : axis ({}x{})", val, anglex = AngleFromTextureAxis(texinfo.vS, true, val), angley = AngleFromTextureAxis(texinfo.vT, false, val));
-							ImGui::Text("Texinfo: {}/{}/{} + {} / {}/{}/{} + {} ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS,
-										texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT);
+							ImGui::Text(fmt::format("Plane type {} : axis ({}x{})", val, anglex = AngleFromTextureAxis(texinfo.vS, true, val),
+										angley = AngleFromTextureAxis(texinfo.vT, false, val)).c_str());
+							ImGui::Text(fmt::format("Texinfo: {}/{}/{} + {} / {}/{}/{} + {} ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS,
+										texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT).c_str());
 
 							xv = AxisFromTextureAngle(anglex, true, val);
 							yv = AxisFromTextureAngle(angley, false, val);
 
-							ImGui::Text("AxisBack: {}/{}/{} + {} / {}/{}/{} + {} ", xv.x, xv.y, xv.z, texinfo.shiftS,
-										yv.x, yv.y, yv.z, texinfo.shiftT);
+							ImGui::Text(fmt::format("AxisBack: {}/{}/{} + {} / {}/{}/{} + {} ", xv.x, xv.y, xv.z, texinfo.shiftS,
+										yv.x, yv.y, yv.z, texinfo.shiftT).c_str());
 
 						}
-						ImGui::Text("Lightmap Offset: {}", face.nLightmapOffset);
+						ImGui::Text(fmt::format("Lightmap Offset: {}", face.nLightmapOffset).c_str());
 					}
 				}
 			}
@@ -2526,16 +2527,16 @@ void Gui::drawDebugWidget()
 						if (ImGui::TreeNode(("HULL " + std::to_string(i)).c_str()))
 						{
 							ImGui::Indent();
-							ImGui::Text("Contents: {}", map->getLeafContentsName(contents));
+							ImGui::Text(fmt::format("Contents: {}", map->getLeafContentsName(contents)).c_str());
 							if (i == 0)
 							{
-								ImGui::Text("Leaf: {}", leafIdx);
+								ImGui::Text(fmt::format("Leaf: {}", leafIdx).c_str());
 							}
-							ImGui::Text("Parent Node: {} (child {})",
+							ImGui::Text(fmt::format("Parent Node: {} (child {})",
 										nodeBranch.size() ? nodeBranch[nodeBranch.size() - 1] : headNode,
-										childIdx);
-							ImGui::Text("Head Node: {}", headNode);
-							ImGui::Text("Depth: {}", nodeBranch.size());
+										childIdx).c_str());
+							ImGui::Text(fmt::format("Head Node: {}", headNode).c_str());
+							ImGui::Text(fmt::format("Depth: {}", nodeBranch.size()).c_str());
 
 							ImGui::Unindent();
 							ImGui::TreePop();
@@ -2580,10 +2581,10 @@ void Gui::drawDebugWidget()
 				}
 			}
 
-			ImGui::Text("Total textures used in map {}", map->textureCount);
-			ImGui::Text("Used {} internal textures of {}", InternalTextures, TotalInternalTextures);
-			ImGui::Text("Used {} wad files", TotalInternalTextures > 0 ? (int)mapTexsUsage.size() - 1 : (int)mapTexsUsage.size());
-			ImGui::Text("Used {} wad textures", WadTextures);
+			ImGui::Text(fmt::format("Total textures used in map {}", map->textureCount).c_str());
+			ImGui::Text(fmt::format("Used {} internal textures of {}", InternalTextures, TotalInternalTextures).c_str());
+			ImGui::Text(fmt::format("Used {} wad files", TotalInternalTextures > 0 ? (int)mapTexsUsage.size() - 1 : (int)mapTexsUsage.size()).c_str());
+			ImGui::Text(fmt::format("Used {} wad textures", WadTextures).c_str());
 
 			for (auto& tmpWad : mapTexsUsage)
 			{
@@ -2613,17 +2614,17 @@ void Gui::drawDebugWidget()
 			bool isTransformingValid = !(app->modelUsesSharedStructures && app->transformMode != TRANSFORM_MODE_MOVE) && (app->isTransformableSolid || isScalingObject);
 			bool isTransformingWorld = entIdx == 0 && app->transformTarget != TRANSFORM_OBJECT;
 
-			ImGui::Text("isTransformableSolid {}", app->isTransformableSolid);
-			ImGui::Text("isScalingObject {}", isScalingObject);
-			ImGui::Text("isMovingOrigin {}", isMovingOrigin);
-			ImGui::Text("isTransformingValid {}", isTransformingValid);
-			ImGui::Text("isTransformingWorld {}", isTransformingWorld);
-			ImGui::Text("transformMode {}", app->transformMode);
-			ImGui::Text("transformTarget {}", app->transformTarget);
-			ImGui::Text("modelUsesSharedStructures {}", app->modelUsesSharedStructures);
+			ImGui::Text(fmt::format("isTransformableSolid {}", app->isTransformableSolid).c_str());
+			ImGui::Text(fmt::format("isScalingObject {}", isScalingObject).c_str());
+			ImGui::Text(fmt::format("isMovingOrigin {}", isMovingOrigin).c_str());
+			ImGui::Text(fmt::format("isTransformingValid {}", isTransformingValid).c_str());
+			ImGui::Text(fmt::format("isTransformingWorld {}", isTransformingWorld).c_str());
+			ImGui::Text(fmt::format("transformMode {}", app->transformMode).c_str());
+			ImGui::Text(fmt::format("transformTarget {}", app->transformTarget).c_str());
+			ImGui::Text(fmt::format("modelUsesSharedStructures {}", app->modelUsesSharedStructures).c_str());
 
-			ImGui::Text("showDragAxes {}\nmovingEnt {}\nanyAltPressed {}",
-						app->showDragAxes, app->movingEnt, app->anyAltPressed);
+			ImGui::Text(fmt::format("showDragAxes {}\nmovingEnt {}\nanyAltPressed {}",
+						app->showDragAxes, app->movingEnt, app->anyAltPressed).c_str());
 
 
 		}
@@ -4305,7 +4306,7 @@ void Gui::drawSettings()
 			{
 				ifd::FileDialog::Instance().Open("WorkingDir", "Select working dir", std::string(), false, g_settings.lastdir);
 			}
-			if (ImGui::DragFloat("Font Size", &fontSize, 0.1f, 8, 48, "{} pixels"))
+			if (ImGui::DragFloat("Font Size", &fontSize, 0.1f, 8, 48, "%f pixels"))
 			{
 				shouldReloadFonts = true;
 			}
@@ -4623,38 +4624,38 @@ void Gui::drawSettings()
 
 			ImGui::DragFloat("MAX FLOAT COORDINATES", &FLT_MAX_COORD, 64.f, 512.f, 2147483647.f, "%.0f");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP MODELS", (int*)&MAX_MAP_MODELS, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP MODELS", (int*)&MAX_MAP_MODELS, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP ENTITIES", (int*)&MAX_MAP_ENTS, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP ENTITIES", (int*)&MAX_MAP_ENTS, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP TEXTURES", (int*)&MAX_MAP_TEXTURES, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP TEXTURES", (int*)&MAX_MAP_TEXTURES, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP NODES", (int*)&MAX_MAP_NODES, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP NODES", (int*)&MAX_MAP_NODES, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP CLIPNODES", (int*)&MAX_MAP_CLIPNODES, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP CLIPNODES", (int*)&MAX_MAP_CLIPNODES, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP LEAVES", (int*)&MAX_MAP_LEAVES, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP LEAVES", (int*)&MAX_MAP_LEAVES, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			if (ImGui::DragInt("MAX MAP VISDATA", (int*)&vis_data_count, 4, 128, 2147483647, "{}MB"))
+			if (ImGui::DragInt("MAX MAP VISDATA", (int*)&vis_data_count, 4, 128, 2147483647, "%uMB"))
 			{
 				MAX_MAP_VISDATA = vis_data_count * (1024 * 1024);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP EDGES", (int*)&MAX_MAP_EDGES, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP EDGES", (int*)&MAX_MAP_EDGES, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("MAX MAP SURFEDGES", (int*)&MAX_MAP_SURFEDGES, 4, 128, 2147483647, "{}");
+			ImGui::DragInt("MAX MAP SURFEDGES", (int*)&MAX_MAP_SURFEDGES, 4, 128, 2147483647, "%u");
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			if (ImGui::DragInt("MAX MAP LIGHTDATA", (int*)&light_data_count, 4, 128, 2147483647, "{}MB"))
+			if (ImGui::DragInt("MAX MAP LIGHTDATA", (int*)&light_data_count, 4, 128, 2147483647, "%uMB"))
 			{
 				MAX_MAP_LIGHTDATA = light_data_count * (1024 * 1024);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			if (ImGui::DragInt("MAX MAP TEXTURE DIMENSION", (int*)&MAX_TEXTURE_DIMENSION, 4, 32, 1048576, "{}"))
+			if (ImGui::DragInt("MAX MAP TEXTURE DIMENSION", (int*)&MAX_TEXTURE_DIMENSION, 4, 32, 1048576, "%u"))
 			{
 				MAX_TEXTURE_SIZE = ((MAX_TEXTURE_DIMENSION * MAX_TEXTURE_DIMENSION * 2 * 3) / 2);
 			}
 			ImGui::SetNextItemWidth(pathWidth / 2);
-			ImGui::DragInt("TEXTURE_STEP", (int*)&TEXTURE_STEP, 4, 4, 512, "{}");
+			ImGui::DragInt("TEXTURE_STEP", (int*)&TEXTURE_STEP, 4, 4, 512, "%u");
 		}
 		else if (settingsTab == 5)
 		{
@@ -5781,11 +5782,11 @@ void Gui::drawEntityReport()
 							ImGui::BeginTooltip();
 							if (!app->fgd || !app->fgd->getFgdClass(cname))
 							{
-								ImGui::Text("Classname \"{}\" not found in fgd files!", cname.c_str());
+								ImGui::Text(fmt::format("Classname \"{}\" not found in fgd files!", cname.c_str()).c_str());
 							}
 							else
 							{
-								ImGui::Text("{}", "This entity is hidden on map, press 'unhide' to show it!");
+								ImGui::Text(fmt::format("{}", "This entity is hidden on map, press 'unhide' to show it!").c_str());
 							}
 							ImGui::EndTooltip();
 						}
@@ -6696,7 +6697,7 @@ void Gui::drawLightMapTool()
 				}
 			}
 			ImGui::Separator();
-			ImGui::Text("Lightmap width:{} height:{}", size[0], size[1]);
+			ImGui::Text(fmt::format("Lightmap width:{} height:{}", size[0], size[1]).c_str());
 			ImGui::Separator();
 			ColorPicker3(imgui_io, colourPatch);
 			ImGui::SetNextItemWidth(100.f);
@@ -6931,7 +6932,7 @@ void Gui::drawTextureTool()
 		ImGui::PushItemWidth(inputWidth);
 
 		if (app->pickInfo.selectedFaces.size() == 1)
-			ImGui::Text("Lightmap size {} / {} ( {} )", lmSize[0], lmSize[1], lmSize[0] * lmSize[1]);
+			ImGui::Text(fmt::format("Lightmap size {} / {} ( {} )", lmSize[0], lmSize[1], lmSize[0] * lmSize[1]).c_str());
 
 
 		ImGui::Text("Scale");
