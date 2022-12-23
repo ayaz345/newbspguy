@@ -17,17 +17,11 @@ jobs:
                echo "release_tag=NightBuild_$(date +"%Y.%m.%d_%H-%M")" >> $GITHUB_OUTPUT
             
     linux_build:
-        strategy:
-          matrix:
-            compiler: [gcc]
-
         name: "Linux"
         needs: get_time_build
         runs-on: ubuntu-latest
         
         env:
-            CC: ${{ matrix.compiler }}
-            CXX: ${{ matrix.compiler }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         outputs:
@@ -36,6 +30,8 @@ jobs:
         steps:
             - name: Checkout repository
               uses: actions/checkout@v2
+              with:
+               cxx: ${{ matrix.cxx }}
 
             - name: Download and install dependencies
               run: |
@@ -43,6 +39,8 @@ jobs:
                  
             - name: Build release
               run: |
+                 export CC=`which gcc`
+                 export CXX=`which g++`
                  mkdir build; cd build
                  cmake .. -DCMAKE_BUILD_TYPE=RELEASE
                  make
