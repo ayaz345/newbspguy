@@ -20,7 +20,7 @@ jobs:
         strategy:
           matrix:
             compiler: gcc
-            gcc: 11
+            gcc: 10
 
         name: "Linux"
         needs: get_time_build
