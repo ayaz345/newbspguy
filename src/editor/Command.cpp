@@ -463,7 +463,7 @@ int CreateBspModelCommand::getDefaultTextureIdx()
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 			if (tex.szName[0] != '\0' && strcasecmp(tex.szName, "aaatrigger") == 0)
 			{
-				logf(std::format("Found default texture in map file.\n"));
+				logf("Found default texture in map file.\n");
 				return i;
 			}
 		}
@@ -616,7 +616,7 @@ void CleanMapCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!map || !renderer)
 		return;
-	logf(std::format("Cleaning {}\n", map->bsp_name));
+	logf("Cleaning {}\n", map->bsp_name);
 	map->remove_unused_model_structures().print_delete_stats(1);
 
 	refresh();
@@ -686,10 +686,10 @@ void OptimizeMapCommand::execute()
 		return;
 	map->update_ent_lump();
 
-	logf(std::format("Optimizing {}\n", map->bsp_name));
+	logf("Optimizing {}\n", map->bsp_name);
 	if (!map->has_hull2_ents())
 	{
-		logf(std::format("    Redirecting hull 2 to hull 1 because there are no large monsters/pushables\n"));
+		logf("    Redirecting hull 2 to hull 1 because there are no large monsters/pushables\n");
 		map->delete_hull(2, 1);
 	}
 

@@ -82,7 +82,7 @@ bool CommandLine::hasOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		logf(std::format("ERROR: invalid number of coordinates for option {}\n", optionName));
+		logf("ERROR: invalid number of coordinates for option {}\n", optionName);
 		return false;
 	}
 
@@ -106,7 +106,7 @@ vec3 CommandLine::getOptionVector(const std::string& optionName)
 
 	if (parts.size() != 3)
 	{
-		logf(std::format("ERROR: invalid number of coordinates for option {}\n", optionName));
+		logf("ERROR: invalid number of coordinates for option {}\n", optionName);
 		return ret;
 	}
 

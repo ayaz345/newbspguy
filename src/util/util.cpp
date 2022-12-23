@@ -28,20 +28,6 @@ std::vector<std::string> g_log_buffer;
 std::mutex g_log_mutex;
 std::mutex g_log_mutex2;
 
-void logf(const std::string& log_line)
-{
-	g_log_mutex.lock();
-#ifndef NDEBUG
-	static std::ofstream outfile("log.txt", std::ios_base::app);
-	outfile << log_line;
-#endif
-
-	std::cout << log_line;
-	g_log_buffer.push_back(log_line);
-
-	g_log_mutex.unlock();
-}
-
 
 bool fileExists(const std::string& fileName)
 {
@@ -715,7 +701,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i1 == -1)
 	{
-//logf(std::format("Only 1 unique vert!\n"));
+//logf("Only 1 unique vert!\n");
 		return std::vector<vec3>();
 	}
 
@@ -740,7 +726,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i2 == -1)
 	{
-//logf(std::format("All verts are colinear!\n"));
+//logf("All verts are colinear!\n");
 		return std::vector<vec3>();
 	}
 
@@ -901,7 +887,7 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 	fopen_s(&outputFile, fileName.c_str(), "wb");
 	if (!outputFile)
 	{
-		logf(std::format("Can't write to output file!\n"));
+		logf("Can't write to output file!\n");
 		return;
 	}
 	//*****HEADER************//
@@ -1167,7 +1153,7 @@ void print_color(int colors)
 {
 	if (!colors)
 	{
-		logf(std::format("\x1B[0m"));
+		logf("\x1B[0m");
 		return;
 	}
 	const char* mode = colors & PRINT_BRIGHT ? "1" : "0";
@@ -1182,7 +1168,7 @@ void print_color(int colors)
 		case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
 		case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
 	}
-	logf(std::format("\x1B[{};{}m", mode, color));
+	logf("\x1B[{};{}m", mode, color);
 }
 
 std::string getConfigDir()
@@ -1444,7 +1430,7 @@ bool FindPathInAssets(const std::string& path, std::string& outpath, bool traces
 	if (tracesearch)
 	{
 		outTrace << "-------------END PATH TRACING-------------\n";
-		logf(std::format("{}", outTrace.str()));
+		logf("{}", outTrace.str());
 	}
 	return false;
 }

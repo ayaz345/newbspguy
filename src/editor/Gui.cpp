@@ -230,12 +230,12 @@ void Gui::copyTexture()
 	Bsp* map = app->getSelectedMap();
 	if (!map)
 	{
-		logf(std::format("No map selecetd\n"));
+		logf("No map selecetd\n");
 		return;
 	}
 	else if (app->pickInfo.selectedFaces.size() == 0 || app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(std::format("No face selected\n"));
+		logf("No face selected\n");
 		return;
 	}
 	BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[app->pickInfo.selectedFaces[0]].iTextureInfo];
@@ -253,12 +253,12 @@ void Gui::copyLightmap()
 
 	if (!map)
 	{
-		logf(std::format("No map selecetd\n"));
+		logf("No map selecetd\n");
 		return;
 	}
 	else if (app->pickInfo.selectedFaces.size() == 0 || app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(std::format("No face selected\n"));
+		logf("No face selected\n");
 		return;
 	}
 
@@ -278,12 +278,12 @@ void Gui::pasteLightmap()
 	Bsp* map = app->getSelectedMap();
 	if (!map)
 	{
-		logf(std::format("No map selecetd\n"));
+		logf("No map selecetd\n");
 		return;
 	}
 	else if (app->pickInfo.selectedFaces.size() == 0 || app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(std::format("No face selected\n"));
+		logf("No face selected\n");
 		return;
 	}
 	int faceIdx = app->pickInfo.selectedFaces[0];
@@ -298,11 +298,11 @@ void Gui::pasteLightmap()
 
 	if (dstLightmap.width != copiedLightmap.width || dstLightmap.height != copiedLightmap.height)
 	{
-		logf(std::format("WARNING: lightmap sizes don't match ({}x{} != {}{})",
+		logf("WARNING: lightmap sizes don't match ({}x{} != {}{})",
 			 copiedLightmap.width,
 			 copiedLightmap.height,
 			 dstLightmap.width,
-			 dstLightmap.height));
+			 dstLightmap.height);
 		 // TODO: resize the lightmap, or maybe just shift if the face is the same size
 	}
 
@@ -366,7 +366,7 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 
 	for (int i = 0; i < 4; i++)
 	{
-		logf(std::format("tmpMap.models[0].iHeadnodes[{}] = {}\n", i, tmpMap.models[0].iHeadnodes[i]));
+		logf("tmpMap.models[0].iHeadnodes[{}] = {}\n", i, tmpMap.models[0].iHeadnodes[i]);
 	}
 
 	STRUCTCOUNT removed = tmpMap.remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
@@ -376,7 +376,7 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 
 	if (!tmpMap.validate())
 	{
-		logf(std::format("Tried to fix model by adding emply missing data {}\n", id));
+		logf("Tried to fix model by adding emply missing data {}\n", id);
 		int markid = 0;
 		for (int i = 0; i < tmpMap.leafCount; i++)
 		{
@@ -394,33 +394,33 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 
 	if (!tmpMap.validate())
 	{
-		logf(std::format("Failed to export model {}\n", id));
+		logf("Failed to export model {}\n", id);
 		return;
 	}
 
 
 	for (int i = 0; i < 4; i++)
 	{
-		logf(std::format("tmpMap.models[0].iHeadnodes[{}] = {}\n", i, tmpMap.models[0].iHeadnodes[i]));
+		logf("tmpMap.models[0].iHeadnodes[{}] = {}\n", i, tmpMap.models[0].iHeadnodes[i]);
 	}
 
 	if (!dirExists(g_settings.gamedir + g_settings.workingdir))
 		createDir(g_settings.gamedir + g_settings.workingdir);
-	logf(std::format("Export model {} to {}\n", id, g_settings.gamedir + g_settings.workingdir + "model" + std::to_string(id) + ".bsp"));
+	logf("Export model {} to {}\n", id, g_settings.gamedir + g_settings.workingdir + "model" + std::to_string(id) + ".bsp");
 	tmpMap.write(g_settings.gamedir + g_settings.workingdir + "model" + std::to_string(id) + ".bsp");
 }
 
 void ExportModel(Bsp* map, int id, int ExportType)
 {
-	logf(std::format("Save current map to temporary file.\n"));
+	logf("Save current map to temporary file.\n");
 	map->update_ent_lump();
 	map->update_lump_pointers();
 	map->write(map->bsp_path + ".tmp.bsp");
 
-	logf(std::format("Load map for model export.\n"));
+	logf("Load map for model export.\n");
 	Bsp* tmpMap = new Bsp(map->bsp_path + ".tmp.bsp");
 
-	logf(std::format("Remove temporary file.\n"));
+	logf("Remove temporary file.\n");
 	removeFile(map->bsp_path + ".tmp.bsp");
 
 	vec3 modelOrigin = tmpMap->get_model_center(id);
@@ -429,12 +429,12 @@ void ExportModel(Bsp* map, int id, int ExportType)
 
 	while (tmpMap->modelCount < 2)
 	{
-		logf(std::format("Create missing model.\n"));
+		logf("Create missing model.\n");
 		tmpMap->create_model();
 	}
 
 	tmpMap->models[1] = tmpModel;
-	logf(std::format("Make first model empty(world bypass).\n"));
+	logf("Make first model empty(world bypass).\n");
 	tmpMap->models[0] = tmpModel;
 	tmpMap->models[0].nVisLeafs = 0;
 	tmpMap->models[0].iHeadnodes[0] = tmpMap->models[0].iHeadnodes[1] =
@@ -444,7 +444,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	{
 		delete tmpMap->ents[i];
 	}
-	logf(std::format("Add two ents, worldspawn and temporary func_wall.\n"));
+	logf("Add two ents, worldspawn and temporary func_wall.\n");
 	tmpMap->ents.clear();
 
 	Entity* tmpEnt = new Entity(*map->ents[0]);
@@ -458,32 +458,32 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	tmpMap->ents.push_back(tmpEnt2);
 	tmpMap->update_ent_lump();
 
-	logf(std::format("Save two models, empty worldspawn and target model.\n"));
+	logf("Save two models, empty worldspawn and target model.\n");
 	tmpMap->modelCount = 2;
 	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
 	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL) * 2;
 	tmpMap->update_lump_pointers();
 
-	logf(std::format("Remove all unused map data #1.\n"));
+	logf("Remove all unused map data #1.\n");
 	STRUCTCOUNT removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
 																 CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
-	logf(std::format("Copy temporary model to worldspawn.\n"));
+	logf("Copy temporary model to worldspawn.\n");
 	tmpMap->modelCount = 1;
 	tmpMap->models[0] = tmpMap->models[1];
 	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
 	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL);
 
-	logf(std::format("Remove temporary func_wall.\n"));
+	logf("Remove temporary func_wall.\n");
 	tmpMap->ents.clear();
 	tmpMap->ents.push_back(tmpEnt);
 	tmpMap->update_ent_lump();
 
 	tmpMap->update_lump_pointers();
 
-	logf(std::format("Validate model...\n"));
+	logf("Validate model...\n");
 
 	/*int markid = 0;
 	for (int i = 0; i < tmpMap->leafCount; i++)
@@ -505,7 +505,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	tmpMap->move(-modelOrigin, 0, true, true);
 
 	tmpMap->update_lump_pointers();
-	logf(std::format("Remove all unused map data #2.\n"));
+	logf("Remove all unused map data #2.\n");
 	removed = tmpMap->remove_unused_model_structures(CLEAN_MARKSURFACES);
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
@@ -687,7 +687,7 @@ void Gui::draw3dContextMenus()
 							{
 								map->regenerate_clipnodes(modelIdx, -1);
 								checkValidHulls();
-								logf(std::format("Regenerated hulls 1-3 on model {}\n", modelIdx));
+								logf("Regenerated hulls 1-3 on model {}\n", modelIdx);
 							}
 
 							ImGui::Separator();
@@ -698,7 +698,7 @@ void Gui::draw3dContextMenus()
 								{
 									map->regenerate_clipnodes(modelIdx, i);
 									checkValidHulls();
-									logf(std::format("Regenerated hull {} on model {}\n", i, modelIdx));
+									logf("Regenerated hull {} on model {}\n", i, modelIdx);
 								}
 							}
 							ImGui::EndMenu();
@@ -714,7 +714,7 @@ void Gui::draw3dContextMenus()
 								map->delete_hull(3, modelIdx, -1);
 								map->getBspRender()->refreshModel(modelIdx);
 								checkValidHulls();
-								logf(std::format("Deleted all hulls on model {}\n", modelIdx));
+								logf("Deleted all hulls on model {}\n", modelIdx);
 							}
 							if (ImGui::MenuItem("Clipnodes"))
 							{
@@ -723,7 +723,7 @@ void Gui::draw3dContextMenus()
 								map->delete_hull(3, modelIdx, -1);
 								map->getBspRender()->refreshModelClipnodes(modelIdx);
 								checkValidHulls();
-								logf(std::format("Deleted hulls 1-3 on model {}\n", modelIdx));
+								logf("Deleted hulls 1-3 on model {}\n", modelIdx);
 							}
 
 							ImGui::Separator();
@@ -740,7 +740,7 @@ void Gui::draw3dContextMenus()
 										map->getBspRender()->refreshModel(modelIdx);
 									else
 										map->getBspRender()->refreshModelClipnodes(modelIdx);
-									logf(std::format("Deleted hull {} on model {}\n", i, modelIdx));
+									logf("Deleted hull {} on model {}\n", i, modelIdx);
 								}
 							}
 
@@ -755,7 +755,7 @@ void Gui::draw3dContextMenus()
 								map->simplify_model_collision(modelIdx, 2);
 								map->simplify_model_collision(modelIdx, 3);
 								map->getBspRender()->refreshModelClipnodes(modelIdx);
-								logf(std::format("Replaced hulls 1-3 on model {} with a box-shaped hull\n", modelIdx));
+								logf("Replaced hulls 1-3 on model {} with a box-shaped hull\n", modelIdx);
 							}
 
 							ImGui::Separator();
@@ -768,7 +768,7 @@ void Gui::draw3dContextMenus()
 								{
 									map->simplify_model_collision(modelIdx, 1);
 									map->getBspRender()->refreshModelClipnodes(modelIdx);
-									logf(std::format("Replaced hull {} on model {} with a box-shaped hull\n", i, modelIdx));
+									logf("Replaced hull {} on model {} with a box-shaped hull\n", i, modelIdx);
 								}
 							}
 
@@ -796,7 +796,7 @@ void Gui::draw3dContextMenus()
 											map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
 											map->getBspRender()->refreshModelClipnodes(modelIdx);
 											checkValidHulls();
-											logf(std::format("Redirected hull {} to hull {} on model {}\n", i, k, modelIdx));
+											logf("Redirected hull {} to hull {} on model {}\n", i, k, modelIdx);
 										}
 									}
 
@@ -849,7 +849,7 @@ void Gui::draw3dContextMenus()
 
 					if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && allowDuplicate))
 					{
-						logf(std::format("Execute 'duplicate' for {} models.\n", app->pickInfo.selectedEnts.size()));
+						logf("Execute 'duplicate' for {} models.\n", app->pickInfo.selectedEnts.size());
 						for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
 						{
 							DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", tmpEntIdx);
@@ -944,7 +944,7 @@ bool ExportWad(Bsp* map)
 		else
 		{
 			retval = false;
-			logf(std::format("Not found any textures in bsp file."));
+			logf("Not found any textures in bsp file.");
 		}
 		tmpWadTex.clear();
 		delete tmpWad;
@@ -952,7 +952,7 @@ bool ExportWad(Bsp* map)
 	else
 	{
 		retval = false;
-		logf(std::format("No textures for export.\n"));
+		logf("No textures for export.\n");
 	}
 	return retval;
 }
@@ -963,7 +963,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 
 	if (!tmpWad->readInfo())
 	{
-		logf(std::format("Reading wad file failed!\n"));
+		logf("Reading wad file failed!\n");
 		delete tmpWad;
 	}
 	else
@@ -1051,7 +1051,7 @@ void Gui::drawMenuBar()
 						if (tmppath.find(basename(pathlowercase)) != std::string::npos)
 						{
 							foundInMap = true;
-							logf(std::format("Already found in current map!\n"));
+							logf("Already found in current map!\n");
 							break;
 						}
 					}
@@ -1181,7 +1181,7 @@ void Gui::drawMenuBar()
 						createDir(GetWorkDir());
 					}
 
-					logf(std::format("Export entities: {}\n", entFilePath));
+					logf("Export entities: {}\n", entFilePath);
 					std::ofstream entFile(entFilePath, std::ios::trunc);
 					map->update_ent_lump();
 					if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
@@ -1192,17 +1192,17 @@ void Gui::drawMenuBar()
 				}
 				else
 				{
-					logf(std::format("Select map first\n"));
+					logf("Select map first\n");
 				}
 			}
 			if ((map && !map->is_mdl_model) && ImGui::MenuItem("All embedded textures to wad", NULL))
 			{
 				if (map)
 				{
-					logf(std::format("Export wad: {}{}\n", GetWorkDir(), map->bsp_name + ".wad"));
+					logf("Export wad: {}{}\n", GetWorkDir(), map->bsp_name + ".wad");
 					if (ExportWad(map))
 					{
-						logf(std::format("Remove all embedded textures\n"));
+						logf("Remove all embedded textures\n");
 						map->delete_embedded_textures();
 						if (map->ents.size())
 						{
@@ -1216,7 +1216,7 @@ void Gui::drawMenuBar()
 				}
 				else
 				{
-					logf(std::format("Select map first\n"));
+					logf("Select map first\n");
 				}
 			}
 			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]"))
@@ -1235,7 +1235,7 @@ void Gui::drawMenuBar()
 						}
 						else
 						{
-							logf(std::format("Select map first\n"));
+							logf("Select map first\n");
 						}
 					}
 
@@ -1250,7 +1250,7 @@ void Gui::drawMenuBar()
 							}
 							else
 							{
-								logf(std::format("Select map first\n"));
+								logf("Select map first\n");
 							}
 						}
 					}
@@ -1266,7 +1266,7 @@ void Gui::drawMenuBar()
 							}
 							else
 							{
-								logf(std::format("Select map first\n"));
+								logf("Select map first\n");
 							}
 						}
 					}
@@ -1282,7 +1282,7 @@ void Gui::drawMenuBar()
 				}
 				else
 				{
-					logf(std::format("Select map first\n"));
+					logf("Select map first\n");
 				}
 			}
 
@@ -1329,7 +1329,7 @@ void Gui::drawMenuBar()
 					hash += "1";
 					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 					{
-						logf(std::format("Preparing to export {}.\n", basename(wad->filename)));
+						logf("Preparing to export {}.\n", basename(wad->filename));
 						createDir(GetWorkDir());
 						createDir(GetWorkDir() + "wads");
 						createDir(GetWorkDir() + "wads/" + basename(wad->filename));
@@ -1340,7 +1340,7 @@ void Gui::drawMenuBar()
 
 							if (texture->szName[0] != '\0' && strlen(texture->szName) < MAXTEXTURENAME)
 							{
-								logf(std::format("Exporting {} from {} to working directory.\n", texture->szName, basename(wad->filename)));
+								logf("Exporting {} from {} to working directory.\n", texture->szName, basename(wad->filename));
 								COLOR3* texturedata = ConvertWadTexToRGB(texture);
 
 								lodepng_encode24_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
@@ -1389,7 +1389,7 @@ void Gui::drawMenuBar()
 						entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
 					}
 
-					logf(std::format("Import entities from: {}\n", entFilePath));
+					logf("Import entities from: {}\n", entFilePath);
 					if (fileExists(entFilePath))
 					{
 						int len;
@@ -1404,7 +1404,7 @@ void Gui::drawMenuBar()
 					}
 					else
 					{
-						logf(std::format("Error! No file!\n"));
+						logf("Error! No file!\n");
 					}
 				}
 			}
@@ -1437,10 +1437,10 @@ void Gui::drawMenuBar()
 					hash += "1";
 					if (ImGui::MenuItem((basename(wad->filename) + hash).c_str()))
 					{
-						logf(std::format("Preparing to import {}.\n", basename(wad->filename)));
+						logf("Preparing to import {}.\n", basename(wad->filename));
 						if (!dirExists(GetWorkDir() + "wads/" + basename(wad->filename)))
 						{
-							logf(std::format("Error. No files in {} directory.\n", GetWorkDir() + "wads/" + basename(wad->filename)));
+							logf("Error. No files in {} directory.\n", GetWorkDir() + "wads/" + basename(wad->filename));
 						}
 						else
 						{
@@ -1467,7 +1467,7 @@ void Gui::drawMenuBar()
 
 							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto& file)
 							{
-								logf(std::format("Importing {} from workdir {} wad.\n", basename(file), basename(wad->filename)));
+								logf("Importing {} from workdir {} wad.\n", basename(file), basename(wad->filename));
 							unsigned char* image_bytes;
 							unsigned int w2, h2;
 							auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, file.c_str());
@@ -1476,7 +1476,7 @@ void Gui::drawMenuBar()
 								int oldcolors = 0;
 								if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
 								{
-									logf(std::format("Need apply quantizer to {}\n", basename(file)));
+									logf("Need apply quantizer to {}\n", basename(file));
 									Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 
 									if (ditheringEnabled)
@@ -1484,7 +1484,7 @@ void Gui::drawMenuBar()
 									else
 										tmpCQuantizer->ApplyColorTable((COLOR3*)image_bytes, w2 * h2);
 
-									logf(std::format("Reduce color of image from >{} to {}\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2)));
+									logf("Reduce color of image from >{} to {}\n", oldcolors, GetImageColors((COLOR3*)image_bytes, w2 * h2));
 
 									delete tmpCQuantizer;
 								}
@@ -1497,7 +1497,7 @@ void Gui::drawMenuBar()
 								free(image_bytes);
 							}
 							});
-							logf(std::format("Success load all textures\n"));
+							logf("Success load all textures\n");
 
 							tmpWad->write(textureList);
 							delete tmpWad;
@@ -1525,13 +1525,13 @@ void Gui::drawMenuBar()
 				std::ofstream entFile(entPath, std::ios::trunc);
 				if (entFile.is_open())
 				{
-					logf(std::format("Writing {}\n", entPath));
+					logf("Writing {}\n", entPath);
 					entFile.write((const char*)map->lumps[LUMP_ENTITIES], map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
 				}
 				else
 				{
-					logf(std::format("Failed to open ent file for writing:\n{}\n", entPath));
-					logf(std::format("Check that the directories in the path exist, and that you have permission to write in them.\n"));
+					logf("Failed to open ent file for writing:\n{}\n", entPath);
+					logf("Check that the directories in the path exist, and that you have permission to write in them.\n");
 				}
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -1550,7 +1550,7 @@ void Gui::drawMenuBar()
 		{
 			if (map)
 			{
-				logf(std::format("Validating {}\n", map->bsp_name));
+				logf("Validating {}\n", map->bsp_name);
 				map->validate();
 			}
 		}
@@ -1575,7 +1575,7 @@ void Gui::drawMenuBar()
 			g_settings.save();
 			if (fileSize(g_settings_path) == 0)
 			{
-				logf(std::format("Save settings fatal error!\n"));
+				logf("Save settings fatal error!\n");
 			}
 			else
 			{
@@ -1680,7 +1680,7 @@ void Gui::drawMenuBar()
 
 		if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && allowDuplicate))
 		{
-			logf(std::format("Execute 'duplicate' for {} models.\n", app->pickInfo.selectedEnts.size()));
+			logf("Execute 'duplicate' for {} models.\n", app->pickInfo.selectedEnts.size());
 			for (auto& ent : app->pickInfo.selectedEnts)
 			{
 				DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", ent);
@@ -1759,7 +1759,7 @@ void Gui::drawMenuBar()
 					map->delete_hull(i, -1);
 					map->getBspRender()->reloadClipnodes();
 					//	app->mapRenderers[k]->reloadClipnodes();
-					logf(std::format("Deleted hull {} in map {}\n", i, map->bsp_name));
+					logf("Deleted hull {} in map {}\n", i, map->bsp_name);
 					//}
 					checkValidHulls();
 				}
@@ -1784,7 +1784,7 @@ void Gui::drawMenuBar()
 							map->delete_hull(i, k);
 							map->getBspRender()->reloadClipnodes();
 							//	app->mapRenderers[j]->reloadClipnodes();
-							logf(std::format("Redirected hull {} to hull {} in map {}\n", i, k, map->bsp_name));
+							logf("Redirected hull {} to hull {} in map {}\n", i, k, map->bsp_name);
 							//}
 							checkValidHulls();
 						}
@@ -1829,7 +1829,7 @@ void Gui::drawMenuBar()
 					{
 						if (map->leaves[i].nMins[n] > map->leaves[i].nMaxs[n])
 						{
-							logf(std::format("Leaf {}: swap mins/maxs\n", i));
+							logf("Leaf {}: swap mins/maxs\n", i);
 							std::swap(map->leaves[i].nMins[n], map->leaves[i].nMaxs[n]);
 						}
 					}
@@ -1849,7 +1849,7 @@ void Gui::drawMenuBar()
 					{
 						if (map->models[i].nMins[n] > map->models[i].nMaxs[n])
 						{
-							logf(std::format("Model {}: swap mins/maxs\n", i));
+							logf("Model {}: swap mins/maxs\n", i);
 							std::swap(map->models[i].nMins[n], map->models[i].nMaxs[n]);
 						}
 					}
@@ -1897,7 +1897,7 @@ void Gui::drawMenuBar()
 						}
 						else if (tex.nOffsets[0] <= 0)
 						{
-							logf(std::format("Found unnamed texture in face {}. Replaced by aaatrigger.\n", i));
+							logf("Found unnamed texture in face {}. Replaced by aaatrigger.\n", i);
 							memset(tex.szName, 0, MAXTEXTURENAME);
 							memcpy(tex.szName, "aaatrigger", strlen("aaatrigger"));
 						}
@@ -2698,7 +2698,7 @@ void Gui::drawDebugWidget()
 		}
 
 		if (mapTexsUsage.size())
-			logf(std::format("Debug: Used {} wad files(include map file)\n", (int)mapTexsUsage.size()));
+			logf("Debug: Used {} wad files(include map file)\n", (int)mapTexsUsage.size());
 	}
 
 	ImGui::End();
@@ -4036,7 +4036,7 @@ void Gui::drawTransformWidget()
 					}
 					else if (app->transformTarget == TRANSFORM_ORIGIN)
 					{
-						logf(std::format("Scaling has no effect on origins\n"));
+						logf("Scaling has no effect on origins\n");
 					}
 				}
 			}
@@ -5056,16 +5056,16 @@ void Gui::drawMergeWindow()
 				for (auto& map : maps)
 					delete map;
 				maps.clear();
-				logf(std::format("ERROR: at least 2 input maps are required\n"));
+				logf("ERROR: at least 2 input maps are required\n");
 			}
 			else
 			{
 				for (int i = 0; i < maps.size(); i++)
 				{
-					logf(std::format("Preprocessing {}:\n", maps[i]->bsp_name));
+					logf("Preprocessing {}:\n", maps[i]->bsp_name);
 					if (DeleteUnusedInfo)
 					{
-						logf(std::format("    Deleting unused data...\n"));
+						logf("    Deleting unused data...\n");
 						STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
 						g_progress.clear();
 						removed.print_delete_stats(2);
@@ -5073,25 +5073,25 @@ void Gui::drawMergeWindow()
 
 					if (DeleteHull2 || (Optimize && !maps[i]->has_hull2_ents()))
 					{
-						logf(std::format("    Deleting hull 2...\n"));
+						logf("    Deleting hull 2...\n");
 						maps[i]->delete_hull(2, 1);
 						maps[i]->remove_unused_model_structures().print_delete_stats(2);
 					}
 
 					if (Optimize)
 					{
-						logf(std::format("    Optmizing...\n"));
+						logf("    Optmizing...\n");
 						maps[i]->delete_unused_hulls().print_delete_stats(2);
 					}
 
-					logf(std::format("\n"));
+					logf("\n");
 				}
 				BspMerger merger;
 				Bsp* result = merger.merge(maps, vec3(), outPath, NoRipent, NoScript);
 
-				logf(std::format("\n"));
+				logf("\n");
 				if (result->isValid()) result->write(outPath);
-				logf(std::format("\n"));
+				logf("\n");
 				result->print_info(false, 0, 0);
 
 				app->clearMaps();
@@ -5105,7 +5105,7 @@ void Gui::drawMergeWindow()
 				}
 				else
 				{
-					logf(std::format("Error while map merge!\n"));
+					logf("Error while map merge!\n");
 					app->addMap(new Bsp());
 				}
 
@@ -5171,7 +5171,7 @@ void Gui::drawImportMapWidget()
 			fixupPath(mapPath, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP);
 			if (fileExists(mapPath))
 			{
-				logf(std::format("Loading new map file from {} path.\n", mapPath));
+				logf("Loading new map file from {} path.\n", mapPath);
 				showImportMapWidget = false;
 				if (showImportMapWidget_Type == SHOW_IMPORT_ADD_NEW)
 				{
@@ -5320,11 +5320,11 @@ void Gui::drawImportMapWidget()
 						Bsp* model = new Bsp(mapPath);
 						if (!model->ents.size())
 						{
-							logf(std::format("Error! No worldspawn found!\n"));
+							logf("Error! No worldspawn found!\n");
 						}
 						else
 						{
-							logf(std::format("Binding .bsp model to func_breakable.\n"));
+							logf("Binding .bsp model to func_breakable.\n");
 							Entity* tmpEnt = new Entity("func_breakable");
 							tmpEnt->setOrAddKeyvalue("gibmodel", std::string("models/") + basename(mapPath));
 							tmpEnt->setOrAddKeyvalue("model", std::string("models/") + basename(mapPath));
@@ -5332,7 +5332,7 @@ void Gui::drawImportMapWidget()
 							tmpEnt->setOrAddKeyvalue("origin", cameraOrigin.toKeyvalueString());
 							map->ents.push_back(tmpEnt);
 							map->update_ent_lump();
-							logf(std::format("Success! Now you needs to copy model to path: {}\n", std::string("models/") + basename(mapPath)));
+							logf("Success! Now you needs to copy model to path: {}\n", std::string("models/") + basename(mapPath));
 							app->updateEnts();
 							app->reloadBspModels();
 						}
@@ -5342,7 +5342,7 @@ void Gui::drawImportMapWidget()
 			}
 			else
 			{
-				logf(std::format("No file found! Try again!\n"));
+				logf("No file found! Try again!\n");
 			}
 		}
 	}
@@ -6300,7 +6300,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 {
 	if (!faces_to_export.size())
 	{
-		logf(std::format("Import all {} faces...", map->faceCount));
+		logf("Import all {} faces...", map->faceCount);
 		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
 		{
 			faces_to_export.push_back(faceIdx);
@@ -6313,7 +6313,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 		int current_x = 0;
 		int current_y = 0;
 		int max_y_found = 0;
-		//logf(std::format("\nImport {} ligtmap\n", lightId));
+		//logf("\nImport {} ligtmap\n", lightId);
 		std::string filename = std::format("{}{}Full{}Style.png", GetWorkDir().c_str(), "lightmap", lightId);
 		unsigned char* image_bytes;
 		unsigned int w2, h2;
@@ -6323,7 +6323,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 		{
 			/*for (int i = 0; i < 100; i++)
 			{
-				logf(std::format("{}/", image_bytes[i]));
+				logf("{}/", image_bytes[i]);
 			}*/
 			colordata.clear();
 			colordata.resize(w2 * h2);
@@ -6386,12 +6386,12 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 
 	if (app->pickInfo.selectedFaces.size() > 1)
 	{
-		logf(std::format("Export {} faces.\n", (unsigned int)app->pickInfo.selectedFaces.size()));
+		logf("Export {} faces.\n", (unsigned int)app->pickInfo.selectedFaces.size());
 		faces_to_export = app->pickInfo.selectedFaces;
 	}
 	else
 	{
-		logf(std::format("Export ALL {} faces.\n", map->faceCount));
+		logf("Export ALL {} faces.\n", map->faceCount);
 		for (int faceIdx = 0; faceIdx < map->faceCount; faceIdx++)
 		{
 			faces_to_export.push_back(faceIdx);
@@ -6442,7 +6442,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 
 		bool found_any_lightmap = false;
 
-		//logf(std::format("\nExport {} ligtmap\n", lightId));
+		//logf("\nExport {} ligtmap\n", lightId);
 		for (int faceIdx : faces_to_export)
 		{
 			int size[2];
@@ -6477,7 +6477,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 		if (found_any_lightmap)
 		{
 			filename = std::format("{}{}Full{}Style.png", GetWorkDir().c_str(), "lightmap", lightId);
-			logf(std::format("Exporting to {} file\n", filename));
+			logf("Exporting to {} file\n", filename);
 			lodepng_encode24_file(filename.c_str(), (const unsigned char*)colordata.data(), LMapMaxWidth, current_y + max_y_found);
 		}
 	}
@@ -6497,7 +6497,7 @@ void ExportLightmap(BSPFACE face, int faceIdx, Bsp* map)
 		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 		int offset = face.nLightmapOffset + i * lightmapSz;
 		filename = std::format("{}{}_FACE{}-STYLE{}.png", GetWorkDir().c_str(), "lightmap", faceIdx, i);
-		logf(std::format("Exporting {}\n", filename));
+		logf("Exporting {}\n", filename);
 		lodepng_encode24_file(filename.c_str(), (unsigned char*)(map->lightdata + offset), size[0], size[1]);
 	}
 }
@@ -6516,7 +6516,7 @@ void ImportLightmap(BSPFACE face, int faceIdx, Bsp* map)
 		filename = std::format("{}{}_FACE{}-STYLE{}.png", GetWorkDir().c_str(), "lightmap", faceIdx, i);
 		unsigned int w = size[0], h = size[1];
 		unsigned int w2 = 0, h2 = 0;
-		logf(std::format("Importing {}\n", filename));
+		logf("Importing {}\n", filename);
 		unsigned char* image_bytes = NULL;
 		auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, filename.c_str());
 		if (error == 0 && image_bytes)
@@ -6527,13 +6527,13 @@ void ImportLightmap(BSPFACE face, int faceIdx, Bsp* map)
 			}
 			else
 			{
-				logf(std::format("Invalid lightmap size! Need {}x{} 24bit png!\n", w, h));
+				logf("Invalid lightmap size! Need {}x{} 24bit png!\n", w, h);
 			}
 			free(image_bytes);
 		}
 		else
 		{
-			logf(std::format("Invalid lightmap image format. Need 24bit png!\n"));
+			logf("Invalid lightmap image format. Need 24bit png!\n");
 		}
 	}
 }
@@ -6595,7 +6595,7 @@ void Gui::drawLightMapTool()
 						memcpy(currentlightMap[i]->data, map->lightdata + offset, lightmapSz);
 						currentlightMap[i]->upload(GL_RGB, true);
 						lightmaps++;
-						//logf(std::format("upload {} style at offset {}\n", i, offset));
+						//logf("upload {} style at offset {}\n", i, offset);
 					}
 				}
 
@@ -6730,14 +6730,14 @@ void Gui::drawLightMapTool()
 			ImGui::Separator();
 			if (ImGui::Button("Export", ImVec2(120, 0)))
 			{
-				logf(std::format("Export lightmaps to png files...\n"));
+				logf("Export lightmaps to png files...\n");
 				createDir(GetWorkDir());
 				ExportLightmap(face, faceIdx, map);
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Import", ImVec2(120, 0)))
 			{
-				logf(std::format("Import lightmaps from png files...\n"));
+				logf("Import lightmaps from png files...\n");
 				ImportLightmap(face, faceIdx, map);
 				showLightmapEditorUpdate = true;
 				map->getBspRender()->reloadLightmaps();
@@ -6748,7 +6748,7 @@ void Gui::drawLightMapTool()
 			ImGui::Separator();
 			if (ImGui::Button("Export ALL", ImVec2(125, 0)))
 			{
-				logf(std::format("Export lightmaps to png files...\n"));
+				logf("Export lightmaps to png files...\n");
 				createDir(GetWorkDir());
 
 				//for (int z = 0; z < map->faceCount; z++)
@@ -6762,7 +6762,7 @@ void Gui::drawLightMapTool()
 			ImGui::SameLine();
 			if (ImGui::Button("Import ALL", ImVec2(125, 0)))
 			{
-				logf(std::format("Import lightmaps from png files...\n"));
+				logf("Import lightmaps from png files...\n");
 
 				//for (int z = 0; z < map->faceCount; z++)
 				//{
@@ -7274,7 +7274,7 @@ void Gui::drawTextureTool()
 		ImVec2 imgSize = ImVec2(inputWidth * 2 - 2, inputWidth * 2 - 2);
 		if (ImGui::ImageButton(textureId, imgSize, ImVec2(0, 0), ImVec2(1, 1), 1))
 		{
-			logf(std::format("Open browser!\n"));
+			logf("Open browser!\n");
 
 			ImGui::OpenPopup("Not Implemented");
 		}
@@ -7442,7 +7442,7 @@ void Gui::checkFaceErrors()
 		GetFaceLightmapSize(map, app->pickInfo.selectedFaces[i], size);
 		if ((size[0] > MAX_SURFACE_EXTENT) || (size[1] > MAX_SURFACE_EXTENT) || size[0] < 0 || size[1] < 0)
 		{
-			//logf(std::format("Bad surface extents ({} x {})\n", size[0], size[1]));
+			//logf("Bad surface extents ({} x {})\n", size[0], size[1]);
 			size[0] = std::min(size[0], MAX_SURFACE_EXTENT);
 			size[1] = std::min(size[1], MAX_SURFACE_EXTENT);
 			badSurfaceExtents = true;
