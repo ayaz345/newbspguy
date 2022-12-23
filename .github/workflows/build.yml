@@ -34,8 +34,9 @@ jobs:
             - name: Download and install dependencies
               run: |
                  sudo add-apt-repository "deb http://apt.llvm.org/kinetic/ llvm-toolchain-kinetic-15 main"
-                 sudo apt install clang-15 clang-tools-15 clang-15-doc libclang-common-15-dev libclang-15-dev libclang1-15 clang-format-15 clangd-15 libc++-15-dev libfuzzer-15-dev lldb-15 lld-15 libc++abi-15-dev --allow-insecure-repositories
-                 sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev --allow-insecure-repositories
+                 sudo apt update --allow-unauthenticated
+                 sudo apt install clang-15 clang-tools-15 clang-15-doc libclang-common-15-dev libclang-15-dev libclang1-15 clang-format-15 clangd-15 libc++-15-dev libfuzzer-15-dev lldb-15 lld-15 libc++abi-15-dev --allow-unauthenticated
+                 sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev --allow-unauthenticated
                 
             - name: Build release
               run: |
