@@ -26,6 +26,7 @@ jobs:
         runs-on: ubuntu-latest
         
         env:
+            CXX: ${{ matrix.cxx }}
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         outputs:
@@ -40,8 +41,6 @@ jobs:
                  sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev
                  
             - name: Build release
-              with:
-               cxx: ${{ matrix.cxx }}
               run: |
                  mkdir build; cd build
                  cmake .. -DCMAKE_BUILD_TYPE=RELEASE
