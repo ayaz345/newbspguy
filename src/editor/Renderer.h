@@ -131,8 +131,6 @@ struct AppSettings
 	void save(std::string path);
 };
 
-extern std::string GetWorkDir();
-
 class Renderer;
 
 extern AppSettings g_settings;
@@ -171,7 +169,12 @@ public:
 	ShaderProgram* fullBrightBspShader;
 	ShaderProgram* colorShader;
 
+	double oldTime = 0.0;
+	double curTime = 0.0;
+
 	Gui* gui;
+
+	Fgd* fgd = NULL;
 
 	bool hideGui = false;
 	bool isModelsReloading = false;
@@ -214,10 +217,6 @@ private:
 
 	static std::future<void> fgdFuture;
 
-	Fgd* fgd = NULL;
-
-	double oldTime = 0.0;
-	double curTime = 0.0;
 	vec3 cameraForward;
 	vec3 cameraUp;
 	vec3 cameraRight;

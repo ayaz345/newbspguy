@@ -56,7 +56,7 @@ bool Wad::readInfo()
 
 	if (!fileExists(file))
 	{
-		logf("%s does not exist!\n", filename.c_str());
+		logf("{} does not exist!\n", filename);
 		return false;
 	}
 
@@ -64,7 +64,7 @@ bool Wad::readInfo()
 
 	if (!filedata)
 	{
-		logf("%s does not exist!\n", filename.c_str());
+		logf("{} does not exist!\n", filename);
 		return false;
 	}
 
@@ -72,7 +72,7 @@ bool Wad::readInfo()
 	{
 		delete[] filedata;
 		filedata = NULL;
-		logf("%s is not wad file[small]!\n", filename.c_str());
+		logf("{} is not wad file[small]!\n", filename);
 		return false;
 	}
 
@@ -84,7 +84,7 @@ bool Wad::readInfo()
 	{
 		delete[] filedata;
 		filedata = NULL;
-		logf("%s is not wad file[invalid header]!\n", filename.c_str());
+		logf("{} is not wad file[invalid header]!\n", filename);
 		return false;
 	}
 
@@ -92,7 +92,7 @@ bool Wad::readInfo()
 	{
 		delete[] filedata;
 		filedata = NULL;
-		logf("%s is not wad file[buffer overrun]!\n", filename.c_str());
+		logf("{} is not wad file[buffer overrun]!\n", filename);
 		return false;
 	}
 
@@ -105,7 +105,7 @@ bool Wad::readInfo()
 
 	usableTextures = false;
 
-	//logf("D %d %d\n", header.nDirOffset, header.nDir);
+	//logf("D {} {}\n", header.nDirOffset, header.nDir);
 
 	for (int i = 0; i < header.nDir; i++)
 	{
@@ -130,7 +130,7 @@ bool Wad::readInfo()
 
 	if (!usableTextures)
 	{
-		logf("Info: %s contains no regular textures\n", basename(filename).c_str());
+		logf("Info: {} contains no regular textures\n", basename(filename));
 		if (!dirEntries.size())
 			return false;
 	}
@@ -202,7 +202,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	memcpy((char*)&mtex, &filedata[offset], sizeof(BSPMIPTEX));
 	offset += sizeof(BSPMIPTEX);
 	if (g_settings.verboseLogs)
-		logf("Load wad BSPMIPTEX name %s size %d/%d\n", mtex.szName, mtex.nWidth, mtex.nHeight);
+		logf("Load wad BSPMIPTEX name {} size {}/{}\n", mtex.szName, mtex.nWidth, mtex.nHeight);
 	int w = mtex.nWidth;
 	int h = mtex.nHeight;
 	int sz = w * h;	   // miptex 0
@@ -224,7 +224,7 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	tex->data = data;
 	tex->needclean = true;
 	if (g_settings.verboseLogs)
-		logf("Return WADTEX name %s size %d/%d\n", tex->szName, tex->nWidth, tex->nHeight);
+		logf("Return WADTEX name {} size {}/{}\n", tex->szName, tex->nWidth, tex->nHeight);
 	return tex;
 }
 
@@ -435,7 +435,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 COLOR3* ConvertWadTexToRGB(WADTEX* wadTex)
 {
 	if (g_settings.verboseLogs)
-		logf("Convert WADTEX to RGB name %s size %d/%d\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
+		logf("Convert WADTEX to RGB name {} size {}/{}\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 
 	COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
@@ -451,13 +451,13 @@ COLOR3* ConvertWadTexToRGB(WADTEX* wadTex)
 	}
 
 	if (g_settings.verboseLogs)
-		logf("Converted WADTEX to RGB name %s size %d/%d\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
+		logf("Converted WADTEX to RGB name {} size {}/{}\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
 	return imageData;
 }
 COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex)
 {
 	if (g_settings.verboseLogs)
-		logf("Convert BSPMIPTEX to RGB name %s size %d/%d\n", tex->szName, tex->nWidth, tex->nHeight);
+		logf("Convert BSPMIPTEX to RGB name {} size {}/{}\n", tex->szName, tex->nWidth, tex->nHeight);
 	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 
 	COLOR3* palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
@@ -473,6 +473,6 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex)
 	}
 
 	if (g_settings.verboseLogs)
-		logf("Converted BSPMIPTEX to RGB name %s size %d/%d\n", tex->szName, tex->nWidth, tex->nHeight);
+		logf("Converted BSPMIPTEX to RGB name {} size {}/{}\n", tex->szName, tex->nWidth, tex->nHeight);
 	return imageData;
 }

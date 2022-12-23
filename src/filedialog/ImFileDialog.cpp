@@ -1257,7 +1257,7 @@ namespace ifd
 					ImGui::TableSetColumnIndex(1);
 					auto tm = std::localtime(&entry.DateModified);
 					if (tm != nullptr)
-						ImGui::Text("%d/%d/%d %02d:%02d", tm->tm_mon + 1, tm->tm_mday, 1900 + tm->tm_year, tm->tm_hour, tm->tm_min);
+						ImGui::Text("{}/{}/{} %02d:%02d", tm->tm_mon + 1, tm->tm_mday, 1900 + tm->tm_year, tm->tm_hour, tm->tm_min);
 					else ImGui::Text("---");
 
 					// size
@@ -1341,7 +1341,7 @@ namespace ifd
 			else
 			{
 				const FileData& data = m_content[m_selectedFileItem];
-				ImGui::TextWrapped("Are you sure you want to delete %s?", data.Path.filename().string().c_str());
+				ImGui::TextWrapped("Are you sure you want to delete {}?", data.Path.filename().string().c_str());
 				if (ImGui::Button("Yes"))
 				{
 					std::error_code ec;

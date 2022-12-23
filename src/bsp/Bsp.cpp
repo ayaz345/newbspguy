@@ -133,6 +133,20 @@ Bsp::Bsp(std::string fpath)
 		init_empty_bsp();
 		return;
 	}
+	else
+	{
+		std::string lowerpath = toLowerCase(fpath);
+		if (lowerpath.ends_with(".mdl"))
+		{
+			is_mdl_model = true;
+			if (fileExists(fpath))
+			{
+				mdl = new StudioModel(fpath);
+			}
+			init_empty_bsp();
+			return;
+		}
+	}
 	if (!fileExists(fpath))
 	{
 		if (fpath.size() < 4 || fpath.rfind(".bsp") != fpath.size() - 4)
@@ -140,23 +154,24 @@ Bsp::Bsp(std::string fpath)
 			fpath = fpath + ".bsp";
 		}
 	}
+
 	bsp_path = fpath;
 	bsp_name = stripExt(basename(fpath));
 	bsp_valid = false;
 
 	if (!fileExists(fpath))
 	{
-		logf("ERROR: %s not found\n", fpath.c_str());
+		logf("ERROR: {} not found\n", fpath);
 		return;
 	}
 
 	if (!load_lumps(fpath))
 	{
-		logf("%s is not a valid BSP file\n", fpath.c_str());
+		logf("{} is not a valid BSP file\n", fpath);
 		return;
 	}
 
-	logf("(CRC \"%u\")\n", reverse_bits(originCrc32));
+	logf("(CRC \"{}\")\n", reverse_bits(originCrc32));
 
 	std::string entFilePath;
 	if (g_settings.sameDirForEnt) {
@@ -167,7 +182,7 @@ Bsp::Bsp(std::string fpath)
 	}
 
 	if (g_settings.autoImportEnt && fileExists(entFilePath)) {
-		logf("Import entities from: %s\n", entFilePath.c_str());
+		logf("Import entities from: {}\n", entFilePath);
 
 		int len;
 		char* newlump = loadFile(entFilePath, len);
@@ -191,7 +206,7 @@ Bsp::Bsp(std::string fpath)
 				abs(lastModel.vOrigin.z - 9999.0) < 0.01 &&
 				lastModel.nFaces == 0)
 			{
-				logf("Removing CRC Hacking Model *%i\n", modelCount - 1);
+				logf("Removing CRC Hacking Model *{}\n", modelCount - 1);
 				bsp_header.lump[LUMP_MODELS].nLength -= sizeof(BSPMODEL);
 				update_lump_pointers();
 			}
@@ -219,7 +234,7 @@ Bsp::Bsp(std::string fpath)
 	{
 		if (!used_models.count(i))
 		{
-			logf("Warning: in map %s found unused model: %d.\n", bsp_name.c_str(), i);
+			logf("Warning: in map {} found unused model: {}.\n", bsp_name, i);
 		}
 	}
 
@@ -561,7 +576,7 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE
 		}
 		if (node.iChildren[i] == iStartNode)
 		{
-			logf("Detect stack overflowing! clipnode.iChildren[i] %d already processed!\n ", node.iChildren[i]);
+			logf("Detect stack overflowing! clipnode.iChildren[i] {} already processed!\n ", node.iChildren[i]);
 			return;
 		}
 		clipOrder.push_back(plane);
@@ -606,7 +621,7 @@ void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& c
 
 		if (node.iChildren[i] == iStartNode)
 		{
-			logf("Detect stack overflowing! node.iChildren[i] %d already processed!\n ", node.iChildren[i]);
+			logf("Detect stack overflowing! node.iChildren[i] {} already processed!\n ", node.iChildren[i]);
 			return;
 		}
 
@@ -814,7 +829,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		}
 	}
 
-	//logf("UPDATED %d planes\n", planeUpdates);
+	//logf("UPDATED {} planes\n", planeUpdates);
 
 	BSPMODEL& model = models[modelIdx];
 	getBoundingBox(allVertPos, model.nMins, model.nMaxs);
@@ -1135,7 +1150,7 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int& 
 
 	if (lightmapsResizeCount > 0)
 	{
-//logf("%d lightmap(s) to resize\n", lightmapsResizeCount);
+//logf("{} lightmap(s) to resize\n", lightmapsResizeCount);
 
 		g_progress.update("Resize lightmaps", faceCount);
 
@@ -1345,11 +1360,11 @@ void Bsp::split_shared_model_structures(int modelIdx)
 	{
 		logf("\nShared model structures were duplicated to allow independent movement:\n");
 		if (duplicatePlanes)
-			logf("    Added %d planes\n", duplicatePlanes);
+			logf("    Added {} planes\n", duplicatePlanes);
 		if (duplicateClipnodes)
-			logf("    Added %d clipnodes\n", duplicateClipnodes);
+			logf("    Added {} clipnodes\n", duplicateClipnodes);
 		if (duplicateTexinfos)
-			logf("    Added %d texinfos\n", duplicateTexinfos);
+			logf("    Added {} texinfos\n", duplicateTexinfos);
 	}
 }
 
@@ -1490,7 +1505,7 @@ unsigned int Bsp::remove_unused_structs(int lumpIdx, bool* usedStructs, int* rem
 		case LUMP_EDGES: structSize = sizeof(BSPEDGE); break;
 		case LUMP_SURFEDGES: structSize = sizeof(int); break;
 		default:
-			logf("\nERROR: Invalid lump %d passed to remove_unused_structs\n", lumpIdx);
+			logf("\nERROR: Invalid lump {} passed to remove_unused_structs\n", lumpIdx);
 			return 0;
 	}
 
@@ -1947,7 +1962,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 
 		if (usageEnts.empty())
 		{
-			logf("Deleting unused model %d\n", i);
+			logf("Deleting unused model {}\n", i);
 
 			for (int k = 0; k < MAX_MAP_HULLS; k++)
 				deletedHulls += models[i].iHeadnodes[k] >= 0;
@@ -2067,7 +2082,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		if (!needsVisibleHull && !needsMonsterHulls)
 		{
 			if (models[i].iHeadnodes[0] >= 0)
-				logf("Deleting HULL 0 from model %d, used in %s\n", i, uses.c_str());
+				logf("Deleting HULL 0 from model {}, used in {}\n", i, uses);
 
 			deletedHulls += models[i].iHeadnodes[0] >= 0;
 
@@ -2090,7 +2105,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 			}
 
 			if (deletedAnyHulls)
-				logf("Deleting HULL 1-3 from model %d, used in %s\n", i, uses.c_str());
+				logf("Deleting HULL 1-3 from model {}, used in {}\n", i, uses);
 
 			model.iHeadnodes[1] = -1;
 			model.iHeadnodes[2] = -1;
@@ -2099,7 +2114,7 @@ STRUCTCOUNT Bsp::delete_unused_hulls(bool noProgress)
 		else if (!needsMonsterHulls)
 		{
 			if (models[i].iHeadnodes[2] >= 0)
-				logf("Deleting HULL 2 from model %d, used in %s\n", i, uses.c_str());
+				logf("Deleting HULL 2 from model {}, used in {}\n", i, uses);
 
 			deletedHulls += models[i].iHeadnodes[2] >= 0;
 
@@ -2336,7 +2351,7 @@ vec3 Bsp::get_model_center(int modelIdx)
 {
 	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL))
 	{
-		logf("Invalid model index %d. Must be 0 - %d\n", modelIdx);
+		logf("Invalid model index {}. Must be 0 - {}\n", modelIdx);
 		return vec3();
 	}
 
@@ -2379,10 +2394,10 @@ void Bsp::write(const std::string& path)
 		std::ofstream file(path + ".bak", std::ios::trunc | std::ios::binary);
 		if (!file.is_open())
 		{
-			logf("Failed to open backup file for writing:\n%s\n", path.c_str());
+			logf("Failed to open backup file for writing:\n{}\n", path);
 			return;
 		}
-		logf("Writing backup to %s\n", (path + ".bak").c_str());
+		logf("Writing backup to {}\n", path + ".bak");
 
 		file.write(oldfile, len);
 		delete[] oldfile;
@@ -2391,7 +2406,7 @@ void Bsp::write(const std::string& path)
 	std::ofstream file(path, std::ios::trunc | std::ios::binary);
 	if (!file.is_open())
 	{
-		logf("Failed to open BSP file for writing:\n%s\n", path.c_str());
+		logf("Failed to open BSP file for writing:\n{}\n", path);
 		return;
 	}
 
@@ -2401,11 +2416,11 @@ void Bsp::write(const std::string& path)
 		if (ents.size() && ents[0]->hasKey("CRC"))
 		{
 			originCrc32 = reverse_bits(std::stoul(ents[0]->keyvalues["CRC"]));
-			logf("HACKING CRC value. Loading original CRC key from WORLDSPAWN: %u. ",
+			logf("HACKING CRC value. Loading original CRC key from WORLDSPAWN: {}. ",
 				 reverse_bits(originCrc32));
 		}
 		else
-			logf("HACKING CRC value. Original crc: %u. ", reverse_bits(originCrc32));
+			logf("HACKING CRC value. Original crc: {}. ", reverse_bits(originCrc32));
 
 		unsigned int crc32 = UINT32_C(0xFFFFFFFF);
 
@@ -2417,7 +2432,7 @@ void Bsp::write(const std::string& path)
 		}
 
 
-		logf("Current value: %u. ", reverse_bits(crc32));
+		logf("Current value: {}. ", reverse_bits(crc32));
 
 		if (originCrc32 == crc32)
 		{
@@ -2455,11 +2470,11 @@ void Bsp::write(const std::string& path)
 					crc32 = GetCrc32InMemory(&lumps[i][0], bsp_header.lump[i].nLength, crc32);
 			}
 
-			logf("Hacked value: %u. \n", reverse_bits(crc32));
+			logf("Hacked value: {}. \n", reverse_bits(crc32));
 		}
 	}
 
-	logf("Writing %s\n", bsp_path.c_str());
+	logf("Writing {}\n", bsp_path);
 	file.write((char*)&bsp_header, sizeof(BSPHEADER));
 
 	// write the lumps
@@ -2484,14 +2499,14 @@ bool Bsp::load_lumps(std::string fpath)
 
 	fin.read((char*)&bsp_header.nVersion, sizeof(int));
 #ifndef NDEBUG
-	logf("Bsp version: %d\n", bsp_header.nVersion);
+	logf("Bsp version: {}\n", bsp_header.nVersion);
 #endif
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		fin.read((char*)&bsp_header.lump[i], sizeof(BSPLUMP));
 #ifndef NDEBUG
-		logf("Read lump id: %d. Len: %d. Offset %d.\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
+		logf("Read lump id: {}. Len: {}. Offset {}.\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
 #endif
 	}
 
@@ -2511,7 +2526,7 @@ bool Bsp::load_lumps(std::string fpath)
 		fin.seekg(bsp_header.lump[i].nOffset);
 		if (fin.eof())
 		{
-			logf("FAILED TO READ BSP LUMP %d\n", i);
+			logf("FAILED TO READ BSP LUMP {}\n", i);
 			valid = false;
 		}
 		else
@@ -2560,7 +2575,7 @@ void Bsp::load_ents()
 		{
 			if (lastBracket == 0)
 			{
-				logf("%s.bsp ent data (line %d): Unexpected '{'\n", bsp_path.c_str(), lineNum);
+				logf("{}.bsp ent data (line {}): Unexpected '{'\n", bsp_path, lineNum);
 				continue;
 			}
 			lastBracket = 0;
@@ -2577,7 +2592,7 @@ void Bsp::load_ents()
 		if (line[0] == '}')
 		{
 			if (lastBracket == 1)
-				logf("%s.bsp ent data (line %d): Unexpected '}'\n", bsp_path.c_str(), lineNum);
+				logf("{}.bsp ent data (line {}): Unexpected '}'\n", bsp_path, lineNum);
 			lastBracket = 1;
 			if (!ent)
 				continue;
@@ -2670,7 +2685,7 @@ void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max
 		print_color(PRINT_RED | PRINT_GREEN | PRINT_BLUE);
 	}
 
-	logf("%-12s  ", name.c_str());
+	logf("%-12s  ", name);
 	if (isMem)
 	{
 		logf("%8.2f / %-5.2f MB", val / meg, max / meg);
@@ -2713,7 +2728,7 @@ void Bsp::print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bo
 	}
 	else
 	{
-		logf("%-26s %-26s *%-6d %9d", classname.c_str(), targetname.c_str(), modelInfo->modelIdx, val);
+		logf("%-26s %-26s *%-6d %9d", classname, targetname, modelInfo->modelIdx, val);
 	}
 	if (percent >= 0.1f)
 		logf("  %6.1f%%", percent);
@@ -2764,7 +2779,7 @@ bool Bsp::validate()
 	{
 		if (marksurfs[i] >= faceCount)
 		{
-			logf("Bad face reference in marksurf %d: %d / %d\n", i, marksurfs[i], faceCount);
+			logf("Bad face reference in marksurf {}: {} / {}\n", i, marksurfs[i], faceCount);
 			isValid = false;
 		}
 	}
@@ -2772,7 +2787,7 @@ bool Bsp::validate()
 	{
 		if (abs(surfedges[i]) >= edgeCount)
 		{
-			logf("Bad edge reference in surfedge %d: %d / %d\n", i, surfedges[i], edgeCount);
+			logf("Bad edge reference in surfedge {}: {} / {}\n", i, surfedges[i], edgeCount);
 			isValid = false;
 		}
 	}
@@ -2780,7 +2795,7 @@ bool Bsp::validate()
 	{
 		if (texinfos[i].iMiptex >= textureCount)
 		{
-			logf("Bad texture reference in textureinfo %d: %d / %d\n", i, texinfos[i].iMiptex, textureCount);
+			logf("Bad texture reference in textureinfo {}: {} / {}\n", i, texinfos[i].iMiptex, textureCount);
 			isValid = false;
 		}
 	}
@@ -2788,23 +2803,23 @@ bool Bsp::validate()
 	{
 		if (faces[i].iPlane >= planeCount)
 		{
-			logf("Bad plane reference in face %d: %d / %d\n", i, faces[i].iPlane, planeCount);
+			logf("Bad plane reference in face {}: {} / {}\n", i, faces[i].iPlane, planeCount);
 			isValid = false;
 		}
 		if (faces[i].nEdges > 0 && faces[i].iFirstEdge >= surfedgeCount)
 		{
-			logf("Bad surfedge reference in face %d: %d / %d\n", i, faces[i].iFirstEdge, surfedgeCount);
+			logf("Bad surfedge reference in face {}: {} / {}\n", i, faces[i].iFirstEdge, surfedgeCount);
 			isValid = false;
 		}
 		if (faces[i].iTextureInfo >= texinfoCount)
 		{
-			logf("Bad textureinfo reference in face %d: %d / %d\n", i, faces[i].iTextureInfo, texinfoCount);
+			logf("Bad textureinfo reference in face {}: {} / {}\n", i, faces[i].iTextureInfo, texinfoCount);
 			isValid = false;
 		}
 		if (lightDataLength > 0 &&
 			faces[i].nLightmapOffset >= 0 && faces[i].nLightmapOffset > lightDataLength)
 		{
-			logf("Bad lightmap offset in face %d: %d / %d\n", i, faces[i].nLightmapOffset, lightDataLength);
+			logf("Bad lightmap offset in face {}: {} / {}\n", i, faces[i].nLightmapOffset, lightDataLength);
 			isValid = false;
 		}
 	}
@@ -2812,13 +2827,13 @@ bool Bsp::validate()
 	{
 		if (leaves[i].nMarkSurfaces > 0 && leaves[i].iFirstMarkSurface >= marksurfCount)
 		{
-			logf("Bad marksurf reference in leaf %d: %d / %d\n", i, leaves[i].iFirstMarkSurface, marksurfCount);
+			logf("Bad marksurf reference in leaf {}: {} / {}\n", i, leaves[i].iFirstMarkSurface, marksurfCount);
 			isValid = false;
 		}
 		if (visDataLength > 0 &&
 			leaves[i].nVisOffset != -1 && (leaves[i].nVisOffset < 0 || leaves[i].nVisOffset >= visDataLength))
 		{
-			logf("Bad vis offset in leaf %d: %d / %d\n", i, leaves[i].nVisOffset, visDataLength);
+			logf("Bad vis offset in leaf {}: {} / {}\n", i, leaves[i].nVisOffset, visDataLength);
 			isValid = false;
 		}
 
@@ -2826,7 +2841,7 @@ bool Bsp::validate()
 		{
 			if (leaves[i].nMins[n] > leaves[i].nMaxs[n])
 			{
-				logf("backwards mins / maxs in leaf %d Mins: (%f, %f, %f) Maxs: (%f %f %f)", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
+				logf("backwards mins / maxs in leaf {} Mins: ({}, {}, {}) Maxs: ({} {} {})", i, leaves[i].nMins[0], leaves[i].nMins[1], leaves[i].nMins[2],
 					 leaves[i].nMaxs[0], leaves[i].nMaxs[1], leaves[i].nMaxs[2]);
 				isValid = false;
 			}
@@ -2838,7 +2853,7 @@ bool Bsp::validate()
 		{
 			if (edges[i].iVertex[k] >= vertCount)
 			{
-				logf("Bad vertex reference in edge %d: %d / %d\n", i, edges[i].iVertex[k], vertCount);
+				logf("Bad vertex reference in edge {}: {} / {}\n", i, edges[i].iVertex[k], vertCount);
 				isValid = false;
 			}
 		}
@@ -2847,24 +2862,24 @@ bool Bsp::validate()
 	{
 		if (nodes[i].nFaces > 0 && nodes[i].firstFace >= faceCount)
 		{
-			logf("Bad face reference in node %d: %d / %d\n", i, nodes[i].firstFace, faceCount);
+			logf("Bad face reference in node {}: {} / {}\n", i, nodes[i].firstFace, faceCount);
 			isValid = false;
 		}
 		if (nodes[i].iPlane >= planeCount)
 		{
-			logf("Bad plane reference in node %d: %d / %d\n", i, nodes[i].iPlane, planeCount);
+			logf("Bad plane reference in node {}: {} / {}\n", i, nodes[i].iPlane, planeCount);
 			isValid = false;
 		}
 		for (int k = 0; k < 2; k++)
 		{
 			if (nodes[i].iChildren[k] != -1 && nodes[i].iChildren[k] > 0 && nodes[i].iChildren[k] >= nodeCount)
 			{
-				logf("Bad node reference in node %d child %d: %d / %d\n", i, k, nodes[i].iChildren[k], nodeCount);
+				logf("Bad node reference in node {} child {}: {} / {}\n", i, k, nodes[i].iChildren[k], nodeCount);
 				isValid = false;
 			}
 			else if (~nodes[i].iChildren[k] != -1 && nodes[i].iChildren[k] < 0 && ~nodes[i].iChildren[k] >= leafCount)
 			{
-				logf("Bad leaf reference in ~node %d child %d: %d / %d\n", i, k, ~nodes[i].iChildren[k], leafCount);
+				logf("Bad leaf reference in ~node {} child {}: {} / {}\n", i, k, ~nodes[i].iChildren[k], leafCount);
 				isValid = false;
 			}
 		}
@@ -2873,14 +2888,14 @@ bool Bsp::validate()
 	{
 		if (clipnodes[i].iPlane < 0 || clipnodes[i].iPlane >= planeCount)
 		{
-			logf("Bad plane reference in clipnode %d: %d / %d\n", i, clipnodes[i].iPlane, planeCount);
+			logf("Bad plane reference in clipnode {}: {} / {}\n", i, clipnodes[i].iPlane, planeCount);
 			isValid = false;
 		}
 		for (int k = 0; k < 2; k++)
 		{
 			if (clipnodes[i].iChildren[k] > 0 && clipnodes[i].iChildren[k] >= clipnodeCount)
 			{
-				logf("Bad clipnode reference in clipnode %d child %d: %d / %d\n", i, k, clipnodes[i].iChildren[k], clipnodeCount);
+				logf("Bad clipnode reference in clipnode {} child {}: {} / {}\n", i, k, clipnodes[i].iChildren[k], clipnodeCount);
 				isValid = false;
 			}
 		}
@@ -2889,7 +2904,7 @@ bool Bsp::validate()
 	{
 		if (ents[i]->getBspModelIdxForce() > 0 && ents[i]->getBspModelIdxForce() >= modelCount)
 		{
-			logf("Bad model reference in entity %d: %d / %d\n", i, ents[i]->getBspModelIdxForce(), modelCount);
+			logf("Bad model reference in entity {}: {} / {}\n", i, ents[i]->getBspModelIdxForce(), modelCount);
 			isValid = false;
 		}
 	}
@@ -2903,19 +2918,19 @@ bool Bsp::validate()
 		totalFaces += models[i].nFaces;
 		if (models[i].nFaces > 0 && (models[i].iFirstFace < 0 || models[i].iFirstFace >= faceCount))
 		{
-			logf("Bad face reference in model %d: %d / %d\n", i, models[i].iFirstFace, faceCount);
+			logf("Bad face reference in model {}: {} / {}\n", i, models[i].iFirstFace, faceCount);
 			isValid = false;
 		}
 		if (models[i].iHeadnodes[0] >= nodeCount)
 		{
-			logf("Bad node reference in model %d hull 0: %d / %d\n", i, models[i].iHeadnodes[0], nodeCount);
+			logf("Bad node reference in model {} hull 0: {} / {}\n", i, models[i].iHeadnodes[0], nodeCount);
 			isValid = false;
 		}
 		for (int k = 1; k < MAX_MAP_HULLS; k++)
 		{
 			if (models[i].iHeadnodes[k] >= clipnodeCount)
 			{
-				logf("Bad clipnode reference in model %d hull %d: %d / %d\n", i, k, models[i].iHeadnodes[k], clipnodeCount);
+				logf("Bad clipnode reference in model {} hull {}: {} / {}\n", i, k, models[i].iHeadnodes[k], clipnodeCount);
 				isValid = false;
 			}
 		}
@@ -2923,7 +2938,7 @@ bool Bsp::validate()
 			models[i].nMins.y > models[i].nMaxs.y ||
 			models[i].nMins.z > models[i].nMaxs.z)
 		{
-			logf("Backwards mins/maxs in model %d. Mins: (%f, %f, %f) Maxs: (%f %f %f)\n", i,
+			logf("Backwards mins/maxs in model {}. Mins: ({}, {}, {}) Maxs: ({} {} {})\n", i,
 				 models[i].nMins.x, models[i].nMins.y, models[i].nMins.z,
 				 models[i].nMaxs.x, models[i].nMaxs.y, models[i].nMaxs.z);
 			isValid = false;
@@ -2931,13 +2946,13 @@ bool Bsp::validate()
 	}
 	if (totalVisLeaves != leafCount)
 	{
-		logf("Bad model vis leaf sum: %d / %d\n", totalVisLeaves, leafCount);
+		logf("Bad model vis leaf sum: {} / {}\n", totalVisLeaves, leafCount);
 		isValid = false;
 	}
 
 	if (totalFaces > faceCount)
 	{
-		logf("Bad model face sum: %d / %d\n", totalFaces, faceCount);
+		logf("Bad model face sum: {} / {}\n", totalFaces, faceCount);
 		isValid = false;
 	}
 
@@ -2951,7 +2966,7 @@ bool Bsp::validate()
 	}
 	if (worldspawn_count != 1)
 	{
-		logf("Found %d worldspawn entities (expected 1). This can cause crashes and svc_bad errors.\n", worldspawn_count);
+		logf("Found {} worldspawn entities (expected 1). This can cause crashes and svc_bad errors.\n", worldspawn_count);
 		isValid = false;
 	}
 
@@ -2974,7 +2989,7 @@ bool Bsp::validate()
 	{
 		if (!used_models.count(i))
 		{
-			logf("Warning: in map %s found unused model: %d.\n", bsp_name.c_str(), i);
+			logf("Warning: in map {} found unused model: {}.\n", bsp_name, i);
 		}
 	}
 
@@ -3111,20 +3126,20 @@ void Bsp::print_model_hull(int modelIdx, int hull_number)
 {
 	if (modelIdx < 0 || modelIdx > bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL))
 	{
-		logf("Invalid model index %d. Must be 0 - %d\n", modelIdx);
+		logf("Invalid model index {}. Must be 0 - {}\n", modelIdx);
 		return;
 	}
 
 	// the first hull is used for point-sized clipping, but uses nodes and not clipnodes.
 	if (hull_number < 0 || hull_number >= MAX_MAP_HULLS)
 	{
-		logf("Invalid hull number. Clipnode hull numbers are 0 - %d\n", MAX_MAP_HULLS);
+		logf("Invalid hull number. Clipnode hull numbers are 0 - {}\n", MAX_MAP_HULLS);
 		return;
 	}
 
 	BSPMODEL& model = models[modelIdx];
 
-	logf("Model %d Hull %d - %s\n", modelIdx, hull_number, get_model_usage(modelIdx).c_str());
+	logf("Model {} Hull {} - {}\n", modelIdx, hull_number, get_model_usage(modelIdx));
 
 	if (hull_number == 0)
 		print_model_bsp(modelIdx);
@@ -3181,7 +3196,7 @@ void Bsp::recurse_node(int nodeIdx, int depth)
 	{
 		BSPLEAF& leaf = leaves[~nodeIdx];
 		print_leaf(leaf);
-		logf(" (LEAF %d)\n", ~nodeIdx);
+		logf(" (LEAF {})\n", ~nodeIdx);
 		return;
 	}
 	else
@@ -3198,7 +3213,7 @@ void Bsp::print_node(const BSPNODE& node)
 {
 	BSPPLANE& plane = planes[node.iPlane];
 
-	logf("Plane (%f %f %f) d: %f, Faces: %d, Min(%d, %d, %d), Max(%d, %d, %d)",
+	logf("Plane ({} {} {}) d: {}, Faces: {}, Min({}, {}, {}), Max({}, {}, {})",
 		 plane.vNormal.x, plane.vNormal.y, plane.vNormal.z,
 		 plane.fDist, node.nFaces,
 		 node.nMins[0], node.nMins[1], node.nMins[2],
@@ -3409,8 +3424,8 @@ void Bsp::remap_face_structures(int faceIdx, STRUCTREMAP* remap)
 
 	face.iPlane = (unsigned short)remap->planes[face.iPlane];
 	face.iTextureInfo = (short)remap->texInfo[face.iTextureInfo];
-	//logf("REMAP FACE %d: %d -> %d\n", faceIdx, face.iFirstEdge, remap->surfEdges[face.iFirstEdge]);
-	//logf("REMAP FACE %d: %d -> %d\n", faceIdx, face.iTextureInfo, remap->texInfo[face.iTextureInfo]);
+	//logf("REMAP FACE {}: {} -> {}\n", faceIdx, face.iFirstEdge, remap->surfEdges[face.iFirstEdge]);
+	//logf("REMAP FACE {}: {} -> {}\n", faceIdx, face.iTextureInfo, remap->texInfo[face.iTextureInfo]);
 	//face.iFirstEdge = remap->surfEdges[face.iFirstEdge];
 }
 
@@ -3495,7 +3510,7 @@ void Bsp::delete_hull(int hull_number, int redirect)
 {
 	if (hull_number < 0 || hull_number >= MAX_MAP_HULLS)
 	{
-		logf("Invalid hull number. Valid hull numbers are 1-%d\n", MAX_MAP_HULLS);
+		logf("Invalid hull number. Valid hull numbers are 1-{}\n", MAX_MAP_HULLS);
 		return;
 	}
 
@@ -3509,20 +3524,20 @@ void Bsp::delete_hull(int hull_number, int modelIdx, int redirect)
 {
 	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
-		logf("Invalid model index %d. Must be 0-%d\n", modelIdx);
+		logf("Invalid model index {}. Must be 0-{}\n", modelIdx);
 		return;
 	}
 
 	// the first hull is used for point-sized clipping, but uses nodes and not clipnodes.
 	if (hull_number < 0 || hull_number >= MAX_MAP_HULLS)
 	{
-		logf("Invalid hull number. Valid hull numbers are 1-%d\n", MAX_MAP_HULLS);
+		logf("Invalid hull number. Valid hull numbers are 1-{}\n", MAX_MAP_HULLS);
 		return;
 	}
 
 	if (redirect >= MAX_MAP_HULLS)
 	{
-		logf("Invalid redirect hull number. Valid redirect hulls are 1-%d\n", MAX_MAP_HULLS);
+		logf("Invalid redirect hull number. Valid redirect hulls are 1-{}\n", MAX_MAP_HULLS);
 		return;
 	}
 
@@ -3545,11 +3560,11 @@ void Bsp::delete_hull(int hull_number, int modelIdx, int redirect)
 	{
 		if (model.iHeadnodes[hull_number] > 0 && model.iHeadnodes[redirect] < 0)
 		{
-//logf("WARNING: HULL %d is empty\n", redirect);
+//logf("WARNING: HULL {} is empty\n", redirect);
 		}
 		else if (model.iHeadnodes[hull_number] == model.iHeadnodes[redirect])
 		{
-//logf("WARNING: HULL %d and %d are already sharing clipnodes\n", hull_number, redirect);
+//logf("WARNING: HULL {} and {} are already sharing clipnodes\n", hull_number, redirect);
 		}
 		model.iHeadnodes[hull_number] = model.iHeadnodes[redirect];
 	}
@@ -3677,7 +3692,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	memset(name, 0, MAXTEXTURENAME);
 	memcpy(name, oldname, strlen(oldname));
 
-	logf("Adding new %s texture '%s' with size %dx%d\n", !data ? "embedded" : "wad", name, width, height);
+	logf("Adding new {} texture '{}' with size {}x{}\n", !data ? "embedded" : "wad", name, width, height);
 
 	if (width % 16 != 0 || height % 16 != 0)
 	{
@@ -3696,11 +3711,11 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 	if (oldtex)
 	{
-		logf("Texture with name %s found in map.\n", name);
+		logf("Texture with name {} found in map.\n", name);
 		if (oldtex->nWidth != width || oldtex->nHeight != height)
 		{
 			oldtex->szName[0] = '\0';
-			logf("Warning! Texture size different %dx%d > %dx%d.\nRenaming old texture and create new one.\n",
+			logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 				 oldtex->nWidth, oldtex->nHeight, width, height);
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
@@ -3727,11 +3742,11 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 	if (oldtex)
 	{
-		logf("Texture with name %s found in map.\n", name);
+		logf("Texture with name {} found in map.\n", name);
 		if (oldtex->nWidth != width || oldtex->nHeight != height)
 		{
 			oldtex->szName[0] = '\0';
-			logf("Warning! Texture size different %dx%d > %dx%d.\nRenaming old texture and create new one.\n",
+			logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 				 oldtex->nWidth, oldtex->nHeight, width, height);
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
@@ -4410,12 +4425,12 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 {
 	if (modelIdx < 0 || modelIdx >= modelCount)
 	{
-		logf("Invalid model index %d. Must be 0-%d\n", modelIdx);
+		logf("Invalid model index {}. Must be 0-{}\n", modelIdx);
 		return;
 	}
 	if (hullIdx >= MAX_MAP_HULLS)
 	{
-		logf("Invalid hull number. Valid hull numbers are 1-%d\n", MAX_MAP_HULLS);
+		logf("Invalid hull number. Valid hull numbers are 1-{}\n", MAX_MAP_HULLS);
 		return;
 	}
 
@@ -4429,7 +4444,7 @@ void Bsp::simplify_model_collision(int modelIdx, int hullIdx)
 
 	if (hullIdx > 0 && model.iHeadnodes[hullIdx] < 0)
 	{
-		logf("Hull %d has no clipnodes\n", hullIdx);
+		logf("Hull {} has no clipnodes\n", hullIdx);
 		return;
 	}
 
@@ -4708,7 +4723,7 @@ BSPTEXTUREINFO* Bsp::get_unique_texinfo(int faceIdx)
 			texinfos[newInfo] = texinfos[targetInfo];
 			targetInfo = newInfo;
 			targetFace.iTextureInfo = (short)newInfo;
-			logf("Create new texinfo %d\n", newInfo);
+			logf("Create new texinfo {}\n", newInfo);
 			break;
 		}
 	}
@@ -4804,7 +4819,7 @@ short Bsp::regenerate_clipnodes_from_nodes(int iNode, int hullIdx)
 			{
 				if (solidContents != CONTENTS_SOLID)
 				{
-					logf("UNEXPECTED SOLID CONTENTS %d\n", solidContents);
+					logf("UNEXPECTED SOLID CONTENTS {}\n", solidContents);
 				}
 				// solidContents or CONTENTS_SOLID?
 				return CONTENTS_SOLID;
@@ -4927,7 +4942,7 @@ void Bsp::write_csg_outputs(const std::string& path)
 		};
 		pln_file.write((char*)&csgplane, sizeof(CSGPLANE));
 	}
-	logf("Wrote %d planes\n", numPlanes);
+	logf("Wrote {} planes\n", numPlanes);
 
 	BSPMODEL* tmodels = (BSPMODEL*)lumps[LUMP_MODELS];
 	BSPMODEL world = tmodels[0];
@@ -4972,7 +4987,7 @@ void Bsp::write_csg_outputs(const std::string& path)
 			if (i == LUMP_PLANES)
 			{
 				int count = bsp_header.lump[i].nLength / sizeof(BSPPLANE);
-				printf("BSP HAS %d PLANES\n", count);
+				logf("BSP HAS {} PLANES\n",count);
 			}
 		}
 		else
@@ -5020,7 +5035,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 			if (debug)
 			{
 				BSPPLANE plane = planes[iPlane];
-				logf("Writing face (%2.0f %2.0f %2.0f) %4.0f  %s\n",
+				logf("Writing face (%2.0f %2.0f %2.0f) %4.0f  {}\n",
 					 plane.vNormal.x, plane.vNormal.y, plane.vNormal.z, plane.fDist,
 					 (faceContents == CONTENTS_SOLID ? "SOLID" : "EMPTY"));
 				if (flipped && false)
@@ -5062,7 +5077,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 void Bsp::print_leaf(const BSPLEAF& leaf)
 {
 	logf(getLeafContentsName(leaf.nContents));
-	logf(" %d surfs, Min(%d, %d, %d), Max(%d %d %d)", leaf.nMarkSurfaces,
+	logf(" {} surfs, Min({}, {}, {}), Max({} {} {})", leaf.nMarkSurfaces,
 		 leaf.nMins[0], leaf.nMins[1], leaf.nMins[2],
 		 leaf.nMaxs[0], leaf.nMaxs[1], leaf.nMaxs[2]);
 }
@@ -5167,7 +5182,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 {
 	if (!createDir(path))
 	{
-		logf("Error output path directory \"%s\" can't be created!\n", path.c_str());
+		logf("Error output path directory \"{}\" can't be created!\n", path);
 		return;
 	}
 
@@ -5179,8 +5194,8 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 	scale = abs(scale);
 
 	FILE* f = NULL;
-	logf("Export %s to %s\n", (bsp_name + ".obj").c_str(), path.c_str());
-	logf("With %s x%i", iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale", abs(iscale));
+	logf("Export {} to {}\n", bsp_name + ".obj", path);
+	logf("With {} x{}", iscale == 1 ? "scale" : iscale < 0 ? "downscale" : "upscale", abs(iscale));
 	fopen_s(&f, (path + bsp_name + ".obj").c_str(), "wb");
 	if (f)
 	{
@@ -5426,11 +5441,11 @@ void Bsp::ExportToMapWIP(const std::string& path)
 {
 	if (!createDir(path))
 	{
-		logf("Error output path directory \"%s\" can't be created!\n", path.c_str());
+		logf("Error output path directory \"{}\" can't be created!\n", path);
 		return;
 	}
 	FILE* f = NULL;
-	logf("Export %s to %s\n", (bsp_name + ".map").c_str(), path.c_str());
+	logf("Export {} to {}\n", (bsp_name + ".map"), path);
 	fopen_s(&f, (path + bsp_name + ".map").c_str(), "wb");
 	if (f)
 	{
@@ -5448,7 +5463,7 @@ void Bsp::ExportToMapWIP(const std::string& path)
 
 			for (int i = 0; i < bsprend->renderModels[modelIdx].groupCount; i++)
 			{
-				logf("Export ent %u model %u group %d\n", entIdx, modelIdx, i);
+				logf("Export ent {} model {} group {}\n", entIdx, modelIdx, i);
 				//RenderGroup& rgroup = bsprend->renderModels[modelIdx].renderGroups[i];
 
 			}
@@ -5470,7 +5485,7 @@ BspRenderer* Bsp::getBspRender()
 	return renderer;
 }
 
-void Bsp::setBspRender(BspRenderer * rnd)
+void Bsp::setBspRender(BspRenderer* rnd)
 {
 	renderer = rnd;
 }
@@ -5507,7 +5522,7 @@ void Bsp::decalShoot(vec3 pos, const char* texname)
 	if (bestMath > 0)
 	{
 		int modelidx = get_model_from_face(bestMath);
-		logf("Best %d %d %f\n", modelidx, bestMath, bestDir);
+		logf("Best {} {} {}\n", modelidx, bestMath, bestDir);
 		std::vector<vec3> worldVerts;
 	}
 }

@@ -2,11 +2,12 @@
 
 #include <filesystem>
 namespace fs = std::filesystem;
-
+#include <format>
+#include <iostream>
 #include <string>
+#include <string_view>
 #include <vector>
 #include "mat4x4.h"
-#include <iostream>
 #include <fstream>
 #include <cmath>
 #include <thread>
@@ -43,10 +44,23 @@ extern std::mutex g_log_mutex;
 extern std::mutex g_log_mutex2;
 
 extern int g_render_flags;
+template<class ...Args>
+inline void logf(const std::string & format, Args ...args) noexcept
+{
+	g_log_mutex.lock();
 
-void logf(const char* format, ...);
+	std::string log_line = std::vformat(format, std::make_format_args(args...));
+#ifndef NDEBUG
+	static std::ofstream outfile("log.txt", std::ios_base::app);
+	outfile << log_line;
+#endif
 
-void debugf(const char* format, ...);
+	std::cout << log_line;
+	g_log_buffer.push_back(log_line);
+
+	g_log_mutex.unlock();
+}
+
 
 bool fileExists(const std::string& fileName);
 
@@ -148,7 +162,8 @@ void WriteBMP(const std::string& fileName, unsigned char* pixels, int width, int
 std::string getConfigDir();
 
 extern fs::path g_current_dir;
-std::string GetCurrentWorkingDir();
+std::string GetCurrentDir();
+std::string GetWorkDir();
 
 int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv);
 float AngleFromTextureAxis(vec3 axis, bool x, int type);
@@ -159,3 +174,5 @@ size_t strlen(std::string str);
 int GetImageColors(COLOR3* image, int size);
 int ColorDistance(COLOR3 color, COLOR3 other);
 void SimpeColorReduce(COLOR3* image, int size);
+
+bool FindPathInAssets(const std::string& path, std::string& outpath, bool tracesearch = false);

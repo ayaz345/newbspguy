@@ -40,7 +40,7 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 			size = numValues * 4;
 			break;
 		default:
-			logf("Unknown attribute value type: %d", valueType);
+			logf("Unknown attribute value type: {}", valueType);
 			handle = -1;
 			size = 0;
 	}
@@ -94,7 +94,7 @@ void VertexBuffer::addAttributes(int attFlags)
 			else if (i >= VBUF_TEX_START)
 				commonAttr[i].handle = shaderProgram->vtexID;
 			else
-				logf("Unused vertex buffer flag bit %d", i);
+				logf("Unused vertex buffer flag bit {}", i);
 
 			attribs.push_back(commonAttr[i]);
 			elementSize += commonAttr[i].size;
@@ -159,7 +159,7 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 		attribs[i].handle = glGetAttribLocation(shaderProgram->ID, attribs[i].varName);
 
 		if (!hideErrors && attribs[i].handle == -1)
-			logf("Could not find vertex attribute: %s\n", attribs[i].varName);
+			logf("Could not find vertex attribute: {}\n", attribs[i].varName);
 	}
 
 	attributesBound = true;
@@ -233,11 +233,11 @@ void VertexBuffer::drawRange(int _primitive, int start, int end)
 	}
 
 	if (start < 0 || start > numVerts || numVerts == 0)
-		logf("Invalid start index: %d. numVerts: %d \n", start, numVerts);
+		logf("Invalid start index: {}. numVerts: {} \n", start, numVerts);
 	else if (end > numVerts || end < 0)
-		logf("Invalid end index: %d\n", end);
+		logf("Invalid end index: {}\n", end);
 	else if (end - start <= 0)
-		logf("Invalid draw range: %d -> %d\n", start, end);
+		logf("Invalid draw range: {} -> {}\n", start, end);
 	else
 		glDrawArrays(_primitive, start, end - start);
 

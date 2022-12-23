@@ -92,13 +92,13 @@ void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _model
 	{
 		modelViewID = glGetUniformLocation(ID, _modelViewMat);
 		if (modelViewID == -1)
-			logf("Could not find modelView uniform: %s\n", _modelViewMat);
+			logf("Could not find modelView uniform: {}\n", _modelViewMat);
 	}
 	if (_modelViewProjMat)
 	{
 		modelViewProjID = glGetUniformLocation(ID, _modelViewProjMat);
 		if (modelViewProjID == -1)
-			logf("Could not find modelViewProjection uniform: %s\n", _modelViewProjMat);
+			logf("Could not find modelViewProjection uniform: {}\n", _modelViewProjMat);
 	}
 }
 
@@ -107,17 +107,17 @@ void ShaderProgram::setVertexAttributeNames(const char* posAtt, const char* colo
 	if (posAtt)
 	{
 		vposID = glGetAttribLocation(ID, posAtt);
-		if (vposID == -1) logf("Could not find vposition attribute: %s\n", posAtt);
+		if (vposID == -1) logf("Could not find vposition attribute: {}\n", posAtt);
 	}
 	if (colorAtt)
 	{
 		vcolorID = glGetAttribLocation(ID, colorAtt);
-		if (vcolorID == -1) logf("Could not find vcolor attribute: %s\n", colorAtt);
+		if (vcolorID == -1) logf("Could not find vcolor attribute: {}\n", colorAtt);
 	}
 	if (texAtt)
 	{
 		vtexID = glGetAttribLocation(ID, texAtt);
-		if (vtexID == -1) logf("Could not find vtexture attribute: %s\n", texAtt);
+		if (vtexID == -1) logf("Could not find vtexture attribute: {}\n", texAtt);
 	}
 }
 

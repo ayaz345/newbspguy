@@ -62,6 +62,20 @@ struct RenderEnt
 	EntCube* pointEntCube;
 	bool needAngles = false;
 	bool hide = false;
+	StudioModel* mdl;
+	RenderEnt()
+	{
+		modelMatAngles = modelMatOrigin = mat4x4();
+		offset = angles = vec3();
+		modelIdx = 0;
+		pointEntCube = NULL;
+		mdl = NULL;
+	}
+	~RenderEnt()
+	{
+		if (mdl)
+			delete mdl;
+	}
 };
 
 struct RenderGroup

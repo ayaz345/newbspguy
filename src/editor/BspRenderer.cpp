@@ -144,8 +144,8 @@ void BspRenderer::loadTextures()
 	}
 
 	std::vector<std::string> tryPaths{};
-	tryPaths.push_back(GetCurrentWorkingDir());
-	if (GetCurrentWorkingDir() != g_config_dir)
+	tryPaths.push_back(GetCurrentDir());
+	if (GetCurrentDir() != g_config_dir)
 		tryPaths.push_back(g_config_dir);
 
 	for (auto& path : g_settings.resPaths)
@@ -176,17 +176,17 @@ void BspRenderer::loadTextures()
 
 		if (path.empty())
 		{
-			logf("Missing WAD: %s\n", wadNames[i].c_str());
+			logf("Missing WAD: {}\n", wadNames[i]);
 			continue;
 		}
 
-		logf("Loading WAD %s\n", path.c_str());
+		logf("Loading WAD {}\n", path);
 		Wad* wad = new Wad(path);
 		if (wad->readInfo())
 			wads.push_back(wad);
 		else
 		{
-			logf("Unreadable WAD file %s\n", path.c_str());
+			logf("Unreadable WAD file {}\n", path);
 			delete wad;
 		}
 	}
@@ -244,11 +244,11 @@ void BspRenderer::loadTextures()
 	}
 
 	if (wadTexCount)
-		logf("Loaded %d wad textures\n", wadTexCount);
+		logf("Loaded {} wad textures\n", wadTexCount);
 	if (embedCount)
-		logf("Loaded %d embedded textures\n", embedCount);
+		logf("Loaded {} embedded textures\n", embedCount);
 	if (missingCount)
-		logf("%d missing textures\n", missingCount);
+		logf("{} missing textures\n", missingCount);
 }
 
 void BspRenderer::reload()
@@ -376,7 +376,7 @@ void BspRenderer::loadLightmaps()
 
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
-					logf("Lightmap too big for atlas size ( %dx%d but allowed %dx%d )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
+					logf("Lightmap too big for atlas size ( {}x{} but allowed {}x{} )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
 					continue;
 				}
 			}
@@ -421,7 +421,7 @@ void BspRenderer::loadLightmaps()
 	numLightmapAtlases = atlasTextures.size();
 
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
-	logf("Fit %d lightmaps into %d atlases\n", lightmapCount, atlasId + 1);
+	logf("Fit {} lightmaps into {} atlases\n", lightmapCount, atlasId + 1);
 }
 
 void BspRenderer::updateLightmapInfos()
@@ -433,7 +433,7 @@ void BspRenderer::updateLightmapInfos()
 	}
 	if (map->faceCount < numRenderLightmapInfos)
 	{
-		debugf("TODO: Recalculate lightmaps when faces deleted\n");
+		logf("TODO: Recalculate lightmaps when faces deleted\n");
 		return;
 	}
 
@@ -486,7 +486,7 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 			modelRenderGroups += groupCount;
 	}
 
-	debugf("Created %d solid render groups (%d world, %d entity)\n",
+	logf("Created {} solid render groups ({} world, {} entity)\n",
 		   worldRenderGroups + modelRenderGroups,
 		   worldRenderGroups,
 		   modelRenderGroups);
@@ -1288,6 +1288,46 @@ void BspRenderer::refreshEnt(int entIdx)
 		renderEnts[entIdx].offset = origin;
 	}
 
+	if (!ent->isBspModel())
+	{
+		if (ent->hasKey("model") || g_app->fgd)
+		{
+			std::string modelpath;
+			if (ent->hasKey("model"))
+			{
+				modelpath = ent->keyvalues["model"];
+			}
+			if (g_app->fgd && modelpath.empty())
+			{
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+				if (fgdClass)
+				{
+					modelpath = fgdClass->model;
+				}
+			}
+
+			if (!renderEnts[entIdx].mdl || renderEnts[entIdx].mdl->filename != modelpath)
+			{
+				std::string lowerpath = toLowerCase(modelpath);
+				if (lowerpath.ends_with(".mdl"))
+				{
+					std::string newModelPath;
+					if (FindPathInAssets(modelpath, newModelPath))
+					{
+						if (renderEnts[entIdx].mdl)
+							delete renderEnts[entIdx].mdl;
+						renderEnts[entIdx].mdl = new StudioModel(newModelPath);
+						renderEnts[entIdx].mdl->UpdateModelMeshList();
+					}
+					else
+					{
+
+					}
+				}
+			}
+		}
+	}
+
 	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
 	{
 		if (ent->keyOrder[i] == "angles")
@@ -1496,7 +1536,7 @@ void BspRenderer::delayLoadData()
 		}
 
 		clipnodesLoaded = true;
-		logf("Loaded %d clipnode leaves\n", clipnodeLeafCount);
+		logf("Loaded {} clipnode leaves\n", clipnodeLeafCount);
 		updateClipnodeOpacity((g_render_flags & RENDER_TRANSPARENT) ? 128 : 255);
 	}
 }
@@ -1607,6 +1647,15 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 	activeShader->modelMat->loadIdentity();
 	activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	activeShader->updateMatrixes();
+
+	for (size_t i = 0; i < map->ents.size(); i++)
+	{
+		if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+		{
+			renderEnts[i].mdl->AdvanceFrame(g_app->curTime - g_app->oldTime);
+		}
+	}
+
 	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
 	if (highlightEnts.size() && !highlightAlwaysOnTop)
 	{
@@ -1863,7 +1912,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 		}
 		/*if (!ent)
 		{
-			//test 
+			//test
 			tempmodel->mdl_meshes[0][0].tex->bind(0);
 			whiteTex->bind(1);
 			whiteTex->bind(2);
@@ -1936,8 +1985,16 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 			colorShader->updateMatrixes();
 
-			renderEnts[i].pointEntCube->selectBuffer->drawFull();
-			renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+			if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+			{
+				renderEnts[i].mdl->DrawModel(0, 0, 0);
+				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+			}
+			else
+			{
+				renderEnts[i].pointEntCube->selectBuffer->drawFull();
+				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
+			}
 		}
 		else
 		{
@@ -1945,7 +2002,14 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 
 			colorShader->updateMatrixes();
-
+			if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+			{
+				renderEnts[i].mdl->DrawModel(0, 0, 0);
+			}
+			else
+			{
+				renderEnts[i].pointEntCube->selectBuffer->drawFull();
+			}
 			renderEnts[i].pointEntCube->buffer->drawFull();
 			//renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 		}
@@ -2316,7 +2380,7 @@ void BspRenderer::undo()
 	Command* undoCommand = undoHistory[undoHistory.size() - 1];
 	if (!undoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf("Can't undo %s while map is loading!\n", undoCommand->desc.c_str());
+		logf("Can't undo {} while map is loading!\n", undoCommand->desc);
 		return;
 	}
 
@@ -2336,7 +2400,7 @@ void BspRenderer::redo()
 	Command* redoCommand = redoHistory[redoHistory.size() - 1];
 	if (!redoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf("Can't redo %s while map is loading!\n", redoCommand->desc.c_str());
+		logf("Can't redo {} while map is loading!\n", redoCommand->desc);
 		return;
 	}
 

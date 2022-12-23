@@ -508,8 +508,8 @@ vec4 operator*(const mat4x4& mat, const vec4& vec)
 
 void mat4x4print(const mat4x4& mat)
 {
-	logf("%f %f %f %f\n", mat.m[0], mat.m[1], mat.m[2], mat.m[3]);
-	logf("%f %f %f %f\n", mat.m[4], mat.m[5], mat.m[6], mat.m[7]);
-	logf("%f %f %f %f\n", mat.m[8], mat.m[9], mat.m[10], mat.m[11]);
-	logf("%f %f %f %f\n\n", mat.m[12], mat.m[13], mat.m[14], mat.m[15]);
+	logf("{} {} {} {}\n", mat.m[0], mat.m[1], mat.m[2], mat.m[3]);
+	logf("{} {} {} {}\n", mat.m[4], mat.m[5], mat.m[6], mat.m[7]);
+	logf("{} {} {} {}\n", mat.m[8], mat.m[9], mat.m[10], mat.m[11]);
+	logf("{} {} {} {}\n\n", mat.m[12], mat.m[13], mat.m[14], mat.m[15]);
 }

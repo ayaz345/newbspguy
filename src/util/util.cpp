@@ -17,14 +17,9 @@
 #include <unistd.h>
 #endif
 #include <stdio.h>
-#ifdef WIN32
-#include <direct.h>
-#define GetCurrentDir _getcwd
-#else
-#include <unistd.h>
-#define GetCurrentDir getcwd
-#endif
 #include <set>
+#include "Renderer.h"
+
 
 bool DebugKeyPressed = false;
 ProgressMeter g_progress;
@@ -33,49 +28,8 @@ std::vector<std::string> g_log_buffer;
 std::mutex g_log_mutex;
 std::mutex g_log_mutex2;
 
-static char log_line[4096];
 
-void logf(const char* format, ...)
-{
-	g_log_mutex.lock();
-
-	va_list vl;
-	va_start(vl, format);
-	vsnprintf(log_line, 4096, format, vl);
-	va_end(vl);
-
-#ifndef NDEBUG
-	std::ofstream outfile("log.txt", std::ios_base::app);
-	outfile << log_line;
-#endif
-
-	printf("%s", log_line);
-	g_log_buffer.push_back(log_line);
-
-	g_log_mutex.unlock();
-}
-
-void debugf(const char* format, ...)
-{
-	if (!g_verbose)
-	{
-		return;
-	}
-
-	g_log_mutex.lock();
-
-	va_list vl;
-	va_start(vl, format);
-	vsnprintf(log_line, 4096, format, vl);
-	va_end(vl);
-
-	printf("%s", log_line);
-	g_log_buffer.push_back(log_line);
-
-	g_log_mutex.unlock();
-}
-
-bool fileExists(const std::string & fileName)
+bool fileExists(const std::string& fileName)
 {
 	return fs::exists(fileName) && !fs::is_directory(fileName);
 }
@@ -341,7 +295,7 @@ vec3 parseVector(const std::string& s)
 	vec3 v;
 	std::vector<std::string> parts = splitString(s, " ");
 
-	while (parts.size()< 3)
+	while (parts.size() < 3)
 	{
 		parts.push_back("0");
 	}
@@ -1150,9 +1104,34 @@ void fixupPath(std::string& path, FIXUPPATH_SLASH startslash, FIXUPPATH_SLASH en
 	replaceAll(path, "//", "/");
 }
 fs::path g_current_dir = "./";
-std::string GetCurrentWorkingDir()
+std::string GetCurrentDir()
 {
 	return g_current_dir.string() + "/";
+}
+
+std::string GetWorkDir()
+{
+#ifdef WIN32
+	if (g_settings.workingdir.find(':') == std::string::npos &&
+		g_settings.gamedir.find(':') != std::string::npos)
+	{
+		return g_settings.gamedir + g_settings.workingdir;
+	}
+#endif
+	return g_settings.workingdir;
+}
+
+std::string GetGameDir()
+{
+#ifdef WIN32
+	std::string curDir = g_current_dir.string();
+	if (curDir.find(':') != std::string::npos &&
+		g_settings.gamedir.find(':') == std::string::npos)
+	{
+		return curDir + g_settings.gamedir;
+	}
+#endif
+	return g_settings.gamedir;
 }
 
 #ifdef WIN32
@@ -1189,7 +1168,7 @@ void print_color(int colors)
 		case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
 		case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
 	}
-	logf("\x1B[%s;%sm", mode, color);
+	logf("\x1B[{};{}m", mode, color);
 }
 
 std::string getConfigDir()
@@ -1358,4 +1337,100 @@ void SimpeColorReduce(COLOR3* image, int size)
 			}
 		}
 	}
+}
+
+bool FindPathInAssets(const std::string& path, std::string& outpath, bool tracesearch)
+{
+	int fPathId = 1;
+	if (fileExists(path))
+	{
+		outpath = path;
+		return true;
+	}
+
+	//if (fileExists("./" + path))
+	//{
+	//	outpath = path;
+	//	return true;
+	//}
+	//if (fileExists("./../" + path))
+	//{
+	//	outpath = path;
+	//	return true;
+	//}
+
+	std::ostringstream outTrace;
+
+	if (tracesearch)
+	{
+		outTrace << "-------------START PATH TRACING-------------\n";
+		outTrace << "Search paths [" << fPathId++ << "] : [" << path.c_str() << "]\n";
+	}
+	if (fileExists(path))
+	{
+		outpath = path;
+		return true;
+	}
+	if (tracesearch)
+	{
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + path) << "]\n";
+	}
+	if (fileExists(GetCurrentDir() + path))
+	{
+		outpath = GetCurrentDir() + path;
+		return true;
+	}
+	if (tracesearch)
+	{
+		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetWorkDir() + path) << "]\n";
+	}
+	if (fileExists(GetWorkDir() + path))
+	{
+		outpath = GetWorkDir() + path;
+		return true;
+	}
+	
+	for (auto const& dir : g_settings.resPaths)
+	{
+		if (dir.enabled)
+		{
+#ifndef WIN32
+			if (tracesearch)
+			{
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (dir.path + path) << "]\n";
+			}
+			if (fileExists(dir.path + path))
+			{
+				outpath = dir.path + path;
+				return true;
+			}
+#else 
+			if (tracesearch && dir.path.find(':') == std::string::npos)
+			{
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (dir.path + path) << "]\n";
+			}
+			if (dir.path.find(':') == std::string::npos && fileExists(dir.path + path))
+			{
+				outpath = dir.path + path;
+				return true;
+			}
+			if (tracesearch)
+			{
+				outTrace << "Search paths [" << fPathId++ << "] : [" << (GetCurrentDir() + dir.path + path) << "]\n";
+			}
+			if (fileExists(GetCurrentDir() + dir.path + path))
+			{
+				outpath = GetCurrentDir() + dir.path + path;
+				return true;
+			}
+#endif
+		}
+	}
+
+	if (tracesearch)
+	{
+		outTrace << "-------------END PATH TRACING-------------\n";
+		logf("{}", outTrace.str());
+	}
+	return false;
 }

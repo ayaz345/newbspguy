@@ -17,7 +17,7 @@ Shader::Shader(const char* sourceCode, int shaderType)
 		char* log = new char[512];
 		int len;
 		glGetShaderInfoLog(ID, 512, &len, log);
-		logf("Shader Compilation Failed (type %d)\n", shaderType);
+		logf("Shader Compilation Failed (type {})\n", shaderType);
 		logf(log);
 		if (len > 512)
 			logf("\nLog too big to fit!");

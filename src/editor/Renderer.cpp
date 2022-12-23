@@ -29,7 +29,7 @@ std::future<void> Renderer::fgdFuture;
 
 void error_callback(int error, const char* description)
 {
-	logf("GLFW Error: %s\n", description);
+	logf("GLFW Error: {}\n", description);
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -72,15 +72,6 @@ void window_close_callback(GLFWwindow* window)
 	logf("adios\n");
 }
 
-std::string GetWorkDir()
-{
-	if (g_settings.workingdir.find(':') == std::string::npos)
-	{
-		return g_settings.gamedir + g_settings.workingdir;
-	}
-	return g_settings.workingdir;
-}
-
 void AppSettings::loadDefault()
 {
 	settingLoaded = false;
@@ -96,7 +87,7 @@ void AppSettings::loadDefault()
 	maximized = 0;
 	fontSize = 22.f;
 	gamedir = std::string();
-	workingdir = "/bspguy_work/";
+	workingdir = "./bspguy_work/";
 
 	lastdir = "";
 	undoLevels = 64;
@@ -221,7 +212,7 @@ void AppSettings::load()
 	std::ifstream file(g_settings_path);
 	if (!file.is_open())
 	{
-		logf("No access to settings file %s!\n", g_settings_path.c_str());
+		logf("No access to settings file {}!\n", g_settings_path);
 		reset();
 		return;
 	}
@@ -524,7 +515,7 @@ void AppSettings::load()
 	if (lines_readed > 0)
 		g_settings.settingLoaded = true;
 	else
-		logf("Failed to load user config: %s\n", g_settings_path.c_str());
+		logf("Failed to load user config: {}\n", g_settings_path);
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{
@@ -987,7 +978,6 @@ void Renderer::renderLoop()
 		if (SelectedMap && SelectedMap->mdl)
 		{
 			SelectedMap->mdl->AdvanceFrame(curTime - oldTime);
-			SelectedMap->mdl->UpdateModelMeshList();
 		}
 
 		int modelIdx = -1;
@@ -1261,7 +1251,7 @@ void Renderer::renderLoop()
 		int glerror = glGetError();
 		if (glerror != GL_NO_ERROR)
 		{
-			logf("Got OpenGL Error: %d\n", glerror);
+			logf("Got OpenGL Error: {}\n", glerror);
 		}
 
 		if (updatePickCount)
@@ -1385,36 +1375,35 @@ void Renderer::loadSettings()
 void Renderer::loadFgds()
 {
 	Fgd* mergedFgd = NULL;
-	for (int i = 0; i < g_settings.fgdPaths.size(); i++)
+	for (size_t i = 0; i < g_settings.fgdPaths.size(); i++)
 	{
 		if (!g_settings.fgdPaths[i].enabled)
 			continue;
-		Fgd* tmp = new Fgd(g_settings.fgdPaths[i].path);
-		if (!tmp->parse())
+		std::string newFgdPath;
+		if (FindPathInAssets(g_settings.fgdPaths[i].path, newFgdPath))
 		{
-			tmp->path = g_settings.gamedir + g_settings.fgdPaths[i].path;
+			Fgd* tmp = new Fgd(newFgdPath);
 			if (!tmp->parse())
 			{
-				tmp->path = GetCurrentWorkingDir() + g_settings.fgdPaths[i].path;
-				if (!tmp->parse())
-				{
-					tmp->path = g_config_dir + g_settings.fgdPaths[i].path;
-					if (!tmp->parse())
-					{
-						logf("Missing fgd %s.\n", g_settings.fgdPaths[i].path.c_str());
-						continue;
-					}
-				}
+				logf("Fgd {} parsing failed.\n", g_settings.fgdPaths[i].path);
+				continue;
 			}
-		}
-		if (mergedFgd == NULL)
-		{
-			mergedFgd = tmp;
+			if (mergedFgd == NULL)
+			{
+				mergedFgd = tmp;
+			}
+			else
+			{
+				mergedFgd->merge(tmp);
+				delete tmp;
+			}
 		}
 		else
 		{
-			mergedFgd->merge(tmp);
-			delete tmp;
+			logf("Missing fgd {}. Now this path disabled.\n", g_settings.fgdPaths[i].path);
+			FindPathInAssets(g_settings.fgdPaths[i].path, newFgdPath, true);
+			g_settings.fgdPaths[i].enabled = false;
+			continue;
 		}
 	}
 
@@ -2211,14 +2200,12 @@ void Renderer::pickObject()
 	PickInfo tmpPickInfo = PickInfo();
 	tmpPickInfo.bestDist = FLT_MAX_COORD;
 
-	map->getBspRender()->preRenderEnts();
 	map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tmpPickInfo, &map);
 
 	for (int i = 0; i < mapRenderers.size(); i++)
 	{
 		if (map == mapRenderers[i]->map->parentMap)
 		{
-			mapRenderers[i]->preRenderEnts();
 			mapRenderers[i]->pickPoly(pickStart, pickDir, clipnodeRenderHull, tmpPickInfo, &map);
 		}
 	}
@@ -2731,17 +2718,6 @@ void Renderer::reloadBspModels()
 
 	mapRenderers = std::move(sorted_renders);
 
-	std::vector<std::string> tryPaths{};
-	tryPaths.push_back(GetCurrentWorkingDir());
-	if (GetCurrentWorkingDir() != g_config_dir)
-		tryPaths.push_back(g_config_dir);
-
-	for (auto& path : g_settings.resPaths)
-	{
-		if (path.enabled)
-			tryPaths.push_back(path.path);
-	}
-
 	for (auto bsprend : mapRenderers)
 	{
 		if (bsprend)
@@ -2753,23 +2729,22 @@ void Renderer::reloadBspModels()
 					std::string modelPath = entity->keyvalues["model"];
 					if (toLowerCase(modelPath).find(".bsp") != std::string::npos)
 					{
-						for (int i = 0; i < tryPaths.size(); i++)
+						std::string newBspPath;
+						if (FindPathInAssets(modelPath, newBspPath))
 						{
-							std::string tryPath = tryPaths[i] + modelPath;
-							if (!fileExists(tryPath))
-								tryPath = g_settings.gamedir + tryPaths[i] + modelPath;
-							if (fileExists(tryPath))
+							Bsp* tmpBsp = new Bsp(newBspPath);
+							tmpBsp->is_bsp_model = true;
+							tmpBsp->parentMap = bsprend->map;
+							if (tmpBsp->bsp_valid)
 							{
-								Bsp* tmpBsp = new Bsp(tryPath);
-								tmpBsp->is_bsp_model = true;
-								tmpBsp->parentMap = bsprend->map;
-								if (tmpBsp->bsp_valid)
-								{
-									BspRenderer* mapRenderer = new BspRenderer(tmpBsp, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
-									mapRenderers.push_back(mapRenderer);
-								}
-								break;
+								BspRenderer* mapRenderer = new BspRenderer(tmpBsp, bspShader, fullBrightBspShader, colorShader, pointEntRenderer);
+								mapRenderers.push_back(mapRenderer);
 							}
+						}
+						else
+						{
+							logf("Missing {} model file.\n",modelPath);
+							FindPathInAssets(modelPath, newBspPath, true);
 						}
 					}
 				}
@@ -3224,7 +3199,7 @@ void Renderer::updateModelVerts()
 	size_t numCubes = modelVerts.size() + modelEdges.size();
 	modelVertCubes = new cCube[numCubes];
 	modelVertBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
-	//logf("%d intersection points\n", modelVerts.size());
+	//logf("{} intersection points\n", modelVerts.size());
 }
 
 void Renderer::updateSelectionSize()
@@ -3508,7 +3483,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			if (planeCount != 2)
 			{
 				if (g_settings.verboseLogs)
-					logf("ERROR: Edge connected to %d planes!\n", planeCount);
+					logf("ERROR: Edge connected to {} planes!\n", planeCount);
 				return false;
 			}
 

@@ -329,7 +329,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 
 		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * TEXTURE_STEP > 4096)
 		{
-			logf("Bad surface extents %d ( %d > 4096 )\n", facenum, (int)((maxs_out[i] - mins_out[i]) * TEXTURE_STEP));
+			logf("Bad surface extents {} ( {} > 4096 )\n", facenum, (int)((maxs_out[i] - mins_out[i]) * TEXTURE_STEP));
 			return false;
 		}
 	}

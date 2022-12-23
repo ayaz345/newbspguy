@@ -16,7 +16,7 @@ void ProgressMeter::update(const char* newTitle, int totalProgressTicks)
 	progress_total = totalProgressTicks;
 	if (simpleMode && !hide)
 	{
-		logf((std::string(newTitle) + "\n").c_str());
+		logf(std::string(newTitle) + "\n");
 	}
 }
 

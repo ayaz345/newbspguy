@@ -420,8 +420,11 @@ public:
 	std::vector<std::vector<StudioMesh>> mdl_mesh_groups;
 	Texture* whiteTex;
 
+	std::string filename;
+
 	StudioModel(std::string modelname)
 	{
+		filename = modelname;
 		g_vright = vec3();
 		g_lambert = 1.0f;
 		mdl_textures = std::vector<Texture*>();
@@ -446,7 +449,7 @@ public:
 		{
 			m_blending[i] = 0;
 		}
-		Init(modelname);
+		Init(filename);
 		SetSequence(1);
 		SetController(0, 0.0);
 		SetController(1, 0.0);
@@ -511,7 +514,7 @@ public:
 	void Init(std::string modelname);
 	void RefreshMeshList(int body);
 	void UpdateModelMeshList(void);
-
+	void GetModelMeshes(int& bodies, int& subbodies, int& skins, int& meshes);
 
 	void AdvanceFrame(float dt);
 	void ExtractBbox(float* mins, float* maxs);

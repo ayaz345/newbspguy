@@ -161,7 +161,7 @@ int test()
 		{
 			logf("");
 		}
-		logf("Preprocess %s\n", maps[i]->bsp_name.c_str());
+		logf("Preprocess {}\n", maps[i]->bsp_name);
 		maps[i]->delete_hull(2, 1);
 		//removed.add(maps[i]->delete_unused_hulls());
 		removed.add(maps[i]->remove_unused_model_structures());
@@ -211,7 +211,7 @@ int merge_maps(CommandLine& cli)
 
 	for (int i = 0; i < maps.size(); i++)
 	{
-		logf("Preprocessing %s:\n", maps[i]->bsp_name.c_str());
+		logf("Preprocessing {}:\n", maps[i]->bsp_name);
 
 		logf("    Deleting unused data...\n");
 		STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
@@ -286,7 +286,7 @@ int print_info(CommandLine& cli)
 			}
 			else
 			{
-				logf("ERROR: invalid limit name: %s\n", limitName.c_str());
+				logf("ERROR: invalid limit name: {}\n", limitName);
 				delete map;
 				return 0;
 			}
@@ -360,22 +360,22 @@ int noclip(CommandLine& cli)
 
 			if (model < 0 || model >= map->modelCount)
 			{
-				logf("ERROR: model number must be 0 - %d\n", map->modelCount);
+				logf("ERROR: model number must be 0 - {}\n", map->modelCount);
 				return 1;
 			}
 
 			if (hull != -1)
 			{
 				if (redirect)
-					logf("Redirecting HULL %d to HULL %d in model %d:\n", hull, redirect, model);
+					logf("Redirecting HULL {} to HULL {} in model {}:\n", hull, redirect, model);
 				else
-					logf("Deleting HULL %d from model %d:\n", hull, model);
+					logf("Deleting HULL {} from model {}:\n", hull, model);
 
 				map->delete_hull(hull, model, redirect);
 			}
 			else
 			{
-				logf("Deleting HULL 1, 2, and 3 from model %d:\n", model);
+				logf("Deleting HULL 1, 2, and 3 from model {}:\n", model);
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, model, redirect);
@@ -394,9 +394,9 @@ int noclip(CommandLine& cli)
 			if (hull != -1)
 			{
 				if (redirect)
-					logf("Redirecting HULL %d to HULL %d:\n", hull, redirect);
+					logf("Redirecting HULL {} to HULL {}:\n", hull, redirect);
 				else
-					logf("Deleting HULL %d:\n", hull);
+					logf("Deleting HULL {}:\n", hull);
 				map->delete_hull(hull, redirect);
 			}
 			else
@@ -467,17 +467,17 @@ int simplify(CommandLine& cli)
 
 		if (modelIdx < 0 || modelIdx >= map->modelCount)
 		{
-			logf("ERROR: model number must be 0 - %d\n", map->modelCount);
+			logf("ERROR: model number must be 0 - {}\n", map->modelCount);
 			return 1;
 		}
 
 		if (hull != 0)
 		{
-			logf("Simplifying HULL %d in model %d:\n", hull, modelIdx);
+			logf("Simplifying HULL {} in model {}:\n", hull, modelIdx);
 		}
 		else
 		{
-			logf("Simplifying collision hulls in model %d:\n", modelIdx);
+			logf("Simplifying collision hulls in model {}:\n", modelIdx);
 		}
 
 		map->simplify_model_collision(modelIdx, hull);
@@ -523,7 +523,7 @@ int deleteCmd(CommandLine& cli)
 		{
 			int modelIdx = cli.getOptionInt("-model");
 
-			logf("Deleting model %d:\n", modelIdx);
+			logf("Deleting model {}:\n", modelIdx);
 			map->delete_model(modelIdx);
 			map->update_ent_lump();
 			removed = map->remove_unused_model_structures();
@@ -581,7 +581,7 @@ int unembed(CommandLine& cli)
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
-		logf("Deleted %d embedded textures\n", deleted);
+		logf("Deleted {} embedded textures\n", deleted);
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
 		logf("\n");
@@ -723,7 +723,7 @@ void print_help(const std::string& command)
 	}
 	else
 	{
-		logf("%s\n\n", g_version_string.c_str());
+		logf("{}\n\n", g_version_string);
 		logf(
 			"This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
 			"Usage: bspguy <command> <mapname> [options]\n"
@@ -780,10 +780,10 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	SYSTEMTIME t;
 	GetSystemTime(&t);
 	wsprintfA(nameEnd - strlen(".exe"),
-				"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
+				"_%4d%02d%02d_%02d%02d%02d({}).dmp",
 				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
 
-	logf("Generating minidump at path %s\n", name);
+	logf("Generating minidump at path {}\n", name);
 
 	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -837,7 +837,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			logf("Crash\n WINAPI_LASTERROR:%X.\n Exception code: %X.\n Exception address: %p.\n Main module address: %p\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, GetModuleHandleA(0));
+			logf("Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void *)GetModuleHandleA(0));
 			
 			if (crashdumps > 0)
 			{
@@ -876,8 +876,8 @@ int main(int argc, char* argv[])
 		fs::current_path(g_current_dir);
 	}
 #ifdef WIN32
-	g_settings_path = GetCurrentWorkingDir() + "bspguy.cfg";
-	g_config_dir = GetCurrentWorkingDir();
+	g_settings_path = GetCurrentDir() + "bspguy.cfg";
+	g_config_dir = GetCurrentDir();
 #else
 	g_settings_path = fileExists(getConfigDir() + "bspguy.cfg") ? getConfigDir() + "bspguy.cfg" : GetCurrentWorkingDir() + "bspguy.cfg";
 	g_config_dir = fileExists(getConfigDir() + "bspguy.cfg") ? getConfigDir() : GetCurrentWorkingDir();
@@ -889,7 +889,7 @@ int main(int argc, char* argv[])
 
 	if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
 	{
-		logf(g_version_string.c_str());
+		logf(g_version_string);
 		return 0;
 	}
 
@@ -937,7 +937,7 @@ int main(int argc, char* argv[])
 	else 
 	{
 		if (cli.bspfile.size() == 0)
-			logf("%s\n", "Open editor with empty map.");
+			logf("{}\n", "Open editor with empty map.");
 		else
 		{
 			if (cli.askingForHelp)
@@ -946,11 +946,11 @@ int main(int argc, char* argv[])
 				return 0;
 			}
 		}
-		logf("%s\n", ("Start bspguy editor with map: " + cli.bspfile).c_str());
-		logf("Load settings from : %s\n", g_settings_path.c_str());
+		logf("{}\n", ("Start bspguy editor with: " + cli.bspfile));
+		logf("Load settings from : {}\n", g_settings_path);
 		if (!start_viewer(cli.bspfile.c_str()))
 		{
-			logf("ERROR: File not found: %s", cli.bspfile.c_str());
+			logf("ERROR: File not found: {}", cli.bspfile);
 		}
 	}
 	return 0;

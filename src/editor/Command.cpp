@@ -616,7 +616,7 @@ void CleanMapCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!map || !renderer)
 		return;
-	logf("Cleaning %s\n", map->bsp_name.c_str());
+	logf("Cleaning {}\n", map->bsp_name);
 	map->remove_unused_model_structures().print_delete_stats(1);
 
 	refresh();
@@ -686,7 +686,7 @@ void OptimizeMapCommand::execute()
 		return;
 	map->update_ent_lump();
 
-	logf("Optimizing %s\n", map->bsp_name.c_str());
+	logf("Optimizing {}\n", map->bsp_name);
 	if (!map->has_hull2_ents())
 	{
 		logf("    Redirecting hull 2 to hull 1 because there are no large monsters/pushables\n");

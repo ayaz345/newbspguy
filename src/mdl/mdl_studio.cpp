@@ -49,14 +49,14 @@ void StudioModel::CalcBoneAdj()
 				if (value > 1.0) value = 1.0;
 				value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
-			// Con_DPrintf( "%d %d %f : %f\n", m_controller[j], m_prevcontroller[j], value, dadt );
+			// logf( "{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
 		}
 		else
 		{
 			value = m_mouth / 64.0;
 			if (value > 1.0) value = 1.0;
 			value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
-			// Con_DPrintf("%d %f\n", mouthopen, value );
+			// logf("{} {}\n", mouthopen, value );
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
 		{
@@ -488,7 +488,7 @@ void StudioModel::SetupModel(int bodypart)
 
 	if (bodypart > m_pstudiohdr->numbodyparts)
 	{
-		// Con_DPrintf ("StudioModel::SetupModel: no such bodypart %d\n", bodypart);
+		// logf ("StudioModel::SetupModel: no such bodypart {}\n", bodypart);
 		bodypart = 0;
 	}
 
@@ -544,8 +544,13 @@ void StudioModel::UpdateModelMeshList()
 */
 void StudioModel::RefreshMeshList(int body)
 {
+	const int MAX_TRIS_PER_BODYGROUP = 4080;
+	const int MAX_VERTS_PER_CALL = MAX_TRIS_PER_BODYGROUP * 3;
+	static float vertexData[MAX_VERTS_PER_CALL * 3];
+	static float texCoordData[MAX_VERTS_PER_CALL * 2];
+	//static float colorData[MAX_VERTS_PER_CALL * 4];
+
 	StudioMesh tmpStudioMesh = StudioMesh();
-	int					i, j;
 	mstudiomesh_t* pmesh;
 	unsigned char* pvertbone;
 	unsigned char* pnormbone;
@@ -570,7 +575,7 @@ void StudioModel::RefreshMeshList(int body)
 	if (m_skinnum != 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
 		pskinref += (m_skinnum * m_ptexturehdr->numskinref);
 
-	for (i = 0; i < m_pmodel->numverts; i++)
+	for (int i = 0; i < m_pmodel->numverts; i++)
 	{
 		VectorTransform(pstudioverts[i], g_bonetransform[pvertbone[i]], g_pxformverts[i]);
 	}
@@ -580,11 +585,11 @@ void StudioModel::RefreshMeshList(int body)
 	//
 
 	lv = g_pvlightvalues;
-	for (j = 0; j < m_pmodel->nummesh; j++)
+	for (int j = 0; j < m_pmodel->nummesh; j++)
 	{
 		int flags;
 		flags = ptexture[pskinref[pmesh[j].skinref]].flags;
-		for (i = 0; i < pmesh[j].numnorms; i++, pstudionorms++, pnormbone++)
+		for (int i = 0; i < pmesh[j].numnorms; i++, pstudionorms++, pnormbone++)
 		{
 			Lighting(&lv_tmp, *pnormbone, flags, *pstudionorms);
 
@@ -602,7 +607,7 @@ void StudioModel::RefreshMeshList(int body)
 	{
 		mdl_mesh_groups[body].resize(m_pmodel->nummesh);
 
-		for (j = 0; j < m_pmodel->nummesh; j++)
+		for (int j = 0; j < m_pmodel->nummesh; j++)
 		{
 			auto tmpBuff = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
 			tmpBuff->addAttribute(TEX_2F, "vTex");
@@ -615,7 +620,7 @@ void StudioModel::RefreshMeshList(int body)
 		}
 	}
 
-	for (j = 0; j < m_pmodel->nummesh; j++)
+	for (int j = 0; j < m_pmodel->nummesh; j++)
 	{
 		short* ptricmds;
 
@@ -639,19 +644,13 @@ void StudioModel::RefreshMeshList(int body)
 			mdl_mesh_groups[body][j].texure = NULL;
 		}
 
-		const int MAX_TRIS_PER_BODYGROUP = 4080;
-		const int MAX_VERTS_PER_CALL = MAX_TRIS_PER_BODYGROUP * 3;
-		static float vertexData[MAX_VERTS_PER_CALL * 3];
-		static float texCoordData[MAX_VERTS_PER_CALL * 2];
-		static float colorData[MAX_VERTS_PER_CALL * 4];
-
 
 		int totalElements = 0;
 		int texCoordIdx = 0;
 		int colorIdx = 0;
 		int vertexIdx = 0;
 		int stripIdx = 0;
-		while (i = *(ptricmds++))
+		while (int i = *(ptricmds++))
 		{
 			int drawMode = GL_TRIANGLE_STRIP;
 			if (i < 0)
@@ -688,20 +687,20 @@ void StudioModel::RefreshMeshList(int body)
 
 					texCoordData[texCoordIdx++] = texCoordData[v1TexIdx];
 					texCoordData[texCoordIdx++] = texCoordData[v1TexIdx + 1];
-					colorData[colorIdx++] = colorData[v1ColorIdx];
+					/*colorData[colorIdx++] = colorData[v1ColorIdx];
 					colorData[colorIdx++] = colorData[v1ColorIdx + 1];
 					colorData[colorIdx++] = colorData[v1ColorIdx + 2];
-					colorData[colorIdx++] = colorData[v1ColorIdx + 3];
+					colorData[colorIdx++] = colorData[v1ColorIdx + 3];*/
 					vertexData[vertexIdx++] = vertexData[v1PosIdx];
 					vertexData[vertexIdx++] = vertexData[v1PosIdx + 1];
 					vertexData[vertexIdx++] = vertexData[v1PosIdx + 2];
 
 					texCoordData[texCoordIdx++] = texCoordData[v2TexIdx];
 					texCoordData[texCoordIdx++] = texCoordData[v2TexIdx + 1];
-					colorData[colorIdx++] = colorData[v2ColorIdx];
+					/*colorData[colorIdx++] = colorData[v2ColorIdx];
 					colorData[colorIdx++] = colorData[v2ColorIdx + 1];
 					colorData[colorIdx++] = colorData[v2ColorIdx + 2];
-					colorData[colorIdx++] = colorData[v2ColorIdx + 3];
+					colorData[colorIdx++] = colorData[v2ColorIdx + 3];*/
 					vertexData[vertexIdx++] = vertexData[v2PosIdx];
 					vertexData[vertexIdx++] = vertexData[v2PosIdx + 1];
 					vertexData[vertexIdx++] = vertexData[v2PosIdx + 2];
@@ -726,11 +725,11 @@ void StudioModel::RefreshMeshList(int body)
 					texCoordData[texCoordIdx++] = ptricmds[3] * t;
 				}
 
-				lv = &g_pvlightvalues[ptricmds[1]];
+				/*lv = &g_pvlightvalues[ptricmds[1]];
 				colorData[colorIdx++] = lv->x;
 				colorData[colorIdx++] = lv->y;
 				colorData[colorIdx++] = lv->z;
-				colorData[colorIdx++] = 1.0;
+				colorData[colorIdx++] = 1.0;*/
 
 				av = &g_pxformverts[ptricmds[0]];
 				vertexData[vertexIdx++] = av->x;
@@ -758,16 +757,15 @@ void StudioModel::RefreshMeshList(int body)
 						texCoordData[vstart] = texCoordData[vstart + 2];
 						texCoordData[vstart + 2] = t;
 					}
-					for (int k = 0; k < 4; k++)
+					/*for (int k = 0; k < 4; k++)
 					{
 						int vstart = polyOffset * 4 + fanStartColorIdx + k;
 						float t = colorData[vstart];
 						colorData[vstart] = colorData[vstart + 4];
 						colorData[vstart + 4] = t;
-					}
+					}*/
 				}
 			}
-
 		}
 		if (mdl_mesh_groups[body][j].verts.empty())
 		{
@@ -775,10 +773,8 @@ void StudioModel::RefreshMeshList(int body)
 			for (auto& vert : mdl_mesh_groups[body][j].verts)
 			{
 				vert.r = vert.g = vert.b = vert.a = 1.0;
-				vert.luv[0][2] = 1.0f;
-				vert.luv[1][2] = 0.0f;
-				vert.luv[2][2] = 0.0f;
-				vert.luv[3][2] = 0.0f;
+				vert.luv[0][2] = 1.0;
+				vert.luv[1][2] = vert.luv[2][2] = vert.luv[2][2] = vert.luv[3][2] = 0.0f;
 			}
 			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)mdl_mesh_groups[body][j].verts.size());
 		}
@@ -786,10 +782,10 @@ void StudioModel::RefreshMeshList(int body)
 		{
 			mdl_mesh_groups[body][j].verts[z].u = texCoordData[z * 2 + 0];
 			mdl_mesh_groups[body][j].verts[z].v = texCoordData[z * 2 + 1];
-			mdl_mesh_groups[body][j].verts[z].r = colorData[z * 4 + 0];
+			/*mdl_mesh_groups[body][j].verts[z].r = colorData[z * 4 + 0];
 			mdl_mesh_groups[body][j].verts[z].g = colorData[z * 4 + 1];
 			mdl_mesh_groups[body][j].verts[z].b = colorData[z * 4 + 2];
-			mdl_mesh_groups[body][j].verts[z].a = 1.0;
+			mdl_mesh_groups[body][j].verts[z].a = 1.0;*/
 			mdl_mesh_groups[body][j].verts[z].x = vertexData[z * 3 + 0];
 			mdl_mesh_groups[body][j].verts[z].y = vertexData[z * 3 + 2];
 			mdl_mesh_groups[body][j].verts[z].z = -vertexData[z * 3 + 1];
@@ -825,7 +821,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname)
 	void* buffer = loadFile(modelname, size);
 	if (!buffer)
 	{
-		logf("Unable to open %s\n", modelname.c_str());
+		logf("Unable to open {}\n", modelname);
 		return NULL;
 	}
 	int i;
@@ -860,17 +856,19 @@ studioseqhdr_t* StudioModel::LoadDemandSequences(std::string modelname, int seqi
 	void* buffer = loadFile(str.str(), size);
 	if (!buffer)
 	{
-		logf("Unable to open sequence: %s\n", str.str().c_str());
+		logf("Unable to open sequence: {}\n", str.str());
 		return NULL;
 	}
 	return (studioseqhdr_t*)buffer;
 }
 
+void StudioModel::GetModelMeshes(int& bodies, int& subbodies, int& skins, int& meshes)
+{
+
+}
+
 void StudioModel::DrawModel(int bodynum, int subbodynum, int skinnum, int meshnum)
 {
-	SetBlending(0, 0.5);
-	SetBlending(1, 0.5);
-
 	if (SetBodygroup(bodynum, subbodynum) != -1)
 	{
 		// Need clear all model data and refresh it for new subbody
@@ -970,7 +968,7 @@ void StudioModel::Init(std::string modelname)
 	m_pstudiohdr = LoadModel(modelname);
 	if (!m_pstudiohdr)
 	{
-		logf("Can't load model %s\n", modelname.c_str());
+		logf("Can't load model {}\n", modelname);
 		return;
 	}
 	// preload textures
@@ -987,7 +985,7 @@ void StudioModel::Init(std::string modelname)
 	if (m_pstudiohdr->numseqgroups > 1)
 	{
 		auto mdllen = strlen(modelname);
-		for (int i = 0; i < m_pstudiohdr->numseqgroups; i++)
+		for (int i = 1; i < m_pstudiohdr->numseqgroups; i++)
 		{
 			m_panimhdr[i] = LoadDemandSequences(modelname, i);
 		}
