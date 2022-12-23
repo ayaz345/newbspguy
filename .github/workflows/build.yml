@@ -34,8 +34,13 @@ jobs:
             - name: Download and install dependencies
               run: |
                  sudo apt update
-                 sudo apt install gcc-11 g++-11 libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev
-                 
+                 sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev
+            - name: Set up Clang
+              uses: egor-tensin/setup-clang@v1
+              with:
+                version: latest
+                platform: x64     
+                
             - name: Build release
               run: |
                  mkdir build; cd build
