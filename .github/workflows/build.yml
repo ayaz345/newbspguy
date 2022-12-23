@@ -21,7 +21,9 @@ jobs:
         name: "Linux"
         needs: get_time_build
         runs-on: ubuntu-latest
-
+        compiler: gcc
+        gcc: 11
+        
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -36,12 +38,6 @@ jobs:
               run: |
                  sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev
                  
-            - name: Try GCC
-              uses: egor-tensin/setup-gcc@v1
-              with:
-                version: latest
-                platform: x64
-
             - name: Build release
               run: |
                  mkdir build; cd build
