@@ -40,12 +40,12 @@ jobs:
                  sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev
                  
             - name: Build release
+              with:
+               cxx: ${{ matrix.cxx }}
               run: |
                  mkdir build; cd build
                  cmake .. -DCMAKE_BUILD_TYPE=RELEASE
                  make
-              with:
-               cxx: ${{ matrix.cxx }}
 
             - name: Publish nightly binaries for linux
               uses: softprops/action-gh-release@v1
