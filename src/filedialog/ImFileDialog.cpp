@@ -1257,7 +1257,7 @@ namespace ifd
 					ImGui::TableSetColumnIndex(1);
 					auto tm = std::localtime(&entry.DateModified);
 					if (tm != nullptr)
-						ImGui::Text(fmt::format("{}/{}/{} %02d:%02d", tm->tm_mon + 1, tm->tm_mday, 1900 + tm->tm_year, tm->tm_hour, tm->tm_min).c_str());
+						ImGui::Text(fmt::format("{}/{}/{} {:2d}:{:2d}", tm->tm_mon + 1, tm->tm_mday, 1900 + tm->tm_year, tm->tm_hour, tm->tm_min).c_str());
 					else ImGui::Text("---");
 
 					// size
