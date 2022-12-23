@@ -1294,7 +1294,7 @@ void BspRenderer::refreshEnt(int entIdx)
 		{
 			std::string modelpath = std::string();
 
-			if (ent->hasKey("model") && modelpath.size())
+			if (ent->hasKey("model") && ent->keyvalues["model"].size())
 			{
 				modelpath = ent->keyvalues["model"];
 			}
