@@ -20,7 +20,7 @@ jobs:
         include:
           - runs-on: ubuntu-latest
             compiler: gcc
-            gcc: 
+            gcc: 11
             
     linux_build:
 
