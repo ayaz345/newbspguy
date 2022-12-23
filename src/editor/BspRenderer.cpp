@@ -176,17 +176,17 @@ void BspRenderer::loadTextures()
 
 		if (path.empty())
 		{
-			logf("Missing WAD: {}\n", wadNames[i]);
+			logf(std::format("Missing WAD: {}\n", wadNames[i]));
 			continue;
 		}
 
-		logf("Loading WAD {}\n", path);
+		logf(std::format("Loading WAD {}\n", path));
 		Wad* wad = new Wad(path);
 		if (wad->readInfo())
 			wads.push_back(wad);
 		else
 		{
-			logf("Unreadable WAD file {}\n", path);
+			logf(std::format("Unreadable WAD file {}\n", path));
 			delete wad;
 		}
 	}
@@ -244,11 +244,11 @@ void BspRenderer::loadTextures()
 	}
 
 	if (wadTexCount)
-		logf("Loaded {} wad textures\n", wadTexCount);
+		logf(std::format("Loaded {} wad textures\n", wadTexCount));
 	if (embedCount)
-		logf("Loaded {} embedded textures\n", embedCount);
+		logf(std::format("Loaded {} embedded textures\n", embedCount));
 	if (missingCount)
-		logf("{} missing textures\n", missingCount);
+		logf(std::format("{} missing textures\n", missingCount));
 }
 
 void BspRenderer::reload()
@@ -333,7 +333,7 @@ void BspRenderer::loadLightmaps()
 	lightmaps = new LightmapInfo[map->faceCount];
 	memset(lightmaps, 0, map->faceCount * sizeof(LightmapInfo));
 
-	logf("Calculating lightmaps\n");
+	logf(std::format("Calculating lightmaps\n"));
 
 	int lightmapCount = 0;
 	int atlasId = 0;
@@ -376,7 +376,7 @@ void BspRenderer::loadLightmaps()
 
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
-					logf("Lightmap too big for atlas size ( {}x{} but allowed {}x{} )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
+					logf(std::format("Lightmap too big for atlas size ( {}x{} but allowed {}x{} )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
 					continue;
 				}
 			}
@@ -421,7 +421,7 @@ void BspRenderer::loadLightmaps()
 	numLightmapAtlases = atlasTextures.size();
 
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
-	logf("Fit {} lightmaps into {} atlases\n", lightmapCount, atlasId + 1);
+	logf(std::format("Fit {} lightmaps into {} atlases\n", lightmapCount, atlasId + 1));
 }
 
 void BspRenderer::updateLightmapInfos()
@@ -433,7 +433,7 @@ void BspRenderer::updateLightmapInfos()
 	}
 	if (map->faceCount < numRenderLightmapInfos)
 	{
-		logf("TODO: Recalculate lightmaps when faces deleted\n");
+		logf(std::format("TODO: Recalculate lightmaps when faces deleted\n"));
 		return;
 	}
 
@@ -486,10 +486,10 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 			modelRenderGroups += groupCount;
 	}
 
-	logf("Created {} solid render groups ({} world, {} entity)\n",
+	logf(std::format("Created {} solid render groups ({} world, {} entity)\n",
 		   worldRenderGroups + modelRenderGroups,
 		   worldRenderGroups,
-		   modelRenderGroups);
+		   modelRenderGroups));
 }
 
 void BspRenderer::deleteRenderModel(RenderModel* renderModel)
@@ -906,7 +906,7 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 	}
 	if (modelIdx < 0 || modelIdx >= numRenderClipnodes)
 	{
-		logf("Bad model idx\n");
+		logf(std::format("Bad model idx\n"));
 		return false;
 	}
 
@@ -1010,7 +1010,7 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 
 				if (faceVerts.size() < 3)
 				{
-//logf("Degenerate clipnode face discarded\n");
+//logf(std::format("Degenerate clipnode face discarded\n"));
 					continue;
 				}
 
@@ -1042,7 +1042,7 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 					}
 					if (!found)
 					{
-						logf("Failed to find non-duplicate vert for clipnode face\n");
+						logf(std::format("Failed to find non-duplicate vert for clipnode face\n"));
 					}
 
 					vec3 plane_z = mesh.faces[n].normal;
@@ -1189,7 +1189,7 @@ void BspRenderer::refreshPointEnt(int entIdx)
 
 	if (skipIdx >= numPointEnts)
 	{
-		logf("Failed to update point ent\n");
+		logf(std::format("Failed to update point ent\n"));
 		return;
 	}
 }
@@ -1439,7 +1439,7 @@ BspRenderer::~BspRenderer()
 		texturesFuture.valid() && texturesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready ||
 		clipnodesFuture.valid() && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) != std::future_status::ready)
 	{
-		logf("ERROR: Deleted bsp renderer while it was loading\n");
+		logf(std::format("ERROR: Deleted bsp renderer while it was loading\n"));
 	}
 
 	for (int i = 0; i < wads.size(); i++)
@@ -1536,7 +1536,7 @@ void BspRenderer::delayLoadData()
 		}
 
 		clipnodesLoaded = true;
-		logf("Loaded {} clipnode leaves\n", clipnodeLeafCount);
+		logf(std::format("Loaded {} clipnode leaves\n", clipnodeLeafCount));
 		updateClipnodeOpacity((g_render_flags & RENDER_TRANSPARENT) ? 128 : 255);
 	}
 }
@@ -1552,7 +1552,7 @@ void BspRenderer::highlightFace(int faceIdx, bool highlight)
 	RenderGroup* rgroup;
 	if (!getRenderPointers(faceIdx, &rface, &rgroup))
 	{
-		logf("Bad face index\n");
+		logf(std::format("Bad face index\n"));
 		return;
 	}
 
@@ -1582,7 +1582,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 	RenderGroup* rgroup;
 	if (!getRenderPointers(faceIdx, &rface, &rgroup))
 	{
-		logf("Bad face index\n");
+		logf(std::format("Bad face index\n"));
 		return;
 	}
 
@@ -2249,7 +2249,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 {
 	if (entIdx < 0)
 	{
-		logf("Invalid entity undo state push[No ent id]\n");
+		logf(std::format("Invalid entity undo state push[No ent id]\n"));
 		return;
 	}
 
@@ -2257,7 +2257,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 	if (!ent)
 	{
-		logf("Invalid entity undo state push[No ent]\n");
+		logf(std::format("Invalid entity undo state push[No ent]\n"));
 		return;
 	}
 
@@ -2288,7 +2288,7 @@ void BspRenderer::pushEntityUndoState(const std::string& actionDesc, int entIdx)
 
 	if (!anythingToUndo)
 	{
-		logf("Invalid entity undo state push[No changes]\n");
+		logf(std::format("Invalid entity undo state push[No changes]\n"));
 		return; // nothing to undo
 	}
 
@@ -2300,7 +2300,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 {
 	if (!map)
 	{
-		logf("Impossible, no map\n");
+		logf(std::format("Impossible, no map\n"));
 		return;
 	}
 
@@ -2332,7 +2332,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 
 	if (!anyDifference)
 	{
-		logf("No differences detected\n");
+		logf(std::format("No differences detected\n"));
 		return;
 	}
 
@@ -2380,7 +2380,7 @@ void BspRenderer::undo()
 	Command* undoCommand = undoHistory[undoHistory.size() - 1];
 	if (!undoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf("Can't undo {} while map is loading!\n", undoCommand->desc);
+		logf(std::format("Can't undo {} while map is loading!\n", undoCommand->desc));
 		return;
 	}
 
@@ -2400,7 +2400,7 @@ void BspRenderer::redo()
 	Command* redoCommand = redoHistory[redoHistory.size() - 1];
 	if (!redoCommand->allowedDuringLoad && g_app->isLoading)
 	{
-		logf("Can't redo {} while map is loading!\n", redoCommand->desc);
+		logf(std::format("Can't redo {} while map is loading!\n", redoCommand->desc));
 		return;
 	}
 

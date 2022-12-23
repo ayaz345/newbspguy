@@ -44,23 +44,8 @@ extern std::mutex g_log_mutex;
 extern std::mutex g_log_mutex2;
 
 extern int g_render_flags;
-template<class ...Args>
-inline void logf(const std::string & format, Args ...args) noexcept
-{
-	g_log_mutex.lock();
 
-	std::string log_line = std::vformat(format, std::make_format_args(args...));
-#ifndef NDEBUG
-	static std::ofstream outfile("log.txt", std::ios_base::app);
-	outfile << log_line;
-#endif
-
-	std::cout << log_line;
-	g_log_buffer.push_back(log_line);
-
-	g_log_mutex.unlock();
-}
-
+void logf(const std::string& log_line);
 
 bool fileExists(const std::string& fileName);
 

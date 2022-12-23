@@ -29,7 +29,7 @@ std::future<void> Renderer::fgdFuture;
 
 void error_callback(int error, const char* description)
 {
-	logf("GLFW Error: {}\n", description);
+	logf(std::format("GLFW Error: {}\n", description));
 }
 
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
@@ -69,7 +69,7 @@ void window_minimize_callback(GLFWwindow* window, int iconified)
 void window_close_callback(GLFWwindow* window)
 {
 	g_settings.save();
-	logf("adios\n");
+	logf(std::format("adios\n"));
 }
 
 void AppSettings::loadDefault()
@@ -212,7 +212,7 @@ void AppSettings::load()
 	std::ifstream file(g_settings_path);
 	if (!file.is_open())
 	{
-		logf("No access to settings file {}!\n", g_settings_path);
+		logf(std::format("No access to settings file {}!\n", g_settings_path));
 		reset();
 		return;
 	}
@@ -312,7 +312,7 @@ void AppSettings::load()
 			g_settings.moveSpeed = (float)atof(val.c_str());
 			if (g_settings.moveSpeed < 100)
 			{
-				logf("Move speed can be 100 - 1000. Replaced to default value.\n");
+				logf(std::format("Move speed can be 100 - 1000. Replaced to default value.\n"));
 				g_settings.moveSpeed = 500;
 			}
 		}
@@ -515,7 +515,7 @@ void AppSettings::load()
 	if (lines_readed > 0)
 		g_settings.settingLoaded = true;
 	else
-		logf("Failed to load user config: {}\n", g_settings_path);
+		logf(std::format("Failed to load user config: {}\n", g_settings_path));
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{
@@ -745,7 +745,7 @@ Renderer::Renderer()
 {
 	if (!glfwInit())
 	{
-		logf("GLFW initialization failed\n");
+		logf(std::format("GLFW initialization failed\n"));
 		return;
 	}
 
@@ -774,7 +774,7 @@ Renderer::Renderer()
 
 	if (!window)
 	{
-		logf("Window creation failed. Maybe your PC doesn't support OpenGL 3.0\n");
+		logf(std::format("Window creation failed. Maybe your PC doesn't support OpenGL 3.0\n"));
 		return;
 	}
 
@@ -1218,7 +1218,7 @@ void Renderer::renderLoop()
 
 		vec3 forward, right, up;
 		makeVectors(cameraAngles, forward, right, up);
-		//logf("DRAW %.1f %.1f %.1f -> %.1f %.1f %.1f\n", pickStart.x, pickStart.y, pickStart.z, pickDir.x, pickDir.y, pickDir.z);
+		//logf(std::format("DRAW %.1f %.1f %.1f -> %.1f %.1f %.1f\n", pickStart.x, pickStart.y, pickStart.z, pickDir.x, pickDir.y, pickDir.z));
 
 		if (!hideGui)
 			gui->draw();
@@ -1251,7 +1251,7 @@ void Renderer::renderLoop()
 		int glerror = glGetError();
 		if (glerror != GL_NO_ERROR)
 		{
-			logf("Got OpenGL Error: {}\n", glerror);
+			logf(std::format("Got OpenGL Error: {}\n", glerror));
 		}
 
 		if (updatePickCount)
@@ -1289,7 +1289,7 @@ void Renderer::postLoadFgdsAndTextures()
 {
 	if (reloading)
 	{
-		logf("Previous reload not finished. Aborting reload.");
+		logf(std::format("Previous reload not finished. Aborting reload."));
 		return;
 	}
 	reloading = reloadingGameDir = true;
@@ -1304,7 +1304,7 @@ void Renderer::clearMaps()
 	}
 	mapRenderers.clear();
 	clearSelection();
-	logf("Cleared map list\n");
+	logf(std::format("Cleared map list\n"));
 }
 
 void Renderer::reloadMaps()
@@ -1323,7 +1323,7 @@ void Renderer::reloadMaps()
 	}
 
 	reloadBspModels();
-	logf("Reloaded maps\n");
+	logf(std::format("Reloaded maps\n"));
 }
 
 void Renderer::saveSettings()
@@ -1385,7 +1385,7 @@ void Renderer::loadFgds()
 			Fgd* tmp = new Fgd(newFgdPath);
 			if (!tmp->parse())
 			{
-				logf("Fgd {} parsing failed.\n", g_settings.fgdPaths[i].path);
+				logf(std::format("Fgd {} parsing failed.\n", g_settings.fgdPaths[i].path));
 				continue;
 			}
 			if (mergedFgd == NULL)
@@ -1400,7 +1400,7 @@ void Renderer::loadFgds()
 		}
 		else
 		{
-			logf("Missing fgd {}. Now this path disabled.\n", g_settings.fgdPaths[i].path);
+			logf(std::format("Missing fgd {}. Now this path disabled.\n", g_settings.fgdPaths[i].path));
 			FindPathInAssets(g_settings.fgdPaths[i].path, newFgdPath, true);
 			g_settings.fgdPaths[i].enabled = false;
 			continue;
@@ -2743,7 +2743,7 @@ void Renderer::reloadBspModels()
 						}
 						else
 						{
-							logf("Missing {} model file.\n",modelPath);
+							logf(std::format("Missing {} model file.\n",modelPath));
 							FindPathInAssets(modelPath, newBspPath, true);
 						}
 					}
@@ -2759,7 +2759,7 @@ void Renderer::addMap(Bsp* map)
 {
 	if (!map->bsp_valid)
 	{
-		logf("Invalid map!\n");
+		logf(std::format("Invalid map!\n"));
 		return;
 	}
 
@@ -3199,7 +3199,7 @@ void Renderer::updateModelVerts()
 	size_t numCubes = modelVerts.size() + modelEdges.size();
 	modelVertCubes = new cCube[numCubes];
 	modelVertBuff = new VertexBuffer(colorShader, COLOR_4B | POS_3F, modelVertCubes, (int)(6 * 6 * numCubes), GL_TRIANGLES);
-	//logf("{} intersection points\n", modelVerts.size());
+	//logf(std::format("{} intersection points\n", modelVerts.size()));
 }
 
 void Renderer::updateSelectionSize()
@@ -3412,7 +3412,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 		if (verts.size() < 2)
 		{
 			if (g_settings.verboseLogs)
-				logf("Plane with less than 2 verts!?\n"); // hl_c00 pipe in green water place
+				logf(std::format("Plane with less than 2 verts!?\n")); // hl_c00 pipe in green water place
 			return false;
 		}
 
@@ -3483,7 +3483,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 			if (planeCount != 2)
 			{
 				if (g_settings.verboseLogs)
-					logf("ERROR: Edge connected to {} planes!\n", planeCount);
+					logf(std::format("ERROR: Edge connected to {} planes!\n", planeCount));
 				return false;
 			}
 
@@ -3719,7 +3719,7 @@ bool Renderer::splitModelFace()
 	int entIdx = pickInfo.GetSelectedEnt();
 	if (!map)
 	{
-		logf("No selected map\n");
+		logf(std::format("No selected map\n"));
 		return false;
 	}
 	BspRenderer* mapRenderer = map->getBspRender();
@@ -3735,12 +3735,12 @@ bool Renderer::splitModelFace()
 
 	if (selectedEdges.size() != 2)
 	{
-		logf("Exactly 2 edges must be selected before splitting a face\n");
+		logf(std::format("Exactly 2 edges must be selected before splitting a face\n"));
 		return false;
 	}
 	if (entIdx < 0)
 	{
-		logf("No selected entity\n");
+		logf(std::format("No selected entity\n"));
 		return false;
 	}
 	Entity* ent = map->ents[entIdx];
@@ -3764,7 +3764,7 @@ bool Renderer::splitModelFace()
 
 	if (commonPlane == -1)
 	{
-		logf("Can't split edges that don't share a plane\n");
+		logf(std::format("Can't split edges that don't share a plane\n"));
 		return false;
 	}
 
@@ -3791,7 +3791,7 @@ bool Renderer::splitModelFace()
 	}
 	if (commonPlaneIdx == -1)
 	{
-		logf("Failed to find splitting plane");
+		logf(std::format("Failed to find splitting plane"));
 		return false;
 	}
 
@@ -3855,14 +3855,14 @@ bool Renderer::splitModelFace()
 	std::vector<TransformVert> newHullVerts;
 	if (!map->getModelPlaneIntersectVerts(ent->getBspModelIdx(), modelPlanes, newHullVerts))
 	{
-		logf("Can't split here because the model would not be convex\n");
+		logf(std::format("Can't split here because the model would not be convex\n"));
 		return false;
 	}
 
 	Solid newSolid;
 	if (!getModelSolid(newHullVerts, map, newSolid))
 	{
-		logf("Splitting here would invalidate the solid\n");
+		logf(std::format("Splitting here would invalidate the solid\n"));
 		return false;
 	}
 
@@ -3883,7 +3883,7 @@ bool Renderer::splitModelFace()
 
 			if (verts.size() < 3)
 			{
-				logf("Can't split here because a face with less than 3 verts would be created\n");
+				logf(std::format("Can't split here because a face with less than 3 verts would be created\n"));
 				return false;
 			}
 		}
@@ -3998,7 +3998,7 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	}
 	else
 	{
-		logf("No map selected!\n");
+		logf(std::format("No map selected!\n"));
 	}
 }
 
@@ -4088,7 +4088,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 	Bsp* map = SelectedMap;
 	if (!map)
 	{
-		logf("Select a map before pasting an ent\n");
+		logf(std::format("Select a map before pasting an ent\n"));
 		return;
 	}
 

@@ -53,7 +53,7 @@ void Fgd::merge(Fgd* other)
 
 		if (classMap.find(className) != classMap.end())
 		{
-			logf("Skipping duplicate definition for {} in FGD {}\n", className, other->name);
+			logf(std::format("Skipping duplicate definition for {} in FGD {}\n", className, other->name));
 			continue;
 		}
 
@@ -72,7 +72,7 @@ bool Fgd::parse()
 		return false;
 	}
 
-	logf("Parsing {}\n", path);
+	logf(std::format("Parsing {}\n", path));
 
 	std::ifstream in(path);
 
@@ -100,7 +100,7 @@ bool Fgd::parse()
 		{
 			if (bracketNestLevel)
 			{
-				logf("ERROR: New FGD class definition starts before previous one ends (line {}) in FGD {}\n", lineNum, name);
+				logf(std::format("ERROR: New FGD class definition starts before previous one ends (line {}) in FGD {}\n", lineNum, name));
 			}
 
 			parseClassHeader(*fgdClass);
@@ -134,7 +134,7 @@ bool Fgd::parse()
 		{
 			if (fgdClass->keyvalues.empty())
 			{
-				logf("ERROR: Choice values begin before any keyvalue are defined (line {}) in FGD {}\n", lineNum, name);
+				logf(std::format("ERROR: Choice values begin before any keyvalue are defined (line {}) in FGD {}\n", lineNum, name));
 				continue;
 			}
 			KeyvalueDef& lastKey = fgdClass->keyvalues[fgdClass->keyvalues.size() - 1];
@@ -154,7 +154,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 
 	if (headerParts.empty())
 	{
-		logf("ERROR: Unexpected end of class header (line {}) in FGD {}\n", lineNum, name);
+		logf(std::format("ERROR: Unexpected end of class header (line {}) in FGD {}\n", lineNum, name));
 		return;
 	}
 
@@ -178,7 +178,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 	}
 	else
 	{
-		logf("ERROR: Unrecognized FGD class type '{}' in FGD {}\n", typeParts[0],name);
+		logf(std::format("ERROR: Unrecognized FGD class type '{}' in FGD {}\n", typeParts[0],name));
 	}
 
 	// parse constructors/properties
@@ -212,7 +212,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			else
 			{
-				logf("ERROR: Expected 2 vectors in size() property (line {}) in FGD {}\n", lineNum, name);
+				logf(std::format("ERROR: Expected 2 vectors in size() property (line {}) in FGD {}\n", lineNum, name));
 			}
 
 			fgdClass.sizeSet = true;
@@ -227,7 +227,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			else
 			{
-				logf("ERROR: Expected 3 components in color() property (line {}) in FGD {}\n", lineNum, name);
+				logf(std::format("ERROR: Expected 3 components in color() property (line {}) in FGD {}\n", lineNum, name));
 			}
 
 			fgdClass.colorSet = true;
@@ -265,19 +265,19 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 				else if (flag == "Path" || flag == "Light")
 					;
 				else
-					logf("WARNING: Unrecognized type flags value {} (line {}) in FGD {}\n", flag, lineNum, name);
+					logf(std::format("WARNING: Unrecognized type flags value {} (line {}) in FGD {}\n", flag, lineNum, name));
 			}
 		}
 		else if (typeParts[i].find('(') != std::string::npos)
 		{
 			std::string typeName = typeParts[i].substr(0, typeParts[i].find('('));
-			logf("WARNING: Unrecognized type {} (line {}) in FGD {}\n", typeName, lineNum, name);
+			logf(std::format("WARNING: Unrecognized type {} (line {}) in FGD {}\n", typeName, lineNum, name));
 		}
 	}
 
 	if (headerParts.size() == 1)
 	{
-		logf("ERROR: Unexpected end of class header (line {}) in FGD {}\n", lineNum, name);
+		logf(std::format("ERROR: Unexpected end of class header (line {}) in FGD {}\n", lineNum, name));
 		return;
 	}
 	std::vector<std::string> nameParts = splitStringIgnoringQuotes(headerParts[1], ":");
@@ -338,7 +338,7 @@ void Fgd::parseKeyvalue(FgdClass& outClass)
 
 	outClass.keyvalues.push_back(def);
 
-	//logf << "ADD KEY " << def.name << "(" << def.valueType << ") : " << def.description << " : " << def.defaultValue << endl;
+	//logf(std::format << "ADD KEY " << def.name << "(" << def.valueType << ") : " << def.description << " : " << def.defaultValue << endl);
 }
 
 void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
@@ -365,7 +365,7 @@ void Fgd::parseChoicesOrFlags(KeyvalueDef& outKey)
 
 	outKey.choices.push_back(def);
 
-	//logf << "ADD CHOICE LINE " << lineNum << " = " << def.svalue << " : " << def.name << endl;
+	//logf(std::format << "ADD CHOICE LINE " << lineNum << " = " << def.svalue << " : " << def.name << endl);
 }
 
 std::vector<std::string> Fgd::groupParts(std::vector<std::string>& ungrouped)
@@ -439,7 +439,7 @@ void Fgd::processClassInheritance()
 	for (int i = 0; i < classes.size(); i++)
 	{
 		classMap[classes[i]->name] = classes[i];
-		//logf("Got class {}\n", classes[i]->name);
+		//logf(std::format("Got class {}\n", classes[i]->name));
 	}
 
 	for (int i = 0; i < classes.size(); i++)
@@ -456,7 +456,7 @@ void Fgd::processClassInheritance()
 			std::vector<KeyvalueChoice> newSpawnflags;
 			std::set<std::string> addedKeys;
 			std::set<std::string> addedSpawnflags;
-			//logf << classes[i]->name << " INHERITS FROM: ";
+			//logf(std::format << classes[i]->name << " INHERITS FROM: ");
 			for (int k = (int)allBaseClasses.size() - 1; k >= 0; k--)
 			{
 				if (!classes[i]->colorSet && allBaseClasses[k]->colorSet)
@@ -491,7 +491,7 @@ void Fgd::processClassInheritance()
 						}
 					}
 				}
-				//logf << allBaseClasses[k]->name << " ";
+				//logf(std::format << allBaseClasses[k]->name << " ");
 			}
 
 			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
@@ -559,7 +559,7 @@ void FgdClass::getBaseClasses(Fgd* fgd, std::vector<FgdClass*>& inheritanceList)
 		{
 			if (fgd->classMap.find(baseClasses[i]) == fgd->classMap.end())
 			{
-				logf("ERROR: Invalid base class {} in FGD {}\n", baseClasses[i], name);
+				logf(std::format("ERROR: Invalid base class {} in FGD {}\n", baseClasses[i], name));
 				continue;
 			}
 			inheritanceList.push_back(fgd->classMap[baseClasses[i]]);
@@ -648,7 +648,7 @@ void Fgd::setSpawnflagNames()
 
 					if (!choice.isInteger)
 					{
-						logf("ERROR: Invalid spwanflag value {} in FGD {}\n", choice.svalue, name);
+						logf(std::format("ERROR: Invalid spwanflag value {} in FGD {}\n", choice.svalue, name));
 						continue;
 					}
 
@@ -661,7 +661,7 @@ void Fgd::setSpawnflagNames()
 
 					if (bit > 31)
 					{
-						logf("ERROR: Invalid spawnflag value {} in FGD {}\n", choice.svalue, name);
+						logf(std::format("ERROR: Invalid spawnflag value {} in FGD {}\n", choice.svalue, name));
 					}
 					else
 					{

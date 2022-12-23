@@ -204,7 +204,7 @@ bool Winding::Clip(const BSPPLANE& split, bool keepon, float epsilon)
 
 	if (newNumPoints > maxpts)
 	{
-		logf("Winding::Clip : points exceeded estimate\n");
+		logf(std::format("Winding::Clip : points exceeded estimate\n"));
 	}
 
 	delete[] m_Points;

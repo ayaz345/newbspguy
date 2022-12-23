@@ -33,10 +33,10 @@ void ShaderProgram::link()
 		char* log = new char[1024];
 		int len;
 		glGetProgramInfoLog(ID, 1024, &len, log);
-		logf("Shader Program Link Failure:\n");
-		logf(log);
+		logf(std::format("Shader Program Link Failure:\n"));
+		logf(std::format("{}", log));
 		if (len > 1024)
-			logf("\nLog too big to fit!\n");
+			logf(std::format("\nLog too big to fit!\n"));
 		delete[] log;
 	}
 }
@@ -92,13 +92,13 @@ void ShaderProgram::setMatrixNames(const char* _modelViewMat, const char* _model
 	{
 		modelViewID = glGetUniformLocation(ID, _modelViewMat);
 		if (modelViewID == -1)
-			logf("Could not find modelView uniform: {}\n", _modelViewMat);
+			logf(std::format("Could not find modelView uniform: {}\n", _modelViewMat));
 	}
 	if (_modelViewProjMat)
 	{
 		modelViewProjID = glGetUniformLocation(ID, _modelViewProjMat);
 		if (modelViewProjID == -1)
-			logf("Could not find modelViewProjection uniform: {}\n", _modelViewProjMat);
+			logf(std::format("Could not find modelViewProjection uniform: {}\n", _modelViewProjMat));
 	}
 }
 
@@ -107,17 +107,17 @@ void ShaderProgram::setVertexAttributeNames(const char* posAtt, const char* colo
 	if (posAtt)
 	{
 		vposID = glGetAttribLocation(ID, posAtt);
-		if (vposID == -1) logf("Could not find vposition attribute: {}\n", posAtt);
+		if (vposID == -1) logf(std::format("Could not find vposition attribute: {}\n", posAtt));
 	}
 	if (colorAtt)
 	{
 		vcolorID = glGetAttribLocation(ID, colorAtt);
-		if (vcolorID == -1) logf("Could not find vcolor attribute: {}\n", colorAtt);
+		if (vcolorID == -1) logf(std::format("Could not find vcolor attribute: {}\n", colorAtt));
 	}
 	if (texAtt)
 	{
 		vtexID = glGetAttribLocation(ID, texAtt);
-		if (vtexID == -1) logf("Could not find vtexture attribute: {}\n", texAtt);
+		if (vtexID == -1) logf(std::format("Could not find vtexture attribute: {}\n", texAtt));
 	}
 }
 
@@ -142,7 +142,7 @@ void ShaderProgram::popMatrix(int matType)
 				stack.pop_back();
 			}
 			else
-				logf("Can't pop matrix. Stack is empty.\n");
+				logf(std::format("Can't pop matrix. Stack is empty.\n"));
 		}
 	}
 

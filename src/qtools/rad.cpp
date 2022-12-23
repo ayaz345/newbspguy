@@ -95,7 +95,7 @@ const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE* const face)
 {
 	if (!face)
 	{
-		logf("getPlaneFromFace() face was NULL\n");
+		logf(std::format("getPlaneFromFace() face was NULL\n"));
 		return BSPPLANE();
 	}
 
@@ -329,7 +329,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 
 		if (!(tex.nFlags & TEX_SPECIAL) && (maxs_out[i] - mins_out[i]) * TEXTURE_STEP > 4096)
 		{
-			logf("Bad surface extents {} ( {} > 4096 )\n", facenum, (int)((maxs_out[i] - mins_out[i]) * TEXTURE_STEP));
+			logf(std::format("Bad surface extents {} ( {} > 4096 )\n", facenum, (int)((maxs_out[i] - mins_out[i]) * TEXTURE_STEP)));
 			return false;
 		}
 	}

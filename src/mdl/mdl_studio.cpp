@@ -49,14 +49,14 @@ void StudioModel::CalcBoneAdj()
 				if (value > 1.0) value = 1.0;
 				value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
-			// logf( "{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
+			// logf(std::format( "{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt ));
 		}
 		else
 		{
 			value = m_mouth / 64.0;
 			if (value > 1.0) value = 1.0;
 			value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
-			// logf("{} {}\n", mouthopen, value );
+			// logf(std::format("{} {}\n", mouthopen, value ));
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
 		{
@@ -488,7 +488,7 @@ void StudioModel::SetupModel(int bodypart)
 
 	if (bodypart > m_pstudiohdr->numbodyparts)
 	{
-		// logf ("StudioModel::SetupModel: no such bodypart {}\n", bodypart);
+		// logf(std::format ("StudioModel::SetupModel: no such bodypart {}\n", bodypart));
 		bodypart = 0;
 	}
 
@@ -821,7 +821,7 @@ studiohdr_t* StudioModel::LoadModel(std::string modelname)
 	void* buffer = loadFile(modelname, size);
 	if (!buffer)
 	{
-		logf("Unable to open {}\n", modelname);
+		logf(std::format("Unable to open {}\n", modelname));
 		return NULL;
 	}
 	int i;
@@ -856,7 +856,7 @@ studioseqhdr_t* StudioModel::LoadDemandSequences(std::string modelname, int seqi
 	void* buffer = loadFile(str.str(), size);
 	if (!buffer)
 	{
-		logf("Unable to open sequence: {}\n", str.str());
+		logf(std::format("Unable to open sequence: {}\n", str.str()));
 		return NULL;
 	}
 	return (studioseqhdr_t*)buffer;
@@ -968,7 +968,7 @@ void StudioModel::Init(std::string modelname)
 	m_pstudiohdr = LoadModel(modelname);
 	if (!m_pstudiohdr)
 	{
-		logf("Can't load model {}\n", modelname);
+		logf(std::format("Can't load model {}\n", modelname));
 		return;
 	}
 	// preload textures

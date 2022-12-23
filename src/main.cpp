@@ -159,22 +159,22 @@ int test()
 		}
 		if (!maps[i]->validate())
 		{
-			logf("");
+			logf(std::format(""));
 		}
-		logf("Preprocess {}\n", maps[i]->bsp_name);
+		logf(std::format("Preprocess {}\n", maps[i]->bsp_name));
 		maps[i]->delete_hull(2, 1);
 		//removed.add(maps[i]->delete_unused_hulls());
 		removed.add(maps[i]->remove_unused_model_structures());
 
 		if (!maps[i]->validate())
-			logf("");
+			logf(std::format(""));
 	}
 
 	removed.print_delete_stats(1);
 
 	BspMerger merger;
 	Bsp* result = merger.merge(maps, vec3(1, 1, 1), "yabma_move", false, false);
-	logf("\n");
+	logf(std::format("\n"));
 	if (result)
 	{
 		result->write("yabma_move.bsp");
@@ -193,7 +193,7 @@ int merge_maps(CommandLine& cli)
 
 	if (input_maps.size() < 2)
 	{
-		logf("ERROR: at least 2 input maps are required\n");
+		logf(std::format("ERROR: at least 2 input maps are required\n"));
 		return 1;
 	}
 
@@ -211,27 +211,27 @@ int merge_maps(CommandLine& cli)
 
 	for (int i = 0; i < maps.size(); i++)
 	{
-		logf("Preprocessing {}:\n", maps[i]->bsp_name);
+		logf(std::format("Preprocessing {}:\n", maps[i]->bsp_name));
 
-		logf("    Deleting unused data...\n");
+		logf(std::format("    Deleting unused data...\n"));
 		STRUCTCOUNT removed = maps[i]->remove_unused_model_structures();
 		g_progress.clear();
 		removed.print_delete_stats(2);
 
 		if (cli.hasOption("-nohull2") || (cli.hasOption("-optimize") && !maps[i]->has_hull2_ents()))
 		{
-			logf("    Deleting hull 2...\n");
+			logf(std::format("    Deleting hull 2...\n"));
 			maps[i]->delete_hull(2, 1);
 			maps[i]->remove_unused_model_structures().print_delete_stats(2);
 		}
 
 		if (cli.hasOption("-optimize"))
 		{
-			logf("    Optmizing...\n");
+			logf(std::format("    Optmizing...\n"));
 			maps[i]->delete_unused_hulls().print_delete_stats(2);
 		}
 
-		logf("\n");
+		logf(std::format("\n"));
 	}
 
 	vec3 gap = cli.hasOption("-gap") ? cli.getOptionVector("-gap") : vec3();
@@ -241,9 +241,9 @@ int merge_maps(CommandLine& cli)
 	BspMerger merger;
 	Bsp* result = merger.merge(maps, gap, output_name, cli.hasOption("-noripent"), cli.hasOption("-noscript"));
 
-	logf("\n");
+	logf(std::format("\n"));
 	if (result->isValid()) result->write(output_name);
-	logf("\n");
+	logf(std::format("\n"));
 	result->print_info(false, 0, 0);
 
 	for (int i = 0; i < maps.size(); i++)
@@ -286,7 +286,7 @@ int print_info(CommandLine& cli)
 			}
 			else
 			{
-				logf("ERROR: invalid limit name: {}\n", limitName);
+				logf(std::format("ERROR: invalid limit name: {}\n", limitName));
 				delete map;
 				return 0;
 			}
@@ -318,7 +318,7 @@ int noclip(CommandLine& cli)
 
 			if (hull < 0 || hull >= MAX_MAP_HULLS)
 			{
-				logf("ERROR: hull number must be 0-3\n");
+				logf(std::format("ERROR: hull number must be 0-3\n"));
 				return 1;
 			}
 		}
@@ -327,19 +327,19 @@ int noclip(CommandLine& cli)
 		{
 			if (!cli.hasOption("-hull"))
 			{
-				logf("ERROR: -redirect must be used with -hull\n");
+				logf(std::format("ERROR: -redirect must be used with -hull\n"));
 				return 1;
 			}
 			redirect = cli.getOptionInt("-redirect");
 
 			if (redirect < 1 || redirect >= MAX_MAP_HULLS)
 			{
-				logf("ERROR: redirect hull number must be 1-3\n");
+				logf(std::format("ERROR: redirect hull number must be 1-3\n"));
 				return 1;
 			}
 			if (redirect == hull)
 			{
-				logf("ERROR: Can't redirect hull to itself\n");
+				logf(std::format("ERROR: Can't redirect hull to itself\n"));
 				return 1;
 			}
 		}
@@ -348,10 +348,10 @@ int noclip(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf("Deleting unused data:\n");
+			logf(std::format("Deleting unused data:\n"));
 			removed.print_delete_stats(1);
 			g_progress.clear();
-			logf("\n");
+			logf(std::format("\n"));
 		}
 
 		if (cli.hasOption("-model"))
@@ -360,22 +360,22 @@ int noclip(CommandLine& cli)
 
 			if (model < 0 || model >= map->modelCount)
 			{
-				logf("ERROR: model number must be 0 - {}\n", map->modelCount);
+				logf(std::format("ERROR: model number must be 0 - {}\n", map->modelCount));
 				return 1;
 			}
 
 			if (hull != -1)
 			{
 				if (redirect)
-					logf("Redirecting HULL {} to HULL {} in model {}:\n", hull, redirect, model);
+					logf(std::format("Redirecting HULL {} to HULL {} in model {}:\n", hull, redirect, model));
 				else
-					logf("Deleting HULL {} from model {}:\n", hull, model);
+					logf(std::format("Deleting HULL {} from model {}:\n", hull, model));
 
 				map->delete_hull(hull, model, redirect);
 			}
 			else
 			{
-				logf("Deleting HULL 1, 2, and 3 from model {}:\n", model);
+				logf(std::format("Deleting HULL 1, 2, and 3 from model {}:\n", model));
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, model, redirect);
@@ -386,7 +386,7 @@ int noclip(CommandLine& cli)
 		{
 			if (hull == 0)
 			{
-				logf("HULL 0 can't be stripped globally. The entire map would be invisible!\n");
+				logf(std::format("HULL 0 can't be stripped globally. The entire map would be invisible!\n"));
 				delete map;
 				return 0;
 			}
@@ -394,14 +394,14 @@ int noclip(CommandLine& cli)
 			if (hull != -1)
 			{
 				if (redirect)
-					logf("Redirecting HULL {} to HULL {}:\n", hull, redirect);
+					logf(std::format("Redirecting HULL {} to HULL {}:\n", hull, redirect));
 				else
-					logf("Deleting HULL {}:\n", hull);
+					logf(std::format("Deleting HULL {}:\n", hull));
 				map->delete_hull(hull, redirect);
 			}
 			else
 			{
-				logf("Deleting HULL 1, 2, and 3:\n", hull);
+				logf(std::format("Deleting HULL 1, 2, and 3:\n", hull));
 				for (int i = 1; i < MAX_MAP_HULLS; i++)
 				{
 					map->delete_hull(i, redirect);
@@ -414,11 +414,11 @@ int noclip(CommandLine& cli)
 		if (!removed.allZero())
 			removed.print_delete_stats(1);
 		else if (redirect == 0)
-			logf("    Model hull(s) was previously deleted or redirected.");
-		logf("\n");
+			logf(std::format("    Model hull(s) was previously deleted or redirected."));
+		logf(std::format("\n"));
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		logf(std::format("\n"));
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -436,7 +436,7 @@ int simplify(CommandLine& cli)
 
 		if (!cli.hasOption("-model"))
 		{
-			logf("ERROR: -model is required\n");
+			logf(std::format("ERROR: -model is required\n"));
 			return 1;
 		}
 
@@ -446,7 +446,7 @@ int simplify(CommandLine& cli)
 
 			if (hull < 1 || hull >= MAX_MAP_HULLS)
 			{
-				logf("ERROR: hull number must be 1-3\n");
+				logf(std::format("ERROR: hull number must be 1-3\n"));
 				return 1;
 			}
 		}
@@ -457,27 +457,27 @@ int simplify(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf("Deleting unused data:\n");
+			logf(std::format("Deleting unused data:\n"));
 			removed.print_delete_stats(1);
 			g_progress.clear();
-			logf("\n");
+			logf(std::format("\n"));
 		}
 
 		STRUCTCOUNT oldCounts(map);
 
 		if (modelIdx < 0 || modelIdx >= map->modelCount)
 		{
-			logf("ERROR: model number must be 0 - {}\n", map->modelCount);
+			logf(std::format("ERROR: model number must be 0 - {}\n", map->modelCount));
 			return 1;
 		}
 
 		if (hull != 0)
 		{
-			logf("Simplifying HULL {} in model {}:\n", hull, modelIdx);
+			logf(std::format("Simplifying HULL {} in model {}:\n", hull, modelIdx));
 		}
 		else
 		{
-			logf("Simplifying collision hulls in model {}:\n", modelIdx);
+			logf(std::format("Simplifying collision hulls in model {}:\n", modelIdx));
 		}
 
 		map->simplify_model_collision(modelIdx, hull);
@@ -492,10 +492,10 @@ int simplify(CommandLine& cli)
 		if (!change.allZero())
 			change.print_delete_stats(1);
 
-		logf("\n");
+		logf(std::format("\n"));
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		logf(std::format("\n"));
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -513,28 +513,28 @@ int deleteCmd(CommandLine& cli)
 
 		if (!removed.allZero())
 		{
-			logf("Deleting unused data:\n");
+			logf(std::format("Deleting unused data:\n"));
 			removed.print_delete_stats(1);
 			g_progress.clear();
-			logf("\n");
+			logf(std::format("\n"));
 		}
 
 		if (cli.hasOption("-model"))
 		{
 			int modelIdx = cli.getOptionInt("-model");
 
-			logf("Deleting model {}:\n", modelIdx);
+			logf(std::format("Deleting model {}:\n", modelIdx));
 			map->delete_model(modelIdx);
 			map->update_ent_lump();
 			removed = map->remove_unused_model_structures();
 
 			if (!removed.allZero())
 				removed.print_delete_stats(1);
-			logf("\n");
+			logf(std::format("\n"));
 		}
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		logf(std::format("\n"));
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -554,19 +554,19 @@ int transform(CommandLine& cli)
 		{
 			move = cli.getOptionVector("-move");
 
-			logf("Applying offset (%.2f, %.2f, %.2f)\n",
-				 move.x, move.y, move.z);
+			logf(std::format("Applying offset (%.2f, %.2f, %.2f)\n",
+				 move.x, move.y, move.z));
 
 			map->move(move);
 		}
 		else
 		{
-			logf("ERROR: at least one transformation option is required\n");
+			logf(std::format("ERROR: at least one transformation option is required\n"));
 			return 1;
 		}
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		logf(std::format("\n"));
 
 		map->print_info(false, 0, 0);
 		delete map;
@@ -581,10 +581,10 @@ int unembed(CommandLine& cli)
 	if (map->bsp_valid)
 	{
 		int deleted = map->delete_embedded_textures();
-		logf("Deleted {} embedded textures\n", deleted);
+		logf(std::format("Deleted {} embedded textures\n", deleted));
 
 		if (map->isValid()) map->write(cli.hasOption("-o") ? cli.getOption("-o") : map->bsp_path);
-		logf("\n");
+		logf(std::format("\n"));
 		delete map;
 		return 0;
 	}
@@ -723,7 +723,7 @@ void print_help(const std::string& command)
 	}
 	else
 	{
-		logf("{}\n\n", g_version_string);
+		logf(std::format("{}\n\n", g_version_string));
 		logf(
 			"This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
 			"Usage: bspguy <command> <mapname> [options]\n"
@@ -783,7 +783,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 				"_%4d%02d%02d_%02d%02d%02d({}).dmp",
 				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
 
-	logf("Generating minidump at path {}\n", name);
+	logf(std::format("Generating minidump at path {}\n", name));
 
 	auto hFile = CreateFileA(name, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
 	if (hFile == INVALID_HANDLE_VALUE)
@@ -837,7 +837,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 				return ExceptionContinueExecution;
 			}
 
-			logf("Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void *)GetModuleHandleA(0));
+			logf(std::format("Crash\n WINAPI_LASTERROR:{}.\n Exception code: {}.\n Exception address: {}.\n Main module address: {}\n", GetLastError(), e->ExceptionRecord->ExceptionCode, e->ExceptionRecord->ExceptionAddress, (void *)GetModuleHandleA(0)));
 			
 			if (crashdumps > 0)
 			{
@@ -889,7 +889,7 @@ int main(int argc, char* argv[])
 
 	if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
 	{
-		logf(g_version_string);
+		logf(std::format("{}", g_version_string));
 		return 0;
 	}
 
@@ -937,7 +937,7 @@ int main(int argc, char* argv[])
 	else 
 	{
 		if (cli.bspfile.size() == 0)
-			logf("{}\n", "Open editor with empty map.");
+			logf(std::format("{}\n", "Open editor with empty map."));
 		else
 		{
 			if (cli.askingForHelp)
@@ -946,11 +946,11 @@ int main(int argc, char* argv[])
 				return 0;
 			}
 		}
-		logf("{}\n", ("Start bspguy editor with: " + cli.bspfile));
-		logf("Load settings from : {}\n", g_settings_path);
+		logf(std::format("{}\n", ("Start bspguy editor with: " + cli.bspfile)));
+		logf(std::format("Load settings from : {}\n", g_settings_path));
 		if (!start_viewer(cli.bspfile.c_str()))
 		{
-			logf("ERROR: File not found: {}", cli.bspfile);
+			logf(std::format("ERROR: File not found: {}", cli.bspfile));
 		}
 	}
 	return 0;

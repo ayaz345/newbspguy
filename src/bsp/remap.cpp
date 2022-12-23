@@ -83,7 +83,7 @@ bool STRUCTCOUNT::allZero()
 void print_stat(int indent, int stat, const char* data)
 {
 	for (int i = 0; i < indent; i++)
-		logf("    ");
+		logf(std::format("    "));
 	const char* plural = "s";
 	if (std::string(data) == "vertex")
 	{
@@ -91,7 +91,7 @@ void print_stat(int indent, int stat, const char* data)
 	}
 	int statabs = abs(stat);
 
-	logf("{} {} {}{}\n", stat > 0 ? "Deleted" : "Added", statabs, data, statabs > 1 ? plural : "");
+	logf(std::format("{} {} {}{}\n", stat > 0 ? "Deleted" : "Added", statabs, data, statabs > 1 ? plural : ""));
 }
 
 void print_stat_mem(int indent, int bytes, const char* data)
@@ -99,12 +99,12 @@ void print_stat_mem(int indent, int bytes, const char* data)
 	if (!bytes)
 		return;
 	for (int i = 0; i < indent; i++)
-		logf("    ");
+		logf(std::format("    "));
 	if (bytes == 0)
 	{
 		return;
 	}
-	logf("{} %.2f KB of {}\n", bytes > 0 ? "Deleted" : "Added", abs(bytes) / 1024.0f, data);
+	logf(std::format("{} %.2f KB of {}\n", bytes > 0 ? "Deleted" : "Added", abs(bytes) / 1024.0f, data));
 }
 
 void STRUCTCOUNT::print_delete_stats(int indent)
