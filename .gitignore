@@ -23,6 +23,7 @@ vs-project/Release/bspguy.exe
 *.vsidx
 *.lock
 *.exe
+/build/*
 vs-project/Release/bspguy.cfg
 vs-project/glfw/src/Debug/glfw3.lib
 vs-project/glfw/src/Release/glfw3.lib
@@ -40,3 +41,5 @@ vs-project/Release/log.txt
 *.lastcodeanalysissucceeded
 vs-project/glfw/src/glfw.dir/Debug/CodeAnalysisResultManifest.txt
 *.dmp
+vs-project/fmt/fmt/Debug/fmtd.lib
+vs-project/fmt/fmt/Release/fmt.lib

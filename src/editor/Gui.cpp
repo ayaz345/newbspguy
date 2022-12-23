@@ -1420,7 +1420,7 @@ void Gui::drawMenuBar()
 				{
 					ImGui::BeginTooltip();
 					std::string embtextooltip;
-					ImGui::TextUnformatted(std::format("Embeds textures from {}{}", GetWorkDir(), map->bsp_name + ".wad").c_str());
+					ImGui::TextUnformatted(fmt::format("Embeds textures from {}{}", GetWorkDir(), map->bsp_name + ".wad").c_str());
 					ImGui::EndTooltip();
 				}
 			}
@@ -6314,7 +6314,7 @@ void ImportOneBigLightmapFile(Bsp* map)
 		int current_y = 0;
 		int max_y_found = 0;
 		//logf("\nImport {} ligtmap\n", lightId);
-		std::string filename = std::format("{}{}Full{}Style.png", GetWorkDir().c_str(), "lightmap", lightId);
+		std::string filename = fmt::format("{}{}Full{}Style.png", GetWorkDir().c_str(), "lightmap", lightId);
 		unsigned char* image_bytes;
 		unsigned int w2, h2;
 		auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, filename.c_str());
@@ -6476,7 +6476,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 
 		if (found_any_lightmap)
 		{
-			filename = std::format("{}{}Full{}Style.png", GetWorkDir().c_str(), "lightmap", lightId);
+			filename = fmt::format("{}{}Full{}Style.png", GetWorkDir().c_str(), "lightmap", lightId);
 			logf("Exporting to {} file\n", filename);
 			lodepng_encode24_file(filename.c_str(), (const unsigned char*)colordata.data(), LMapMaxWidth, current_y + max_y_found);
 		}
@@ -6496,7 +6496,7 @@ void ExportLightmap(BSPFACE face, int faceIdx, Bsp* map)
 			continue;
 		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 		int offset = face.nLightmapOffset + i * lightmapSz;
-		filename = std::format("{}{}_FACE{}-STYLE{}.png", GetWorkDir().c_str(), "lightmap", faceIdx, i);
+		filename = fmt::format("{}{}_FACE{}-STYLE{}.png", GetWorkDir().c_str(), "lightmap", faceIdx, i);
 		logf("Exporting {}\n", filename);
 		lodepng_encode24_file(filename.c_str(), (unsigned char*)(map->lightdata + offset), size[0], size[1]);
 	}
@@ -6513,7 +6513,7 @@ void ImportLightmap(BSPFACE face, int faceIdx, Bsp* map)
 			continue;
 		int lightmapSz = size[0] * size[1] * sizeof(COLOR3);
 		int offset = face.nLightmapOffset + i * lightmapSz;
-		filename = std::format("{}{}_FACE{}-STYLE{}.png", GetWorkDir().c_str(), "lightmap", faceIdx, i);
+		filename = fmt::format("{}{}_FACE{}-STYLE{}.png", GetWorkDir().c_str(), "lightmap", faceIdx, i);
 		unsigned int w = size[0], h = size[1];
 		unsigned int w2 = 0, h2 = 0;
 		logf("Importing {}\n", filename);
@@ -7041,20 +7041,20 @@ void Gui::drawTextureTool()
 			for (auto& v : edgeVerts)
 			{
 				edgeIdx++;
-				tmplabel = std::format("##edge{}1", edgeIdx);
+				tmplabel = fmt::format("##edge{}1", edgeIdx);
 				if (ImGui::DragFloat(tmplabel.c_str(), &v.x, 0.1f, 0, 0, "T1: %.3f"))
 				{
 					updatedFaceVec = true;
 				}
 
-				tmplabel = std::format("##edge{}2", edgeIdx);
+				tmplabel = fmt::format("##edge{}2", edgeIdx);
 				ImGui::SameLine();
 				if (ImGui::DragFloat(tmplabel.c_str(), &v.y, 0.1f, 0, 0, "T2: %.3f"))
 				{
 					updatedFaceVec = true;
 				}
 
-				tmplabel = std::format("##edge{}3", edgeIdx);
+				tmplabel = fmt::format("##edge{}3", edgeIdx);
 				ImGui::SameLine();
 				if (ImGui::DragFloat(tmplabel.c_str(), &v.z, 0.1f, 0, 0, "T3: %.3f"))
 				{
@@ -7328,21 +7328,21 @@ StatInfo Gui::calcStat(std::string name, unsigned int val, unsigned int max, boo
 
 	if (isMem)
 	{
-		tmp = std::format("{:8.2f}", val / meg);
+		tmp = fmt::format("{:8.2f}", val / meg);
 		stat.val = std::string(tmp);
 
-		tmp = std::format("{:5.2f} MB", max / meg);
+		tmp = fmt::format("{:5.2f} MB", max / meg);
 		stat.max = std::string(tmp);
 	}
 	else
 	{
-		tmp = std::format("{:8}", val);
+		tmp = fmt::format("{:8}", val);
 		stat.val = std::string(tmp);
 
-		tmp = std::format("{:8}", max);
+		tmp = fmt::format("{:8}", max);
 		stat.max = std::string(tmp);
 	}
-	tmp = std::format("{:3.1f}%", percent);
+	tmp = fmt::format("{:3.1f}%", percent);
 	stat.fullness = std::string(tmp);
 	stat.color = color;
 
@@ -7377,10 +7377,10 @@ ModelInfo Gui::calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val,
 
 	if (isMem)
 	{
-		tmp = std::format("{:8.1f}", val / meg);
+		tmp = fmt::format("{:8.1f}", val / meg);
 		stat.val = std::to_string(val);
 
-		tmp = std::format("{:-5.1f} MB", max / meg);
+		tmp = fmt::format("{:-5.1f} MB", max / meg);
 		stat.usage = tmp;
 	}
 	else
@@ -7390,7 +7390,7 @@ ModelInfo Gui::calcModelStat(Bsp* map, STRUCTUSAGE* modelInfo, unsigned int val,
 	}
 	if (percent >= 0.1f)
 	{
-		tmp = std::format("{:6.1f}%", percent);
+		tmp = fmt::format("{:6.1f}%", percent);
 		stat.usage = std::string(tmp);
 	}
 

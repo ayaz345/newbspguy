@@ -10,9 +10,6 @@
     <ClCompile Include=".\..\src\cli\ProgressMeter.cpp">
       <Filter>Source Files\cli</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\bsp\forcecrc32.cpp">
-      <Filter>Source Files\bsp</Filter>
-    </ClCompile>
     <ClCompile Include=".\..\src\bsp\BspMerger.cpp">
       <Filter>Source Files\bsp</Filter>
     </ClCompile>
@@ -124,12 +121,9 @@
     <ClCompile Include=".\..\src\filedialog\ImFileDialog.cpp">
       <Filter>Source Files\filedialog</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\util\quantizer.cpp">
-      <Filter>Source Files\util</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\mdl\mdl_studio.cpp">
-      <Filter>Source Files\mdl</Filter>
-    </ClCompile>
+    <ClCompile Include=".\..\src\util\quantizer.cpp" />
+    <ClCompile Include=".\..\src\bsp\forcecrc32.cpp" />
+    <ClCompile Include=".\..\src\mdl\mdl_studio.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -234,12 +228,8 @@
     <ClInclude Include=".\..\src\filedialog\ImFileDialog.h">
       <Filter>Header Files\filedialog</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\util\quantizer.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\mdl\mdl_studio.h">
-      <Filter>Header Files\mdl</Filter>
-    </ClInclude>
+    <ClInclude Include=".\..\src\util\quantizer.h" />
+    <ClInclude Include=".\..\src\mdl\mdl_studio.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Header Files">

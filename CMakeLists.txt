@@ -90,10 +90,13 @@ include_directories(imgui)
 include_directories(imgui/examples)
 include_directories(imgui/misc/cpp)
 include_directories(imgui/backends)
+include_directories(fmt)
+include_directories(fmt/include)
 include_directories(glew/include)
 
 add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 target_link_libraries(${PROJECT_NAME} glfw ${CMAKE_DL_LIBS})
+target_link_libraries(${PROJECT_NAME} fmt ${CMAKE_DL_LIBS})
 
 add_definitions(-DGLEW_STATIC)
 add_definitions(-DNDEBUG)
@@ -102,6 +105,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(MSVC)
 	add_subdirectory(glfw)
+	add_subdirectory(fmt)
 
 	# compile using the static runtime
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")

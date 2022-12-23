@@ -6,9 +6,12 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "bspguy", "bspguy.vcxproj", "{B66A4AE9-1BB7-3A0F-89E2-535DB5F7A262}"
 	ProjectSection(ProjectDependencies) = postProject
 		{94C10DCA-6ED7-3AC5-87DF-14B22017E799} = {94C10DCA-6ED7-3AC5-87DF-14B22017E799}
+		{FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF} = {FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "glfw", "glfw\src\glfw.vcxproj", "{94C10DCA-6ED7-3AC5-87DF-14B22017E799}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fmt", "fmt\fmt.vcxproj", "{FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +32,10 @@ Global
 		{94C10DCA-6ED7-3AC5-87DF-14B22017E799}.DebugGithub|x64.Build.0 = DebugGithub|x64
 		{94C10DCA-6ED7-3AC5-87DF-14B22017E799}.Release|x64.ActiveCfg = Release|x64
 		{94C10DCA-6ED7-3AC5-87DF-14B22017E799}.Release|x64.Build.0 = Release|x64
+		{FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF}.DebugGithub|x64.ActiveCfg = DebugGithub|x64
+		{FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF}.DebugGithub|x64.Build.0 = DebugGithub|x64
+		{FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF}.Release|x64.ActiveCfg = Release|x64
+		{FD691EA2-CABA-3BE3-8AD8-8BD2CBE64BCF}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
