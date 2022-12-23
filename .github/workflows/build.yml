@@ -34,12 +34,7 @@ jobs:
             - name: Download and install dependencies
               run: |
                  sudo apt update
-                 sudo apt install libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev
-            - name: Set up Clang
-              uses: egor-tensin/setup-clang@v1
-              with:
-                version: latest
-                platform: x64     
+                 sudo apt install clang-15 libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libglfw3-dev libglew-dev libxxf86vm-dev
                 
             - name: Build release
               run: |
