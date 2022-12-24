@@ -354,13 +354,13 @@ typedef struct
 
 #define RAD_TO_STUDIO		(32768.0/M_PI)
 #define STUDIO_TO_RAD		(M_PI/32768.0)
-
+#define MAXEVENTSTRING      64
 typedef struct mstudioevent_s
 {
 	int 				frame;
 	int					event;
 	int					type;
-	char				options[64];
+	char				options[MAXEVENTSTRING];
 } mstudioevent_t;
 #pragma pack(pop)
 struct StudioMesh
@@ -370,6 +370,9 @@ struct StudioMesh
 	std::vector<lightmapVert> verts;
 };
 
+const int MAX_TRIS_PER_BODYGROUP = 4080;
+const int MAX_VERTS_PER_CALL = MAX_TRIS_PER_BODYGROUP * 3;
+
 class StudioModel
 {
 public:
@@ -378,19 +381,17 @@ public:
 	float frametime;        //for small fps render
 	float m_frame;			// frame
 	int m_sequence;			// sequence index
-	int m_bodynum;			// bodypart selection	
+	int m_bodynum = 0;			// bodypart selection	
 	int m_skinnum;			// skin group selection
 	int m_iGroup;
 	int m_iGroupValue;      // subbody 
-
+	bool needForceUpdate = false;
 	unsigned char m_controller[4];	// bone controllers
 	unsigned char m_blending[2];		// animation blending
-	unsigned char m_mouth;			// mouth position
+	unsigned char m_mouth = 0;			// mouth position
 
 	vec3			g_xformverts[MAXSTUDIOVERTS];	// transformed vertices
 	vec3			g_lightvalues[MAXSTUDIOVERTS];	// light surface normals
-	vec3* g_pxformverts;
-	vec3* g_pvlightvalues;
 
 	vec3			g_lightvec;						// light vector in model reference frame
 	vec3			g_blightvec[MAXSTUDIOBONES];	// light vectors in bone reference frames
@@ -454,7 +455,7 @@ public:
 			m_blending[i] = 0;
 		}
 		Init(filename);
-		SetSequence(1);
+		SetSequence(0);
 		SetController(0, 0.0);
 		SetController(1, 0.0);
 		SetController(2, 0.0);
@@ -478,6 +479,7 @@ public:
 			g_lightvalues[i][1] = 1.0f;
 			g_lightvalues[i][2] = 1.0f;
 		}
+
 	}
 	~StudioModel()
 	{
@@ -513,7 +515,7 @@ public:
 		}
 	}
 
-	void DrawModel(int body, int subbody, int skin, int mesh = -1);
+	void DrawModel(int mesh = -1);
 
 	void Init(std::string modelname);
 	void RefreshMeshList(int body);
@@ -522,14 +524,14 @@ public:
 
 	void AdvanceFrame(float dt);
 	void ExtractBbox(float* mins, float* maxs);
-	int SetSequence(int iSequence);
-	int GetSequence(void);
 	void GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed);
 	float SetController(int iController, float flValue);
 	float SetMouth(float flValue);
 	float SetBlending(int iBlender, float flValue);
 	int SetBodygroup(int iGroup, int iValue);
 	int SetSkin(int iValue);
+	int SetSequence(int iSequence);
+	int GetSequence(void);
 	studiohdr_t* LoadModel(std::string modelname);
 	studioseqhdr_t* LoadDemandSequences(std::string modelname, int seqid);
 	void CalcBoneAdj(void);
@@ -539,9 +541,27 @@ public:
 	mstudioanim_t* GetAnim(mstudioseqdesc_t* pseqdesc);
 	void SlerpBones(vec4 q1[], vec3 pos1[], vec4 q2[], vec3 pos2[], float s);
 	void SetUpBones(void);
-	void Lighting(float* lv, int bone, int flags, vec3 normal);
-	void Chrome(int* chrome, int bone, vec3 normal);
+	void Lighting(float* lv, int bone, int flags, const vec3& normal);
+	void Chrome(int* chrome, int bone, const vec3& normal);
 	void SetupLighting(void);
 	void SetupModel(int bodypart);
 	void UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, COLOR3* pal);
+private:
+	vec3 static_pos1[MAXSTUDIOBONES];
+	vec4 static_q1[MAXSTUDIOBONES];
+	vec3 static_pos2[MAXSTUDIOBONES];
+	vec4 static_q2[MAXSTUDIOBONES];
+	vec3 static_pos3[MAXSTUDIOBONES];
+	vec4 static_q3[MAXSTUDIOBONES];
+	vec3 static_pos4[MAXSTUDIOBONES];
+	vec4 static_q4[MAXSTUDIOBONES];
+
+	float static_bonematrix[3][4];
+	//vec3 vertexData[MAX_VERTS_PER_CALL];
+	//vec2 texCoordData[MAX_VERTS_PER_CALL];
+	//vec3 colorData[MAX_VERTS_PER_CALL];
+
+	float vertexData[MAX_VERTS_PER_CALL * 3];
+	float texCoordData[MAX_VERTS_PER_CALL * 2];
+	//float colorData[MAX_VERTS_PER_CALL * 4];
 };

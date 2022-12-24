@@ -44,3 +44,4 @@ vs-project/glfw/src/glfw.dir/Debug/CodeAnalysisResultManifest.txt
 vs-project/fmt/fmt/Debug/fmtd.lib
 vs-project/fmt/fmt/Release/fmt.lib
 vs-project/fmt/fmt.dir/Debug/fmt.vcxproj.FileListAbsolute.txt
+vs-project/fmt/fmt.dir/Release/fmt.vcxproj.FileListAbsolute.txt

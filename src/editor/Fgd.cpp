@@ -245,6 +245,10 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 		{
 			fgdClass.modelSequence = atoi(getValueInParens(typeParts[i]).c_str());
 		}
+		else if (lpart.find("body(") == 0)
+		{
+			fgdClass.modelBody = atoi(getValueInParens(typeParts[i]).c_str());
+		}
 		else if (lpart.find("iconsprite(") == 0)
 		{
 			fgdClass.iconSprite = getValueInParens(typeParts[i]);
@@ -554,6 +558,17 @@ void Fgd::processClassInheritance()
 
 			for (int c = 0; c < classes[i]->keyvalues.size(); c++)
 			{
+				if (classes[i]->keyvalues[c].iType == FGD_KEY_STUDIO)
+				{
+					if (classes[i]->keyvalues[c].name == "model")
+					{
+						if (!classes[i]->model.size())
+						{
+							classes[i]->model = classes[i]->keyvalues[c].defaultValue;
+							fixupPath(classes[i]->model, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
+						}
+					}
+				}
 				if (classes[i]->keyvalues[c].iType == FGD_KEY_CHOICES)
 				{
 					if (classes[i]->keyvalues[c].name == "model")
@@ -562,11 +577,41 @@ void Fgd::processClassInheritance()
 						{
 							classes[i]->model = classes[i]->keyvalues[c].defaultValue;
 							fixupPath(classes[i]->model, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
-							//classes[i]->isModel = true;
+						}
+					}
+					else if (classes[i]->keyvalues[c].name == "sequence")
+					{
+						if (classes[i]->modelSequence <= 0)
+						{
+							if (isNumeric(classes[i]->keyvalues[c].defaultValue) && isNumeric(classes[i]->keyvalues[c].defaultValue))
+							{
+								classes[i]->modelSequence = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
+							}
+						}
+					}
+					else if (classes[i]->keyvalues[c].name == "body")
+					{
+						if (classes[i]->modelBody <= 0)
+						{
+							if (isNumeric(classes[i]->keyvalues[c].defaultValue) && isNumeric(classes[i]->keyvalues[c].defaultValue))
+							{
+								classes[i]->modelBody = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
+							}
+						}
+					}
+					else if (classes[i]->keyvalues[c].name == "skin")
+					{
+						if (classes[i]->modelSkin <= 0)
+						{
+							if (isNumeric(classes[i]->keyvalues[c].defaultValue) && isNumeric(classes[i]->keyvalues[c].defaultValue))
+							{
+								classes[i]->modelSkin = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
+							}
 						}
 					}
 				}
 			}
+
 		}
 
 	}

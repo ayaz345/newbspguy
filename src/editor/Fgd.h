@@ -61,6 +61,8 @@ struct FgdClass
 	bool isDecal;
 	bool hasAngles;
 	int modelSequence;
+	int modelSkin;
+	int modelBody;
 	vec3 mins;
 	vec3 maxs;
 	COLOR3 color;
@@ -81,11 +83,11 @@ struct FgdClass
 		colorSet = false;
 		sizeSet = false;
 		hasAngles = false;
-		modelSequence = 0;
 		// default to the purple cube
 		mins = vec3(-8, -8, -8);
 		maxs = vec3(8, 8, 8);
 		color = {220, 0, 220};
+		modelSkin = modelBody = modelSequence = 0;
 	}
 
 	// get parent classes from youngest to oldest, in right-to-left order

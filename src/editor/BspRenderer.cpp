@@ -698,9 +698,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 
 			vec3& vert = map->verts[vertIdx];
-			verts[e].x = vert.x;
-			verts[e].y = vert.z;
-			verts[e].z = -vert.y;
+			verts[e].pos = vert.flip();
 
 			verts[e].r = 1.0f;
 			if (ent)
@@ -1202,6 +1200,10 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 		renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
 
+		renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
+		renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
+		renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
+
 		renderEnts[entIdx].needAngles = false;
 	}
 	else
@@ -1214,6 +1216,10 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			renderEnts[entIdx].modelMatAngles.rotateY(0.0f);
 			renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 			renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+
+			renderEnts[entIdx].modelMatAngles2.rotateY(0.0f);
+			renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
+			renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 		}
 		else if (IsEntNotSupportAngles(entClassName))
 		{
@@ -1227,12 +1233,20 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 				renderEnts[entIdx].modelMatAngles.rotateY(0.0);
 				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateX((angles.y * (PI / 180.0f)));
+
+				renderEnts[entIdx].modelMatAngles2.rotateY(0.0);
+				renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMatAngles2.rotateX((angles.y * (PI / 180.0f)));
 			}
 			else
 			{
 				renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+
+				renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 		else
@@ -1245,6 +1259,10 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 					renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
 					renderEnts[entIdx].modelMatAngles.rotateZ((angles.x * (PI / 180.0f)));
 					renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+
+					renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
+					renderEnts[entIdx].modelMatAngles2.rotateZ((angles.x * (PI / 180.0f)));
+					renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 					foundAngles = true;
 					break;
 				}
@@ -1254,6 +1272,11 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 				renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
+
+
+				renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
+				renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
+				renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 	}
@@ -1272,6 +1295,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
 	renderEnts[entIdx].modelMatAngles.loadIdentity();
+	renderEnts[entIdx].modelMatAngles2.loadIdentity();
 	renderEnts[entIdx].modelMatOrigin.loadIdentity();
 	renderEnts[entIdx].offset = vec3();
 	renderEnts[entIdx].angles = vec3();
@@ -1284,7 +1308,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	{
 		vec3 origin = parseVector(ent->keyvalues["origin"]);
 		renderEnts[entIdx].modelMatAngles.translate(origin.x, origin.z, -origin.y);
-		renderEnts[entIdx].modelMatOrigin.translate(origin.x, origin.z, -origin.y);
+		renderEnts[entIdx].modelMatAngles2 = renderEnts[entIdx].modelMatOrigin = renderEnts[entIdx].modelMatAngles;
 		renderEnts[entIdx].offset = origin;
 	}
 
@@ -1379,6 +1403,80 @@ void BspRenderer::refreshEnt(int entIdx)
 
 		}
 	}
+
+	if (ent->hasKey("sequence") || g_app->fgd)
+	{
+		int sequence = 0;
+		if (ent->hasKey("sequence") && isNumeric(ent->keyvalues["sequence"]))
+		{
+			sequence = atoi(ent->keyvalues["sequence"].c_str());
+		}
+		if (sequence <= 0 && g_app->fgd)
+		{
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			if (fgdClass)
+			{
+				sequence = fgdClass->modelSequence;
+			}
+		}
+
+		if (renderEnts[entIdx].mdl)
+		{
+			renderEnts[entIdx].mdl->SetSequence(sequence);
+		}
+	}
+
+	if (ent->hasKey("skin") || g_app->fgd)
+	{
+		int skin = 0;
+		if (ent->hasKey("skin") && isNumeric(ent->keyvalues["skin"]))
+		{
+			skin = atoi(ent->keyvalues["skin"].c_str());
+		}
+		if (skin <= 0 && g_app->fgd)
+		{
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			if (fgdClass)
+			{
+				skin = fgdClass->modelSkin;
+			}
+		}
+
+		if (renderEnts[entIdx].mdl)
+		{
+			renderEnts[entIdx].mdl->SetSkin(skin);
+		}
+	}
+
+	if (ent->hasKey("body") || g_app->fgd)
+	{
+		int body = 0;
+		if (ent->hasKey("body") && isNumeric(ent->keyvalues["body"]))
+		{
+			body = atoi(ent->keyvalues["body"].c_str());
+		}
+		if (body == 0 && g_app->fgd)
+		{
+			FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+			if (fgdClass)
+			{
+				body = fgdClass->modelBody;
+			}
+		}
+
+		if (renderEnts[entIdx].mdl && renderEnts[entIdx].mdl->m_pstudiohdr)
+		{
+			auto* pbodypart = (mstudiobodyparts_t*)((unsigned char*)renderEnts[entIdx].mdl->m_pstudiohdr + renderEnts[entIdx].mdl->m_pstudiohdr->bodypartindex);
+			for (int bg = 0; bg < renderEnts[entIdx].mdl->m_pstudiohdr->numbodyparts; bg++)
+			{
+				renderEnts[entIdx].mdl->SetBodygroup(bg, body % pbodypart->nummodels);
+				body /= pbodypart->nummodels;
+				pbodypart++;
+			}
+			
+		}
+	}
+
 
 	if (setAngles)
 	{
@@ -1616,7 +1714,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 		for (int i = 0; i < rface->vertCount; i++)
 		{
 			lightmapVert& vert = rgroup->verts[rface->vertOffset + i];
-			vec3 pos = vec3(vert.x, -vert.z, vert.y);
+			vec3 pos = vert.pos.flipUV();
 
 			float tw = 1.0f / (float)tex.nWidth;
 			float th = 1.0f / (float)tex.nHeight;
@@ -1654,10 +1752,11 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 		return 0;
 	return glTextures[texinfo.iMiptex]->id;
 }
-ShaderProgram* activeShader; vec3 renderOffset;
+
 
 void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnTop, int clipnodeHull)
 {
+	ShaderProgram* activeShader; vec3 renderOffset;
 	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
 
@@ -1806,6 +1905,12 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 
 void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bool edgesOnly)
 {
+	ShaderProgram* activeShader; vec3 renderOffset;
+	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
+	renderOffset = mapOffset.flip();
+
+	activeShader = (g_render_flags & RENDER_LIGHTMAPS) ? bspShader : fullBrightBspShader;
+
 	int modelIdx = ent ? ent->modelIdx : 0;
 
 	if (modelIdx < 0 || modelIdx >= numRenderModels)
@@ -1984,12 +2089,14 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 
 void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 {
+	ShaderProgram* activeShader; vec3 renderOffset;
+	mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 	renderOffset = mapOffset.flip();
-
-	colorShader->bind();
+	activeShader = (g_render_flags & RENDER_LIGHTMAPS) ? bspShader : fullBrightBspShader;
 
 	// skip worldspawn
 	colorShader->pushMatrix(MAT_MODEL);
+	fullBrightBspShader->pushMatrix(MAT_MODEL);
 
 	for (int i = 1, sz = (int)map->ents.size(); i < sz; i++)
 	{
@@ -2000,34 +2107,58 @@ void BspRenderer::drawPointEntities(std::vector<int> highlightEnts)
 
 		if (g_app->pickInfo.IsSelectedEnt(i))
 		{
-			*colorShader->modelMat = renderEnts[i].modelMatAngles;
-			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-
-			colorShader->updateMatrixes();
-
-			if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
 			{
-				renderEnts[i].mdl->DrawModel(0, 0, 0);
+				fullBrightBspShader->bind();
+
+				*fullBrightBspShader->modelMat = renderEnts[i].modelMatAngles;
+				fullBrightBspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
+				fullBrightBspShader->updateMatrixes();
+
+				renderEnts[i].mdl->DrawModel();
+
+				colorShader->bind();
+
+				*colorShader->modelMat = renderEnts[i].modelMatAngles;
+				colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
+				colorShader->updateMatrixes();
+
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 			}
 			else
 			{
+				colorShader->bind();
+
+				*colorShader->modelMat = renderEnts[i].modelMatAngles;
+				colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
+				colorShader->updateMatrixes();
+
 				renderEnts[i].pointEntCube->selectBuffer->drawFull();
 				renderEnts[i].pointEntCube->wireframeBuffer->drawFull();
 			}
 		}
 		else
 		{
-			*colorShader->modelMat = renderEnts[i].modelMatAngles;
-			colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
-
-			colorShader->updateMatrixes();
-			if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
+			if ((g_render_flags & RENDER_MODELS) && renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
 			{
-				renderEnts[i].mdl->DrawModel(0, 0, 0);
+				*fullBrightBspShader->modelMat = renderEnts[i].modelMatAngles;
+				fullBrightBspShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
+				fullBrightBspShader->updateMatrixes();
+				renderEnts[i].mdl->DrawModel();
 			}
 			else
 			{
+				colorShader->bind();
+
+				*colorShader->modelMat = renderEnts[i].modelMatAngles;
+				colorShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
+
+				colorShader->updateMatrixes();
+
 				renderEnts[i].pointEntCube->buffer->drawFull();
 			}
 			//renderEnts[i].pointEntCube->wireframeBuffer->drawFull();

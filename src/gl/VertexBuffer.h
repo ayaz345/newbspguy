@@ -66,22 +66,23 @@ public:
 	int numVerts;
 	int primitive;
 	bool ownData = false; // set to true if buffer should delete data on destruction
+	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
 
 	// Specify which common attributes to use. They will be located in the
 	// shader program. If passing data, note that data is not copied, but referenced
 	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, int primitive = 0);
-	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, int numVerts, int primitive = 0);
+	VertexBuffer(ShaderProgram* shaderProgram, int attFlags, void* dat, int numVerts, int primitive = 0);
 	~VertexBuffer();
 
 	// Note: Data is not copied into the class - don't delete your data.
 	//       Data will be deleted when the buffer is destroyed.
-	void setData(const void* data, int numVerts);
+	void setData(void* data, int numVerts);
 
-	void upload();
+	void upload(bool hideErrors = true);
 	void deleteBuffer();
 	void setShader(ShaderProgram* program, bool hideErrors = false);
 
-	void drawRange(int primitive, int start, int end);
+	void drawRange(int primitive, int start, int end, bool hideErrors = true);
 	void draw(int primitive);
 	void drawFull();
 
@@ -90,7 +91,6 @@ public:
 	void bindAttributes(bool hideErrors = false); // find handles for all vertex attributes (call from main thread only)
 
 private:
-	ShaderProgram* shaderProgram = NULL; // for getting handles to vertex attributes
 	GLuint vboId = (GLuint)-1;
 	bool attributesBound = false;
 

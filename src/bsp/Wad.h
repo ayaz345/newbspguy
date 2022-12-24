@@ -121,3 +121,5 @@ public:
 WADTEX* create_wadtex(const char* name, COLOR3* data, int width, int height);
 COLOR3* ConvertWadTexToRGB(WADTEX * wadTex);
 COLOR3* ConvertMipTexToRGB(BSPMIPTEX* wadTex);
+COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex);
+COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex);

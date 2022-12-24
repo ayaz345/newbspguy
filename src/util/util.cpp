@@ -228,12 +228,14 @@ std::wstring stripFileName(const std::wstring& path)
 
 bool isNumeric(const std::string& s)
 {
+	if (s.empty())
+		return false;
 	std::string::const_iterator it = s.begin();
 
 	while (it != s.end() && isdigit(*it))
 		++it;
 
-	return !s.empty() && it == s.end();
+	return it == s.end();
 }
 
 std::string toLowerCase(const std::string& s)
@@ -1018,7 +1020,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 
 bool createDir(const std::string& dirName)
 {
-	std::string fixDirName = dirName.c_str();
+	std::string fixDirName = dirName;
 	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 	if (dirExists(fixDirName))
 		return true;
@@ -1030,7 +1032,7 @@ bool createDir(const std::string& dirName)
 
 void removeDir(const std::string& dirName)
 {
-	std::string fixDirName = dirName.c_str();
+	std::string fixDirName = dirName;
 	fixupPath(fixDirName, FIXUPPATH_SLASH::FIXUPPATH_SLASH_SKIP, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 	std::error_code e;
 	fs::remove_all(fixDirName, e);
@@ -1308,7 +1310,7 @@ int GetImageColors(COLOR3* image, int size)
 		if (paletteIdx == -1)
 		{
 			if (colorCount >= 300)
-				return colorCount; // Just for speed reason
+				break; // Just for speed reason
 			palette[colorCount] = image[y];
 			paletteIdx = colorCount;
 			colorCount++;

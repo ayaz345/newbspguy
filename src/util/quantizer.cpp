@@ -64,7 +64,7 @@ Quantizer::~Quantizer()
 	m_pPalette = NULL;
 }
 
-void Quantizer::ProcessImage(COLOR3* image, int64_t size)
+void Quantizer::ProcessImage(COLOR3* image, unsigned int size)
 {
 	if (m_pTree)
 		DeleteTree(&m_pTree);
@@ -76,7 +76,7 @@ void Quantizer::ProcessImage(COLOR3* image, int64_t size)
 	m_nLeafCount = 0;
 	m_lastIndex = 0;
 
-	for (int64_t i = 0; i < size; i++)
+	for (unsigned int i = 0; i < size; i++)
 	{
 		AddColor(&m_pTree, image[i], 0, &m_nLeafCount, m_pReducibleNodes);
 
@@ -123,11 +123,11 @@ unsigned int Quantizer::GetNearestIndex(COLOR3 c, COLOR3* pal)
 	if (!pal) return 0;
 	if (ColorsAreEqual(c, pal[m_lastIndex]))
 		return m_lastIndex;
-	int64_t cur = 0;
-	for (int64_t i = 0, k = 0, distance = 2147483647; i < m_nLeafCount; i++)
+	unsigned int cur = 0;
+	for (unsigned int i = 0, k = 0, distance = 2147483647; i < m_nLeafCount; i++)
 	{
-		k = (int64_t)((pal[i].r - c.r) * (pal[i].r - c.r) + (pal[i].g - c.g) * (pal[i].g - c.g) + (pal[i].b - c.b) * (pal[i].b - c.b));
-		if (k == 0)
+		k = (unsigned int)((pal[i].r - c.r) * (pal[i].r - c.r) + (pal[i].g - c.g) * (pal[i].g - c.g) + (pal[i].b - c.b) * (pal[i].b - c.b));
+		if (k <= 0)
 		{
 			m_lastIndex = i;
 			return i;
@@ -159,13 +159,13 @@ COLOR3 Quantizer::GetNearestColorFast(COLOR3 c, COLOR3* pal)
 }
 
 
-void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t height, unsigned int* target)
+void Quantizer::FloydSteinbergDither(COLOR3* image, unsigned int width, unsigned int height, unsigned int* target)
 {
-	for (int64_t y = 0; y < height; y++)
+	for (unsigned int y = 0; y < height; y++)
 	{
 		if (y % 2 == 1)
 		{
-			for (int64_t x = 0; x < width; x++)
+			for (unsigned int x = 0; x < width; x++)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
@@ -207,7 +207,7 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t heigh
 		}
 		else
 		{
-			for (int64_t x = width - 1; x >= 0; x--)
+			for (unsigned int x = width - 1; x >= 0; x--)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
@@ -249,13 +249,13 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, int64_t width, int64_t heigh
 	}
 }
 
-void Quantizer::FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t height, unsigned char* target)
+void Quantizer::FloydSteinbergDither256(COLOR3* image, unsigned int width, unsigned int height, unsigned char* target)
 {
-	for (int64_t y = 0; y < height; y++)
+	for (unsigned int y = 0; y < height; y++)
 	{
 		if (y % 2 == 1)
 		{
-			for (int64_t x = 0; x < width; x++)
+			for (unsigned int x = 0; x < width; x++)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
@@ -297,7 +297,7 @@ void Quantizer::FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t he
 		}
 		else
 		{
-			for (int64_t x = width - 1; x >= 0; x--)
+			for (unsigned int x = width - 1; x >= 0; x--)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
@@ -548,7 +548,7 @@ void Quantizer::GenColorTable()
 	}
 }
 
-void Quantizer::ApplyColorTable(COLOR3* image, int64_t size)
+void Quantizer::ApplyColorTable(COLOR3* image, unsigned int size)
 {
 	ProcessImage(image, size);
 
@@ -558,7 +558,7 @@ void Quantizer::ApplyColorTable(COLOR3* image, int64_t size)
 	}
 }
 
-void Quantizer::ApplyColorTableDither(COLOR3* image, int64_t width, int64_t height)
+void Quantizer::ApplyColorTableDither(COLOR3* image, unsigned int width, unsigned int height)
 {
 	ProcessImage(image, width * height);
 

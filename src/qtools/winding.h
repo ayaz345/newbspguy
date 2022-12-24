@@ -26,7 +26,7 @@ public:
 	Winding& operator=(const Winding& other);
 
 	void RemoveColinearPoints(float epsilon = ON_EPSILON);
-	bool Clip(const BSPPLANE& split, bool keepon, float epsilon = ON_EPSILON);
+	bool Clip(BSPPLANE& split, bool keepon, float epsilon = ON_EPSILON);
 
 
 protected:

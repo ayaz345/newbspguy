@@ -35,27 +35,27 @@ void StudioModel::CalcBoneAdj()
 	for (j = 0; j < m_pstudiohdr->numbonecontrollers; j++)
 	{
 		i = pbonecontroller[j].index;
-		if (i <= 3)
+		if (i < 4)
 		{
 			// check for 360% wrapping
 			if (pbonecontroller[j].type & STUDIO_RLOOP)
 			{
-				value = m_controller[i] * (360.0 / 256.0) + pbonecontroller[j].start;
+				value = m_controller[i] * (360.0f / 256.0f) + pbonecontroller[j].start;
 			}
 			else
 			{
-				value = m_controller[i] / 255.0;
-				if (value < 0) value = 0;
-				if (value > 1.0) value = 1.0;
-				value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
+				value = m_controller[i] / 255.0f;
+				if (value < 0.0f) value = 0.0f;
+				if (value > 1.0f) value = 1.0f;
+				value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			}
 			// logf( "{} {} {} : {}\n", m_controller[j], m_prevcontroller[j], value, dadt );
 		}
 		else
 		{
-			value = m_mouth / 64.0;
-			if (value > 1.0) value = 1.0;
-			value = (1.0 - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
+			value = m_mouth / 64.0f;
+			if (value > 1.0f) value = 1.0f;
+			value = (1.0f - value) * pbonecontroller[j].start + value * pbonecontroller[j].end;
 			// logf("{} {}\n", mouthopen, value );
 		}
 		switch (pbonecontroller[j].type & STUDIO_TYPES)
@@ -63,7 +63,7 @@ void StudioModel::CalcBoneAdj()
 			case STUDIO_XR:
 			case STUDIO_YR:
 			case STUDIO_ZR:
-				m_adj[j] = value * (PI / 180.0);
+				m_adj[j] = value * (PI / 180.0f);
 				break;
 			case STUDIO_X:
 			case STUDIO_Y:
@@ -73,7 +73,6 @@ void StudioModel::CalcBoneAdj()
 		}
 	}
 }
-
 
 void StudioModel::CalcBoneQuaternion(int frame, float s, mstudiobone_t* pbone, mstudioanim_t* panim, vec4& q)
 {
@@ -175,7 +174,7 @@ void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mst
 				// and there's more data in the span
 				if (panimvalue->num.valid > k + 1)
 				{
-					pos[j] += (panimvalue[k + 1].value * (1.0 - s) + s * panimvalue[k + 2].value) * pbone->scale[j];
+					pos[j] += (panimvalue[k + 1].value * (1.0f - s) + s * panimvalue[k + 2].value) * pbone->scale[j];
 				}
 				else
 				{
@@ -205,10 +204,20 @@ void StudioModel::CalcBonePosition(int frame, float s, mstudiobone_t* pbone, mst
 
 void StudioModel::CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, mstudioanim_t* panim, float f)
 {
-	int					i;
-	int					frame;
+	int		i, frame;
+	float		adj[MAXSTUDIOCONTROLLERS];
+	float		s, dadt;
 	mstudiobone_t* pbone;
-	float				s;
+
+	// bah, fix this bug with changing sequences too fast
+	if (f > pseqdesc->numframes - 1)
+	{
+		f = 0.0f;
+	}
+	else if (f < -0.01f)
+	{
+		f = -0.01f;
+	}
 
 	frame = (int)f;
 	s = (f - frame);
@@ -224,11 +233,11 @@ void StudioModel::CalcRotations(vec3* pos, vec4* q, mstudioseqdesc_t* pseqdesc, 
 	}
 
 	if (pseqdesc->motiontype & STUDIO_X)
-		pos[pseqdesc->motionbone][0] = 0.0;
+		pos[pseqdesc->motionbone][0] = 0.0f;
 	if (pseqdesc->motiontype & STUDIO_Y)
-		pos[pseqdesc->motionbone][1] = 0.0;
+		pos[pseqdesc->motionbone][1] = 0.0f;
 	if (pseqdesc->motiontype & STUDIO_Z)
-		pos[pseqdesc->motionbone][2] = 0.0;
+		pos[pseqdesc->motionbone][2] = 0.0f;
 }
 
 
@@ -252,10 +261,10 @@ void StudioModel::SlerpBones(vec4 q1[], vec3 pos1[], vec4 q2[], vec3 pos2[], flo
 	vec4		q3;
 	float		s1;
 
-	if (s < 0) s = 0;
-	else if (s > 1.0) s = 1.0;
+	if (s < 0.0f) s = +0.0f;
+	else if (s > 1.0) s = 1.0f;
 
-	s1 = 1.0 - s;
+	s1 = 1.0f - s;
 
 	for (i = 0; i < m_pstudiohdr->numbones; i++)
 	{
@@ -276,13 +285,12 @@ void StudioModel::AdvanceFrame(float dt)
 	mstudioseqdesc_t* pseqdesc;
 	pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex) + m_sequence;
 
-	if (dt > 0.1)
-		dt = (float)0.1;
+
 	m_frame += dt * pseqdesc->fps;
 
 	if (pseqdesc->numframes <= 1)
 	{
-		m_frame = 0;
+		m_frame = 0.0f;
 	}
 	else
 	{
@@ -302,17 +310,6 @@ void StudioModel::SetUpBones(void)
 	mstudioseqdesc_t* pseqdesc;
 	mstudioanim_t* panim;
 
-	static vec3		pos[MAXSTUDIOBONES];
-	float				bonematrix[3][4];
-	static vec4		q[MAXSTUDIOBONES];
-
-	static vec3		pos2[MAXSTUDIOBONES];
-	static vec4		q2[MAXSTUDIOBONES];
-	static vec3		pos3[MAXSTUDIOBONES];
-	static vec4		q3[MAXSTUDIOBONES];
-	static vec3		pos4[MAXSTUDIOBONES];
-	static vec4		q4[MAXSTUDIOBONES];
-
 
 	if (m_sequence >= m_pstudiohdr->numseq) {
 		m_sequence = 0;
@@ -321,48 +318,48 @@ void StudioModel::SetUpBones(void)
 	pseqdesc = (mstudioseqdesc_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->seqindex) + m_sequence;
 
 	panim = GetAnim(pseqdesc);
-	CalcRotations(pos, q, pseqdesc, panim, m_frame);
+	CalcRotations(static_pos1, static_q1, pseqdesc, panim, m_frame);
 
 	if (pseqdesc->numblends > 1)
 	{
 		float				s;
 
 		panim += m_pstudiohdr->numbones;
-		CalcRotations(pos2, q2, pseqdesc, panim, m_frame);
-		s = m_blending[0] / 255.0;
+		CalcRotations(static_pos2, static_q2, pseqdesc, panim, m_frame);
+		s = m_blending[0] / 255.0f;
 
-		SlerpBones(q, pos, q2, pos2, s);
+		SlerpBones(static_q1, static_pos1, static_q2, static_pos2, s);
 
 		if (pseqdesc->numblends == 4)
 		{
 			panim += m_pstudiohdr->numbones;
-			CalcRotations(pos3, q3, pseqdesc, panim, m_frame);
+			CalcRotations(static_pos3, static_q3, pseqdesc, panim, m_frame);
 
 			panim += m_pstudiohdr->numbones;
-			CalcRotations(pos4, q4, pseqdesc, panim, m_frame);
+			CalcRotations(static_pos4, static_q4, pseqdesc, panim, m_frame);
 
-			s = m_blending[0] / 255.0;
-			SlerpBones(q3, pos3, q4, pos4, s);
+			s = m_blending[0] / 255.0f;
+			SlerpBones(static_q3, static_pos3, static_q4, static_pos4, s);
 
-			s = m_blending[1] / 255.0;
-			SlerpBones(q, pos, q3, pos3, s);
+			s = m_blending[1] / 255.0f;
+			SlerpBones(static_q1, static_pos1, static_q3, static_pos3, s);
 		}
 	}
 
 	pbones = (mstudiobone_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->boneindex);
 
 	for (i = 0; i < m_pstudiohdr->numbones; i++) {
-		QuaternionMatrix(q[i], bonematrix);
+		QuaternionMatrix(static_q1[i], static_bonematrix);
 
-		bonematrix[0][3] = pos[i][0];
-		bonematrix[1][3] = pos[i][1];
-		bonematrix[2][3] = pos[i][2];
+		static_bonematrix[0][3] = static_pos1[i][0];
+		static_bonematrix[1][3] = static_pos1[i][1];
+		static_bonematrix[2][3] = static_pos1[i][2];
 
 		if (pbones[i].parent == -1) {
-			memcpy(g_bonetransform[i], bonematrix, sizeof(float) * 12);
+			memcpy(g_bonetransform[i], static_bonematrix, sizeof(float) * 12);
 		}
 		else {
-			R_ConcatTransforms(g_bonetransform[pbones[i].parent], bonematrix, g_bonetransform[i]);
+			R_ConcatTransforms(g_bonetransform[pbones[i].parent], static_bonematrix, g_bonetransform[i]);
 		}
 	}
 }
@@ -374,7 +371,7 @@ void StudioModel::SetUpBones(void)
 StudioModel::TransformFinalVert
 ================
 */
-void StudioModel::Lighting(float* lv, int bone, int flags, vec3 normal)
+void StudioModel::Lighting(float* lv, int bone, int flags, const vec3& normal)
 {
 	float 	illum;
 	float	lightcos;
@@ -383,38 +380,38 @@ void StudioModel::Lighting(float* lv, int bone, int flags, vec3 normal)
 
 	if (flags & STUDIO_NF_FLATSHADE)
 	{
-		illum += g_shadelight * 0.8;
+		illum += g_shadelight * 0.8f;
 	}
 	else
 	{
 		float r;
 		lightcos = mDotProduct(normal, g_blightvec[bone]); // -1 colinear, 1 opposite
 
-		if (lightcos > 1.0)
-			lightcos = 1;
+		if (lightcos > 1.0f)
+			lightcos = 1.0f;
 
 		illum += g_shadelight;
 
 		r = g_lambert;
-		if (r <= 1.0)
-		r = 1.0;
+		if (r <= 1.0f)
+			r = 1.0f;
 
-		lightcos = (lightcos + (r - 1.0)) / r; 		// do modified hemispherical lighting
-		if (lightcos > 0.0)
+		lightcos = (lightcos + (r - 1.0f)) / r; 		// do modified hemispherical lighting
+		if (lightcos > 0.0f)
 		{
 			illum -= g_shadelight * lightcos;
 		}
-		if (illum <= 0)
-			illum = 0;
+		if (illum <= 0.0f)
+			illum = 0.0f;
 	}
 
-	if (illum > 255)
-		illum = 255;
-	*lv = illum / 255.0;	// Light from 0 to 1.0
+	if (illum > 255.0f)
+		illum = 255.0f;
+	*lv = illum / 255.0f;	// Light from 0 to 1.0
 }
 
 
-void StudioModel::Chrome(int* pchrome, int bone, vec3 normal)
+void StudioModel::Chrome(int* pchrome, int bone, const vec3& normal)
 {
 	float n;
 
@@ -486,29 +483,27 @@ void StudioModel::SetupModel(int bodypart)
 {
 	int index;
 
-	if (bodypart > m_pstudiohdr->numbodyparts)
+	if (bodypart >= m_pstudiohdr->numbodyparts)
 	{
-		// logf ("StudioModel::SetupModel: no such bodypart {}\n", bodypart);
+		logf ("StudioModel::SetupModel: no such bodypart {}\n", bodypart);
 		bodypart = 0;
 	}
 
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + bodypart;
+	if (pbodypart->nummodels <= 0)
+	{
+		m_pmodel = (mstudiomodel_t*)((unsigned char*)m_pstudiohdr + pbodypart->modelindex);
+	}
+	else
+	{
+		index = m_bodynum / pbodypart->base;
+		index = index % pbodypart->nummodels;
 
-	index = m_bodynum / pbodypart->base;
-	index = index % pbodypart->nummodels;
-
-	m_pmodel = (mstudiomodel_t*)((unsigned char*)m_pstudiohdr + pbodypart->modelindex) + index;
+		m_pmodel = (mstudiomodel_t*)((unsigned char*)m_pstudiohdr + pbodypart->modelindex) + index;
+	}
 }
 
 
-/*
-================
-StudioModel::DrawModel
-inputs:
-	currententity
-	r_entorigin
-================
-*/
 void StudioModel::UpdateModelMeshList()
 {
 	if (!m_pstudiohdr || m_pstudiohdr->numbodyparts == 0)
@@ -518,16 +513,11 @@ void StudioModel::UpdateModelMeshList()
 
 	g_smodels_total++; // render data cache cookie
 
-	g_pxformverts = &g_xformverts[0];
-	g_pvlightvalues = &g_lightvalues[0];
-
-	// glShadeModel (GL_SMOOTH);
-
 	SetUpBones();
 
-	SetupLighting();
+	//SetupLighting();
 
-	if (!mdl_mesh_groups.size())
+	if (mdl_mesh_groups.size() < m_pstudiohdr->numbodyparts)
 		mdl_mesh_groups.resize(m_pstudiohdr->numbodyparts);
 
 	for (i = 0; i < m_pstudiohdr->numbodyparts; i++)
@@ -537,19 +527,8 @@ void StudioModel::UpdateModelMeshList()
 	}
 }
 
-/*
-================
-
-================
-*/
 void StudioModel::RefreshMeshList(int body)
 {
-	const int MAX_TRIS_PER_BODYGROUP = 4080;
-	const int MAX_VERTS_PER_CALL = MAX_TRIS_PER_BODYGROUP * 3;
-	static float vertexData[MAX_VERTS_PER_CALL * 3];
-	static float texCoordData[MAX_VERTS_PER_CALL * 2];
-	//static float colorData[MAX_VERTS_PER_CALL * 4];
-
 	StudioMesh tmpStudioMesh = StudioMesh();
 	mstudiomesh_t* pmesh;
 	unsigned char* pvertbone;
@@ -557,8 +536,6 @@ void StudioModel::RefreshMeshList(int body)
 	vec3* pstudioverts;
 	vec3* pstudionorms;
 	mstudiotexture_t* ptexture;
-	vec3* av;
-	vec3* lv;
 	float				lv_tmp;
 	short* pskinref;
 
@@ -572,19 +549,19 @@ void StudioModel::RefreshMeshList(int body)
 	pstudionorms = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->normindex);
 
 	pskinref = (short*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->skinindex);
-	if (m_skinnum != 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
+
+	if (m_skinnum >= 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
 		pskinref += (m_skinnum * m_ptexturehdr->numskinref);
 
 	for (int i = 0; i < m_pmodel->numverts; i++)
 	{
-		VectorTransform(pstudioverts[i], g_bonetransform[pvertbone[i]], g_pxformverts[i]);
+		VectorTransform(pstudioverts[i], g_bonetransform[pvertbone[i]], g_xformverts[i]);
 	}
 
 	//
 	// clip and draw all triangles
 	//
 
-	lv = g_pvlightvalues;
 	for (int j = 0; j < m_pmodel->nummesh; j++)
 	{
 		int flags;
@@ -597,19 +574,19 @@ void StudioModel::RefreshMeshList(int body)
 			if (flags & STUDIO_NF_CHROME)
 				Chrome(g_chrome[i], *pnormbone, *pstudionorms);
 
-			g_pvlightvalues[i][0] = g_lightcolor[0] * lv_tmp;
-			g_pvlightvalues[i][1] = g_lightcolor[1] * lv_tmp;
-			g_pvlightvalues[i][2] = g_lightcolor[2] * lv_tmp;
+			g_lightvalues[i][0] = g_lightcolor[0] * lv_tmp;
+			g_lightvalues[i][1] = g_lightcolor[1] * lv_tmp;
+			g_lightvalues[i][2] = g_lightcolor[2] * lv_tmp;
 		}
 	}
 
-	if (mdl_mesh_groups[body].empty())
+	if (mdl_mesh_groups[body].size() < m_pmodel->nummesh)
 	{
 		mdl_mesh_groups[body].resize(m_pmodel->nummesh);
 
 		for (int j = 0; j < m_pmodel->nummesh; j++)
 		{
-			auto tmpBuff = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->bspShader, 0, GL_TRIANGLES);
+			auto tmpBuff = mdl_mesh_groups[body][j].buffer = new VertexBuffer(g_app->fullBrightBspShader, 0, GL_TRIANGLES);
 			tmpBuff->addAttribute(TEX_2F, "vTex");
 			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
 			tmpBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
@@ -731,7 +708,7 @@ void StudioModel::RefreshMeshList(int body)
 				colorData[colorIdx++] = lv->z;
 				colorData[colorIdx++] = 1.0;*/
 
-				av = &g_pxformverts[ptricmds[0]];
+				vec3 * av = &g_xformverts[ptricmds[0]];
 				vertexData[vertexIdx++] = av->x;
 				vertexData[vertexIdx++] = av->y;
 				vertexData[vertexIdx++] = av->z;
@@ -767,7 +744,7 @@ void StudioModel::RefreshMeshList(int body)
 				}
 			}
 		}
-		if (mdl_mesh_groups[body][j].verts.empty())
+		if (mdl_mesh_groups[body][j].verts.size() < totalElements)
 		{
 			mdl_mesh_groups[body][j].verts.resize(totalElements);
 			for (auto& vert : mdl_mesh_groups[body][j].verts)
@@ -786,9 +763,9 @@ void StudioModel::RefreshMeshList(int body)
 			mdl_mesh_groups[body][j].verts[z].g = colorData[z * 4 + 1];
 			mdl_mesh_groups[body][j].verts[z].b = colorData[z * 4 + 2];
 			mdl_mesh_groups[body][j].verts[z].a = 1.0;*/
-			mdl_mesh_groups[body][j].verts[z].x = vertexData[z * 3 + 0];
-			mdl_mesh_groups[body][j].verts[z].y = vertexData[z * 3 + 2];
-			mdl_mesh_groups[body][j].verts[z].z = -vertexData[z * 3 + 1];
+			mdl_mesh_groups[body][j].verts[z].pos.x = vertexData[z * 3 + 0];
+			mdl_mesh_groups[body][j].verts[z].pos.y = vertexData[z * 3 + 2];
+			mdl_mesh_groups[body][j].verts[z].pos.z = -vertexData[z * 3 + 1];
 		}
 	}
 }
@@ -796,9 +773,9 @@ void StudioModel::RefreshMeshList(int body)
 
 void StudioModel::UploadTexture(mstudiotexture_t* ptexture, unsigned char* data, COLOR3* pal)
 {
-	int texsize = ptexture->width * ptexture->height ;
+	int texsize = ptexture->width * ptexture->height;
 
-	COLOR4 * out = new COLOR4[texsize];
+	COLOR4* out = new COLOR4[texsize];
 
 	for (int i = 0; i < texsize; i++)
 	{
@@ -867,106 +844,84 @@ void StudioModel::GetModelMeshes(int& bodies, int& subbodies, int& skins, int& m
 
 }
 
-void StudioModel::DrawModel(int bodynum, int subbodynum, int skinnum, int meshnum)
+void StudioModel::DrawModel(int meshnum)
 {
-	this->frametime += g_app->curTime - g_app->oldTime;
-
-	if (SetBodygroup(bodynum, subbodynum) != -1)
+	frametime += g_app->curTime - g_app->oldTime;
+	if (needForceUpdate || (this->frametime > (1.0f / fps) && (g_render_flags & RENDER_MODELS_ANIMATED)))
 	{
-		// Need clear all model data and refresh it for new subbody
-		for (auto& body : mdl_mesh_groups)
+		if (needForceUpdate)
 		{
-			//for (auto& subbody : body)
+			for (auto& body : mdl_mesh_groups)
 			{
-				//for (auto& submesh : subbody)
-				for (auto& submesh : body)
+				//for (auto& subbody : body)
 				{
-					if (submesh.buffer)
+					//for (auto& submesh : subbody)
+					for (auto& submesh : body)
 					{
-						delete submesh.buffer;
+						if (submesh.buffer)
+						{
+							delete submesh.buffer;
+						}
 					}
 				}
 			}
+			mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
 		}
-		mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
-	}
-	SetSkin(skinnum);
 
-	if (this->frametime > (1.0f / fps))
-	{
 		AdvanceFrame(this->frametime);
 		UpdateModelMeshList();
 		this->frametime = 0.0f;
 	}
+	needForceUpdate = false;
+
 
 	Texture* validTexture = NULL;
 
 	if (meshnum >= 0)
 	{
-		if (meshnum < mdl_mesh_groups[bodynum].size())
+		if (meshnum < mdl_mesh_groups[0].size())
 		{
-			if (validTexture == NULL && mdl_mesh_groups[bodynum][meshnum].texure)
-				validTexture = mdl_mesh_groups[bodynum][meshnum].texure;
+			if (validTexture == NULL && mdl_mesh_groups[0][meshnum].texure)
+				validTexture = mdl_mesh_groups[0][meshnum].texure;
 
-			if (mdl_mesh_groups[bodynum][meshnum].texure)
+			if (mdl_mesh_groups[0][meshnum].texure)
 			{
-				mdl_mesh_groups[bodynum][meshnum].texure->bind(0);
-				whiteTex->bind(1);
-				whiteTex->bind(2);
-				whiteTex->bind(3);
-				whiteTex->bind(4);
+				mdl_mesh_groups[0][meshnum].texure->bind(0);
 			}
 			else if (validTexture)
 			{
 				validTexture->bind(0);
-				whiteTex->bind(1);
-				whiteTex->bind(2);
-				whiteTex->bind(3);
-				whiteTex->bind(4);
 			}
 			else
 			{
 				whiteTex->bind(0);
-				whiteTex->bind(1);
-				whiteTex->bind(2);
-				whiteTex->bind(3);
-				whiteTex->bind(4);
 			}
-			mdl_mesh_groups[bodynum][meshnum].buffer->drawFull();
+			mdl_mesh_groups[0][meshnum].buffer->drawFull();
 		}
 	}
-	else
+	else 
 	{
-		for (int meshid = 0; meshid < mdl_mesh_groups[bodynum].size(); meshid++)
+		for (int group = 0; group < mdl_mesh_groups.size(); group++)
 		{
-			if (validTexture == NULL && mdl_mesh_groups[bodynum][meshid].texure)
-				validTexture = mdl_mesh_groups[bodynum][meshid].texure;
+			for (int meshid = 0; meshid < mdl_mesh_groups[group].size(); meshid++)
+			{
+				if (validTexture == NULL && mdl_mesh_groups[group][meshid].texure)
+					validTexture = mdl_mesh_groups[group][meshid].texure;
 
-			if (mdl_mesh_groups[bodynum][meshid].texure)
-			{
-				mdl_mesh_groups[bodynum][meshid].texure->bind(0);
-				whiteTex->bind(1);
-				whiteTex->bind(2);
-				whiteTex->bind(3);
-				whiteTex->bind(4);
+				if (mdl_mesh_groups[group][meshid].texure)
+				{
+					mdl_mesh_groups[group][meshid].texure->bind(0);
+				}
+				else if (validTexture)
+				{
+					validTexture->bind(0);
+				}
+				else
+				{
+					whiteTex->bind(0);
+				}
+				mdl_mesh_groups[group][meshid].buffer->drawFull();
 			}
-			else if (validTexture)
-			{
-				validTexture->bind(0);
-				whiteTex->bind(1);
-				whiteTex->bind(2);
-				whiteTex->bind(3);
-				whiteTex->bind(4);
-			}
-			else
-			{
-				whiteTex->bind(0);
-				whiteTex->bind(1);
-				whiteTex->bind(2);
-				whiteTex->bind(3);
-				whiteTex->bind(4);
-			}
-			mdl_mesh_groups[bodynum][meshid].buffer->drawFull();
 		}
 	}
 }
@@ -1015,6 +970,10 @@ int StudioModel::SetSequence(int iSequence)
 	if (iSequence < 0)
 		iSequence = m_pstudiohdr->numseq - 1;
 
+	if (iSequence != m_sequence)
+	{
+		needForceUpdate = true;
+	}
 	m_sequence = iSequence;
 	m_frame = 0;
 
@@ -1047,14 +1006,14 @@ void StudioModel::GetSequenceInfo(float* pflFrameRate, float* pflGroundSpeed)
 
 	if (pseqdesc->numframes > 1)
 	{
-		*pflFrameRate = 256 * pseqdesc->fps / (pseqdesc->numframes - 1);
+		*pflFrameRate = 256.0f * pseqdesc->fps / (pseqdesc->numframes - 1);
 		*pflGroundSpeed = sqrt(pseqdesc->linearmovement[0] * pseqdesc->linearmovement[0] + pseqdesc->linearmovement[1] * pseqdesc->linearmovement[1] + pseqdesc->linearmovement[2] * pseqdesc->linearmovement[2]);
 		*pflGroundSpeed = *pflGroundSpeed * pseqdesc->fps / (pseqdesc->numframes - 1);
 	}
 	else
 	{
-		*pflFrameRate = 256.0;
-		*pflGroundSpeed = 0.0;
+		*pflFrameRate = 256.0f;
+		*pflGroundSpeed = 0.0f;
 	}
 }
 
@@ -1081,19 +1040,19 @@ float StudioModel::SetController(int iController, float flValue)
 			flValue = -flValue;
 
 		// does the controller not wrap?
-		if (pbonecontroller->start + 359.0 >= pbonecontroller->end)
+		if (pbonecontroller->start + 359.0f >= pbonecontroller->end)
 		{
-			if (flValue > ((pbonecontroller->start + pbonecontroller->end) / 2.0) + 180)
-				flValue = flValue - 360;
-			if (flValue < ((pbonecontroller->start + pbonecontroller->end) / 2.0) - 180)
-				flValue = flValue + 360;
+			if (flValue > ((pbonecontroller->start + pbonecontroller->end) / 2.0f) + 180.0f)
+				flValue = flValue - 360.0f;
+			if (flValue < ((pbonecontroller->start + pbonecontroller->end) / 2.0f) - 180.0f)
+				flValue = flValue + 360.0f;
 		}
 		else
 		{
-			if (flValue > 360)
-				flValue = flValue - (int)(flValue / 360.0) * 360.0;
-			else if (flValue < 0)
-				flValue = flValue + (int)((flValue / -360.0) + 1) * 360.0;
+			if (flValue > 360.0f)
+				flValue = flValue - (int)(flValue / 360.0f) * 360.0f;
+			else if (flValue < 0.0f)
+				flValue = flValue + (int)((flValue / -360.0f) + 1.0f) * 360.0f;
 		}
 	}
 
@@ -1126,19 +1085,19 @@ float StudioModel::SetMouth(float flValue)
 			flValue = -flValue;
 
 		// does the controller not wrap?
-		if (pbonecontroller->start + 359.0 >= pbonecontroller->end)
+		if (pbonecontroller->start + 359.0f >= pbonecontroller->end)
 		{
-			if (flValue > ((pbonecontroller->start + pbonecontroller->end) / 2.0) + 180)
-				flValue = flValue - 360;
-			if (flValue < ((pbonecontroller->start + pbonecontroller->end) / 2.0) - 180)
-				flValue = flValue + 360;
+			if (flValue > ((pbonecontroller->start + pbonecontroller->end) / 2.0f) + 180.0f)
+				flValue = flValue - 360.0f;
+			if (flValue < ((pbonecontroller->start + pbonecontroller->end) / 2.0f) - 180.0f)
+				flValue = flValue + 360.0f;
 		}
 		else
 		{
-			if (flValue > 360)
-				flValue = flValue - (int)(flValue / 360.0) * 360.0;
-			else if (flValue < 0)
-				flValue = flValue + (int)((flValue / -360.0) + 1) * 360.0;
+			if (flValue > 360.0f)
+				flValue = flValue - (int)(flValue / 360.0f) * 360.0f;
+			else if (flValue < 0.0f)
+				flValue = flValue + (int)((flValue / -360.0f) + 1.0f) * 360.0f;
 		}
 	}
 
@@ -1148,7 +1107,7 @@ float StudioModel::SetMouth(float flValue)
 	if (setting > 64) setting = 64;
 	m_mouth = setting;
 
-	return setting * (1.0 / 64.0) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
+	return setting * (1.0f / 64.0f) * (pbonecontroller->end - pbonecontroller->start) + pbonecontroller->start;
 }
 
 
@@ -1168,12 +1127,12 @@ float StudioModel::SetBlending(int iBlender, float flValue)
 			flValue = -flValue;
 
 		// does the controller not wrap?
-		if (pseqdesc->blendstart[iBlender] + 359.0 >= pseqdesc->blendend[iBlender])
+		if (pseqdesc->blendstart[iBlender] + 359.0f >= pseqdesc->blendend[iBlender])
 		{
-			if (flValue > ((pseqdesc->blendstart[iBlender] + pseqdesc->blendend[iBlender]) / 2.0) + 180)
-				flValue = flValue - 360;
-			if (flValue < ((pseqdesc->blendstart[iBlender] + pseqdesc->blendend[iBlender]) / 2.0) - 180)
-				flValue = flValue + 360;
+			if (flValue > ((pseqdesc->blendstart[iBlender] + pseqdesc->blendend[iBlender]) / 2.0f) + 180.0f)
+				flValue = flValue - 360.0f;
+			if (flValue < ((pseqdesc->blendstart[iBlender] + pseqdesc->blendend[iBlender]) / 2.0f) - 180.0f)
+				flValue = flValue + 360.0f;
 		}
 	}
 
@@ -1184,7 +1143,7 @@ float StudioModel::SetBlending(int iBlender, float flValue)
 
 	m_blending[iBlender] = setting;
 
-	return setting * (1.0 / 255.0) * (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]) + pseqdesc->blendstart[iBlender];
+	return setting * (1.0f / 255.0f) * (pseqdesc->blendend[iBlender] - pseqdesc->blendstart[iBlender]) + pseqdesc->blendstart[iBlender];
 }
 
 
@@ -1193,8 +1152,11 @@ int StudioModel::SetBodygroup(int iGroup, int iValue)
 {
 	if (iGroup > m_pstudiohdr->numbodyparts || (iGroup == m_iGroup && iValue == m_iGroupValue))
 		return -1;
+
 	m_iGroup = iGroup;
 	m_iGroupValue = iValue;
+
+	needForceUpdate = true;
 
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + iGroup;
 
@@ -1204,6 +1166,8 @@ int StudioModel::SetBodygroup(int iGroup, int iValue)
 		return iCurrent;
 
 	m_bodynum = (m_bodynum - (iCurrent * pbodypart->base) + (iValue * pbodypart->base));
+
+	needForceUpdate = true;
 
 	return iValue;
 }
@@ -1216,6 +1180,8 @@ int StudioModel::SetSkin(int iValue)
 		return m_skinnum;
 	}
 
+	if (iValue != m_skinnum)
+		needForceUpdate = true;
 	m_skinnum = iValue;
 
 	return iValue;

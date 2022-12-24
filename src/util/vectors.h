@@ -14,6 +14,7 @@
 struct vec3
 {
 	float x, y, z;
+
 	vec3() : x(+0.0f), y(+0.0f), z(+0.0f)
 	{
 
@@ -21,28 +22,42 @@ struct vec3
 	vec3(const vec3& other) : x(other.x), y(other.y), z(other.z)
 	{
 		if (abs(x) < EPSILON)
+		{
 			x = +0.0f;
+		}
 		if (abs(y) < EPSILON)
+		{
 			y = +0.0f;
+		}
 		if (abs(z) < EPSILON)
+		{
 			z = +0.0f;
+		}
 	}
 	vec3(float x, float y, float z) : x(x), y(y), z(z)
 	{
 		if (abs(x) < EPSILON)
+		{
 			x = +0.0f;
+		}
 		if (abs(y) < EPSILON)
+		{
 			y = +0.0f;
+		}
 		if (abs(z) < EPSILON)
+		{
 			z = +0.0f;
+		}
 	}
 	vec3 normalize(float length = 1.0f);
+	vec3 swap_xz();
 	float length();
 	bool IsZero();
 	vec3 invert();
 	std::string toKeyvalueString(bool truncate = false, const std::string& suffix_x = " ", const std::string& suffix_y = " ", const std::string& suffix_z = "");
 	std::string toString();
 	vec3 flip(); // flip from opengl to Half-life coordinate system and vice versa
+	vec3 flipUV(); // flip from opengl to Half-life coordinate system and vice versa
 
 	void operator-=(const vec3& v);
 	void operator+=(const vec3& v);
@@ -126,13 +141,14 @@ struct vec2
 		if (abs(y) < EPSILON)
 			y = +0.0f;
 	}
+	vec2 swap();
 	vec2 normalize(float length = 1.0f);
 	float length();
 
-	void operator-=(vec2 v);
-	void operator+=(vec2 v);
-	void operator*=(vec2 v);
-	void operator/=(vec2 v);
+	void operator-=(const vec2& v);
+	void operator+=(const vec2& v);
+	void operator*=(const vec2& v);
+	void operator/=(const vec2& v);
 
 	void operator-=(float f);
 	void operator+=(float f);
@@ -140,18 +156,18 @@ struct vec2
 	void operator/=(float f);
 };
 
-vec2 operator-(vec2 v1, vec2 v2);
-vec2 operator+(vec2 v1, vec2 v2);
-vec2 operator*(vec2 v1, vec2 v2);
-vec2 operator/(vec2 v1, vec2 v2);
+vec2 operator-(vec2 v1, const vec2& v2);
+vec2 operator+(vec2 v1, const vec2& v2);
+vec2 operator*(vec2 v1, const vec2& v2);
+vec2 operator/(vec2 v1, const vec2& v2);
 
 vec2 operator+(vec2 v, float f);
 vec2 operator-(vec2 v, float f);
 vec2 operator*(vec2 v, float f);
 vec2 operator/(vec2 v, float f);
 
-bool operator==(vec2 v1, vec2 v2);
-bool operator!=(vec2 v1, vec2 v2);
+bool operator==(const vec2& v1, const vec2& v2);
+bool operator!=(const vec2& v1, const vec2& v2);
 
 struct vec4
 {
@@ -180,7 +196,7 @@ struct vec4
 		if (abs(w) < EPSILON)
 			w = +0.0f;
 	}
-	vec4(vec3 v, float a) : x(v.x), y(v.y), z(v.z), w(a)
+	vec4(const vec3& v, float a) : x(v.x), y(v.y), z(v.z), w(a)
 	{
 		if (abs(x) < EPSILON)
 			x = +0.0f;
@@ -243,7 +259,7 @@ bool operator!=(const vec4& v1, const vec4& v2);
 #define	SIDE_BACK		1
 #define	SIDE_CROSS		-2
 
-#define	Q_PI	3.14159265358979323846
+#define	Q_PI	(float)(3.14159265358979323846)
 
 #define mDotProduct(x,y) ((x)[0]*(y)[0]+(x)[1]*(y)[1]+(x)[2]*(y)[2])
 
@@ -260,21 +276,21 @@ bool operator!=(const vec4& v1, const vec4& v2);
 #define mVectorScale(a,b,c) {(c)[0]=(b)*(a)[0];(c)[1]=(b)*(a)[1];(c)[2]=(b)*(a)[2];}
 
 float Q_rint(float in);
-float _DotProduct(vec3 v1, vec3 v2);
-void _VectorSubtract(vec3 va, vec3 vb, vec3& out);
-void _VectorAdd(vec3 va, vec3 vb, vec3& out);
-void _VectorCopy(vec3 in, vec3& out);
-void _VectorScale(vec3 v, float scale, vec3& out);
+float _DotProduct(const vec3& v1, const vec3& v2);
+void _VectorSubtract(const vec3& va, const vec3& vb, vec3& out);
+void _VectorAdd(const vec3& va, const vec3& vb, vec3& out);
+void _VectorCopy(const vec3& in, vec3& out);
+void _VectorScale(const vec3& v, float scale, vec3& out);
 
-double VectorLength(vec3 v);
+float VectorLength(const vec3& v);
 
-void mVectorMA(vec3 va, double scale, vec3 vb, vec3& vc);
+void mVectorMA(const vec3& va, double scale, const vec3& vb, vec3& vc);
 
-void mCrossProduct(vec3 v1, vec3 v2, vec3& cross);
+void mCrossProduct(const vec3& v1, const vec3& v2, vec3& cross);
 void VectorInverse(vec3& v);
 
 void ClearBounds(vec3& mins, vec3& maxs);
-void AddPointToBounds(vec3 v, vec3& mins, vec3& maxs);
+void AddPointToBounds(const vec3& v, vec3& mins, vec3& maxs);
 
 void AngleMatrix(const vec3& angles, float(*matrix)[4]);
 void AngleIMatrix(const vec3& angles, float matrix[3][4]);
@@ -287,8 +303,8 @@ void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4]);
 
 bool VectorCompare(const vec3& v1, const vec3& v2);
 
-void QuaternionSlerp(const vec4& p, vec4 & q, float t, vec4& qt);
+void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt);
 void AngleQuaternion(const vec3& angles, vec4& quaternion);
 void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4]);
-void VectorScale(vec3 v, float scale, vec3& out);
-float VectorNormalize(vec3 & v);
+void VectorScale(const vec3& v, float scale, vec3& out);
+float VectorNormalize(vec3& v);

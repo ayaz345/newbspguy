@@ -101,7 +101,7 @@ void Winding::RemoveColinearPoints(float epsilon)
 	}
 }
 
-bool Winding::Clip(const BSPPLANE& split, bool keepon, float epsilon)
+bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 {
 	float           dists[MAX_POINTS_ON_WINDING];
 	int             sides[MAX_POINTS_ON_WINDING];
@@ -115,7 +115,7 @@ bool Winding::Clip(const BSPPLANE& split, bool keepon, float epsilon)
 	// do this exactly, with no epsilon so tiny portals still work
 	for (i = 0; i < m_NumPoints; i++)
 	{
-		dot = DotProduct(m_Points[i], ((float*)&split.vNormal));
+		dot = DotProduct(m_Points[i], (float*)(&split.vNormal));
 		dot -= split.fDist;
 		dists[i] = dot;
 		if (dot > ON_EPSILON)

@@ -162,7 +162,7 @@ namespace ifd
 				if (!isFirstElement)
 				{
 					ImGui::ArrowButtonEx("##dir_dropdown", ImGuiDir_Right, ImVec2(GUI_ELEMENT_SIZE, GUI_ELEMENT_SIZE));
-					anyOtherHC |= ImGui::IsItemHovered() | ImGui::IsItemClicked();
+					anyOtherHC = ImGui::IsItemHovered() || ImGui::IsItemClicked();
 					ImGui::SameLine();
 				}
 				if (ImGui::Button(btnList[i].c_str(), ImVec2(0, GUI_ELEMENT_SIZE)))
@@ -186,7 +186,7 @@ namespace ifd
 					path = std::filesystem::path(newPath);
 					ret = true;
 				}
-				anyOtherHC |= ImGui::IsItemHovered() | ImGui::IsItemClicked();
+				anyOtherHC = ImGui::IsItemHovered() || ImGui::IsItemClicked();
 				ImGui::SameLine();
 				ImGui::PopID();
 
@@ -429,7 +429,7 @@ namespace ifd
 		DWORD d = GetLogicalDrives();
 		for (int i = 0; i < 26; i++)
 			if (d & (1 << i))
-				thisPC->Children.push_back(new FileTreeNode(std::string(1, 'A' + i) + ":"));
+				thisPC->Children.push_back(new FileTreeNode(std::string(1, (int)('A' + i)) + ":"));
 		m_treeCache.push_back(thisPC);
 #else
 		std::error_code ec;

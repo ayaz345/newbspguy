@@ -1899,7 +1899,7 @@ void Gui::drawMenuBar()
 						{
 							logf("Found unnamed texture in face {}. Replaced by aaatrigger.\n", i);
 							memset(tex.szName, 0, MAXTEXTURENAME);
-							memcpy(tex.szName, "aaatrigger", strlen("aaatrigger"));
+							memcpy(tex.szName, "aaatrigger", 10);
 						}
 					}
 				}
@@ -4677,6 +4677,8 @@ void Gui::drawSettings()
 			bool renderEntClipnodes = g_render_flags & RENDER_ENT_CLIPNODES;
 			bool renderEntConnections = g_render_flags & RENDER_ENT_CONNECTIONS;
 			bool transparentNodes = g_render_flags & RENDER_TRANSPARENT;
+			bool renderModels = g_render_flags & RENDER_MODELS;
+			bool renderAnimatedModels = g_render_flags & RENDER_MODELS_ANIMATED;
 
 			ImGui::Text("Render Flags:");
 
@@ -4726,6 +4728,14 @@ void Gui::drawSettings()
 			if (ImGui::Checkbox("Special World Faces", &renderSpecial))
 			{
 				g_render_flags ^= RENDER_SPECIAL;
+			}
+			if (ImGui::Checkbox("Models", &renderModels))
+			{
+				g_render_flags ^= RENDER_MODELS;
+			}
+			if (ImGui::Checkbox("Animate models", &renderAnimatedModels))
+			{
+				g_render_flags ^= RENDER_MODELS_ANIMATED;
 			}
 
 

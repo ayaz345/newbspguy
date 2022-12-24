@@ -185,6 +185,11 @@ vec3 vec3::normalize(float length)
 	return vec3(x * d, y * d, z * d);
 }
 
+vec3 vec3::swap_xz()
+{
+	return vec3(z, y, x);
+}
+
 vec3 vec3::invert()
 {
 	return vec3(abs(x) >= EPSILON ? -x : x, abs(y) >= EPSILON ? -y : y, abs(z) >= EPSILON ? -z : z);
@@ -234,8 +239,13 @@ vec3 vec3::flip()
 	return vec3(x, z, -y);
 }
 
+vec3 vec3::flipUV()
+{
+	return vec3(x, -z, y);
+}
 
-bool operator==(vec2 v1, vec2 v2)
+
+bool operator==(const vec2& v1, const vec2& v2)
 {
 	vec2 v = v1 - v2;
 	if (abs(v.x) >= EPSILON)
@@ -245,33 +255,33 @@ bool operator==(vec2 v1, vec2 v2)
 	return true;
 }
 
-bool operator!=(vec2 v1, vec2 v2)
+bool operator!=(const vec2& v1, const vec2& v2)
 {
 	return abs(v1.x - v2.x) >= EPSILON || abs(v1.y - v2.y) >= EPSILON;
 }
 
-vec2 operator-(vec2 v1, vec2 v2)
+vec2 operator-(vec2 v1, const vec2& v2)
 {
 	v1.x -= v2.x;
 	v1.y -= v2.y;
 	return v1;
 }
 
-vec2 operator+(vec2 v1, vec2 v2)
+vec2 operator+(vec2 v1, const vec2& v2)
 {
 	v1.x += v2.x;
 	v1.y += v2.y;
 	return v1;
 }
 
-vec2 operator*(vec2 v1, vec2 v2)
+vec2 operator*(vec2 v1, const vec2& v2)
 {
 	v1.x *= v2.x;
 	v1.y *= v2.y;
 	return v1;
 }
 
-vec2 operator/(vec2 v1, vec2 v2)
+vec2 operator/(vec2 v1, const vec2& v2)
 {
 	v1.x /= v2.x;
 	v1.y /= v2.y;
@@ -306,25 +316,25 @@ vec2 operator/(vec2 v, float f)
 	return v;
 }
 
-void vec2::operator-=(vec2 v)
+void vec2::operator-=(const vec2& v)
 {
 	x -= v.x;
 	y -= v.y;
 }
 
-void vec2::operator+=(vec2 v)
+void vec2::operator+=(const vec2& v)
 {
 	x += v.x;
 	y += v.y;
 }
 
-void vec2::operator*=(vec2 v)
+void vec2::operator*=(const vec2& v)
 {
 	x *= v.x;
 	y *= v.y;
 }
 
-void vec2::operator/=(vec2 v)
+void vec2::operator/=(const vec2& v)
 {
 	x /= v.x;
 	y /= v.y;
@@ -367,7 +377,10 @@ vec2 vec2::normalize(float length)
 	return vec2(x * d, y * d);
 }
 
-
+vec2 vec2::swap()
+{
+	return vec2(y, x);
+}
 
 bool operator==(const vec4& v1, const vec4& v2)
 {
@@ -567,6 +580,7 @@ void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt)
 
 
 
+
 void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4])
 {
 	matrix[0][0] = 1.0f - 2.0f * quaternion[1] * quaternion[1] - 2.0f * quaternion[2] * quaternion[2];
@@ -612,14 +626,14 @@ void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[
 		in1[2][2] * in2[2][3] + in1[2][3];
 }
 
-void VectorScale(vec3 v, float scale, vec3& out)
+void VectorScale(const vec3& v, float scale, vec3& out)
 {
 	out[0] = v[0] * scale;
 	out[1] = v[1] * scale;
 	out[2] = v[2] * scale;
 }
 
-float VectorNormalize(vec3 & v)
+float VectorNormalize(vec3& v)
 {
 	int		i;
 	float	length;
@@ -672,12 +686,10 @@ int TextureAxisFromPlane(const BSPPLANE& pln, vec3& xv, vec3& yv)
 	return bestaxis;
 }
 
-double VectorLength(vec3 v)
+float VectorLength(const vec3& v)
 {
 	int		i;
-	double	length;
-
-	length = 0;
+	float	length = 0.0f;
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt(length);		// FIXME
@@ -687,43 +699,43 @@ double VectorLength(vec3 v)
 
 float Q_rint(float in)
 {
-	return floor(in + 0.5);
+	return floor(in + 0.5f);
 }
 
-void mVectorMA(vec3 va, double scale, vec3 vb, vec3& vc)
+void mVectorMA(const vec3 & va, float scale, const vec3& vb, vec3& vc)
 {
 	vc[0] = va[0] + scale * vb[0];
 	vc[1] = va[1] + scale * vb[1];
 	vc[2] = va[2] + scale * vb[2];
 }
 
-float _DotProduct(vec3 v1, vec3 v2)
+float _DotProduct(const vec3& v1, const vec3& v2)
 {
 	return v1[0] * v2[0] + v1[1] * v2[1] + v1[2] * v2[2];
 }
 
-void _VectorSubtract(vec3 va, vec3 vb, vec3& out)
+void _VectorSubtract(const vec3& va, const vec3& vb, vec3& out)
 {
 	out[0] = va[0] - vb[0];
 	out[1] = va[1] - vb[1];
 	out[2] = va[2] - vb[2];
 }
 
-void _VectorAdd(vec3 va, vec3 vb, vec3& out)
+void _VectorAdd(const vec3& va, const vec3& vb, vec3& out)
 {
 	out[0] = va[0] + vb[0];
 	out[1] = va[1] + vb[1];
 	out[2] = va[2] + vb[2];
 }
 
-void _VectorCopy(vec3 in, vec3& out)
+void _VectorCopy(const vec3& in, vec3& out)
 {
 	out[0] = in[0];
 	out[1] = in[1];
 	out[2] = in[2];
 }
 
-void _VectorScale(vec3 v, float scale, vec3& out)
+void _VectorScale(const vec3& v, float scale, vec3& out)
 {
 	out[0] = v[0] * scale;
 	out[1] = v[1] * scale;
@@ -732,9 +744,7 @@ void _VectorScale(vec3 v, float scale, vec3& out)
 
 void VectorInverse(vec3& v)
 {
-	v[0] = -v[0];
-	v[1] = -v[1];
-	v[2] = -v[2];
+	v = -v;
 }
 
 void ClearBounds(vec3& mins, vec3& maxs)
@@ -743,7 +753,7 @@ void ClearBounds(vec3& mins, vec3& maxs)
 	maxs[0] = maxs[1] = maxs[2] = -99999;
 }
 
-void AddPointToBounds(vec3 v, vec3& mins, vec3& maxs)
+void AddPointToBounds(const vec3& v, vec3& mins, vec3& maxs)
 {
 	int		i;
 	float	val;
@@ -758,18 +768,18 @@ void AddPointToBounds(vec3 v, vec3& mins, vec3& maxs)
 	}
 }
 
-void AngleMatrix(const vec3& angles, float (*matrix)[4])
+void AngleMatrix(const vec3& angles, float(*matrix)[4])
 {
 	float		angle;
 	float		sr, sp, sy, cr, cp, cy;
-
-	angle = angles[2] * (Q_PI * 2 / 360);
+	float multipl = (Q_PI * 2.0f / 360.0f);
+	angle = angles[2] * multipl;
 	sy = sin(angle);
 	cy = cos(angle);
-	angle = angles[1] * (Q_PI * 2 / 360);
+	angle = angles[1] * multipl;
 	sp = sin(angle);
 	cp = cos(angle);
-	angle = angles[0] * (Q_PI * 2 / 360);
+	angle = angles[0] * multipl;
 	sr = sin(angle);
 	cr = cos(angle);
 
@@ -783,9 +793,9 @@ void AngleMatrix(const vec3& angles, float (*matrix)[4])
 	matrix[0][2] = (cr * sp * cy + -sr * -sy);
 	matrix[1][2] = (cr * sp * sy + -sr * cy);
 	matrix[2][2] = cr * cp;
-	matrix[0][3] = 0.0;
-	matrix[1][3] = 0.0;
-	matrix[2][3] = 0.0;
+	matrix[0][3] = 0.0f;
+	matrix[1][3] = 0.0f;
+	matrix[2][3] = 0.0f;
 }
 
 void AngleIMatrix(const vec3& angles, float matrix[3][4])
@@ -793,13 +803,15 @@ void AngleIMatrix(const vec3& angles, float matrix[3][4])
 	float		angle;
 	float		sr, sp, sy, cr, cp, cy;
 
-	angle = angles[2] * (Q_PI * 2 / 360);
+	float multipl = (Q_PI * 2.0f / 360.0f);
+
+	angle = angles[2] * multipl;
 	sy = sin(angle);
 	cy = cos(angle);
-	angle = angles[1] * (Q_PI * 2 / 360);
+	angle = angles[1] * multipl;
 	sp = sin(angle);
 	cp = cos(angle);
-	angle = angles[0] * (Q_PI * 2 / 360);
+	angle = angles[0] * multipl;
 	sr = sin(angle);
 	cr = cos(angle);
 
@@ -813,9 +825,9 @@ void AngleIMatrix(const vec3& angles, float matrix[3][4])
 	matrix[2][0] = (cr * sp * cy + -sr * -sy);
 	matrix[2][1] = (cr * sp * sy + -sr * cy);
 	matrix[2][2] = cr * cp;
-	matrix[0][3] = 0.0;
-	matrix[1][3] = 0.0;
-	matrix[2][3] = 0.0;
+	matrix[0][3] = 0.0f;
+	matrix[1][3] = 0.0f;
+	matrix[2][3] = 0.0f;
 }
 
 void VectorRotate(const vec3& in1, const float in2[3][4], vec3& out)
@@ -825,7 +837,7 @@ void VectorRotate(const vec3& in1, const float in2[3][4], vec3& out)
 	out[2] = mDotProduct(in1, in2[2]);
 }
 
-void mCrossProduct(vec3 v1, vec3 v2, vec3& cross)
+void mCrossProduct(const vec3& v1, const vec3& v2, vec3& cross)
 {
 	cross[0] = v1[1] * v2[2] - v1[2] * v2[1];
 	cross[1] = v1[2] * v2[0] - v1[0] * v2[2];

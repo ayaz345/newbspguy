@@ -48,7 +48,7 @@ VertexAttr::VertexAttr(int numValues, int valueType, int handle, int normalized,
 
 
 
-VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, const void* dat, int numVerts, int primitive)
+VertexBuffer::VertexBuffer(ShaderProgram* shaderProgram, int attFlags, void * dat, int numVerts, int primitive)
 {
 	attribs = std::vector<VertexAttr>();
 	this->shaderProgram = shaderProgram;
@@ -165,19 +165,19 @@ void VertexBuffer::bindAttributes(bool hideErrors) {
 	attributesBound = true;
 }
 
-void VertexBuffer::setData(const void* _data, int _numVerts)
+void VertexBuffer::setData(void* _data, int _numVerts)
 {
 	data = (unsigned char*)_data;
 	numVerts = _numVerts;
 	deleteBuffer();
 }
 
-void VertexBuffer::upload()
+void VertexBuffer::upload(bool hideErrors)
 {
 	if (!shaderProgram)
 		return;
 	shaderProgram->bind();
-	bindAttributes(true);
+	bindAttributes(hideErrors);
 
 	if (vboId == (GLuint)-1)
 		glGenBuffers(1, &vboId);
@@ -208,10 +208,10 @@ void VertexBuffer::deleteBuffer() {
 	vboId = (GLuint)-1;
 }
 
-void VertexBuffer::drawRange(int _primitive, int start, int end)
+void VertexBuffer::drawRange(int _primitive, int start, int end, bool hideErrors)
 {
 	shaderProgram->bind();
-	bindAttributes();
+	bindAttributes(hideErrors);
 
 	char* offsetPtr = (char*)data;
 	if (vboId != (GLuint)-1) {

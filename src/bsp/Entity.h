@@ -68,7 +68,7 @@ public:
 	size_t getMemoryUsage(); // aproximate
 
 	int rendermode = kRenderNormal;
-	float renderamt = 0;
+	int renderamt = 0;
 	int renderfx = kRenderFxNone;
 	vec3 rendercolor = vec3(255, 255, 255);
 };

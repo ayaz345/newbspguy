@@ -104,7 +104,7 @@ void AppSettings::loadDefault()
 
 	render_flags = g_render_flags = RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL
 		| RENDER_ENTS | RENDER_SPECIAL_ENTS | RENDER_POINT_ENTS | RENDER_WIREFRAME | RENDER_ENT_CONNECTIONS
-		| RENDER_ENT_CLIPNODES;
+		| RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED;
 
 	vsync = true;
 	backUpMap = true;
@@ -320,7 +320,7 @@ void AppSettings::load()
 		{
 			g_settings.rotSpeed = (float)atof(val.c_str());
 		}
-		else if (key == "render_flags")
+		else if (key == "renders_flags")
 		{
 			g_settings.render_flags = atoi(val.c_str());
 		}
@@ -697,7 +697,7 @@ void AppSettings::save(std::string path)
 	file << "zfar=" << g_settings.zfar << std::endl;
 	file << "move_speed=" << g_settings.moveSpeed << std::endl;
 	file << "rot_speed=" << g_settings.rotSpeed << std::endl;
-	file << "render_flags=" << g_settings.render_flags << std::endl;
+	file << "renders_flags=" << g_settings.render_flags << std::endl;
 	file << "font_size=" << g_settings.fontSize << std::endl;
 	file << "undo_levels=" << g_settings.undoLevels << std::endl;
 	file << "savebackup=" << g_settings.backUpMap << std::endl;
@@ -835,7 +835,7 @@ Renderer::~Renderer()
 }
 
 VertexBuffer* tempmodelBuff;
-StudioModel * tempmodel;
+StudioModel* tempmodel;
 void Renderer::renderLoop()
 {
 	/*tempmodel = new StudioModel("d:\\Games\\CS16\\cstrike\\models\\arcticorange.mdl");
@@ -994,7 +994,7 @@ void Renderer::renderLoop()
 
 		bool updatePickCount = false;
 
-		if (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount || transformTarget != tmpTransformTarget || tmpModelIdx != modelIdx)
+		if (SelectedMap && (tmpPickIdx != pickCount || tmpVertPickIdx != vertPickCount || transformTarget != tmpTransformTarget || tmpModelIdx != modelIdx))
 		{
 			if (transformTarget != tmpTransformTarget && transformTarget == TRANSFORM_VERTEX)
 			{
@@ -1021,7 +1021,7 @@ void Renderer::renderLoop()
 
 			isScalingObject = transformMode == TRANSFORM_MODE_SCALE && transformTarget == TRANSFORM_OBJECT;
 			isMovingOrigin = transformMode == TRANSFORM_MODE_MOVE && transformTarget == TRANSFORM_ORIGIN;
-			isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX)) 
+			isTransformingValid = (!modelUsesSharedStructures || (transformMode == TRANSFORM_MODE_MOVE && transformTarget != TRANSFORM_VERTEX))
 				|| (isTransformableSolid && isScalingObject);
 			isTransformingWorld = pickInfo.IsSelectedEnt(0) && transformTarget != TRANSFORM_OBJECT;
 
@@ -1047,8 +1047,8 @@ void Renderer::renderLoop()
 		matmodel.rotateX((float)curTime);
 
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		
-		if(SelectedMap->is_mdl_model)
+
+		if (SelectedMap && SelectedMap->is_mdl_model)
 			glClearColor(0.25, 0.25, 0.25, 1.0);
 		setupView();
 
@@ -1079,7 +1079,7 @@ void Renderer::renderLoop()
 				bspShader->bind();
 				bspShader->modelMat->loadIdentity();
 				bspShader->updateMatrixes();
-				SelectedMap->mdl->DrawModel(0, 0, 0);
+				SelectedMap->mdl->DrawModel(0);
 				continue;
 			}
 
@@ -1127,7 +1127,7 @@ void Renderer::renderLoop()
 				isLoading = true;
 			}
 		}
-	
+
 
 		matmodel.loadIdentity();
 		colorShader->bind();
@@ -1176,9 +1176,15 @@ void Renderer::renderLoop()
 				vec3 offset = SelectedMap->getBspRender()->mapOffset.flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
-				drawLine(debugPoint - vec3(32, 0, 0), debugPoint + vec3(32, 0, 0), {128, 128, 255, 255});
-				drawLine(debugPoint - vec3(0, 32, 0), debugPoint + vec3(0, 32, 0), {0, 255, 0, 255});
-				drawLine(debugPoint - vec3(0, 0, 32), debugPoint + vec3(0, 0, 32), {0, 0, 255, 255});
+				vec3 p1 = debugPoint - vec3(32, 0, 0);
+				vec3 p2 = debugPoint + vec3(32, 0, 0);
+				drawLine(p1, p2, {128, 128, 255, 255});
+				p1 = debugPoint - vec3(0, 32, 0);
+				p2 = debugPoint + vec3(0, 32, 0);
+				drawLine(p1, p2, {0, 255, 0, 255});
+				p1 = debugPoint - vec3(0, 0, 32);
+				p2 = debugPoint + vec3(0, 0, 32);
+				drawLine(p1, p2, {0, 0, 255, 255});
 				colorShader->popMatrix(MAT_MODEL);
 			}
 		}
@@ -1626,7 +1632,7 @@ void Renderer::controls()
 			}
 		}
 
-		cameraOrigin += getMoveDir() * (curTime - oldTime) * moveSpeed;
+		cameraOrigin += getMoveDir() * (float)(curTime - oldTime) * moveSpeed;
 
 		moveGrabbedEnt();
 
@@ -2721,7 +2727,7 @@ void Renderer::reloadBspModels()
 
 	mapRenderers = std::move(sorted_renders);
 
-	for (auto bsprend : mapRenderers)
+	for (auto bsprend : sorted_renders)
 	{
 		if (bsprend)
 		{
@@ -2746,7 +2752,7 @@ void Renderer::reloadBspModels()
 						}
 						else
 						{
-							logf("Missing {} model file.\n",modelPath);
+							logf("Missing {} model file.\n", modelPath);
 							FindPathInAssets(modelPath, newBspPath, true);
 						}
 					}
@@ -2792,16 +2798,12 @@ void Renderer::addMap(Bsp* map)
 	}
 }
 
-void Renderer::drawLine(const vec3& start, const vec3& end, COLOR4 color)
+void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
 {
-	line_verts[0].x = start.x;
-	line_verts[0].y = start.z;
-	line_verts[0].z = -start.y;
+	line_verts[0].pos = start.flip();
 	line_verts[0].c = color;
 
-	line_verts[1].x = end.x;
-	line_verts[1].y = end.z;
-	line_verts[1].z = -end.y;
+	line_verts[1].pos = end.flip();
 	line_verts[1].c = color;
 
 	lineBuf->drawFull();
@@ -3019,9 +3021,7 @@ void Renderer::updateDragAxes(vec3 delta)
 		cVert* verts = (cVert*)scaleAxes.model;
 		for (int i = 0; i < 6 * 6 * 6; i++)
 		{
-			float tmp = verts[i].z;
-			verts[i].z = -verts[i].y;
-			verts[i].y = tmp;
+			verts[i].pos = verts[i].pos.flip();
 		}
 
 		// larger mins/maxs so you can be less precise when selecting them
@@ -3379,9 +3379,7 @@ void Renderer::updateEntConnectionPositions()
 		cVert* verts = (cVert*)entConnections->data;
 		for (int i = 0; i < entConnections->numVerts; i += 2)
 		{
-			verts[i].x = pos.x;
-			verts[i].y = pos.y;
-			verts[i].z = pos.z;
+			verts[i].pos = pos;
 		}
 	}
 }

@@ -36,11 +36,11 @@ protected:
 public:
 	Quantizer(unsigned int nMaxColors, unsigned char nColorBits);
 	virtual ~Quantizer();
-	void ProcessImage(COLOR3* image, int64_t size);
-	void ApplyColorTable(COLOR3* image, int64_t size);
-	void ApplyColorTableDither(COLOR3* image, int64_t width, int64_t height);
-	void FloydSteinbergDither(COLOR3* image, int64_t width, int64_t height, unsigned int* target);
-	void FloydSteinbergDither256(COLOR3* image, int64_t width, int64_t height, unsigned char* target);
+	void ProcessImage(COLOR3* image, unsigned int size);
+	void ApplyColorTable(COLOR3* image, unsigned int size);
+	void ApplyColorTableDither(COLOR3* image, unsigned int width, unsigned int height);
+	void FloydSteinbergDither(COLOR3* image, unsigned int width, unsigned int height, unsigned int* target);
+	void FloydSteinbergDither256(COLOR3* image, unsigned int width, unsigned int height, unsigned char* target);
 	unsigned int GetColorCount();
 	void GetColorTable(COLOR3* pal);
 	void SetColorTable(COLOR3* pal, unsigned int colors);

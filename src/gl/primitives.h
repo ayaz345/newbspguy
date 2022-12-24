@@ -9,17 +9,15 @@
 struct tVert
 {
 	float u, v;
-	float x, y, z;
+	vec3 pos;
 
 	tVert() = default;
-	tVert(float x, float y, float z, float u, float v) : u(u), v(v), x(x), y(y), z(z)
+	tVert(float x, float y, float z, float u, float v) : u(u), v(v), pos(x, y, z)
 	{}
-	tVert(vec3 p, float u, float v) : u(u), v(v), x(p.x), y(p.y), z(p.z)
+	tVert(vec3 p, float u, float v) : u(u), v(v), pos(p.x, p.y, p.z)
 	{}
-	tVert(vec3 p, vec2 uv) : u(uv.x), v(uv.y), x(p.x), y(p.y), z(p.z)
+	tVert(vec3 p, vec2 uv) : u(uv.x), v(uv.y), pos(p.x, p.y, p.z)
 	{}
-
-	vec3 pos();
 };
 
 struct lightmapVert
@@ -32,18 +30,17 @@ struct lightmapVert
 	float luv[MAXLIGHTMAPS][3];
 
 	float r, g, b, a;
-	float x, y, z;
+	vec3 pos;
 };
 
 struct cVert
 {
 	COLOR4 c;
-	float x, y, z;
-
+	vec3 pos;
 	cVert() = default;
-	cVert(float x, float y, float z, COLOR4 c) : c(c), x(x), y(y), z(z)
+	cVert(float x, float y, float z, COLOR4 c) : c(c), pos(x, y, z)
 	{}
-	cVert(vec3 p, COLOR4 c) : c(c), x(p.x), y(p.y), z(p.z)
+	cVert(vec3 p, COLOR4 c) : c(c), pos(p.x, p.y, p.z)
 	{}
 };
 

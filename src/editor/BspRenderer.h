@@ -28,7 +28,9 @@ enum RenderFlags
 	RENDER_WORLD_CLIPNODES = 256,
 	RENDER_ENT_CLIPNODES = 512,
 	RENDER_ENT_CONNECTIONS = 1024,
-	RENDER_TRANSPARENT = 2048
+	RENDER_TRANSPARENT = 2048,
+	RENDER_MODELS = 4096,
+	RENDER_MODELS_ANIMATED = 8192
 };
 
 struct LightmapInfo
@@ -55,6 +57,7 @@ struct FaceMath
 struct RenderEnt
 {
 	mat4x4 modelMatAngles; // model matrix for rendering with angles
+	mat4x4 modelMatAngles2; // model matrix for rendering with angles StudiMDL
 	mat4x4 modelMatOrigin; // model matrix for render origin
 	vec3 offset; // vertex transformations for picking
 	vec3 angles; // support angles
@@ -66,7 +69,7 @@ struct RenderEnt
 	std::string mdlFileName;
 	RenderEnt()
 	{
-		modelMatAngles = modelMatOrigin = mat4x4();
+		modelMatAngles = modelMatAngles2 = modelMatOrigin = mat4x4();
 		offset = angles = vec3();
 		modelIdx = 0;
 		pointEntCube = NULL;
