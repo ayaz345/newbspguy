@@ -211,7 +211,7 @@ public:
 	void updateLightmapInfos();
 	bool isFinishedLoading();
 
-	void highlightFace(int faceIdx, bool highlight);
+	void highlightFace(int faceIdx, bool highlight, COLOR4 color = COLOR4(), bool useColor = false);
 	void updateFaceUVs(int faceIdx);
 	unsigned int getFaceTextureId(int faceIdx);
 

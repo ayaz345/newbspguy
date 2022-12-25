@@ -1716,7 +1716,7 @@ bool BspRenderer::isFinishedLoading()
 	return lightmapsUploaded && texturesLoaded && clipnodesLoaded;
 }
 
-void BspRenderer::highlightFace(int faceIdx, bool highlight)
+void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool useColor)
 {
 	RenderFace* rface;
 	RenderGroup* rgroup;
@@ -1734,6 +1734,13 @@ void BspRenderer::highlightFace(int faceIdx, bool highlight)
 		r = 0.86f;
 		g = 0;
 		b = 0;
+	}
+
+	if (useColor)
+	{
+		r = color.r;
+		g = color.g;
+		b = color.b;
 	}
 
 	for (int i = 0; i < rface->vertCount; i++)
