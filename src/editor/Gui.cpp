@@ -2415,7 +2415,7 @@ void Gui::drawDebugWidget()
 	BspRenderer* renderer = map ? map->getBspRender() : NULL;
 	int entIdx = app->pickInfo.GetSelectedEnt();
 
-	bool needReloadClipnodes = false;
+	int needReloadClipnodes = 0;
 
 	if (ImGui::Begin("Debug info", &showDebugWidget))
 	{
@@ -2671,10 +2671,16 @@ void Gui::drawDebugWidget()
 				}
 			}
 
-			if (ImGui::Button("TEST VISIBILITY DATA"))
+			if (ImGui::Button("TEST VIS DATA[CLIPNODES]"))
 			{
-				needReloadClipnodes = true;
+				needReloadClipnodes = 1;
 			}
+
+			if (ImGui::Button("TEST VIS DATA[HIGHFACES]"))
+			{
+				needReloadClipnodes = 2;
+			}
+
 			if (ImGui::IsItemHovered())
 			{
 				ImGui::BeginTooltip();
@@ -2750,68 +2756,62 @@ void Gui::drawDebugWidget()
 	ImGui::End();
 
 
-	if (needReloadClipnodes && !g_app->reloading)
+	if (needReloadClipnodes > 0 && !g_app->reloading)
 	{
-		for (auto& ent : map->ents)
+		vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
+
+		vec3 renderOffset;
+		vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
+		renderOffset = mapOffset.flip();
+
+		static ImVec4 hullColors[] = {
+			ImVec4(1, 1, 1, 1),
+			ImVec4(0.3f, 1, 1, 1),
+			ImVec4(1, 0.3f, 1, 1),
+			ImVec4(1, 1, 0.3f, 1),
+		};
+		LeafDebug tmpLeafDebug;
+		std::vector<LeafDebug> leafIdxs;
+		for (int m = 0; m < map->modelCount; m++)
 		{
-			if (ent->isWorldSpawn())
+			for (int i = 0; i < MAX_MAP_HULLS; i++)
 			{
-				vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
-
-				vec3 renderOffset;
-				vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
-				renderOffset = mapOffset.flip();
-
-				static ImVec4 hullColors[] = {
-					ImVec4(1, 1, 1, 1),
-					ImVec4(0.3f, 1, 1, 1),
-					ImVec4(1, 0.3f, 1, 1),
-					ImVec4(1, 1, 0.3f, 1),
-				};
-				LeafDebug tmpLeafDebug;
-				std::vector<LeafDebug> leafIdxs;
-				for (int m = 0; m < map->modelCount; m++)
+				std::vector<int> nodeBranch;
+				int childIdx = -1;
+				int leafIdx = -1;
+				int headNode = map->models[m].iHeadnodes[i];
+				int contents = map->pointContents(headNode, localCamera, i, nodeBranch, leafIdx, childIdx);
+				if (leafIdx >= 0)
 				{
-					for (int i = 0; i < MAX_MAP_HULLS; i++)
+					bool found = false;
+					for (auto const& s : leafIdxs)
 					{
-						std::vector<int> nodeBranch;
-						int childIdx = -1;
-						int leafIdx = -1;
-						int headNode = map->models[m].iHeadnodes[i];
-						int contents = map->pointContents(headNode, localCamera, i, nodeBranch, leafIdx, childIdx);
-						if (leafIdx >= 0)
+						if (s.leafIdx == leafIdx)
 						{
-							bool found = false;
-							for (auto const& s : leafIdxs)
-							{
-								if (s.leafIdx == leafIdx)
-								{
-									found = true;
-									break;
-								}
-							}
-							if (found)
-								continue;
-							tmpLeafDebug.leafIdx = leafIdx;
-
-
-							BSPLEAF& startLeaf = map->leaves[leafIdx];
-							int thisLeafCount = map->leafCount;
-							tmpLeafDebug.leafVIS = new unsigned char[map->leafCount];
-							memset(tmpLeafDebug.leafVIS, 0xFF, map->leafCount);
-							DecompressVis(map->visdata + startLeaf.nVisOffset, tmpLeafDebug.leafVIS, map->leafCount, map->leafCount, map->visDataLength - startLeaf.nVisOffset);
-
-							leafIdxs.push_back(tmpLeafDebug);
+							found = true;
+							break;
 						}
 					}
-				}
-				map->getBspRender()->debugClipnodeVis = true;
-				map->getBspRender()->debugLeafIdx = leafIdxs;
-				map->getBspRender()->debugEntOffset = renderOffset;
+					if (found)
+						continue;
+					tmpLeafDebug.leafIdx = leafIdx;
 
-				map->getBspRender()->reloadClipnodes();
+
+					BSPLEAF& startLeaf = map->leaves[leafIdx];
+					int thisLeafCount = map->leafCount;
+					tmpLeafDebug.leafVIS = new unsigned char[map->leafCount];
+					memset(tmpLeafDebug.leafVIS, 0xFF, map->leafCount);
+					DecompressVis(map->visdata + startLeaf.nVisOffset, tmpLeafDebug.leafVIS, map->leafCount, map->leafCount, map->visDataLength - startLeaf.nVisOffset);
+
+					leafIdxs.push_back(tmpLeafDebug);
+				}
 			}
 		}
+		map->getBspRender()->debugClipnodeVis = true;
+		map->getBspRender()->debugLeafIdx = leafIdxs;
+		map->getBspRender()->debugEntOffset = renderOffset;
+
+		map->getBspRender()->reloadClipnodes();
 	}
 }
 

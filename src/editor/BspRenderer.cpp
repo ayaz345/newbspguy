@@ -1987,7 +1987,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			}
 
 			whiteTex->bind(1);
-
+			
 			rgroup.wireframeBuffer->drawFull();
 		}
 		return;
