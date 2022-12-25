@@ -554,7 +554,7 @@ int transform(CommandLine& cli)
 		{
 			move = cli.getOptionVector("-move");
 
-			logf("Applying offset (%.2f, %.2f, %.2f)\n",
+			logf("Applying offset ({:.2f}, {:.2f}, {:.2f})\n",
 				 move.x, move.y, move.z);
 
 			map->move(move);

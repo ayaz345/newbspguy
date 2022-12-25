@@ -29,6 +29,7 @@
 
 #include <execution>
 
+#include "vis.h"
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip
 
@@ -1744,6 +1745,30 @@ void Gui::drawMenuBar()
 			rend->pushUndoCommand(command);
 		}
 
+		if (ImGui::BeginMenu("Show clipnodes", map))
+		{
+			if (ImGui::MenuItem("[-1] - Auto", NULL, app->clipnodeRenderHull == -1))
+			{
+				app->clipnodeRenderHull = -1;
+			}
+			if (ImGui::MenuItem("[0] - Point", NULL, app->clipnodeRenderHull == 0))
+			{
+				app->clipnodeRenderHull = 0;
+			}
+			if (ImGui::MenuItem("[1] - Human", NULL, app->clipnodeRenderHull == 1))
+			{
+				app->clipnodeRenderHull = 1;
+			}
+			if (ImGui::MenuItem("[2] - Large", NULL, app->clipnodeRenderHull == 2))
+			{
+				app->clipnodeRenderHull = 2;
+			}
+			if (ImGui::MenuItem("[3] - Head", NULL, app->clipnodeRenderHull == 3))
+			{
+				app->clipnodeRenderHull = 3;
+			}
+			ImGui::EndMenu();
+		}
 		ImGui::Separator();
 
 		bool hasAnyCollision = anyHullValid[1] || anyHullValid[2] || anyHullValid[3];
@@ -2390,6 +2415,8 @@ void Gui::drawDebugWidget()
 	BspRenderer* renderer = map ? map->getBspRender() : NULL;
 	int entIdx = app->pickInfo.GetSelectedEnt();
 
+	bool needReloadClipnodes = false;
+
 	if (ImGui::Begin("Debug info", &showDebugWidget))
 	{
 
@@ -2498,6 +2525,8 @@ void Gui::drawDebugWidget()
 
 		if (ImGui::CollapsingHeader((bspTreeTitle + "##bsptree").c_str(), ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			if (modelIdx < 0 && entIdx >= 0)
+				modelIdx = 0;
 			if (modelIdx >= 0)
 			{
 				if (!map)
@@ -2629,16 +2658,33 @@ void Gui::drawDebugWidget()
 
 		}
 
-		if (map && ImGui::Button("PRESS ME TO DECAL"))
+		if (map)
 		{
-			for (auto& ent : map->ents)
+			if (ImGui::Button("PRESS ME TO DECAL"))
 			{
-				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "infodecal")
+				for (auto& ent : map->ents)
 				{
-					map->decalShoot(ent->getOrigin(), "Hello world");
+					if (ent->hasKey("classname") && ent->keyvalues["classname"] == "infodecal")
+					{
+						map->decalShoot(ent->getOrigin(), "Hello world");
+					}
 				}
 			}
+
+			if (ImGui::Button("TEST VISIBILITY DATA"))
+			{
+				needReloadClipnodes = true;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted("CAN USE IT MARK ALL INVISIBLE CLIPNODES AND DEBUG VISIBILITY DATA");
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
 		}
+
 	}
 
 	if (renderer && map && renderer->needReloadDebugTextures)
@@ -2701,8 +2747,72 @@ void Gui::drawDebugWidget()
 		if (mapTexsUsage.size())
 			logf("Debug: Used {} wad files(include map file)\n", (int)mapTexsUsage.size());
 	}
-
 	ImGui::End();
+
+
+	if (needReloadClipnodes && !g_app->reloading)
+	{
+		for (auto& ent : map->ents)
+		{
+			if (ent->isWorldSpawn())
+			{
+				vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
+
+				vec3 renderOffset;
+				vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
+				renderOffset = mapOffset.flip();
+
+				static ImVec4 hullColors[] = {
+					ImVec4(1, 1, 1, 1),
+					ImVec4(0.3f, 1, 1, 1),
+					ImVec4(1, 0.3f, 1, 1),
+					ImVec4(1, 1, 0.3f, 1),
+				};
+				LeafDebug tmpLeafDebug;
+				std::vector<LeafDebug> leafIdxs;
+				for (int m = 0; m < map->modelCount; m++)
+				{
+					for (int i = 0; i < MAX_MAP_HULLS; i++)
+					{
+						std::vector<int> nodeBranch;
+						int childIdx = -1;
+						int leafIdx = -1;
+						int headNode = map->models[m].iHeadnodes[i];
+						int contents = map->pointContents(headNode, localCamera, i, nodeBranch, leafIdx, childIdx);
+						if (leafIdx >= 0)
+						{
+							bool found = false;
+							for (auto const& s : leafIdxs)
+							{
+								if (s.leafIdx == leafIdx)
+								{
+									found = true;
+									break;
+								}
+							}
+							if (found)
+								continue;
+							tmpLeafDebug.leafIdx = leafIdx;
+
+
+							BSPLEAF& startLeaf = map->leaves[leafIdx];
+							int thisLeafCount = map->leafCount;
+							tmpLeafDebug.leafVIS = new unsigned char[map->leafCount];
+							memset(tmpLeafDebug.leafVIS, 0xFF, map->leafCount);
+							DecompressVis(map->visdata + startLeaf.nVisOffset, tmpLeafDebug.leafVIS, map->leafCount, map->leafCount, map->visDataLength - startLeaf.nVisOffset);
+
+							leafIdxs.push_back(tmpLeafDebug);
+						}
+					}
+				}
+				map->getBspRender()->debugClipnodeVis = true;
+				map->getBspRender()->debugLeafIdx = leafIdxs;
+				map->getBspRender()->debugEntOffset = renderOffset;
+
+				map->getBspRender()->reloadClipnodes();
+			}
+		}
+	}
 }
 
 void Gui::drawKeyvalueEditor()
@@ -4711,8 +4821,6 @@ void Gui::drawSettings()
 				}
 			}
 
-			ImGui::NextColumn();
-
 			if (ImGui::Checkbox("Point Entities", &renderPointEnts))
 			{
 				g_render_flags ^= RENDER_POINT_ENTS;
@@ -4721,6 +4829,8 @@ void Gui::drawSettings()
 			{
 				g_render_flags ^= RENDER_ENTS;
 			}
+
+			ImGui::NextColumn();
 			if (ImGui::Checkbox("Special Solid Entities", &renderSpecialEnts))
 			{
 				g_render_flags ^= RENDER_SPECIAL_ENTS;
@@ -4737,22 +4847,6 @@ void Gui::drawSettings()
 			{
 				g_render_flags ^= RENDER_MODELS_ANIMATED;
 			}
-
-
-			ImGui::Columns(1);
-
-			ImGui::Separator();
-
-			ImGui::Text("Clipnode Rendering:");
-
-			ImGui::Columns(2, 0, false);
-			ImGui::RadioButton("Auto", &app->clipnodeRenderHull, -1);
-			ImGui::RadioButton("0 - Point", &app->clipnodeRenderHull, 0);
-			ImGui::RadioButton("1 - Human", &app->clipnodeRenderHull, 1);
-			ImGui::RadioButton("2 - Large", &app->clipnodeRenderHull, 2);
-			ImGui::RadioButton("3 - Head", &app->clipnodeRenderHull, 3);
-
-			ImGui::NextColumn();
 
 			if (ImGui::Checkbox("World Leaves", &renderWorldClipnodes))
 			{

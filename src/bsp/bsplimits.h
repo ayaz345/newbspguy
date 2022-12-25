@@ -13,6 +13,8 @@
 #define MAXLIGHTMAPS 4
 #define MAX_LIGHTSTYLES		256	// a byte limit, don't modify
 
+extern int LIGHTMAP_ATLAS_SIZE; //max for glTexImage2D
+
 extern float FLT_MAX_COORD;
 
 extern unsigned int MAX_MAP_MODELS;

@@ -2,7 +2,7 @@
 
 
 float FLT_MAX_COORD = 32767.f;
-
+int LIGHTMAP_ATLAS_SIZE = 1024;
 unsigned int MAX_MAP_MODELS = 4096;
 unsigned int MAX_MAP_NODES = 32768;
 unsigned int MAX_MAP_CLIPNODES = 32767;
@@ -25,7 +25,6 @@ unsigned int TEXTURE_STEP = 16;  // BSP 31 has 8
 void ResetBspLimits()
 {
 	FLT_MAX_COORD = 32767.f;
-
 	MAX_MAP_MODELS = 4096;
 	MAX_MAP_NODES = 32768;
 	MAX_MAP_CLIPNODES = 32767;

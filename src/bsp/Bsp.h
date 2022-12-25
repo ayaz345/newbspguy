@@ -27,6 +27,17 @@ enum ExportObjOrder
 	EXPORT_XZY
 };
 
+
+struct LeafDebug
+{
+	int leafIdx;
+	unsigned char* leafVIS;
+	LeafDebug()
+	{
+		leafIdx = 0;
+		leafVIS = 0;
+	}
+};
 class Bsp
 {
 public:
@@ -53,7 +64,7 @@ public:
 	bool replacedLump[32];
 
 
-	bool is_bsp_model;	
+	bool is_bsp_model;
 	bool is_mdl_model;
 	StudioModel* mdl;
 
@@ -89,7 +100,7 @@ public:
 	bool move(vec3 offset, int modelIdx = 0, bool onlyModel = false, bool forceMove = false, bool logged = true);
 
 	void move_texinfo(int idx, vec3 offset);
-	void write(const std::string & path);
+	void write(const std::string& path);
 
 	void print_info(bool perModelStats, int perModelLimit, int sortMode);
 	void print_model_hull(int modelIdx, int hull);
@@ -129,8 +140,8 @@ public:
 
 	// get cuts required to create bounding volumes for each solid leaf in the model
 	std::vector<NodeVolumeCuts> get_model_leaf_volume_cuts(int modelIdx, int hullIdx);
-	void get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output);
-	void get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output);
+	void get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANEX>& clipOrder, std::vector<NodeVolumeCuts>& output);
+	void get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANEX>& clipOrder, std::vector<NodeVolumeCuts>& output);
 
 	// this a cheat to recalculate plane normals after scaling a solid. Really I should get the plane
 	// intersection code working for nonconvex solids, but that's looking like a ton of work.
@@ -157,7 +168,7 @@ public:
 
 	// delete structures not used by the map (needed after deleting models/hulls)
 	STRUCTCOUNT remove_unused_model_structures(unsigned int target = CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES |
-											   CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS | 
+											   CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
 											   CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	void delete_model(int modelIdx);
 
@@ -224,7 +235,7 @@ public:
 
 	int get_ent_from_model(int modelIdx);
 
-	void decalShoot(vec3 pos, const char * texname);
+	void decalShoot(vec3 pos, const char* texname);
 
 	std::vector<STRUCTUSAGE*> get_sorted_model_infos(int sortMode);
 
@@ -241,21 +252,25 @@ public:
 
 	int delete_embedded_textures();
 
-	BSPMIPTEX* find_embedded_texture(const char* name, int & texid);
+	BSPMIPTEX* find_embedded_texture(const char* name, int& texid);
 	BSPMIPTEX* find_embedded_wad_texture(const char* name, int& texid);
 
 	void update_lump_pointers();
 
-	BspRenderer* getBspRender(); 
+	BspRenderer* getBspRender();
 	void setBspRender(BspRenderer* rnd);
 
-	void ExportToObjWIP(const std::string & path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1);
+	void ExportToObjWIP(const std::string& path, ExportObjOrder order = ExportObjOrder::EXPORT_XYZ, int iscale = 1);
 
-	void ExportToMapWIP(const std::string & path);
+	void ExportToMapWIP(const std::string& path);
 
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 
 	void hideEnts(bool hide = true);
+
+	std::vector<int> getLeafFaces(BSPLEAF& leaf);
+	std::vector<int> getFaceLeafs(int faceIdx);
+	int getFaceFromPlane(int iPlane);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, int oldLeafCount, int oldLeavesMemSize); // called after removing unused leaves
@@ -263,7 +278,7 @@ private:
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
 	void get_lightmaps(LIGHTMAP* outLightmaps, BSPMODEL* target, bool logged = false);
-	void resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int & newLightmapSize);
+	void resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int& newLightmapSize);
 
 	bool load_lumps(std::string fname);
 
@@ -296,7 +311,6 @@ private:
 	void remap_model_structures(int modelIdx, STRUCTREMAP* remap);
 	void remap_node_structures(int iNode, STRUCTREMAP* remap);
 	void remap_clipnode_structures(int iNode, STRUCTREMAP* remap);
-
 
 	BspRenderer* renderer;
 	unsigned int originCrc32 = 0;

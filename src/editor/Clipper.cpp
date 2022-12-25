@@ -6,14 +6,13 @@ Clipper::Clipper()
 {
 
 }
-
-CMesh Clipper::clip(std::vector<BSPPLANE>& clips)
+CMesh Clipper::clip(std::vector<BSPPLANEX>& clips)
 {
-	CMesh mesh = createMaxSizeVolume();
+	CMesh mesh = createMaxSizeVolume(clips.size() ? clips[0].planeId : -1);
 
 	for (int i = 0; i < clips.size(); i++)
 	{
-		BSPPLANE clip = clips[i];
+		BSPPLANEX clip = clips[i];
 
 		int result = clipVertices(mesh, clip);
 
@@ -35,7 +34,7 @@ CMesh Clipper::clip(std::vector<BSPPLANE>& clips)
 	return mesh;
 }
 
-int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
+int Clipper::clipVertices(CMesh& mesh, BSPPLANEX& clip)
 {
 	int positive = 0;
 	int negative = 0;
@@ -78,7 +77,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
 	return 0;
 }
 
-void Clipper::clipEdges(CMesh& mesh, BSPPLANE& clip)
+void Clipper::clipEdges(CMesh& mesh, BSPPLANEX& clip)
 {
 	for (int i = 0; i < mesh.edges.size(); i++)
 	{
@@ -139,9 +138,9 @@ void Clipper::clipEdges(CMesh& mesh, BSPPLANE& clip)
 	}
 }
 
-void Clipper::clipFaces(CMesh& mesh, BSPPLANE& clip)
+void Clipper::clipFaces(CMesh& mesh, BSPPLANEX& clip)
 {
-	CFace closeFace({}, clip.vNormal.invert());
+	CFace closeFace({}, clip.vNormal.invert(),clip.planeId);
 	int findex = (int)mesh.faces.size();
 
 	for (size_t i = 0; i < mesh.faces.size(); i++)
@@ -221,7 +220,7 @@ bool Clipper::getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final)
 	return start != -1 && final != -1;
 }
 
-CMesh Clipper::createMaxSizeVolume()
+CMesh Clipper::createMaxSizeVolume(int startface)
 {
 	const int MAX_DIM = 131072;
 	const vec3 min = vec3(-MAX_DIM, -MAX_DIM, -MAX_DIM);
@@ -260,12 +259,12 @@ CMesh Clipper::createMaxSizeVolume()
 	}
 
 	{
-		mesh.faces.emplace_back(CFace({0, 1, 2, 3}, vec3(0, -1, 0)));	// 0 front
-		mesh.faces.emplace_back(CFace({4, 5, 6, 7}, vec3(0, 1, 0)));	// 1 back
-		mesh.faces.emplace_back(CFace({1, 5, 8, 9}, vec3(-1, 0, 0)));	// 2 left
-		mesh.faces.emplace_back(CFace({3, 7, 10, 11}, vec3(1, 0, 0)));	// 3 right
-		mesh.faces.emplace_back(CFace({2, 6, 9, 11}, vec3(0, 0, 1)));	// 4 top
-		mesh.faces.emplace_back(CFace({0, 4, 8, 10}, vec3(0, 0, -1)));	// 5 bottom
+		mesh.faces.emplace_back(CFace({0, 1, 2, 3}, vec3(0, -1, 0), startface));	// 0 front
+		mesh.faces.emplace_back(CFace({4, 5, 6, 7}, vec3(0, 1, 0), startface));	// 1 back
+		mesh.faces.emplace_back(CFace({1, 5, 8, 9}, vec3(-1, 0, 0), startface));	// 2 left
+		mesh.faces.emplace_back(CFace({3, 7, 10, 11}, vec3(1, 0, 0), startface));	// 3 right
+		mesh.faces.emplace_back(CFace({2, 6, 9, 11}, vec3(0, 0, 1), startface));	// 4 top
+		mesh.faces.emplace_back(CFace({0, 4, 8, 10}, vec3(0, 0, -1), startface));	// 5 bottom
 	}
 
 	return mesh;

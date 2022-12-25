@@ -180,3 +180,20 @@ void SimpeColorReduce(COLOR3* image, int size);
 
 bool FindPathInAssets(const std::string& path, std::string& outpath, bool tracesearch = false);
 void FixupAllSystemPaths();
+
+int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p);
+#define BOX_ON_PLANE_SIDE( emins, emaxs, p )			\
+	((( p )->type < 3 ) ?				\
+	(						\
+		((p)->dist <= (emins)[(p)->type]) ?		\
+			1				\
+		:					\
+		(					\
+			((p)->dist >= (emaxs)[(p)->type]) ?	\
+				2			\
+			:				\
+				3			\
+		)					\
+	)						\
+	:						\
+		BoxOnPlaneSide(( emins ), ( emaxs ), ( p )))

@@ -292,10 +292,46 @@ struct Solid
 };
 #pragma pack(pop)
 // used to construct bounding volumes for solid leaves
+
+struct BSPPLANEX
+{
+	vec3 vNormal;
+	float fDist;
+	int nType;
+	int planeId;
+	// returns true if the plane was flipped
+	bool update(vec3 newNormal, float fdist);
+
+	BSPPLANEX()
+	{
+		vNormal = vec3();
+		fDist = 0.0f;
+		nType = 0;
+		planeId = -1;
+	}
+
+	BSPPLANEX(const BSPPLANE& other)
+	{
+		vNormal = other.vNormal;
+		fDist = other.fDist;
+		nType = other.nType;
+		planeId = -1;
+	}
+
+	BSPPLANEX(vec3 normal, float dist, int type)
+	{
+		vNormal = normal;
+		fDist = dist;
+		nType = type;
+		planeId = -1;
+	}
+};
+
+
 struct NodeVolumeCuts
 {
 	int nodeIdx;
-	std::vector<BSPPLANE> cuts; // cuts which define the leaf boundaries when applied to a bounding box, in order.
+	std::vector<BSPPLANEX> cuts; // cuts which define the leaf boundaries when applied to a bounding box, in order.
 };
 #pragma pack(push, 1)
 // Rendering constants

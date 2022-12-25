@@ -593,6 +593,71 @@ void expandBoundingBox(const vec2& v, vec2& mins, vec2& maxs)
 	if (v.y < mins.y) mins.y = v.y;
 }
 
+
+
+int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p)
+{
+	float	dist1, dist2;
+	int	sides = 0;
+	int signs = 0;
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (std::signbit(p->vNormal[i]))
+		{
+			signs += (1U << (i));
+		}
+	}
+
+	// general case
+	switch (signs)
+	{
+		case 0:
+			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+			break;
+		case 1:
+			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+			break;
+		case 2:
+			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+			break;
+		case 3:
+			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+			break;
+		case 4:
+			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+			break;
+		case 5:
+			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+			break;
+		case 6:
+			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+			break;
+		case 7:
+			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+			break;
+		default:
+			// shut up compiler
+			dist1 = dist2 = 0;
+			break;
+	}
+
+	if (dist1 >= p->fDist)
+		sides = 1;
+	if (dist2 < p->fDist)
+		sides |= 2;
+
+	return sides;
+}
+
 std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes)
 {
 	std::vector<vec3> intersectVerts;

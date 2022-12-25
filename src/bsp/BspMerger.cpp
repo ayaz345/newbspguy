@@ -27,7 +27,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 				if (abs(block.offset.x) >= EPSILON || abs(block.offset.y) >= EPSILON || abs(block.offset.z) >= EPSILON)
 				{
-					logf("    Apply offset (%6.0f, %6.0f, %6.0f) to {}\n",
+					logf("    Apply offset ({:6.0f}, {:6.0f}, {:6.0f}) to {}\n",
 						 block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
 					block.map->move(block.offset);
 				}
@@ -130,7 +130,7 @@ void BspMerger::merge(MAPBLOCK& dst, MAPBLOCK& src, std::string resultType)
 	std::string thisName = dst.merge_name.size() ? dst.merge_name : dst.map->bsp_name;
 	std::string otherName = src.merge_name.size() ? src.merge_name : src.map->bsp_name;
 	dst.merge_name = std::move(resultType);
-	logf("    %-8s = {} + {}\n", dst.merge_name, thisName, otherName);
+	logf("    {:-8s} = {} + {}\n", dst.merge_name, thisName, otherName);
 
 	merge(*dst.map, *src.map);
 }
@@ -210,16 +210,16 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	vec3 mergedMapMin = mergedMapSize * -0.5f;
 	vec3 mergedMapMax = mergedMapMin + mergedMapSize;
 
-	logf("Max map size:      width=%.0f length=%.0f height=%.0f\n", maxDims.x, maxDims.y, maxDims.z);
-	logf("Max maps per axis: x=%.0f y=%.0f z=%.0f  (total=%.0f)\n", maxMapsPerRow, maxMapsPerCol, maxMapsPerLayer, maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
+	logf("Max map size:      width={:.0f} length={:.0f} height={:.0f}\n", maxDims.x, maxDims.y, maxDims.z);
+	logf("Max maps per axis: x={:.0f} y={:.0f} z={:.0f}  (total={:.0f})\n", maxMapsPerRow, maxMapsPerCol, maxMapsPerLayer, maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
 
 	float actualWidth = std::min(idealMapsPerAxis, (float)maps.size());
 	float actualLength = std::min(idealMapsPerAxis, (float)ceil(maps.size() / (float)(idealMapsPerAxis)));
 	float actualHeight = std::min(idealMapsPerAxis, (float)ceil(maps.size() / (float)(idealMapsPerAxis * idealMapsPerAxis)));
-	logf("Merged map size:   %.0fx%.0fx%.0f maps\n", actualWidth, actualLength, actualHeight);
+	logf("Merged map size:   {:.0f}x{:.0f}x{:.0f} maps\n", actualWidth, actualLength, actualHeight);
 
-	logf("Merged map bounds: min=(%.0f, %.0f, %.0f)\n"
-		 "                   max=(%.0f, %.0f, %.0f)\n",
+	logf("Merged map bounds: min=({:.0f},{:.0f}, {:.0f})\n"
+		 "                   max=({:.0f}, {:.0f},{:.0f})\n",
 		 mergedMapMin.x, mergedMapMin.y, mergedMapMin.z,
 		 mergedMapMax.x, mergedMapMax.y, mergedMapMax.z);
 
@@ -238,8 +238,8 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 				MAPBLOCK& block = blocks[blockIdx];
 
 				block.offset = targetMins - block.mins;
-				//logf("block {}: %.0f %.0f %.0f\n", blockIdx, targetMins.x, targetMins.y, targetMins.z);
-				//logf("{} offset: %.0f %.0f %.0f\n", block.map->name, block.offset.x, block.offset.y, block.offset.z);
+				//logf("block {}: {:.0f} {:.0f} {:.0f}\n", blockIdx, targetMins.x, targetMins.y, targetMins.z);
+				//logf("{} offset: {:.0f} {:.0f} {:.0f}\n", block.map->name, block.offset.x, block.offset.y, block.offset.z);
 
 				row.push_back(block);
 
@@ -1066,11 +1066,11 @@ BSPPLANE BspMerger::separate(Bsp& mapA, Bsp& mapB)
 		separationPlane.nType = -1; // no simple separating axis
 
 		logf("Bounding boxes for each map:\n");
-		logf("(%6.0f, %6.0f, %6.0f)", amin.x, amin.y, amin.z);
-		logf(" - (%6.0f, %6.0f, %6.0f) {}\n", amax.x, amax.y, amax.z, mapA.bsp_name);
+		logf("({:6.0f}, {:6.0f}, {:6.0f})", amin.x, amin.y, amin.z);
+		logf(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", amax.x, amax.y, amax.z, mapA.bsp_name);
 
-		logf("(%6.0f, %6.0f, %6.0f)", bmin.x, bmin.y, bmin.z);
-		logf(" - (%6.0f, %6.0f, %6.0f) {}\n", bmax.x, bmax.y, bmax.z, mapB.bsp_name);
+		logf("({:6.0f}, {:6.0f}, {:6.0f})", bmin.x, bmin.y, bmin.z);
+		logf(" - ({:6.0f}, {:6.0f}, {:6.0f}) {}\n", bmax.x, bmax.y, bmax.z, mapB.bsp_name);
 	}
 
 	return separationPlane;
@@ -1808,12 +1808,12 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	// decompress this map's world leaves
 	// model leaves don't need to be decompressed because the game ignores VIS for them.
 	decompress_vis_lump(allLeaves, mapA.visdata, decompressedVis,
-						thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_VISIBILITY].nLength);
+						thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_VISIBILITY].nLength, mapA.visDataLength);
 
 	// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
 	unsigned char* decompressedOtherVis = decompressedVis + thisWorldLeafCount * newVisRowSize;
 	decompress_vis_lump(allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
-						otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_VISIBILITY].nLength);
+						otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_VISIBILITY].nLength,mapB.visDataLength);
 
 	// shift mapB's world leaves after mapA's world leaves
 
@@ -1932,7 +1932,7 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 	if (swapNodeChildren)
 		separationPlane.vNormal = separationPlane.vNormal.invert();
 
-	//logf("Separating plane: (%.0f, %.0f, %.0f) %.0f\n", separationPlane.vNormal.x, separationPlane.vNormal.y, separationPlane.vNormal.z, separationPlane.fDist);
+	//logf("Separating plane: ({:.0f}, {:.0f}, {:.0f}) {:.0f}\n", separationPlane.vNormal.x, separationPlane.vNormal.y, separationPlane.vNormal.z, separationPlane.fDist);
 
 	// write separating plane
 

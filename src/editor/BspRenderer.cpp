@@ -4,11 +4,13 @@
 #include "VertexBuffer.h"
 #include "primitives.h"
 #include "rad.h"
+#include "vis.h"
 #include "lodepng.h"
 #include "Renderer.h"
 #include "Clipper.h"
 #include "Command.h"
 #include "icons/missing.h"
+
 
 BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _fullBrightBspShader,
 						 ShaderProgram* _colorShader, PointEntRenderer* _pointEntRenderer)
@@ -19,6 +21,11 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	this->fullBrightBspShader = _fullBrightBspShader;
 	this->colorShader = _colorShader;
 	this->pointEntRenderer = _pointEntRenderer;
+
+
+	debugEntOffset = vec3();
+	debugClipnodeVis = false;
+	debugLeafIdx = std::vector<LeafDebug>();
 
 	renderEnts = NULL;
 	renderModels = NULL;
@@ -487,9 +494,9 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 	}
 
 	logf("Created {} solid render groups ({} world, {} entity)\n",
-		   worldRenderGroups + modelRenderGroups,
-		   worldRenderGroups,
-		   modelRenderGroups);
+		 worldRenderGroups + modelRenderGroups,
+		 worldRenderGroups,
+		 modelRenderGroups);
 }
 
 void BspRenderer::deleteRenderModel(RenderModel* renderModel)
@@ -921,205 +928,250 @@ void BspRenderer::loadClipnodes()
 	for (int i = 0; i < numRenderClipnodes; i++)
 		renderClipnodes[i] = RenderClipnodes();
 
-	for (int i = 0; i < numRenderClipnodes; i++)
+	if (map)
 	{
-		generateClipnodeBuffer(i);
+		for (int i = 0; i < numRenderClipnodes; i++)
+		{
+			for (int hull = 0; hull < MAX_MAP_HULLS; hull++)
+			{
+				generateClipnodeBufferForHull(i, hull);
+			}
+		}
 	}
+	debugClipnodeVis = false;
+}
+
+void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
+{
+	if (debugClipnodeVis && debugLeafIdx.empty())
+		return;
+
+	BSPMODEL& model = map->models[modelIdx];
+	RenderClipnodes* renderClip = &renderClipnodes[modelIdx];
+
+	Clipper clipper;
+
+	vec3 min = vec3(model.nMins.x, model.nMins.y, model.nMins.z);
+	vec3 max = vec3(model.nMaxs.x, model.nMaxs.y, model.nMaxs.z);
+
+	if (renderClip->clipnodeBuffer[hullId])
+		delete renderClip->clipnodeBuffer[hullId];
+	if (renderClip->wireframeClipnodeBuffer[hullId])
+		delete renderClip->wireframeClipnodeBuffer[hullId];
+
+	renderClip->clipnodeBuffer[hullId] = NULL;
+	renderClip->wireframeClipnodeBuffer[hullId] = NULL;
+
+	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullId);
+
+	std::vector<CMesh> meshes;
+	for (int k = 0; k < solidNodes.size(); k++)
+	{
+		meshes.emplace_back(clipper.clip(solidNodes[k].cuts));
+		clipnodeLeafCount++;
+	}
+
+	static COLOR4 hullColors[] = {
+		COLOR4(255, 255, 255, 128),
+		COLOR4(96, 255, 255, 128),
+		COLOR4(255, 96, 255, 128),
+		COLOR4(255, 255, 96, 128),
+	};
+	COLOR4 color = hullColors[hullId];
+
+	std::vector<cVert> allVerts;
+	std::vector<cVert> wireframeVerts;
+	std::vector<FaceMath> tfaceMaths;
+
+	for (int m = 0; m < meshes.size(); m++)
+	{
+		CMesh& mesh = meshes[m];
+
+		for (int n = 0; n < mesh.faces.size(); n++)
+		{
+			if (!mesh.faces[n].visible)
+			{
+				continue;
+			}
+			std::set<int> uniqueFaceVerts;
+
+			for (int k = 0; k < mesh.faces[n].edges.size(); k++)
+			{
+				for (int v = 0; v < 2; v++)
+				{
+					int vertIdx = mesh.edges[mesh.faces[n].edges[k]].verts[v];
+					if (!mesh.verts[vertIdx].visible || uniqueFaceVerts.count(vertIdx))
+					{
+						continue;
+					}
+					uniqueFaceVerts.insert(vertIdx);
+				}
+			}
+
+			std::vector<vec3> faceVerts;
+			for (auto vertIdx : uniqueFaceVerts)
+			{
+				faceVerts.push_back(mesh.verts[vertIdx].pos);
+			}
+
+			faceVerts = getSortedPlanarVerts(faceVerts);
+
+			if (faceVerts.size() < 3)
+			{
+				// logf("Degenerate clipnode face discarded\n");
+				continue;
+			}
+
+			vec3 normal = getNormalFromVerts(faceVerts);
+
+
+			if (dotProduct(mesh.faces[n].normal, normal) > 0)
+			{
+				reverse(faceVerts.begin(), faceVerts.end());
+				normal = normal.invert();
+			}
+
+			// calculations for face picking
+			FaceMath faceMath;
+			faceMath.normal = mesh.faces[n].normal;
+			faceMath.fdist = getDistAlongAxis(mesh.faces[n].normal, faceVerts[0]);
+
+			vec3 v0 = faceVerts[0];
+			vec3 v1;
+			bool found = false;
+			for (int c = 1; c < faceVerts.size(); c++)
+			{
+				if (faceVerts[c] != v0)
+				{
+					v1 = faceVerts[c];
+					found = true;
+					break;
+				}
+			}
+			if (!found)
+			{
+				logf("Failed to find non-duplicate vert for clipnode face\n");
+			}
+
+			vec3 plane_z = mesh.faces[n].normal;
+			vec3 plane_x = (v1 - v0).normalize();
+			vec3 plane_y = crossProduct(plane_z, plane_x).normalize();
+
+			faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
+
+			faceMath.localVerts = std::vector<vec2>(faceVerts.size());
+			for (int k = 0; k < faceVerts.size(); k++)
+			{
+				faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xy();
+			}
+
+			tfaceMaths.push_back(faceMath);
+		// create the verts for rendering
+			for (int c = 0; c < faceVerts.size(); c++)
+			{
+				faceVerts[c] = faceVerts[c].flip();
+			}
+
+			COLOR4 wireframeColor = {0, 0, 0, 255};
+			for (int k = 0; k < faceVerts.size(); k++)
+			{
+				wireframeVerts.emplace_back(cVert(faceVerts[k], wireframeColor));
+				wireframeVerts.emplace_back(cVert(faceVerts[(k + 1) % faceVerts.size()], wireframeColor));
+			}
+
+			vec3 lightDir = vec3(1, 1, -1).normalize();
+			float dot = (dotProduct(normal, lightDir) + 1) / 2.0f;
+			if (dot > 0.5f)
+			{
+				dot = dot * dot;
+			}
+
+			COLOR4 faceColor = color * (dot);
+
+			bool isVisibled = false;
+			if (debugClipnodeVis)
+			{
+				int faceIdx = map->getFaceFromPlane(mesh.faces[n].planeIdx);
+				auto faceLeafs = map->getFaceLeafs(faceIdx);
+
+				if (mesh.faces[n].planeIdx >= 0)
+				{
+					for (auto leafIdx : debugLeafIdx)
+					{
+						if (leafIdx.leafIdx < 0)
+						{
+							continue;
+						}
+
+						for (auto fLeaf : faceLeafs)
+						{
+							if (fLeaf < 0)
+								continue;
+							if (CHECKVISBIT(leafIdx.leafVIS, fLeaf))
+							{
+								isVisibled = true;
+								break;
+							}
+						}
+
+						if (isVisibled )
+							break;
+					}
+				}
+			}
+
+			if (isVisibled )
+			{
+				faceColor = COLOR4(255, 0, 0, 150);
+			}
+
+			// convert from TRIANGLE_FAN style verts to TRIANGLES
+			for (int k = 2; k < faceVerts.size(); k++)
+			{
+				allVerts.emplace_back(cVert(faceVerts[0], faceColor));
+				allVerts.emplace_back(cVert(faceVerts[k - 1], faceColor));
+				allVerts.emplace_back(cVert(faceVerts[k], faceColor));
+			}
+
+		}
+	}
+
+	cVert* output = new cVert[allVerts.size()];
+	for (int c = 0; c < allVerts.size(); c++)
+	{
+		output[c] = allVerts[c];
+	}
+
+	cVert* wireOutput = new cVert[wireframeVerts.size()];
+	for (int c = 0; c < wireframeVerts.size(); c++)
+	{
+		wireOutput[c] = wireframeVerts[c];
+	}
+
+	renderClip->faceMaths[hullId].clear();
+
+	if (allVerts.empty() || wireframeVerts.empty())
+	{
+		return;
+	}
+
+	renderClip->clipnodeBuffer[hullId] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
+	renderClip->clipnodeBuffer[hullId]->ownData = true;
+
+	renderClip->wireframeClipnodeBuffer[hullId] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
+	renderClip->wireframeClipnodeBuffer[hullId]->ownData = true;
+
+	renderClip->faceMaths[hullId] = std::move(tfaceMaths);
 }
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
 {
 	if (!map)
 		return;
-	BSPMODEL& model = map->models[modelIdx];
-	RenderClipnodes* renderClip = &renderClipnodes[modelIdx];
-
-	vec3 min = vec3(model.nMins.x, model.nMins.y, model.nMins.z);
-	vec3 max = vec3(model.nMaxs.x, model.nMaxs.y, model.nMaxs.z);
 
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
 	{
-		if (renderClip->clipnodeBuffer[i])
-			delete renderClip->clipnodeBuffer[i];
-		if (renderClip->wireframeClipnodeBuffer[i])
-			delete renderClip->wireframeClipnodeBuffer[i];
-		renderClip->clipnodeBuffer[i] = NULL;
-		renderClip->wireframeClipnodeBuffer[i] = NULL;
-	}
-
-	Clipper clipper;
-
-	for (int i = 0; i < MAX_MAP_HULLS; i++)
-	{
-		std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, i);
-
-		std::vector<CMesh> meshes;
-		for (int k = 0; k < solidNodes.size(); k++)
-		{
-			meshes.emplace_back(clipper.clip(solidNodes[k].cuts));
-			clipnodeLeafCount++;
-		}
-
-		static COLOR4 hullColors[] = {
-			COLOR4(255, 255, 255, 128),
-			COLOR4(96, 255, 255, 128),
-			COLOR4(255, 96, 255, 128),
-			COLOR4(255, 255, 96, 128),
-		};
-		COLOR4 color = hullColors[i];
-
-		std::vector<cVert> allVerts;
-		std::vector<cVert> wireframeVerts;
-		std::vector<FaceMath> tfaceMaths;
-
-		for (int m = 0; m < meshes.size(); m++)
-		{
-			CMesh& mesh = meshes[m];
-
-			for (int n = 0; n < mesh.faces.size(); n++)
-			{
-				if (!mesh.faces[n].visible)
-				{
-					continue;
-				}
-
-				std::set<int> uniqueFaceVerts;
-
-				for (int k = 0; k < mesh.faces[n].edges.size(); k++)
-				{
-					for (int v = 0; v < 2; v++)
-					{
-						int vertIdx = mesh.edges[mesh.faces[n].edges[k]].verts[v];
-						if (!mesh.verts[vertIdx].visible || uniqueFaceVerts.count(vertIdx))
-						{
-							continue;
-						}
-						uniqueFaceVerts.insert(vertIdx);
-					}
-				}
-
-				std::vector<vec3> faceVerts;
-				for (auto vertIdx : uniqueFaceVerts)
-				{
-					faceVerts.push_back(mesh.verts[vertIdx].pos);
-				}
-
-				faceVerts = getSortedPlanarVerts(faceVerts);
-
-				if (faceVerts.size() < 3)
-				{
-//logf("Degenerate clipnode face discarded\n");
-					continue;
-				}
-
-				vec3 normal = getNormalFromVerts(faceVerts);
-
-				if (dotProduct(mesh.faces[n].normal, normal) > 0)
-				{
-					reverse(faceVerts.begin(), faceVerts.end());
-					normal = normal.invert();
-				}
-
-				// calculations for face picking
-				{
-					FaceMath faceMath;
-					faceMath.normal = mesh.faces[n].normal;
-					faceMath.fdist = getDistAlongAxis(mesh.faces[n].normal, faceVerts[0]);
-
-					vec3 v0 = faceVerts[0];
-					vec3 v1;
-					bool found = false;
-					for (int c = 1; c < faceVerts.size(); c++)
-					{
-						if (faceVerts[c] != v0)
-						{
-							v1 = faceVerts[c];
-							found = true;
-							break;
-						}
-					}
-					if (!found)
-					{
-						logf("Failed to find non-duplicate vert for clipnode face\n");
-					}
-
-					vec3 plane_z = mesh.faces[n].normal;
-					vec3 plane_x = (v1 - v0).normalize();
-					vec3 plane_y = crossProduct(plane_z, plane_x).normalize();
-					faceMath.worldToLocal = worldToLocalTransform(plane_x, plane_y, plane_z);
-
-					faceMath.localVerts = std::vector<vec2>(faceVerts.size());
-					for (int k = 0; k < faceVerts.size(); k++)
-					{
-						faceMath.localVerts[k] = (faceMath.worldToLocal * vec4(faceVerts[k], 1)).xy();
-					}
-
-					tfaceMaths.push_back(faceMath);
-				}
-
-				// create the verts for rendering
-				{
-					for (int c = 0; c < faceVerts.size(); c++)
-					{
-						faceVerts[c] = faceVerts[c].flip();
-					}
-
-					COLOR4 wireframeColor = {0, 0, 0, 255};
-					for (int k = 0; k < faceVerts.size(); k++)
-					{
-						wireframeVerts.emplace_back(cVert(faceVerts[k], wireframeColor));
-						wireframeVerts.emplace_back(cVert(faceVerts[(k + 1) % faceVerts.size()], wireframeColor));
-					}
-
-					vec3 lightDir = vec3(1, 1, -1).normalize();
-					float dot = (dotProduct(normal, lightDir) + 1) / 2.0f;
-					if (dot > 0.5f)
-					{
-						dot = dot * dot;
-					}
-					COLOR4 faceColor = color * (dot);
-
-					// convert from TRIANGLE_FAN style verts to TRIANGLES
-					for (int k = 2; k < faceVerts.size(); k++)
-					{
-						allVerts.emplace_back(cVert(faceVerts[0], faceColor));
-						allVerts.emplace_back(cVert(faceVerts[k - 1], faceColor));
-						allVerts.emplace_back(cVert(faceVerts[k], faceColor));
-					}
-				}
-			}
-		}
-
-		cVert* output = new cVert[allVerts.size()];
-		for (int c = 0; c < allVerts.size(); c++)
-		{
-			output[c] = allVerts[c];
-		}
-
-		cVert* wireOutput = new cVert[wireframeVerts.size()];
-		for (int c = 0; c < wireframeVerts.size(); c++)
-		{
-			wireOutput[c] = wireframeVerts[c];
-		}
-
-		if (allVerts.empty() || wireframeVerts.empty())
-		{
-			if (renderClip->clipnodeBuffer[i])
-				delete renderClip->clipnodeBuffer[i];
-			if (renderClip->wireframeClipnodeBuffer[i])
-				delete renderClip->wireframeClipnodeBuffer[i];
-			renderClip->clipnodeBuffer[i] = NULL;
-			renderClip->wireframeClipnodeBuffer[i] = NULL;
-			continue;
-		}
-
-		renderClip->clipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
-		renderClip->clipnodeBuffer[i]->ownData = true;
-
-		renderClip->wireframeClipnodeBuffer[i] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
-		renderClip->wireframeClipnodeBuffer[i]->ownData = true;
-
-		renderClip->faceMaths[i] = std::move(tfaceMaths);
+		generateClipnodeBufferForHull(modelIdx, i);
 	}
 }
 
@@ -1360,7 +1412,7 @@ void BspRenderer::refreshEnt(int entIdx)
 						}
 					}
 				}
-				else 
+				else
 				{
 					if (renderEnts[entIdx].mdl)
 					{
@@ -1473,7 +1525,7 @@ void BspRenderer::refreshEnt(int entIdx)
 				body /= pbodypart->nummodels;
 				pbodypart++;
 			}
-			
+
 		}
 	}
 

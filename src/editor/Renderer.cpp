@@ -856,6 +856,14 @@ void Renderer::renderLoop()
 	tempmodel->UpdateModelMeshList();
 	tempmodelBuff->setData(&tempmodel->mdl_meshes[0][0].verts[0], tempmodel->mdl_meshes[0][0].verts.size());*/
 
+	int value;
+	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value);
+
+	if (LIGHTMAP_ATLAS_SIZE > value)
+	{
+		logf("Decrease LIGHTMAP_ATLAS_SIZE to {}\n", value);
+	}
+
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_FRONT);
@@ -1227,8 +1235,6 @@ void Renderer::renderLoop()
 
 		vec3 forward, right, up;
 		makeVectors(cameraAngles, forward, right, up);
-		//logf("DRAW %.1f %.1f %.1f -> %.1f %.1f %.1f\n", pickStart.x, pickStart.y, pickStart.z, pickDir.x, pickDir.y, pickDir.z);
-
 		if (!hideGui)
 			gui->draw();
 

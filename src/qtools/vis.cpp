@@ -1,4 +1,5 @@
 #include "vis.h"
+#include "bsptypes.h"
 #include "Bsp.h"
 
 bool g_debug_shift = false;
@@ -72,7 +73,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 	{
 		if (g_debug_shift)
 		{
-			logf("%2d = ", k);
+			logf("{:2d} = ", k);
 			printVisRow(vis, len, offsetLeaf, mask);
 		}
 
@@ -133,7 +134,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 
 		if (g_debug_shift && k == bitShifts - 1)
 		{
-			logf("%2d = ", k + 1);
+			logf("{:2d} = ", k + 1);
 			printVisRow(vis, len, offsetLeaf, mask);
 		}
 	}
@@ -204,7 +205,7 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 				continue;
 			}
 
-			if (abs(leafLump[i].nVisOffset > visLumpMemSize))
+			if (abs(leafLump[i].nVisOffset >= visLumpMemSize))
 			{
 				logf("Overflow decompressing VIS lump! #1\n");
 			}

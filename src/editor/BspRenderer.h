@@ -11,8 +11,6 @@
 #include <future>
 #include "mdl_studio.h"
 
-#define LIGHTMAP_ATLAS_SIZE 512
-
 class Command;
 
 enum RenderFlags
@@ -169,6 +167,10 @@ public:
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
 
+	vec3 debugEntOffset;
+	bool debugClipnodeVis;
+	std::vector<LeafDebug> debugLeafIdx;
+
 	BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* fullBrightBspShader, ShaderProgram* colorShader, PointEntRenderer* pointEntRenderer);
 	~BspRenderer();
 
@@ -261,6 +263,7 @@ public:
 	void loadLightmaps();
 	void genRenderFaces(int& renderModelCount);
 	void loadClipnodes();
+	void generateClipnodeBufferForHull(int modelIdx, int hullId);
 	void generateClipnodeBuffer(int modelIdx);
 	void deleteRenderModel(RenderModel* renderModel);
 	void deleteRenderModelClipnodes(RenderClipnodes* renderClip);

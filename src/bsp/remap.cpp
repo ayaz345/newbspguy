@@ -104,7 +104,7 @@ void print_stat_mem(int indent, int bytes, const char* data)
 	{
 		return;
 	}
-	logf("{} %.2f KB of {}\n", bytes > 0 ? "Deleted" : "Added", abs(bytes) / 1024.0f, data);
+	logf("{} {:.2f} KB of {}\n", bytes > 0 ? "Deleted" : "Added", abs(bytes) / 1024.0f, data);
 }
 
 void STRUCTCOUNT::print_delete_stats(int indent)

@@ -543,7 +543,7 @@ std::vector<NodeVolumeCuts> Bsp::get_model_leaf_volume_cuts(int modelIdx, int hu
 
 		if (nodeIdx >= 0 && is_valid_node)
 		{
-			std::vector<BSPPLANE> clipOrder;
+			std::vector<BSPPLANEX> clipOrder;
 			if (hullIdx == 0)
 			{
 				get_node_leaf_cuts(nodeIdx, 0, clipOrder, modelVolumeCuts);
@@ -557,7 +557,7 @@ std::vector<NodeVolumeCuts> Bsp::get_model_leaf_volume_cuts(int modelIdx, int hu
 	return modelVolumeCuts;
 }
 
-void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
+void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANEX>& clipOrder, std::vector<NodeVolumeCuts>& output)
 {
 	BSPCLIPNODE& node = clipnodes[iNode];
 
@@ -568,7 +568,8 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE
 
 	for (int i = 0; i < 2; i++)
 	{
-		BSPPLANE plane = planes[node.iPlane];
+		BSPPLANEX plane = planes[node.iPlane];
+		plane.planeId = node.iPlane;
 		if (i != 0)
 		{
 			plane.vNormal = plane.vNormal.invert();
@@ -606,13 +607,15 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE
 	}
 }
 
-void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
+void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANEX>& clipOrder, std::vector<NodeVolumeCuts>& output)
 {
 	BSPNODE& node = nodes[iNode];
 
 	for (int i = 0; i < 2; i++)
 	{
-		BSPPLANE plane = planes[node.iPlane];
+		BSPPLANEX plane = planes[node.iPlane];
+		plane.planeId = node.iPlane;
+
 		if (i != 0)
 		{
 			plane.vNormal = plane.vNormal.invert();
@@ -1232,7 +1235,7 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int& 
 			face.nLightmapOffset = lightmapOffset;
 			lightmapOffset += newSz;
 		}
-		delete [] newLightData;
+		delete[] newLightData;
 	}
 	newLightmapSize = lightmapOffset;
 }
@@ -2686,16 +2689,16 @@ void Bsp::print_stat(const std::string& name, unsigned int val, unsigned int max
 		print_color(PRINT_RED | PRINT_GREEN | PRINT_BLUE);
 	}
 
-	logf("%-12s  ", name);
+	logf("{:-12s}  ", name);
 	if (isMem)
 	{
-		logf("%8.2f / %-5.2f MB", val / meg, max / meg);
+		logf("{:8.2f} /{:5.2f} MB", val / meg, max / meg);
 	}
 	else
 	{
-		logf("%8u / %-8u", val, max);
+		logf("{:8u} / {:-8u}", val, max);
 	}
-	logf("  %6.1f%%", percent);
+	logf(" {:6.1f}%", percent);
 
 	if (val > max)
 	{
@@ -2725,14 +2728,14 @@ void Bsp::print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bo
 
 	if (isMem)
 	{
-		logf("%8.1f / %-5.1f MB", val / meg, max / meg);
+		logf("{:8.1f} / {:-5.1f} MB", val / meg, max / meg);
 	}
 	else
 	{
-		logf("%-26s %-26s *%-6d %9d", classname, targetname, modelInfo->modelIdx, val);
+		logf("{:-26s} {:-26s} *{:-6d} {:9d}", classname, targetname, modelInfo->modelIdx, val);
 	}
 	if (percent >= 0.1f)
-		logf("  %6.1f%%", percent);
+		logf("  {:6.1f}%", percent);
 
 	logf("\n");
 }
@@ -3048,7 +3051,7 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 			case SORT_FACES:		maxCount = faceCount; countName = "  Faces";  break;
 		}
 
-		logf("       Classname                  Targetname          Model  %-10s  Usage\n", countName);
+		logf("       Classname                  Targetname          Model  {:-10s}  Usage\n", countName);
 		logf("-------------------------  -------------------------  -----  ----------  --------\n");
 
 		for (int i = 0; i < modelCount && i < perModelLimit; i++)
@@ -3113,7 +3116,7 @@ void Bsp::print_clipnode_tree(int iNode, int depth)
 	else
 	{
 		BSPPLANE& plane = planes[clipnodes[iNode].iPlane];
-		logf("NODE (%.2f, %.2f, %.2f) @ %.2f\n", plane.vNormal.x, plane.vNormal.y, plane.vNormal.z, plane.fDist);
+		logf("NODE ({.2f}, {:.2f}, {:.2f} @ {:.2}\n", plane.vNormal.x, plane.vNormal.y, plane.vNormal.z, plane.fDist);
 	}
 
 
@@ -3223,10 +3226,10 @@ void Bsp::print_node(const BSPNODE& node)
 
 int Bsp::pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nodeBranch, int& leafIdx, int& childIdx)
 {
+	leafIdx = -1;
+	childIdx = -1;
 	if (iNode < 0)
 	{
-		leafIdx = -1;
-		childIdx = -1;
 		return CONTENTS_EMPTY;
 	}
 
@@ -3275,6 +3278,7 @@ int Bsp::pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nod
 			}
 		}
 
+		//leafIdx = ~iNode;
 		return iNode;
 	}
 }
@@ -3334,7 +3338,7 @@ void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 		int edgeIdx = surfedges[face.iFirstEdge + e];
 		BSPEDGE& edge = edges[abs(edgeIdx)];
 		int vertIdx = edgeIdx >= 0 ? edge.iVertex[1] : edge.iVertex[0];
-
+	
 		usage->surfEdges[face.iFirstEdge + e] = true;
 		usage->edges[abs(edgeIdx)] = true;
 		usage->verts[vertIdx] = true;
@@ -3691,7 +3695,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	}
 	char name[MAXTEXTURENAME];
 	memset(name, 0, MAXTEXTURENAME);
-	memcpy(name, oldname, std::min(MAXTEXTURENAME,(int)strlen(oldname)));
+	memcpy(name, oldname, std::min(MAXTEXTURENAME, (int)strlen(oldname)));
 
 	logf("Adding new {} texture '{}' with size {}x{}\n", !data ? "embedded" : "wad", name, width, height);
 
@@ -4988,7 +4992,7 @@ void Bsp::write_csg_outputs(const std::string& path)
 			if (i == LUMP_PLANES)
 			{
 				int count = bsp_header.lump[i].nLength / sizeof(BSPPLANE);
-				logf("BSP HAS {} PLANES\n",count);
+				logf("BSP HAS {} PLANES\n", count);
 			}
 		}
 		else
@@ -5036,7 +5040,7 @@ void Bsp::write_csg_polys(int nodeIdx, FILE* polyfile, int flipPlaneSkip, bool d
 			if (debug)
 			{
 				BSPPLANE plane = planes[iPlane];
-				logf("Writing face (%2.0f %2.0f %2.0f) %4.0f  {}\n",
+				logf("Writing face ({:2.0f} {:2.0f} {:2.0f}) {:4.0f}  {}\n",
 					 plane.vNormal.x, plane.vNormal.y, plane.vNormal.z, plane.fDist,
 					 (faceContents == CONTENTS_SOLID ? "SOLID" : "EMPTY"));
 				if (flipped && false)
@@ -5548,4 +5552,48 @@ void Bsp::hideEnts(bool hide)
 			}
 		}
 	}
+}
+
+std::vector<int> Bsp::getLeafFaces(BSPLEAF& leaf)
+{
+	std::vector<int> retFaces;
+	int detaillevel = 0; // no way to know which faces came from a func_detail
+
+	for (int i = leaf.iFirstMarkSurface; i < leaf.iFirstMarkSurface + leaf.nMarkSurfaces; i++)
+	{
+		retFaces.push_back(marksurfs[i]);
+	}
+	return retFaces;
+}
+
+std::vector<int> Bsp::getFaceLeafs(int faceIdx)
+{
+	std::vector<int> retLeafes;
+
+	for (int l = 0; l < leafCount; l++)
+	{
+		BSPLEAF& leaf = leaves[l];
+
+		for (int i = leaf.iFirstMarkSurface; i < leaf.nMarkSurfaces + leaf.iFirstMarkSurface; i++)
+		{
+			if (marksurfs[i] == faceIdx)
+			{
+				retLeafes.push_back(l);
+			}
+		}
+	}
+	
+	return retLeafes;
+}
+
+int Bsp::getFaceFromPlane(int iPlane)
+{
+	for (int i = 0; i < faceCount; i++)
+	{
+		if (faces[i].iPlane == iPlane)
+		{
+			return i;
+		}
+	}
+	return -1;
 }

@@ -210,7 +210,6 @@ public:
 	void clearSelection();
 	void updateEnts();
 	bool isEntTransparent(const char* classname);
-private:
 	Bsp* SelectedMap = NULL;
 	PointEntRenderer* pointEntRenderer;
 	PointEntRenderer* swapPointEntRenderer = NULL;
