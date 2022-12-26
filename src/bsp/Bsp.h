@@ -272,6 +272,7 @@ public:
 	std::vector<int> getLeafFaces(BSPLEAF& leaf);
 	std::vector<int> getFaceLeafs(int faceIdx);
 	int getFaceFromPlane(int iPlane);
+	std::vector<int> getFacesFromPlane(int iPlane);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, int oldLeafCount, int oldLeavesMemSize); // called after removing unused leaves

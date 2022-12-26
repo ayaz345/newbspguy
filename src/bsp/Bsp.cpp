@@ -5608,3 +5608,16 @@ int Bsp::getFaceFromPlane(int iPlane)
 	}
 	return -1;
 }
+
+std::vector<int> Bsp::getFacesFromPlane(int iPlane)
+{
+	std::vector<int> retval;
+	for (int i = 0; i < faceCount; i++)
+	{
+		if (faces[i].iPlane == iPlane)
+		{
+			retval.push_back(i);
+		}
+	}
+	return retval;
+}

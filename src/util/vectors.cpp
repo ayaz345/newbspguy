@@ -169,7 +169,7 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 	rotMat.rotateZ(PI * angles.z / 180.0f);
 
 	vec4 f = rotMat * vec4(0.0f, 1.0f, 0.0f, 1.0f);
-	vec4 r = rotMat * vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	vec4 r = rotMat * vec4(1.0f, 0.0f, 0.0f, 1.0f);
 	vec4 u = rotMat * vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
 	forward = vec3(f.x, f.y, f.z);

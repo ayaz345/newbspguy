@@ -2449,7 +2449,7 @@ void Gui::drawDebugWidget()
 	BspRenderer* renderer = map ? map->getBspRender() : NULL;
 	int entIdx = app->pickInfo.GetSelectedEnt();
 
-	int needReloadClipnodes = 0;
+	int debugVisMode = 0;
 
 	if (ImGui::Begin("Debug info", &showDebugWidget))
 	{
@@ -2705,9 +2705,9 @@ void Gui::drawDebugWidget()
 				}
 			}
 
-			if (ImGui::Button("TEST VIS DATA[CLIPNODES]"))
+			/*if (ImGui::Button("TEST VIS DATA[CLIPNODES]"))
 			{
-				needReloadClipnodes = 1;
+				debugVisMode = 1;
 			}
 
 			if (ImGui::IsItemHovered())
@@ -2719,10 +2719,10 @@ void Gui::drawDebugWidget()
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
-
+			*/
 			if (ImGui::Button("TEST VIS DATA[HIGHFACES]"))
 			{
-				needReloadClipnodes = 2;
+				debugVisMode = 2;
 			}
 
 			if (ImGui::IsItemHovered())
@@ -2801,9 +2801,9 @@ void Gui::drawDebugWidget()
 	ImGui::End();
 
 
-	if (needReloadClipnodes > 0 && !g_app->reloading)
+	if (debugVisMode > 0 && !g_app->reloading)
 	{
-		if (needReloadClipnodes == 2)
+		if (debugVisMode == 2)
 		{
 			vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
 
@@ -2820,48 +2820,41 @@ void Gui::drawDebugWidget()
 			BSPLEAF& leaf = map->leaves[leafIdx];
 			int thisLeafCount = map->leafCount;
 			unsigned char* visData = new unsigned char[map->leafCount];
-			memset(visData, 0xFF, map->leafCount);
-			DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount, visData, map->leafCount);
+			memset(visData, 0x00, map->leafCount);
+			DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
+			//DecompressVis(map->visdata + leaf.nVisOffset, visData, map->leafCount - 1, map->leafCount - 1, map->visDataLength);
 
-			for (int f = 0; f < map->faceCount; f++)
+
+			for (int l = 1; l < map->leafCount; l++)
 			{
-				auto leafsForFace = map->getFaceLeafs(f);
+				auto faceList = map->getLeafFaces(l);
 
-				if (leafsForFace.empty())
+				if (l == leafIdx || CHECKVISBIT(visData, l))
 				{
-					map->getBspRender()->highlightFace(f, true, COLOR4(0, 230 + rand() % 25, 0, 255), true);
+
 				}
 				else
 				{
-					bool faceVisibled = false;
-					for (const auto& idx : leafsForFace)
+					for (const auto& idx : faceList)
 					{
-						if (idx == leafIdx)
-						{
-							faceVisibled = true;
-							break;
-						}
-						if (idx < 0)
-						{
-							continue;
-						}
-						if (CHECKVISBIT(visData, idx) || CHECKVISBIT(visData, idx + 1))
-						{
-							faceVisibled = true;
-							break;
-						}
-					}
-					if (!faceVisibled)
-					{
-						map->getBspRender()->highlightFace(f, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
-					}
-					else
-					{
-						map->getBspRender()->highlightFace(f, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
+						map->getBspRender()->highlightFace(idx, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
 					}
 				}
 			}
-			delete [] visData;
+
+			for (int l = 0; l < map->leafCount; l++)
+			{
+				auto faceList = map->getLeafFaces(l);
+
+				if (l == leafIdx || CHECKVISBIT(visData, l))
+				{
+					for (const auto& idx : faceList)
+					{
+						map->getBspRender()->highlightFace(idx, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
+					}
+				}
+			}
+			delete[] visData;
 			//auto curFaces = map->getLeafFaces(leafIdx);
 			//for (const auto& f : curFaces)
 			//{
@@ -2876,45 +2869,25 @@ void Gui::drawDebugWidget()
 			vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 			renderOffset = mapOffset.flip();
 
-			LeafDebug tmpLeafDebug;
-			std::vector<LeafDebug> leafIdxs;
-			for (int m = 0; m < map->modelCount; m++)
-			{
-				for (int i = 0; i < MAX_MAP_HULLS; i++)
-				{
-					std::vector<int> nodeBranch;
-					int childIdx = -1;
-					int leafIdx = -1;
-					int headNode = map->models[m].iHeadnodes[i];
-					int contents = map->pointContents(headNode, localCamera, i, nodeBranch, leafIdx, childIdx);
-					if (leafIdx >= 0)
-					{
-						bool found = false;
-						for (auto const& s : leafIdxs)
-						{
-							if (s.leafIdx == leafIdx)
-							{
-								found = true;
-								break;
-							}
-						}
-						if (found)
-							continue;
-						tmpLeafDebug.leafIdx = leafIdx;
+			std::vector<int> nodeBranch;
+			int childIdx = -1;
+			int leafIdx = -1;
+			int headNode = map->models[0].iHeadnodes[0];
+			int contents = map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
 
+			BSPLEAF& leaf = map->leaves[leafIdx];
+			int thisLeafCount = map->leafCount;
+			unsigned char* visData = new unsigned char[map->leafCount];
+			memset(visData, 0x00, map->leafCount);
+			//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount, visData, map->leafCount);
+			DecompressVis(map->visdata + leaf.nVisOffset, visData, map->leafCount - 1, map->leafCount - 1, map->visDataLength);
+			LeafDebug tmpLeafDebug = LeafDebug();
+			tmpLeafDebug.leafIdx = leafIdx;
+			tmpLeafDebug.leafVIS = visData;
 
-						BSPLEAF& startLeaf = map->leaves[leafIdx];
-						int thisLeafCount = map->leafCount;
-						tmpLeafDebug.leafVIS = new unsigned char[map->leafCount];
-						memset(tmpLeafDebug.leafVIS, 0x00, map->leafCount);
-						DecompressVis(map->visdata + startLeaf.nVisOffset, tmpLeafDebug.leafVIS, map->leafCount, map->leafCount, map->visDataLength - startLeaf.nVisOffset);
-
-						leafIdxs.push_back(tmpLeafDebug);
-					}
-				}
-			}
 			map->getBspRender()->debugClipnodeVis = true;
-			map->getBspRender()->debugLeafIdx = leafIdxs;
+			map->getBspRender()->debugLeafIdx = std::vector<LeafDebug>();
+			map->getBspRender()->debugLeafIdx.push_back(tmpLeafDebug);
 			map->getBspRender()->debugEntOffset = renderOffset;
 
 			map->getBspRender()->reloadClipnodes();

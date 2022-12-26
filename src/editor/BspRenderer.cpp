@@ -1091,31 +1091,34 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 			bool isVisibled = false;
 			if (debugClipnodeVis)
 			{
-				int faceIdx = map->getFaceFromPlane(mesh.faces[n].planeIdx);
-				auto faceLeafs = map->getFaceLeafs(faceIdx);
-
-				if (mesh.faces[n].planeIdx >= 0)
+				auto faceIdxs = map->getFacesFromPlane(mesh.faces[n].planeIdx);
+				for (auto faceIdx : faceIdxs)
 				{
-					for (auto leafIdx : debugLeafIdx)
+					auto faceLeafs = map->getFaceLeafs(faceIdx);
+
+					if (mesh.faces[n].planeIdx >= 0)
 					{
-						if (leafIdx.leafIdx < 0)
+						for (auto leafIdx : debugLeafIdx)
 						{
-							continue;
-						}
-
-						for (auto fLeaf : faceLeafs)
-						{
-							if (fLeaf < 0)
-								continue;
-							if (CHECKVISBIT(leafIdx.leafVIS, fLeaf))
+							if (leafIdx.leafIdx < 0)
 							{
-								isVisibled = true;
-								break;
+								continue;
 							}
-						}
+							for (auto fLeaf : faceLeafs)
+							{
+								if (fLeaf < 0)
+									continue;
 
-						if (isVisibled)
-							break;
+								if (CHECKVISBIT(leafIdx.leafVIS, fLeaf))
+								{
+									isVisibled = true;
+									break;
+								}
+							}
+
+							if (isVisibled)
+								break;
+						}
 					}
 				}
 			}
