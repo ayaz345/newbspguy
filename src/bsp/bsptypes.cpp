@@ -23,20 +23,20 @@ bool BSPPLANE::update(vec3 newNormal, float fdist)
 	double fz = abs(newNormal.z);
 	int planeType = PLANE_ANYZ;
 	bool shouldFlip = false;
-	if (fx > 0.9999)
+	if (fx > 0.9999f)
 	{
 		planeType = PLANE_X;
-		if (newNormal.x < 0) shouldFlip = true;
+		if (newNormal.x < 0.0f) shouldFlip = true;
 	}
-	else if (fy > 0.9999)
+	else if (fy > 0.9999f)
 	{
 		planeType = PLANE_Y;
-		if (newNormal.y < 0) shouldFlip = true;
+		if (newNormal.y < 0.0f) shouldFlip = true;
 	}
-	else if (fz > 0.9999)
+	else if (fz > 0.9999f)
 	{
 		planeType = PLANE_Z;
-		if (newNormal.z < 0) shouldFlip = true;
+		if (newNormal.z < 0.0f) shouldFlip = true;
 	}
 	else
 	{

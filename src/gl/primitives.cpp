@@ -5,24 +5,24 @@
 
 tQuad::tQuad(float x, float y, float w, float h)
 {
-	v1 = tVert(x, y, 0, 0, 0);
-	v2 = tVert(x, y + h, 0, 0, 1);
-	v3 = tVert(x + w, y + h, 0, 1, 1);
+	v1 = tVert(x, y, 0.0f, 0.0f, 0.0f);
+	v2 = tVert(x, y + h, 0.0f, 0.0f, 0.0f);
+	v3 = tVert(x + w, y + h, 0.0f, 1.0f, 0.0f);
 
-	v4 = tVert(x, y, 0, 0, 0);
-	v5 = tVert(x + w, y + h, 0, 1, 1);
-	v6 = tVert(x + w, y, 0, 1, 0);
+	v4 = tVert(x, y, 0.0f, 0.0f, 0.0f);
+	v5 = tVert(x + w, y + h, 0.0f, 1.0f, 0.0f);
+	v6 = tVert(x + w, y, 0.0f, 1.0f, 0.0f);
 }
 
 tQuad::tQuad(float x, float y, float w, float h, float uu1, float vv1, float uu2, float vv2)
 {
-	v1 = tVert(x, y, 0, uu1, vv1);
-	v2 = tVert(x, y + h, 0, uu1, vv2);
-	v3 = tVert(x + w, y + h, 0, uu2, vv2);
+	v1 = tVert(x, y, 0.0f, uu1, vv1);
+	v2 = tVert(x, y + h, 0.0f, uu1, vv2);
+	v3 = tVert(x + w, y + h, 0.0f, uu2, vv2);
 
-	v4 = tVert(x, y, 0, uu1, vv1);
-	v5 = tVert(x + w, y + h, 0, uu2, vv2);
-	v6 = tVert(x + w, y, 0, uu2, vv1);
+	v4 = tVert(x, y, 0.0f, uu1, vv1);
+	v5 = tVert(x + w, y + h, 0.0f, uu2, vv2);
+	v6 = tVert(x + w, y, 0.0f, uu2, vv1);
 }
 
 tQuad::tQuad(tVert _v1, tVert _v2, tVert _v3, tVert _v4) : v1(_v1), v2(_v2), v3(_v3), v4(_v4), v5(_v3), v6(_v4)
@@ -59,40 +59,40 @@ tCube::tCube(vec3 mins, vec3 maxs)
 {
 	tVert v1, v2, v3, v4;
 
-	v1 = tVert(mins.x, maxs.y, maxs.z, 0, 0);
-	v2 = tVert(mins.x, maxs.y, mins.z, 0, 1);
-	v3 = tVert(mins.x, mins.y, mins.z, 1, 1);
-	v4 = tVert(mins.x, mins.y, maxs.z, 1, 0);
+	v1 = tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f);
+	v2 = tVert(mins.x, maxs.y, mins.z, 0.0f, 0.0f);
+	v3 = tVert(mins.x, mins.y, mins.z, 1.0f, 0.0f);
+	v4 = tVert(mins.x, mins.y, maxs.z, 1.0f, 0.0f);
 	left = tQuad(v1, v2, v3, v4);
 
-	v1 = tVert(maxs.x, maxs.y, mins.z, 0, 0);
-	v2 = tVert(maxs.x, maxs.y, maxs.z, 0, 1);
-	v3 = tVert(maxs.x, mins.y, maxs.z, 1, 1);
-	v4 = tVert(maxs.x, mins.y, mins.z, 1, 0);
+	v1 = tVert(maxs.x, maxs.y, mins.z, 0.0f, 0.0f);
+	v2 = tVert(maxs.x, maxs.y, maxs.z, 0.0f, 0.0f);
+	v3 = tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f);
+	v4 = tVert(maxs.x, mins.y, mins.z, 1.0f, 0.0f);
 	right = tQuad(v1, v2, v3, v4);
 
-	v1 = tVert(mins.x, mins.y, mins.z, 0, 0);
-	v2 = tVert(maxs.x, mins.y, mins.z, 0, 1);
-	v3 = tVert(maxs.x, mins.y, maxs.z, 1, 1);
-	v4 = tVert(mins.x, mins.y, maxs.z, 1, 0);
+	v1 = tVert(mins.x, mins.y, mins.z, 0.0f, 0.0f);
+	v2 = tVert(maxs.x, mins.y, mins.z, 0.0f, 0.0f);
+	v3 = tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f);
+	v4 = tVert(mins.x, mins.y, maxs.z, 1.0f, 0.0f);
 	top = tQuad(v1, v2, v3, v4);
 
-	v1 = tVert(mins.x, maxs.y, maxs.z, 0, 0);
-	v2 = tVert(maxs.x, maxs.y, maxs.z, 0, 1);
-	v3 = tVert(maxs.x, maxs.y, mins.z, 1, 1);
-	v4 = tVert(mins.x, maxs.y, mins.z, 1, 0);
+	v1 = tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f);
+	v2 = tVert(maxs.x, maxs.y, maxs.z, 0.0f, 0.0f);
+	v3 = tVert(maxs.x, maxs.y, mins.z, 1.0f, 0.0f);
+	v4 = tVert(mins.x, maxs.y, mins.z, 1.0f, 0.0f);
 	bottom = tQuad(v1, v2, v3, v4);
 
-	v1 = tVert(mins.x, maxs.y, mins.z, 0, 0);
-	v2 = tVert(maxs.x, maxs.y, mins.z, 0, 1);
-	v3 = tVert(maxs.x, mins.y, mins.z, 1, 1);
-	v4 = tVert(mins.x, mins.y, mins.z, 1, 0);
+	v1 = tVert(mins.x, maxs.y, mins.z, 0.0f, 0.0f);
+	v2 = tVert(maxs.x, maxs.y, mins.z, 0.0f, 0.0f);
+	v3 = tVert(maxs.x, mins.y, mins.z, 1.0f, 0.0f);
+	v4 = tVert(mins.x, mins.y, mins.z, 1.0f, 0.0f);
 	front = tQuad(v1, v2, v3, v4);
 
-	v1 = tVert(maxs.x, maxs.y, maxs.z, 0, 0);
-	v2 = tVert(mins.x, maxs.y, maxs.z, 0, 1);
-	v3 = tVert(mins.x, mins.y, maxs.z, 1, 1);
-	v4 = tVert(maxs.x, mins.y, maxs.z, 1, 0);
+	v1 = tVert(maxs.x, maxs.y, maxs.z, 0.0f, 0.0f);
+	v2 = tVert(mins.x, maxs.y, maxs.z, 0.0f, 0.0f);
+	v3 = tVert(mins.x, mins.y, maxs.z, 1.0f, 0.0f);
+	v4 = tVert(maxs.x, mins.y, maxs.z, 1.0f, 0.0f);
 	back = tQuad(v1, v2, v3, v4);
 }
 
@@ -173,5 +173,5 @@ cCubeAxes::cCubeAxes(vec3 mins, vec3 maxs, COLOR4 c)
 	maxs.y = center.y - 2.5f;
 	maxs.z = center.z + 2.5f;
 
-	axes = cCube(mins, maxs, COLOR4(0, 255, 255, 125));
+	axes = cCube(mins, maxs, COLOR4(0.0f, 255, 255, 125));
 }

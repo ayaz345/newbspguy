@@ -24,7 +24,7 @@ void glhFrustumf2(float* matrix, float left, float right, float bottom, float to
 	matrix[2] = (right + left) / temp2;
 	matrix[6] = (top + bottom) / temp3;
 	matrix[10] = (-zfar - znear) / temp4;
-	matrix[14] = -1.0;
+	matrix[14] = -1.0f;
 	matrix[11] = (-temp * zfar) / temp4;
 }
 
@@ -129,17 +129,17 @@ void mat4x4::rotate(float pitch, float yaw, float roll)
 	float angle;
 	float sr, sp, sy, cr, cp, cy;
 
-	angle = yaw * (PI * 2 / 360);
+	angle = yaw * (PI * 2.0f / 360.0f);
 	sy = sin(angle);
 	cy = cos(angle);
-	angle = pitch * (PI * 2 / 360);
+	angle = pitch * (PI * 2.0f / 360.0f);
 	sp = sin(angle);
 	cp = cos(angle);
-	angle = roll * (PI * 2 / 360);
+	angle = roll * (PI * 2.0f / 360.0f);
 	sr = sin(angle);
 	cr = cos(angle);
 
-	float mat[16] = {0};
+	float mat[16] = {0.0f};
 	mat[0* 4 + 0] = cp * cy;
 	mat[1* 4 + 0] = cp * sy;
 	mat[2* 4 + 0] = -sp;
@@ -150,13 +150,13 @@ void mat4x4::rotate(float pitch, float yaw, float roll)
 	mat[1* 4 + 2] = (cr * sp * sy + -sr * cy);
 	mat[2* 4 + 2] = cr * cp;
 
-	mat[0 * 4 + 3] = 0.0;
-	mat[1 * 4 + 3] = 0.0;
-	mat[2 * 4 + 3] = 0.0;
-	mat[3 * 4 + 0] = 0.0;
-	mat[3 * 4 + 1] = 0.0;
-	mat[3 * 4 + 2] = 0.0;
-	mat[3 * 4 + 3] = 1.0;
+	mat[0 * 4 + 3] = 0.0f;
+	mat[1 * 4 + 3] = 0.0f;
+	mat[2 * 4 + 3] = 0.0f;
+	mat[3 * 4 + 0] = 0.0f;
+	mat[3 * 4 + 1] = 0.0f;
+	mat[3 * 4 + 2] = 0.0f;
+	mat[3 * 4 + 3] = 1.0f;
 
 	mult(mat);
 }/*
@@ -174,19 +174,19 @@ void mat4x4::rotate(float pitch, float yaw, float roll)
 	rmat[0 * 4 + 0] = tmp_ch * tmp_cb + tmp_sh * tmp_sp * tmp_sb;
 	rmat[0 * 4 + 1] = tmp_sb * tmp_cp;
 	rmat[0 * 4 + 2] = -tmp_sh * tmp_cb + tmp_ch * tmp_sp * tmp_sb;
-	rmat[0 * 4 + 3] = 0.0;
+	rmat[0 * 4 + 3] = 0.0f;
 	rmat[1 * 4 + 0] = -tmp_ch * tmp_sb + tmp_sh * tmp_sp * tmp_cb;
 	rmat[1 * 4 + 1] = tmp_cb * tmp_cp;
 	rmat[1 * 4 + 2] = tmp_sb * tmp_sh + tmp_ch * tmp_sp * tmp_cb;
-	rmat[1 * 4 + 3] = 0.0;
+	rmat[1 * 4 + 3] = 0.0f;
 	rmat[2 * 4 + 0] = tmp_sh * tmp_cp;
 	rmat[2 * 4 + 1] = -tmp_sp;
 	rmat[2 * 4 + 2] = tmp_ch * tmp_cp;
-	rmat[2 * 4 + 3] = 0.0;
-	rmat[3 * 4 + 0] = 0.0;
-	rmat[3 * 4 + 1] = 0.0;
-	rmat[3 * 4 + 2] = 0.0;
-	rmat[3 * 4 + 3] = 1.0;
+	rmat[2 * 4 + 3] = 0.0f;
+	rmat[3 * 4 + 0] = 0.0f;
+	rmat[3 * 4 + 1] = 0.0f;
+	rmat[3 * 4 + 2] = 0.0f;
+	rmat[3 * 4 + 3] = 1.0f;
 
 	mult(rmat);
 }*/
@@ -205,19 +205,19 @@ void mat4x4::rotate(float x, float y, float z)
 	rmat[0 * 4 + 0] = c2 * c3;
 	rmat[0 * 4 + 1] = -c1 * s3 + s1 * s2 * c3;
 	rmat[0 * 4 + 2] = s1 * s3 + c1 * s2 * c3;
-	rmat[0 * 4 + 3] = 0.0;
+	rmat[0 * 4 + 3] = 0.0f;
 	rmat[1 * 4 + 0] = c2 * s3;
 	rmat[1 * 4 + 1] = c1 * c3 + s1 * s2 * s3;
 	rmat[1 * 4 + 2] = -s1 * c3 + c1 * s2 * s3;
-	rmat[1 * 4 + 3] = 0.0;
+	rmat[1 * 4 + 3] = 0.0f;
 	rmat[2 * 4 + 0] = -s2;
 	rmat[2 * 4 + 1] = s1 * c2;
 	rmat[2 * 4 + 2] = c1 * c2;
-	rmat[2 * 4 + 3] = 0.0;
-	rmat[3 * 4 + 0] = 0.0;
-	rmat[3 * 4 + 1] = 0.0;
-	rmat[3 * 4 + 2] = 0.0;
-	rmat[3 * 4 + 3] = 1.0;
+	rmat[2 * 4 + 3] = 0.0f;
+	rmat[3 * 4 + 0] = 0.0f;
+	rmat[3 * 4 + 1] = 0.0f;
+	rmat[3 * 4 + 2] = 0.0f;
+	rmat[3 * 4 + 3] = 1.0f;
 
 	mult(rmat);
 }*/

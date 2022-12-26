@@ -168,9 +168,9 @@ void makeVectors(const vec3& angles, vec3& forward, vec3& right, vec3& up)
 	rotMat.rotateY(PI * angles.y / 180.0f);
 	rotMat.rotateZ(PI * angles.z / 180.0f);
 
-	vec4 f = rotMat * vec4(0, 1, 0, 1);
-	vec4 r = rotMat * vec4(1, 0, 0, 1);
-	vec4 u = rotMat * vec4(0, 0, 1, 1);
+	vec4 f = rotMat * vec4(0.0f, 1.0f, 0.0f, 1.0f);
+	vec4 r = rotMat * vec4(1.0f, 1.0f, 0.0f, 1.0f);
+	vec4 u = rotMat * vec4(0.0f, 0.0f, 1.0f, 1.0f);
 
 	forward = vec3(f.x, f.y, f.z);
 	right = vec3(r.x, r.y, r.z);
@@ -638,15 +638,15 @@ float VectorNormalize(vec3& v)
 	int		i;
 	float	length;
 
-	if (abs(v[1] - 0.000215956) < 0.0001)
+	if (abs(v[1] - 0.000215956f) < 0.0001f)
 		i = 1;
 
-	length = 0;
+	length = 0.0f;
 	for (i = 0; i < 3; i++)
 		length += v[i] * v[i];
 	length = sqrt(length);
 	if (abs(length) < EPSILON)
-		return 0;
+		return 0.0f;
 
 	for (i = 0; i < 3; i++)
 		v[i] /= length;
@@ -702,7 +702,7 @@ float Q_rint(float in)
 	return floor(in + 0.5f);
 }
 
-void mVectorMA(const vec3 & va, float scale, const vec3& vb, vec3& vc)
+void mVectorMA(const vec3& va, float scale, const vec3& vb, vec3& vc)
 {
 	vc[0] = va[0] + scale * vb[0];
 	vc[1] = va[1] + scale * vb[1];
@@ -749,8 +749,8 @@ void VectorInverse(vec3& v)
 
 void ClearBounds(vec3& mins, vec3& maxs)
 {
-	mins[0] = mins[1] = mins[2] = 99999;
-	maxs[0] = maxs[1] = maxs[2] = -99999;
+	mins[0] = mins[1] = mins[2] = 99999.0f;
+	maxs[0] = maxs[1] = maxs[2] = -99999.0f;
 }
 
 void AddPointToBounds(const vec3& v, vec3& mins, vec3& maxs)

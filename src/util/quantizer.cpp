@@ -207,7 +207,7 @@ void Quantizer::FloydSteinbergDither(COLOR3* image, unsigned int width, unsigned
 		}
 		else
 		{
-			for (unsigned int x = width - 1; x >= 0; x--)
+			for (int x = width - 1; x >= 0; x--)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;
@@ -297,7 +297,7 @@ void Quantizer::FloydSteinbergDither256(COLOR3* image, unsigned int width, unsig
 		}
 		else
 		{
-			for (unsigned int x = width - 1; x >= 0; x--)
+			for (int x = width - 1; x > 0; x--)
 			{
 				int i = width * (height - y - 1) + x;
 				int j = width * y + x;

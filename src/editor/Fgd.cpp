@@ -583,7 +583,7 @@ void Fgd::processClassInheritance()
 					{
 						if (classes[i]->modelSequence <= 0)
 						{
-							if (isNumeric(classes[i]->keyvalues[c].defaultValue) && isNumeric(classes[i]->keyvalues[c].defaultValue))
+							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
 							{
 								classes[i]->modelSequence = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
 							}
@@ -593,7 +593,7 @@ void Fgd::processClassInheritance()
 					{
 						if (classes[i]->modelBody <= 0)
 						{
-							if (isNumeric(classes[i]->keyvalues[c].defaultValue) && isNumeric(classes[i]->keyvalues[c].defaultValue))
+							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
 							{
 								classes[i]->modelBody = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
 							}
@@ -603,7 +603,7 @@ void Fgd::processClassInheritance()
 					{
 						if (classes[i]->modelSkin <= 0)
 						{
-							if (isNumeric(classes[i]->keyvalues[c].defaultValue) && isNumeric(classes[i]->keyvalues[c].defaultValue))
+							if (isNumeric(classes[i]->keyvalues[c].defaultValue))
 							{
 								classes[i]->modelSkin = atoi(classes[i]->keyvalues[c].defaultValue.c_str());
 							}

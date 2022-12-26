@@ -11,7 +11,7 @@ Entity::Entity(const std::string& classname)
 	rendermode = kRenderNormal;
 	renderamt = 0;
 	renderfx = kRenderFxNone;
-	rendercolor = vec3(255, 255, 255);
+	rendercolor = vec3(1.0f, 1.0f, 1.0f);
 	addKeyvalue("classname", classname);
 }
 

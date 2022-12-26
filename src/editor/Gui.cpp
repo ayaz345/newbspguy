@@ -966,6 +966,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 	{
 		logf("Reading wad file failed!\n");
 		delete tmpWad;
+		return;
 	}
 	else
 	{
@@ -1341,7 +1342,7 @@ void Gui::drawMenuBar()
 							texturesIds.push_back(i);
 						}
 
-						std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](const auto& file)
+						std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&]( int file )
 						{
 							{
 								WADTEX* texture = wad->readTexture(file);
@@ -1482,7 +1483,7 @@ void Gui::drawMenuBar()
 								}
 							}
 
-							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto& file)
+							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
 							{
 
 								logf("Importing {} from workdir {} wad.\n", basename(file), basename(wad->filename));
@@ -1493,7 +1494,7 @@ void Gui::drawMenuBar()
 							COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
 							if (error == 0 && image_bytes)
 							{
-								for (int i = 0; i < w2 * h2; i++)
+								for (unsigned int i = 0; i < w2 * h2; i++)
 								{
 									COLOR4& curPixel = image_bytes[i];
 
@@ -2844,7 +2845,7 @@ void Gui::drawDebugWidget()
 						{
 							continue;
 						}
-						if (CHECKVISBIT(visData, idx))
+						if (CHECKVISBIT(visData, idx) || CHECKVISBIT(visData, idx + 1))
 						{
 							faceVisibled = true;
 							break;
@@ -2860,7 +2861,7 @@ void Gui::drawDebugWidget()
 					}
 				}
 			}
-
+			delete [] visData;
 			//auto curFaces = map->getLeafFaces(leafIdx);
 			//for (const auto& f : curFaces)
 			//{

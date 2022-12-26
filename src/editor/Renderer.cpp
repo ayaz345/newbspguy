@@ -1350,7 +1350,6 @@ void Renderer::saveSettings()
 	g_settings.limits_open = gui->showLimitsWidget;
 	g_settings.entreport_open = gui->showEntityReport;
 	g_settings.settings_tab = gui->settingsTab;
-	g_settings.vsync = gui->vsync;
 	g_settings.show_transform_axes = showDragAxes;
 	g_settings.verboseLogs = g_verbose;
 	g_settings.zfar = zFar;
@@ -1373,7 +1372,6 @@ void Renderer::loadSettings()
 	gui->settingsTab = g_settings.settings_tab;
 	gui->openSavedTabs = true;
 
-	gui->vsync = g_settings.vsync;
 	showDragAxes = g_settings.show_transform_axes;
 	g_verbose = g_settings.verboseLogs;
 	zFar = g_settings.zfar;
@@ -2731,7 +2729,7 @@ void Renderer::reloadBspModels()
 		}
 	}
 
-	mapRenderers = std::move(sorted_renders);
+	mapRenderers = sorted_renders;
 
 	for (auto bsprend : sorted_renders)
 	{
