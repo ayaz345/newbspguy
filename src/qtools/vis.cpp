@@ -419,3 +419,74 @@ int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* outp
 
 	return (int)(vismap_p - output);
 }
+
+void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* dest, unsigned int dest_length)
+{
+	unsigned char* out = dest;
+	unsigned char* src_start = src;
+	unsigned int src_count = src_len;
+	int	c = 0;
+
+	if (!src)
+	{
+		// no vis info, so make all visible
+		while (src_count)
+		{
+			if (out > dest + dest_length)
+			{
+				logf("Fatal Error! Decompress leaf vis overflow {} > {} #1!\n", (int)(out - dest), dest_length);
+				return;
+			}
+
+			*out++ = 0xff;
+
+			src_count--;
+		}
+		return;
+	}
+
+	do
+	{
+		if (*src)
+		{
+			if (out > dest + dest_length)
+			{
+				logf("Fatal Error! Decompress leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+				return;
+			}
+
+			if (src > src_start + src_len)
+			{
+				logf("Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+				return;
+			}
+
+			*out++ = *src++;
+
+			continue;
+		}
+
+		c = src[1];
+		src += 2;
+
+		if (src > src_start + src_len)
+		{
+			logf("Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+			return;
+		}
+
+		while (c)
+		{
+			if (out > dest + dest_length)
+			{
+				logf("Fatal Error! Decompress leaf vis overflow {} > {} #3!\n", (int)(out - dest), dest_length);
+				return;
+			}
+
+			*out++ = 0;
+
+			c--;
+		}
+	} while (out - dest < src_count);
+
+}

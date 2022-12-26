@@ -1114,13 +1114,13 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 							}
 						}
 
-						if (isVisibled )
+						if (isVisibled)
 							break;
 					}
 				}
 			}
 
-			if (isVisibled )
+			if (isVisibled)
 			{
 				faceColor = COLOR4(255, 0, 0, 150);
 			}
@@ -1716,7 +1716,7 @@ bool BspRenderer::isFinishedLoading()
 	return lightmapsUploaded && texturesLoaded && clipnodesLoaded;
 }
 
-void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool useColor)
+void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool useColor, bool reupload)
 {
 	RenderFace* rface;
 	RenderGroup* rgroup;
@@ -1738,9 +1738,9 @@ void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool 
 
 	if (useColor)
 	{
-		r = color.r;
-		g = color.g;
-		b = color.b;
+		r = color.r / 255.0f;
+		g = color.g / 255.0f;
+		b = color.b / 255.0f;
 	}
 
 	for (int i = 0; i < rface->vertCount; i++)
@@ -1749,8 +1749,8 @@ void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool 
 		rgroup->verts[rface->vertOffset + i].g = g;
 		rgroup->verts[rface->vertOffset + i].b = b;
 	}
-
-	rgroup->buffer->upload();
+	if (reupload)
+		rgroup->buffer->upload();
 }
 
 void BspRenderer::updateFaceUVs(int faceIdx)
@@ -1994,7 +1994,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 			}
 
 			whiteTex->bind(1);
-			
+
 			rgroup.wireframeBuffer->drawFull();
 		}
 		return;

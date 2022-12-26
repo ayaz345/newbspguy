@@ -268,6 +268,7 @@ public:
 
 	void hideEnts(bool hide = true);
 
+	std::vector<int> getLeafFaces(int leafIdx);
 	std::vector<int> getLeafFaces(BSPLEAF& leaf);
 	std::vector<int> getFaceLeafs(int faceIdx);
 	int getFaceFromPlane(int iPlane);

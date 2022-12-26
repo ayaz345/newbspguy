@@ -340,6 +340,25 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	// create pallete and full-rez mipmap
 	mip[0] = new unsigned char[width * height];
 
+	bool do_magic = false;
+	if (name && name[0] == '{')
+	{
+		int sz = width * height;
+		for (int i = 0; i < sz; i++)
+		{
+			if (rgbdata[i] == COLOR3(0, 0, 255))
+			{
+				do_magic = true;
+				break;
+			}
+		}
+		if (do_magic)
+		{
+			colorCount++;
+			palette[0] = COLOR3(0, 0, 255);
+		}
+	}
+
 	for (int y = 0; y < height; y++)
 	{
 		for (int x = 0; x < width; x++)
@@ -366,9 +385,32 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 				colorCount++;
 			}
 
-			mip[0][y * width + x] = (unsigned char)paletteIdx;
+			if (do_magic)
+			{
+				if (paletteIdx == 0)
+				{
+					mip[0][y * width + x] = (unsigned char)255;
+				}
+				else if (paletteIdx == 255)
+				{
+					mip[0][y * width + x] = (unsigned char)0;
+				}
+				else
+				{
+					mip[0][y * width + x] = (unsigned char)paletteIdx;
+				}
+			}
+			else
+			{
+				mip[0][y * width + x] = (unsigned char)paletteIdx;
+			}
 			src++;
 		}
+	}
+
+	if (do_magic)
+	{
+		std::swap(palette[0], palette[255]);
 	}
 
 	int texDataSize = width * height + sizeof(COLOR3) * 256;
@@ -492,9 +534,9 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex)
 
 	for (int k = 0; k < sz; k++)
 	{
-		if (wadTex->szName[0] == '{' && palette[255] == palette[src[k]])
+		if (wadTex->szName[0] == '{' && (255 == src[k] || palette[src[k]] == COLOR3(0,0,255)))
 		{
-			imageData[k] = COLOR4(0, 0, 0, 0);
+			imageData[k] = COLOR4(255, 255, 255, 0);
 		}
 		else
 		{

@@ -3278,7 +3278,6 @@ int Bsp::pointContents(int iNode, const vec3& p, int hull, std::vector<int>& nod
 			}
 		}
 
-		//leafIdx = ~iNode;
 		return iNode;
 	}
 }
@@ -5557,11 +5556,23 @@ void Bsp::hideEnts(bool hide)
 std::vector<int> Bsp::getLeafFaces(BSPLEAF& leaf)
 {
 	std::vector<int> retFaces;
-	int detaillevel = 0; // no way to know which faces came from a func_detail
-
-	for (int i = leaf.iFirstMarkSurface; i < leaf.iFirstMarkSurface + leaf.nMarkSurfaces; i++)
+	for (int i = 0; i < leaf.nMarkSurfaces; i++)
 	{
-		retFaces.push_back(marksurfs[i]);
+		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
+	}
+	return retFaces;
+}
+
+std::vector<int> Bsp::getLeafFaces(int leafIdx)
+{
+	std::vector<int> retFaces;
+	if (leafIdx < 0)
+		return retFaces;
+
+	BSPLEAF& leaf = leaves[leafIdx];
+	for (int i = 0; i < leaf.nMarkSurfaces; i++)
+	{
+		retFaces.push_back(marksurfs[leaf.iFirstMarkSurface + i]);
 	}
 	return retFaces;
 }
@@ -5570,19 +5581,19 @@ std::vector<int> Bsp::getFaceLeafs(int faceIdx)
 {
 	std::vector<int> retLeafes;
 
-	for (int l = 0; l < leafCount; l++)
+	for (int l = 1; l < leafCount; l++)
 	{
 		BSPLEAF& leaf = leaves[l];
 
-		for (int i = leaf.iFirstMarkSurface; i < leaf.nMarkSurfaces + leaf.iFirstMarkSurface; i++)
+		for (int i = 0; i < leaf.nMarkSurfaces; i++)
 		{
-			if (marksurfs[i] == faceIdx)
+			if (marksurfs[leaf.iFirstMarkSurface + i] == faceIdx)
 			{
 				retLeafes.push_back(l);
 			}
 		}
 	}
-	
+
 	return retLeafes;
 }
 

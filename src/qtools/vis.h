@@ -17,6 +17,8 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 
 int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize, int leafMemSize);
 
+void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* dest, unsigned int dest_length);
+
 extern bool g_debug_shift;
 
 #define CHECKVISBIT( vis, b )		((b) >= 0 ? ((vis)[(b) >> 3] & (1 << ((b) & 7))) > 0 : false )/*

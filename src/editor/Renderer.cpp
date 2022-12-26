@@ -1774,7 +1774,7 @@ void Renderer::cameraPickingControls()
 		}
 
 		// object picking
-		if (!transforming)
+		if (!transforming && oldLeftMouse == GLFW_RELEASE)
 		{
 			if (map && entIdx >= 0)
 			{

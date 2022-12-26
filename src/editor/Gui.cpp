@@ -1335,21 +1335,37 @@ void Gui::drawMenuBar()
 						createDir(GetWorkDir() + "wads");
 						createDir(GetWorkDir() + "wads/" + basename(wad->filename));
 
-						for (int i = 0; i < (int)wad->dirEntries.size(); i++)
+						std::vector<int> texturesIds;
+						for (int i = 0; i < wad->dirEntries.size(); i++)
 						{
-							WADTEX* texture = wad->readTexture(i);
-
-							if (texture->szName[0] != '\0' && strlen(texture->szName) < MAXTEXTURENAME)
-							{
-								logf("Exporting {} from {} to working directory.\n", texture->szName, basename(wad->filename));
-								COLOR3* texturedata = ConvertWadTexToRGB(texture);
-
-								lodepng_encode24_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
-													  , (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
-								delete texturedata;
-							}
-							delete texture;
+							texturesIds.push_back(i);
 						}
+
+						std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](const auto& file)
+						{
+							{
+								WADTEX* texture = wad->readTexture(file);
+
+								if (texture->szName[0] != '\0')
+								{
+									logf("Exporting {} from {} to working directory.\n", texture->szName, basename(wad->filename));
+									COLOR4* texturedata = ConvertWadTexToRGBA(texture);
+
+									lodepng_encode32_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
+														  , (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
+
+
+								/*	int lastMipSize = (texture->nWidth / 8) * (texture->nHeight / 8);
+
+									COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + 2 - 40);
+
+									lodepng_encode24_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".pal.png").c_str()
+														  , (unsigned char*)palette, 8, 32);*/
+									delete texturedata;
+								}
+								delete texture;
+							}
+						});
 					}
 				}
 
@@ -1405,7 +1421,7 @@ void Gui::drawMenuBar()
 					}
 					else
 					{
-						logf("Error! No file!\n");
+						logf("Fatal Error! No file!\n");
 					}
 				}
 			}
@@ -1468,12 +1484,29 @@ void Gui::drawMenuBar()
 
 							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto& file)
 							{
+
 								logf("Importing {} from workdir {} wad.\n", basename(file), basename(wad->filename));
-							unsigned char* image_bytes;
+							COLOR4* image_bytes = NULL;
 							unsigned int w2, h2;
-							auto error = lodepng_decode24_file(&image_bytes, &w2, &h2, file.c_str());
+							auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
+															 LodePNGColorType::LCT_RGBA, 8);
+							COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
 							if (error == 0 && image_bytes)
 							{
+								for (int i = 0; i < w2 * h2; i++)
+								{
+									COLOR4& curPixel = image_bytes[i];
+
+									if (curPixel.a == 0)
+									{
+										image_bytes_rgb[i] = COLOR3(0, 0, 255);
+									}
+									else
+									{
+										image_bytes_rgb[i] = COLOR3(curPixel.r, curPixel.g, curPixel.b);
+									}
+								}
+
 								int oldcolors = 0;
 								if ((oldcolors = GetImageColors((COLOR3*)image_bytes, w2 * h2)) > 256)
 								{
@@ -2777,66 +2810,62 @@ void Gui::drawDebugWidget()
 			vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
 			renderOffset = mapOffset.flip();
 
-			LeafDebug tmpLeafDebug;
-			std::vector<LeafDebug> leafIdxs;
-			for (int m = 0; m < map->modelCount; m++)
-			{
-				for (int i = 0; i < MAX_MAP_HULLS; i++)
-				{
-					std::vector<int> nodeBranch;
-					int childIdx = -1;
-					int leafIdx = -1;
-					int headNode = map->models[m].iHeadnodes[i];
-					int contents = map->pointContents(headNode, localCamera, i, nodeBranch, leafIdx, childIdx);
-					if (leafIdx >= 0)
-					{
-						bool found = false;
-						for (auto const& s : leafIdxs)
-						{
-							if (s.leafIdx == leafIdx)
-							{
-								found = true;
-								break;
-							}
-						}
-						if (found)
-							continue;
-						tmpLeafDebug.leafIdx = leafIdx;
+			std::vector<int> nodeBranch;
+			int childIdx = -1;
+			int leafIdx = -1;
+			int headNode = map->models[0].iHeadnodes[0];
+			int contents = map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
 
+			BSPLEAF& leaf = map->leaves[leafIdx];
+			int thisLeafCount = map->leafCount;
+			unsigned char* visData = new unsigned char[map->leafCount];
+			memset(visData, 0xFF, map->leafCount);
+			DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount, visData, map->leafCount);
 
-						BSPLEAF& startLeaf = map->leaves[leafIdx];
-						int thisLeafCount = map->leafCount;
-						tmpLeafDebug.leafVIS = new unsigned char[map->leafCount];
-						memset(tmpLeafDebug.leafVIS, 0x00, map->leafCount);
-						DecompressVis(map->visdata + startLeaf.nVisOffset, tmpLeafDebug.leafVIS, map->leafCount, map->leafCount, map->visDataLength - startLeaf.nVisOffset);
-
-						leafIdxs.push_back(tmpLeafDebug);
-					}
-				}
-			}
 			for (int f = 0; f < map->faceCount; f++)
 			{
-				bool visibled = false;
-				auto leafFace = map->getFaceLeafs(f);
-				for (auto const& s : leafIdxs)
+				auto leafsForFace = map->getFaceLeafs(f);
+
+				if (leafsForFace.empty())
 				{
-					if (visibled)
-						break;
-					for (auto const& lf : leafFace)
+					map->getBspRender()->highlightFace(f, true, COLOR4(0, 230 + rand() % 25, 0, 255), true);
+				}
+				else
+				{
+					bool faceVisibled = false;
+					for (const auto& idx : leafsForFace)
 					{
-						if (CHECKVISBIT(s.leafVIS,lf ))
+						if (idx == leafIdx)
 						{
-							visibled = true;
-							map->getBspRender()->highlightFace(f, true, COLOR4(0, 0, 255, 255), true);
+							faceVisibled = true;
+							break;
+						}
+						if (idx < 0)
+						{
+							continue;
+						}
+						if (CHECKVISBIT(visData, idx))
+						{
+							faceVisibled = true;
 							break;
 						}
 					}
-				}
-				if (!visibled)
-				{
-					map->getBspRender()->highlightFace(f, true, COLOR4(255, 0, 0, 255), true);
+					if (!faceVisibled)
+					{
+						map->getBspRender()->highlightFace(f, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
+					}
+					else
+					{
+						map->getBspRender()->highlightFace(f, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
+					}
 				}
 			}
+
+			//auto curFaces = map->getLeafFaces(leafIdx);
+			//for (const auto& f : curFaces)
+			//{
+			//	map->getBspRender()->highlightFace(f, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
+			//}
 		}
 		else
 		{
@@ -5467,7 +5496,7 @@ void Gui::drawImportMapWidget()
 						Bsp* model = new Bsp(mapPath);
 						if (!model->ents.size())
 						{
-							logf("Error! No worldspawn found!\n");
+							logf("Fatal Error! No worldspawn found!\n");
 						}
 						else
 						{
