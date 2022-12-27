@@ -1342,7 +1342,7 @@ void Gui::drawMenuBar()
 							texturesIds.push_back(i);
 						}
 
-						std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&]( int file )
+						std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](int file)
 						{
 							{
 								WADTEX* texture = wad->readTexture(file);
@@ -2825,16 +2825,14 @@ void Gui::drawDebugWidget()
 			//DecompressVis(map->visdata + leaf.nVisOffset, visData, map->leafCount - 1, map->leafCount - 1, map->visDataLength);
 
 
-			for (int l = 1; l < map->leafCount; l++)
+			for (int l = 0; l < map->leafCount; l++)
 			{
-				auto faceList = map->getLeafFaces(l);
-
 				if (l == leafIdx || CHECKVISBIT(visData, l))
 				{
-
 				}
 				else
 				{
+					auto faceList = map->getLeafFaces(l + 1);
 					for (const auto& idx : faceList)
 					{
 						map->getBspRender()->highlightFace(idx, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
@@ -2848,6 +2846,7 @@ void Gui::drawDebugWidget()
 
 				if (l == leafIdx || CHECKVISBIT(visData, l))
 				{
+					auto faceList = map->getLeafFaces(l + 1);
 					for (const auto& idx : faceList)
 					{
 						map->getBspRender()->highlightFace(idx, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
