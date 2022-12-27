@@ -56,6 +56,7 @@ inline void logf(const std::string & format, Args ...args) noexcept
 #ifndef NDEBUG
 	static std::ofstream outfile("log.txt", std::ios_base::app);
 	outfile << log_line;
+	outfile.flush();
 #endif
 
 	std::cout << log_line;

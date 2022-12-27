@@ -219,7 +219,7 @@ void Gui::draw()
 
 void Gui::openContextMenu(int entIdx)
 {
-	if (entIdx == -1)
+	if (entIdx < 0)
 	{
 		emptyContextMenu = 1;
 	}
@@ -624,34 +624,41 @@ void Gui::draw3dContextMenus()
 	}
 	else /*if (app->pickMode == PICK_OBJECT)*/
 	{
-		if (ImGui::BeginPopup("ent_context"))
+		if (ImGui::BeginPopup("ent_context") && entIdx >= 0)
 		{
-			if (ImGui::MenuItem("Cut", "Ctrl+X", false, app->pickInfo.selectedEnts.size() == 1))
-			{
-				app->cutEnt();
-			}
-			if (ImGui::MenuItem("Copy", "Ctrl+C", false, app->pickInfo.selectedEnts.size() == 1))
-			{
-				app->copyEnt();
-			}
+			Entity* ent = map->ents[entIdx];
+			int modelIdx = ent->getBspModelIdx();
+			if (entIdx == 0 && modelIdx <= 0)
+				modelIdx = 0;
 
-			if (app->copiedEnt)
+			if (modelIdx > 0)
 			{
-				if (ImGui::MenuItem("Paste", "Ctrl+V", false, app->copiedEnt))
+				if (ImGui::MenuItem("Cut", "Ctrl+X", false, app->pickInfo.selectedEnts.size() == 1))
 				{
-					app->pasteEnt(false);
+					app->cutEnt();
 				}
-				if (ImGui::MenuItem("Paste at original origin", 0, false, app->copiedEnt))
+				if (ImGui::MenuItem("Copy", "Ctrl+C", false, app->pickInfo.selectedEnts.size() == 1))
 				{
-					app->pasteEnt(true);
+					app->copyEnt();
+				}
+
+				if (app->copiedEnt)
+				{
+					if (ImGui::MenuItem("Paste", "Ctrl+V", false, app->copiedEnt))
+					{
+						app->pasteEnt(false);
+					}
+					if (ImGui::MenuItem("Paste at original origin", 0, false, app->copiedEnt))
+					{
+						app->pasteEnt(true);
+					}
+				}
+
+				if (ImGui::MenuItem("Delete", "Del"))
+				{
+					app->deleteEnts();
 				}
 			}
-
-			if (ImGui::MenuItem("Delete", "Del"))
-			{
-				app->deleteEnts();
-			}
-
 			if (entIdx >= 0 && map && map->ents[entIdx]->hide)
 			{
 				if (ImGui::MenuItem("Unhide", "Ctrl+H"))
@@ -671,143 +678,141 @@ void Gui::draw3dContextMenus()
 			}
 
 			ImGui::Separator();
-			if (map && entIdx >= 0 && entIdx < map->ents.size() && app->pickInfo.selectedEnts.size() == 1)
+			if (app->pickInfo.selectedEnts.size() == 1)
 			{
-				Entity* ent = map->ents[entIdx];
-				int modelIdx = ent->getBspModelIdx();
-				if (entIdx == 0 && modelIdx <= 0)
-					modelIdx = 0;
 				if (modelIdx >= 0)
 				{
 					BSPMODEL& model = map->models[modelIdx];
 					if (ImGui::BeginMenu("Hulls"))
 					{
-						if (ImGui::BeginMenu("Create Hull", !app->invalidSolid && app->isTransformableSolid))
+						if (modelIdx > 0 || map->is_bsp_model)
 						{
-							if (ImGui::MenuItem("Clipnodes"))
+							if (ImGui::BeginMenu("Create Hull", !app->invalidSolid && app->isTransformableSolid))
 							{
-								map->regenerate_clipnodes(modelIdx, -1);
-								checkValidHulls();
-								logf("Regenerated hulls 1-3 on model {}\n", modelIdx);
-							}
-
-							ImGui::Separator();
-
-							for (int i = 1; i < MAX_MAP_HULLS; i++)
-							{
-								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
+								if (ImGui::MenuItem("Clipnodes"))
 								{
-									map->regenerate_clipnodes(modelIdx, i);
+									map->regenerate_clipnodes(modelIdx, -1);
 									checkValidHulls();
-									logf("Regenerated hull {} on model {}\n", i, modelIdx);
+									logf("Regenerated hulls 1-3 on model {}\n", modelIdx);
 								}
-							}
-							ImGui::EndMenu();
-						}
 
-						if (ImGui::BeginMenu("Delete Hull", !app->isLoading))
-						{
-							if (ImGui::MenuItem("All Hulls"))
-							{
-								map->delete_hull(0, modelIdx, -1);
-								map->delete_hull(1, modelIdx, -1);
-								map->delete_hull(2, modelIdx, -1);
-								map->delete_hull(3, modelIdx, -1);
-								map->getBspRender()->refreshModel(modelIdx);
-								checkValidHulls();
-								logf("Deleted all hulls on model {}\n", modelIdx);
-							}
-							if (ImGui::MenuItem("Clipnodes"))
-							{
-								map->delete_hull(1, modelIdx, -1);
-								map->delete_hull(2, modelIdx, -1);
-								map->delete_hull(3, modelIdx, -1);
-								map->getBspRender()->refreshModelClipnodes(modelIdx);
-								checkValidHulls();
-								logf("Deleted hulls 1-3 on model {}\n", modelIdx);
-							}
+								ImGui::Separator();
 
-							ImGui::Separator();
-
-							for (int i = 0; i < MAX_MAP_HULLS; i++)
-							{
-								bool isHullValid = model.iHeadnodes[i] >= 0;
-
-								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
+								for (int i = 1; i < MAX_MAP_HULLS; i++)
 								{
-									map->delete_hull(i, modelIdx, -1);
-									checkValidHulls();
-									if (i == 0)
-										map->getBspRender()->refreshModel(modelIdx);
-									else
-										map->getBspRender()->refreshModelClipnodes(modelIdx);
-									logf("Deleted hull {} on model {}\n", i, modelIdx);
+									if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str()))
+									{
+										map->regenerate_clipnodes(modelIdx, i);
+										checkValidHulls();
+										logf("Regenerated hull {} on model {}\n", i, modelIdx);
+									}
 								}
+								ImGui::EndMenu();
 							}
 
-							ImGui::EndMenu();
-						}
-
-						if (ImGui::BeginMenu("Simplify Hull", !app->isLoading))
-						{
-							if (ImGui::MenuItem("Clipnodes"))
+							if (ImGui::BeginMenu("Delete Hull", !app->isLoading))
 							{
-								map->simplify_model_collision(modelIdx, 1);
-								map->simplify_model_collision(modelIdx, 2);
-								map->simplify_model_collision(modelIdx, 3);
-								map->getBspRender()->refreshModelClipnodes(modelIdx);
-								logf("Replaced hulls 1-3 on model {} with a box-shaped hull\n", modelIdx);
+								if (ImGui::MenuItem("All Hulls"))
+								{
+									map->delete_hull(0, modelIdx, -1);
+									map->delete_hull(1, modelIdx, -1);
+									map->delete_hull(2, modelIdx, -1);
+									map->delete_hull(3, modelIdx, -1);
+									map->getBspRender()->refreshModel(modelIdx);
+									checkValidHulls();
+									logf("Deleted all hulls on model {}\n", modelIdx);
+								}
+								if (ImGui::MenuItem("Clipnodes"))
+								{
+									map->delete_hull(1, modelIdx, -1);
+									map->delete_hull(2, modelIdx, -1);
+									map->delete_hull(3, modelIdx, -1);
+									map->getBspRender()->refreshModelClipnodes(modelIdx);
+									checkValidHulls();
+									logf("Deleted hulls 1-3 on model {}\n", modelIdx);
+								}
+
+								ImGui::Separator();
+
+								for (int i = 0; i < MAX_MAP_HULLS; i++)
+								{
+									bool isHullValid = model.iHeadnodes[i] >= 0;
+
+									if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
+									{
+										map->delete_hull(i, modelIdx, -1);
+										checkValidHulls();
+										if (i == 0)
+											map->getBspRender()->refreshModel(modelIdx);
+										else
+											map->getBspRender()->refreshModelClipnodes(modelIdx);
+										logf("Deleted hull {} on model {}\n", i, modelIdx);
+									}
+								}
+
+								ImGui::EndMenu();
 							}
 
-							ImGui::Separator();
-
-							for (int i = 1; i < MAX_MAP_HULLS; i++)
+							if (ImGui::BeginMenu("Simplify Hull", !app->isLoading))
 							{
-								bool isHullValid = map->models[modelIdx].iHeadnodes[i] >= 0;
-
-								if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
+								if (ImGui::MenuItem("Clipnodes"))
 								{
 									map->simplify_model_collision(modelIdx, 1);
+									map->simplify_model_collision(modelIdx, 2);
+									map->simplify_model_collision(modelIdx, 3);
 									map->getBspRender()->refreshModelClipnodes(modelIdx);
-									logf("Replaced hull {} on model {} with a box-shaped hull\n", i, modelIdx);
+									logf("Replaced hulls 1-3 on model {} with a box-shaped hull\n", modelIdx);
 								}
-							}
 
-							ImGui::EndMenu();
-						}
+								ImGui::Separator();
 
-						bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] || map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
-
-						if (ImGui::BeginMenu("Redirect Hull", canRedirect && !app->isLoading && modelIdx >= 0))
-						{
-							for (int i = 1; i < MAX_MAP_HULLS; i++)
-							{
-								if (ImGui::BeginMenu(("Hull " + std::to_string(i)).c_str()))
+								for (int i = 1; i < MAX_MAP_HULLS; i++)
 								{
+									bool isHullValid = map->models[modelIdx].iHeadnodes[i] >= 0;
 
-									for (int k = 1; k < MAX_MAP_HULLS; k++)
+									if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), 0, false, isHullValid))
 									{
-										if (i == k)
-											continue;
-
-										bool isHullValid = map->models[modelIdx].iHeadnodes[k] >= 0 && map->models[modelIdx].iHeadnodes[k] != map->models[modelIdx].iHeadnodes[i];
-
-										if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
-										{
-											map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
-											map->getBspRender()->refreshModelClipnodes(modelIdx);
-											checkValidHulls();
-											logf("Redirected hull {} to hull {} on model {}\n", i, k, modelIdx);
-										}
+										map->simplify_model_collision(modelIdx, 1);
+										map->getBspRender()->refreshModelClipnodes(modelIdx);
+										logf("Replaced hull {} on model {} with a box-shaped hull\n", i, modelIdx);
 									}
-
-									ImGui::EndMenu();
 								}
+
+								ImGui::EndMenu();
 							}
 
-							ImGui::EndMenu();
-						}
+							bool canRedirect = map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[2] || map->models[modelIdx].iHeadnodes[1] != map->models[modelIdx].iHeadnodes[3];
 
+							if (ImGui::BeginMenu("Redirect Hull", canRedirect && !app->isLoading && modelIdx >= 0))
+							{
+								for (int i = 1; i < MAX_MAP_HULLS; i++)
+								{
+									if (ImGui::BeginMenu(("Hull " + std::to_string(i)).c_str()))
+									{
+
+										for (int k = 1; k < MAX_MAP_HULLS; k++)
+										{
+											if (i == k)
+												continue;
+
+											bool isHullValid = map->models[modelIdx].iHeadnodes[k] >= 0 && map->models[modelIdx].iHeadnodes[k] != map->models[modelIdx].iHeadnodes[i];
+
+											if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), 0, false, isHullValid))
+											{
+												map->models[modelIdx].iHeadnodes[i] = map->models[modelIdx].iHeadnodes[k];
+												map->getBspRender()->refreshModelClipnodes(modelIdx);
+												checkValidHulls();
+												logf("Redirected hull {} to hull {} on model {}\n", i, k, modelIdx);
+											}
+										}
+
+										ImGui::EndMenu();
+									}
+								}
+
+								ImGui::EndMenu();
+							}
+						}
 						if (ImGui::BeginMenu("Print Hull Tree", !app->isLoading && modelIdx >= 0))
 						{
 							for (int i = 0; i < MAX_MAP_HULLS; i++)
@@ -847,22 +852,24 @@ void Gui::draw3dContextMenus()
 							}
 						}
 					}
-
-					if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && allowDuplicate))
+					if (modelIdx > 0)
 					{
-						logf("Execute 'duplicate' for {} models.\n", app->pickInfo.selectedEnts.size());
-						for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+						if (ImGui::MenuItem("Duplicate BSP model", 0, false, !app->isLoading && allowDuplicate))
 						{
-							DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", tmpEntIdx);
-							command->execute();
-							map->getBspRender()->pushUndoCommand(command);
+							logf("Execute 'duplicate' for {} models.\n", app->pickInfo.selectedEnts.size());
+							for (auto& tmpEntIdx : app->pickInfo.selectedEnts)
+							{
+								DuplicateBspModelCommand* command = new DuplicateBspModelCommand("Duplicate BSP Model", tmpEntIdx);
+								command->execute();
+								map->getBspRender()->pushUndoCommand(command);
+							}
 						}
-					}
-					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
-					{
-						ImGui::BeginTooltip();
-						ImGui::TextUnformatted("Create a copy of this BSP model and assign to this entity.\n\nThis lets you edit the model for this entity without affecting others.");
-						ImGui::EndTooltip();
+						if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+						{
+							ImGui::BeginTooltip();
+							ImGui::TextUnformatted("Create a copy of this BSP model and assign to this entity.\n\nThis lets you edit the model for this entity without affecting others.");
+							ImGui::EndTooltip();
+						}
 					}
 					if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && modelIdx >= 0))
 					{
@@ -877,19 +884,22 @@ void Gui::draw3dContextMenus()
 
 				}
 			}
-
-			if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "ALT+G"))
+			if (modelIdx > 0)
 			{
-				if (!app->movingEnt)
-					app->grabEnt();
-				else
+				if (ImGui::MenuItem(app->movingEnt ? "Ungrab" : "Grab", "ALT+G"))
 				{
-					app->ungrabEnt();
+					if (!app->movingEnt)
+						app->grabEnt();
+					else
+					{
+						app->ungrabEnt();
+					}
 				}
-			}
-			if (ImGui::MenuItem("Transform", "Ctrl+M"))
-			{
-				showTransformWidget = true;
+
+				if (ImGui::MenuItem("Transform", "Ctrl+M"))
+				{
+					showTransformWidget = true;
+				}
 			}
 			ImGui::Separator();
 			if (ImGui::MenuItem("Properties", "Alt+Enter"))
@@ -1276,6 +1286,14 @@ void Gui::drawMenuBar()
 				ImGui::EndMenu();
 			}
 
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Export map geometry without textures");
+				ImGui::EndTooltip();
+			}
+
+
 			if ((map && !map->is_mdl_model) && ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL))
 			{
 				if (map)
@@ -1291,9 +1309,30 @@ void Gui::drawMenuBar()
 			if ((map && !map->is_mdl_model) && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Export map geometry without textures");
+				ImGui::TextUnformatted("Export .map ( NOT WORKING at this time:) )");
 				ImGui::EndTooltip();
 			}
+
+			if ((map && !map->is_mdl_model) && ImGui::MenuItem("VIS .ptr file", NULL))
+			{
+				if (map)
+				{
+					map->ExportPortalFile();
+				}
+				else
+				{
+					logf("Select map first\n");
+				}
+			}
+
+
+			if ((map && !map->is_mdl_model) && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Export portal file for do REVIS");
+				ImGui::EndTooltip();
+			}
+
 
 			if ((map && !map->is_mdl_model) && ImGui::BeginMenu(".bsp MODEL with collision"))
 			{
@@ -2819,13 +2858,16 @@ void Gui::drawDebugWidget()
 
 			BSPLEAF& leaf = map->leaves[leafIdx];
 			int thisLeafCount = map->leafCount;
-			unsigned char* visData = new unsigned char[map->leafCount];
-			memset(visData, 0x00, map->leafCount);
-			DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
-			//DecompressVis(map->visdata + leaf.nVisOffset, visData, map->leafCount - 1, map->leafCount - 1, map->visDataLength);
+
+			int oldVisRowSize = ((thisLeafCount + 63) & ~63) >> 3;
+
+			unsigned char* visData = new unsigned char[oldVisRowSize];
+			memset(visData, 0xFF, oldVisRowSize);
+			//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
+			DecompressVis(map->visdata + leaf.nVisOffset, visData, oldVisRowSize, map->leafCount, map->visDataLength - leaf.nVisOffset);
 
 
-			for (int l = 0; l < map->leafCount; l++)
+			for (int l = 0; l < map->leafCount - 1; l++)
 			{
 				if (l == leafIdx || CHECKVISBIT(visData, l))
 				{
@@ -2840,10 +2882,8 @@ void Gui::drawDebugWidget()
 				}
 			}
 
-			for (int l = 0; l < map->leafCount; l++)
+			for (int l = 0; l < map->leafCount - 1; l++)
 			{
-				auto faceList = map->getLeafFaces(l);
-
 				if (l == leafIdx || CHECKVISBIT(visData, l))
 				{
 					auto faceList = map->getLeafFaces(l + 1);
@@ -2877,7 +2917,7 @@ void Gui::drawDebugWidget()
 			BSPLEAF& leaf = map->leaves[leafIdx];
 			int thisLeafCount = map->leafCount;
 			unsigned char* visData = new unsigned char[map->leafCount];
-			memset(visData, 0x00, map->leafCount);
+			memset(visData, 0xFF, map->leafCount);
 			//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount, visData, map->leafCount);
 			DecompressVis(map->visdata + leaf.nVisOffset, visData, map->leafCount - 1, map->leafCount - 1, map->visDataLength);
 			LeafDebug tmpLeafDebug = LeafDebug();

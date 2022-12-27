@@ -12,6 +12,7 @@
 
 struct BSPPLANE;
 struct BSPFACE;
+struct BSPPLANE;
 
 class Winding
 {
@@ -21,7 +22,10 @@ public:
 
 	Winding(Bsp* bsp, const BSPFACE& face, float epsilon = ON_EPSILON);
 	Winding(int numpoints);
+	Winding(const BSPPLANE& plane, float epsilon = ON_EPSILON);
+	Winding();
 	Winding(const Winding& other);
+	void getPlane(BSPPLANE& plane);
 	virtual ~Winding();
 	Winding& operator=(const Winding& other);
 

@@ -9,6 +9,10 @@
 #endif
 
 #pragma pack(push, 1)
+
+#define	SIDESPACE	24
+#define	BOGUS_RANGE	18000
+
 #define BSP_MODEL_BYTES 64 // size of a BSP model in bytes
 
 #define LUMP_ENTITIES      0

@@ -2,6 +2,7 @@
 
 #include "winding.h"
 #include "rad.h"
+#include "bsptypes.h"
 #include "Bsp.h"
 
 Winding& Winding::operator=(const Winding& other)
@@ -26,6 +27,14 @@ Winding::Winding(int numpoints)
 	memset(m_Points, 0, sizeof(vec3) * m_NumPoints);
 }
 
+
+Winding::Winding()
+{
+	m_Points = NULL;
+	m_NumPoints = 0;
+	m_MaxPoints = 0;
+}
+
 Winding::Winding(const Winding& other)
 {
 	m_NumPoints = other.m_NumPoints;
@@ -38,6 +47,97 @@ Winding::Winding(const Winding& other)
 Winding::~Winding()
 {
 	delete[] m_Points;
+}
+
+Winding::Winding(const BSPPLANE& plane, float epsilon)
+{
+		int             i;
+		float           max, v;
+		vec3  org, vright, vup;
+
+		org = vright = vup = vec3();
+		// find the major axis               
+
+		max = -BOGUS_RANGE;
+		int x = -1;
+		for (i = 0; i < 3; i++)
+		{
+			v = fabs(plane.vNormal[i]);
+			if (v > max)
+			{
+				max = v;
+				x = i;
+			}
+		}
+		if (x == -1)
+		{
+			logf("Winding::initFromPlane no major axis found\n");
+		}
+
+		
+
+		switch (x)
+		{
+			case 0:
+			case 1:
+				vup[2] = 1;
+				break;
+			case 2:
+				vup[0] = 1;
+				break;
+		}
+
+		v = DotProduct(vup, plane.vNormal);
+		VectorMA(vup, -v, plane.vNormal, vup);
+		VectorNormalize(vup);
+
+		VectorScale(plane.vNormal, plane.fDist, org);
+
+		CrossProduct(vup, plane.vNormal, vright);
+
+		VectorScale(vup, BOGUS_RANGE, vup);
+		VectorScale(vright, BOGUS_RANGE, vright);
+
+		// project a really big     axis aligned box onto the plane
+		m_NumPoints = 4;
+		m_MaxPoints = (m_NumPoints + 3) & ~3;   // groups of 4
+		m_Points = new vec3[m_MaxPoints];
+
+		VectorSubtract(org, vright, m_Points[0]);
+		VectorAdd(m_Points[0], vup, m_Points[0]);
+
+		VectorAdd(org, vright, m_Points[1]);
+		VectorAdd(m_Points[1], vup, m_Points[1]);
+
+		VectorAdd(org, vright, m_Points[2]);
+		VectorSubtract(m_Points[2], vup, m_Points[2]);
+
+		VectorSubtract(org, vright, m_Points[3]);
+		VectorSubtract(m_Points[3], vup, m_Points[3]);
+}
+
+void Winding::getPlane(BSPPLANE& plane) 
+{
+	vec3          v1, v2;
+	vec3          plane_normal;
+	v1 = v2 = plane_normal = vec3();
+	//hlassert(m_NumPoints >= 3);
+
+	if (m_NumPoints >= 3)
+	{
+		VectorSubtract(m_Points[2], m_Points[1], v1);
+		VectorSubtract(m_Points[0], m_Points[1], v2);
+
+		CrossProduct(v2, v1, plane_normal);
+		VectorNormalize(plane_normal);
+		VectorCopy(plane_normal, plane.vNormal);               // change from vec_t
+		plane.fDist = DotProduct(m_Points[0], plane.vNormal);
+	}
+	else
+	{
+		plane.vNormal = vec3();
+		plane.fDist = 0.0;
+	}
 }
 
 Winding::Winding(Bsp* bsp, const BSPFACE& face, float epsilon)
@@ -87,7 +187,7 @@ void Winding::RemoveColinearPoints(float epsilon)
 		VectorSubtract(p3, p2, v2);
 		// v1 or v2 might be close to 0
 		if (DotProduct(v1, v2) * DotProduct(v1, v2) >= DotProduct(v1, v1) * DotProduct(v2, v2)
-			- ON_EPSILON * ON_EPSILON * (DotProduct(v1, v1) + DotProduct(v2, v2) + ON_EPSILON * ON_EPSILON))
+			- epsilon * epsilon * (DotProduct(v1, v1) + DotProduct(v2, v2) + epsilon * epsilon))
 			// v2 == k * v1 + v3 && abs (v3) < ON_EPSILON || v1 == k * v2 + v3 && abs (v3) < ON_EPSILON
 		{
 			m_NumPoints--;
@@ -103,9 +203,9 @@ void Winding::RemoveColinearPoints(float epsilon)
 
 bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 {
-	float           dists[MAX_POINTS_ON_WINDING];
-	int             sides[MAX_POINTS_ON_WINDING];
-	int             counts[3];
+	float           dists[MAX_POINTS_ON_WINDING]{};
+	int             sides[MAX_POINTS_ON_WINDING]{};
+	int             counts[3]{};
 	float           dot;
 	int             i, j;
 

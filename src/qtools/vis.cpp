@@ -139,7 +139,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 		}
 	}
 	if (overflow)
-		logf("OVERFLOWED {} VIS LEAVES WHILE SHIFTING\n", overflow);
+		logf("Fatal error! OVERFLOWED {} VIS LEAVES WHILE SHIFTING\n", overflow);
 
 
 	if (byteShifts > 0)
@@ -173,7 +173,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 // visDataLeafCount = total leaves in this map (exluding the shared solid leaf 0)
 // newNumLeaves = total leaves that will be in the map after merging is finished (again, excluding solid leaf 0)
 void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned char* output,
-						 int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
+	int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
 {
 	unsigned char* dest;
 	int oldVisRowSize = ((visDataLeafCount + 63) & ~63) >> 3;
@@ -193,25 +193,27 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 		dest = output + i * newVisRowSize;
 		if (lastUsedIdx >= 0)
 		{
-			if ((i) * sizeof(BSPLEAF) >= leafMemSize)
+			if ((i + 1) * sizeof(BSPLEAF) >= leafMemSize)
 			{
-				logf("Overflow decompressing VIS lump! #0\n");
+				logf("Fatal error! Overflow decompressing VIS lump! {} leaf of {} #0\n", i + 1, leafMemSize / sizeof(BSPLEAF));
+				return;
 			}
 
-			if (leafLump[i].nVisOffset < 0)
+			if (leafLump[i + 1].nVisOffset < 0)
 			{
 				memset(dest, 255, lastUsedIdx);
 				dest[lastUsedIdx] |= lastChunkMask;
 				continue;
 			}
 
-			if (abs(leafLump[i].nVisOffset >= visLumpMemSize))
+			if (leafLump[i + 1].nVisOffset >= visLumpMemSize)
 			{
-				logf("Overflow decompressing VIS lump! #1\n");
+				logf("Fatal error! Overflow decompressing VIS lump! {} of {} #1\n",leafLump[i + 1].nVisOffset,visLumpMemSize);
+				return;
 			}
 			// Tracing ... 
-			//logf("Leaef vis offset : {} of {} lump size\n", leafLump[i ].nVisOffset, visLumpMemSize);
-			DecompressVis((unsigned char*)(visLump + leafLump[i ].nVisOffset), dest, oldVisRowSize, visDataLeafCount, visLumpMemSize - leafLump[i].nVisOffset);
+			// logf("Leaef vis offset : {} of {} lump size\n", leafLump[i].nVisOffset, visLumpMemSize);
+			DecompressVis((unsigned char*)(visLump + leafLump[i + 1].nVisOffset), dest, oldVisRowSize, visDataLeafCount, visLumpMemSize - leafLump[i + 1].nVisOffset);
 
 			// Leaf visibility row lengths are multiples of 64 leaves, so there are usually some unused bits at the end.
 			// Maps sometimes set those unused bits randomly (e.g. leaf index 100 is marked visible, but there are only 90 leaves...)
@@ -219,13 +221,14 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 			if (lastUsedIdx < newVisRowSize)
 			{
 				dest[lastUsedIdx] &= lastChunkMask;
-				int sz = newVisRowSize - (lastUsedIdx);
-				memset(dest + lastUsedIdx, 0, sz);
+				int sz = newVisRowSize - (lastUsedIdx + 1);
+				//lastUsedIdx = lastUsedIdx + 1 + sz;
+				memset(dest + lastUsedIdx + 1, 0, sz);
 			}
 		}
 		else
 		{
-			logf("Overflow decompressing VIS lump! #1\n");
+			logf("Fatal error! Overflow decompressing VIS lump! #1\n");
 			return;
 		}
 	}
@@ -251,17 +254,17 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 
 	do
 	{
-		//hlassume(src - g_dvisdata < g_visdatasize, assume_DECOMPRESSVIS_OVERFLOW);
 		if (*src)
 		{
 			if (out > startdst + dest_length)
 			{
-				logf("Decompress vis dest overflow {} > {} #0!\n", (int)(out - startdst), dest_length);
+				logf("Fatal error! Decompress vis dest overflow {} > {} #0!\n", (int)(out - startdst), dest_length);
+				return;
 			}
 			if (src > startsrc + src_length)
 			{
-				logf("Decompress vis src overflow {} > {} #1!\n", (int)(src - startsrc), src_length);
-				//return;
+				logf("Fatal error! Decompress vis src overflow {} > {} #1!\n", (int)(src - startsrc), src_length);
+				return;
 			}
 			*out = *src;
 			out++;
@@ -269,14 +272,14 @@ void DecompressVis(unsigned char* src, unsigned char* dest, unsigned int dest_le
 			continue;
 		}
 
-		//hlassume(&src[1] - g_dvisdata < g_visdatasize, assume_DECOMPRESSVIS_OVERFLOW);
 		c = src[1];
 		src += 2;
 		while (c)
 		{
 			if (out > startdst + dest_length)
 			{
-				logf("Decompress vis dest overflow {} > {} #0!\n", (int)(out - startdst), dest_length);
+				logf("Fatal error! Decompress vis dest overflow {} > {} #0!\n", (int)(out - startdst), dest_length);
+				return;
 			}
 			*out = 0;
 			out++;
@@ -302,13 +305,13 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 
 		if (current_length > dest_length)
 		{
-			logf("Decompress vis overflow {} > {} #0!", current_length, dest_length);
+			logf("Fatal error! Decompress vis overflow {} > {} #0!", current_length, dest_length);
+			return (int)(dest_p - dest);
 		}
-
-		hlassume(current_length <= dest_length, assume_COMPRESSVIS_OVERFLOW);
 
 		*dest_p = src[j];
 		dest_p++;
+
 
 		if (src[j])
 		{
@@ -331,7 +334,8 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 		current_length++;
 		if (current_length > dest_length)
 		{
-			logf("Decompress vis overflow {} > {} #0!", current_length, dest_length);
+			logf("Fatal error! Decompress vis overflow {} > {} #0!", current_length, dest_length);
+			return (int)(dest_p - dest);
 		}
 		*dest_p = rep;
 		dest_p++;
@@ -379,16 +383,17 @@ int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* outp
 	{
 		if (i + 1 >= leafMemSize)
 		{
-			logf("leaf array overflow leafs[{}] of {}\n", i + 1, leafMemSize);
+			logf("Fatal error! leaf array overflow leafs[{}] of {}\n", i + 1, leafMemSize);
+			return (int)(vismap_p - output);
 		}
 
 		if (sharedRows[i] != i)
 		{
 			if (sharedRows[i] + 1 >= leafMemSize)
 			{
-				logf("leaf array overflow leafs[{}] of {} (in sharedRows)\n", (int)(sharedRows[i] + 1), leafMemSize);
+				logf("Fatal error! leaf array overflow leafs[{}] of {} (in sharedRows)\n", (int)(sharedRows[i] + 1), leafMemSize);
+				return (int)(vismap_p - output);
 			}
-
 			leafs[i + 1].nVisOffset = leafs[sharedRows[i] + 1].nVisOffset;
 			continue;
 		}
@@ -405,7 +410,8 @@ int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* outp
 
 		if (vismap_p >= output + bufferSize)
 		{
-			logf("Vismap expansion overflow {} > {}\n", (void*) vismap_p, (void*)(output + bufferSize));
+			logf("Fatal error! Vismap expansion overflow {} > {}\n", (void*)vismap_p, (void*)(output + bufferSize));
+			return (int)(vismap_p - output);
 		}
 
 		leafs[i + 1].nVisOffset = (int)(dest - output);            // leaf 0 is a common solid
@@ -446,7 +452,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf("Fatal Error! Decompress leaf vis overflow {} > {} #1!\n", (int)(out - dest), dest_length);
+				logf("Fatal error! Fatal Error! Decompress leaf vis overflow {} > {} #1!\n", (int)(out - dest), dest_length);
 				return;
 			}
 
@@ -463,13 +469,13 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf("Fatal Error! Decompress leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+				logf("Fatal error! Fatal Error! Decompress leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
 				return;
 			}
 
 			if (src > src_start + src_len)
 			{
-				logf("Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+				logf("Fatal error! Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
 				return;
 			}
 
@@ -483,7 +489,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 
 		if (src > src_start + src_len)
 		{
-			logf("Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
+			logf("Fatal error! Fatal Error! Decompress src leaf vis overflow {} > {} #2!\n", (int)(out - dest), dest_length);
 			return;
 		}
 
@@ -491,7 +497,7 @@ void DecompressLeafVis(unsigned char* src, unsigned int src_len, unsigned char* 
 		{
 			if (out > dest + dest_length)
 			{
-				logf("Fatal Error! Decompress leaf vis overflow {} > {} #3!\n", (int)(out - dest), dest_length);
+				logf("Fatal error! Fatal Error! Decompress leaf vis overflow {} > {} #3!\n", (int)(out - dest), dest_length);
 				return;
 			}
 

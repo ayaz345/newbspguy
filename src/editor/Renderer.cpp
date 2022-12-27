@@ -2050,24 +2050,17 @@ void Renderer::cameraContextMenus()
 			}
 		}
 
-		if (tempPick.GetSelectedEnt() <= 0)
-			map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
+		int tmpSelectedEnt = tempPick.GetSelectedEnt();
 
-
-		if (tempPick.GetSelectedEnt() >= 0 && tempPick.GetSelectedEnt() == pickInfo.GetSelectedEnt())
+		if (tmpSelectedEnt <= 0)
 		{
-			if (tempPick.GetSelectedEnt() == 0)
-			{
-				if (map->ents.size() == 1)
-				{
-					gui->openContextMenu(pickInfo.GetSelectedEnt());
-				}
-				else
-				{
-					gui->openContextMenu(-1);
-				}
-			}
-			else
+			map->getBspRender()->pickPoly(pickStart, pickDir, clipnodeRenderHull, tempPick, &map);
+			tmpSelectedEnt = tempPick.GetSelectedEnt();
+		}
+
+		if (tmpSelectedEnt >= 0 && tmpSelectedEnt == pickInfo.GetSelectedEnt())
+		{
+			if (tmpSelectedEnt >= 0)
 			{
 				gui->openContextMenu(pickInfo.GetSelectedEnt());
 			}

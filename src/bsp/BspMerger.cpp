@@ -1803,7 +1803,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	g_progress.tick();
 
 	unsigned char* decompressedVis = new unsigned char[decompressedVisSize];
-	memset(decompressedVis, 0, decompressedVisSize);
+	memset(decompressedVis, 0xFF, decompressedVisSize);
 
 	// decompress this map's world leaves
 	// model leaves don't need to be decompressed because the game ignores VIS for them.
