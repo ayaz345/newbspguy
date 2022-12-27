@@ -345,7 +345,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 	return (int)(dest_p - dest);
 }
 
-int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize, int leafMemSize)
+int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize, int maxLeafs)
 {
 	int x = 0;
 
@@ -381,17 +381,17 @@ int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* outp
 
 	for (int i = 0; i < iterLeaves; i++)
 	{
-		if (i + 1 >= leafMemSize)
+		if (i + 1 >= maxLeafs)
 		{
-			logf("Fatal error! leaf array overflow leafs[{}] of {}\n", i + 1, leafMemSize);
+			logf("Fatal error! leaf array overflow leafs[{}] of {}\n", i + 1, maxLeafs);
 			return (int)(vismap_p - output);
 		}
 
 		if (sharedRows[i] != i)
 		{
-			if (sharedRows[i] + 1 >= leafMemSize)
+			if (sharedRows[i] + 1 >= maxLeafs)
 			{
-				logf("Fatal error! leaf array overflow leafs[{}] of {} (in sharedRows)\n", (int)(sharedRows[i] + 1), leafMemSize);
+				logf("Fatal error! leaf array overflow leafs[{}] of {} (in sharedRows)\n", (int)(sharedRows[i] + 1), maxLeafs);
 				return (int)(vismap_p - output);
 			}
 			leafs[i + 1].nVisOffset = leafs[sharedRows[i] + 1].nVisOffset;

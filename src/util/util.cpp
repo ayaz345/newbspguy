@@ -1415,6 +1415,8 @@ bool FindPathInAssets(const std::string& path, std::string& outpath, bool traces
 		return true;
 	}
 
+	tracesearch = tracesearch && g_settings.verboseLogs;
+
 	//if (fileExists("./" + path))
 	//{
 	//	outpath = path;

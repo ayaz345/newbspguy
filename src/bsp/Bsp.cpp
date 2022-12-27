@@ -1670,7 +1670,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 
 	int decompressedVisSize = oldLeafCount * oldVisRowSize;
 	unsigned char * decompressedVis = new unsigned char[decompressedVisSize];
-	memset(decompressedVis, 0, decompressedVisSize);
+	memset(decompressedVis, 0xFF, decompressedVisSize);
 	decompress_vis_lump(oldLeaves, lumps[LUMP_VISIBILITY], decompressedVis,
 		oldWorldLeaves, oldVisLeafCount - 1, oldVisLeafCount - 1, oldLeavesMemSize, bsp_header.lump[LUMP_VISIBILITY].nLength);
 
@@ -1697,7 +1697,7 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, in
 
 	unsigned char* compressedVis = new unsigned char[decompressedVisSize];
 	memset(compressedVis, 0, decompressedVisSize);
-	int newVisLen = CompressAll(leaves, decompressedVis, compressedVis, newVisLeafCount, newWorldLeaves, decompressedVisSize, leafCount);
+	int newVisLen = CompressAll(leaves, decompressedVis, compressedVis, newVisLeafCount - 1, newWorldLeaves, decompressedVisSize, leafCount);
 
 	unsigned char* compressedVisResized = new unsigned char[newVisLen];
 	memcpy(compressedVisResized, compressedVis, newVisLen);
