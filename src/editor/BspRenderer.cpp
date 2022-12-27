@@ -13,7 +13,7 @@
 
 
 BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _fullBrightBspShader,
-						 ShaderProgram* _colorShader, PointEntRenderer* _pointEntRenderer)
+	ShaderProgram* _colorShader, PointEntRenderer* _pointEntRenderer)
 {
 	this->map = _map;
 	this->map->setBspRender(this);
@@ -494,9 +494,9 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 	}
 
 	logf("Created {} solid render groups ({} world, {} entity)\n",
-		 worldRenderGroups + modelRenderGroups,
-		 worldRenderGroups,
-		 modelRenderGroups);
+		worldRenderGroups + modelRenderGroups,
+		worldRenderGroups,
+		modelRenderGroups);
 }
 
 void BspRenderer::deleteRenderModel(RenderModel* renderModel)
@@ -1865,7 +1865,8 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 	{
 		bool drawTransparentFaces = pass == 1;
 
-		drawModel(0, drawTransparentFaces, false, false);
+		if (!renderEnts[0].hide)
+			drawModel(0, drawTransparentFaces, false, false);
 
 		for (int i = 0, sz = (int)map->ents.size(); i < sz; i++)
 		{
@@ -1897,7 +1898,8 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 
 		if (g_render_flags & RENDER_WORLD_CLIPNODES && clipnodeHull != -1)
 		{
-			drawModelClipnodes(0, false, clipnodeHull);
+			if (!renderEnts[0].hide)
+				drawModelClipnodes(0, false, clipnodeHull);
 		}
 
 		if (g_render_flags & RENDER_ENT_CLIPNODES)
