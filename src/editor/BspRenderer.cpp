@@ -2314,9 +2314,18 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 
 bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int modelIdx, int hullIdx, PickInfo& tempPickInfo)
 {
-	if (map->modelCount <= 0)
+	if (map->modelCount <= 0 || modelIdx < 0)
 		return false;
 
+	
+	int entidx = map->get_ent_from_model(modelIdx);
+
+	if (entidx >= 0)
+	{
+		if (map->ents[entidx]->hide)
+			return false;
+	}
+		
 	BSPMODEL& model = map->models[modelIdx];
 
 	start -= offset;
