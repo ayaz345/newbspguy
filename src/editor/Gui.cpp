@@ -1313,7 +1313,7 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
-			if ((map && !map->is_mdl_model) && ImGui::MenuItem("VIS .ptr file", NULL))
+			if ((map && !map->is_mdl_model) && ImGui::MenuItem("VIS .prt file", NULL))
 			{
 				if (map)
 				{
@@ -2482,7 +2482,8 @@ void Gui::drawDebugWidget()
 
 	ImGui::SetNextWindowBgAlpha(0.75f);
 
-	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 100.f), ImVec2(FLT_MAX, app->windowHeight * 1.0f));
+	ImGui::SetNextWindowSize(ImVec2(300.f, 400.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(200.f, 200.f), ImVec2(app->windowWidth - 40.f, app->windowHeight - 40.f));
 
 	Bsp* map = app->getSelectedMap();
 	BspRenderer* renderer = map ? map->getBspRender() : NULL;
@@ -2492,7 +2493,6 @@ void Gui::drawDebugWidget()
 
 	if (ImGui::Begin("Debug info", &showDebugWidget))
 	{
-
 		if (ImGui::CollapsingHeader("Camera", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			ImGui::Text(fmt::format("Origin: {} {} {}", (int)cameraOrigin.x, (int)cameraOrigin.y, (int)cameraOrigin.z).c_str());
@@ -5568,7 +5568,7 @@ void Gui::drawLimits()
 						stats.push_back(calcStat("nodes", map->nodeCount, MAX_MAP_NODES, false));
 						stats.push_back(calcStat("texinfos", map->texinfoCount, MAX_MAP_TEXINFOS, false));
 						stats.push_back(calcStat("faces", map->faceCount, MAX_MAP_FACES, false));
-						stats.push_back(calcStat("clipnodes", map->clipnodeCount, MAX_MAP_CLIPNODES, false));
+						stats.push_back(calcStat("clipnodes", map->clipnodeCount, map->is_32bit_clipnodes ? INT_MAX : MAX_MAP_CLIPNODES, false));
 						stats.push_back(calcStat("leaves", map->leafCount, MAX_MAP_LEAVES, false));
 						stats.push_back(calcStat("marksurfaces", map->marksurfCount, MAX_MAP_MARKSURFS, false));
 						stats.push_back(calcStat("surfedges", map->surfedgeCount, MAX_MAP_SURFEDGES, false));

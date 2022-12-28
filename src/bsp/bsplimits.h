@@ -19,6 +19,7 @@ extern float FLT_MAX_COORD;
 
 extern unsigned int MAX_MAP_MODELS;
 extern unsigned int MAX_MAP_NODES;
+#define MAX_MAP_CLIPNODES_DEFAULT 32767
 extern unsigned int MAX_MAP_CLIPNODES;
 extern unsigned int MAX_MAP_LEAVES;
 extern unsigned int MAX_MAP_VISDATA; // 64 MB

@@ -2835,7 +2835,7 @@ void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 
 void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset)
 {
-	if (iNode == -1)
+	if (iNode < 0)
 		return;
 	BSPCLIPNODE& node = map->clipnodes[iNode];
 
@@ -2854,7 +2854,7 @@ void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activeP
 
 void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane, vec3 offset)
 {
-	if (iNode == -1)
+	if (iNode < 0)
 		return;
 	BSPNODE& node = map->nodes[iNode];
 

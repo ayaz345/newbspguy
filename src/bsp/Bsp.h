@@ -44,7 +44,9 @@ public:
 	std::string bsp_path;
 	std::string bsp_name;
 	BSPHEADER bsp_header = BSPHEADER();
+	BSPHEADER_EX bsp_header_ex = BSPHEADER_EX();
 	unsigned char** lumps;
+	unsigned char** extralumps;
 	bool bsp_valid;
 	BSPPLANE* planes;
 	BSPTEXTUREINFO* texinfos;
@@ -71,7 +73,8 @@ public:
 	Bsp* parentMap = NULL;
 	void selectModelEnt();
 
-	int clipnodetype; // 0 - default; 1 - 
+	bool is_bsp30ext;
+	bool is_32bit_clipnodes;
 
 	int planeCount;
 	int texinfoCount;
@@ -210,7 +213,7 @@ public:
 	// for use after scaling a model. Convex only.
 	// Skips axis-aligned planes (bounding box should have been generated beforehand)
 	void regenerate_clipnodes(int modelIdx, int hullIdx);
-	short regenerate_clipnodes_from_nodes(int iNode, int hullIdx);
+	int regenerate_clipnodes_from_nodes(int iNode, int hullIdx);
 
 	int create_clipnode();
 	int create_plane();

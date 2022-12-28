@@ -6,6 +6,7 @@ int LIGHTMAP_ATLAS_SIZE = 1024;
 unsigned int MAX_MAP_MODELS = 4096;
 unsigned int MAX_MAP_NODES = 32768;
 unsigned int MAX_MAP_CLIPNODES = 32767;
+
 unsigned int MAX_MAP_LEAVES = 65536;
 unsigned int MAX_MAP_VISDATA = 64 * (1024 * 1024); // 64 MB
 unsigned int MAX_MAP_ENTS = 8192;

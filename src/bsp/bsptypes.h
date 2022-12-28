@@ -32,6 +32,22 @@
 #define LUMP_MODELS       14
 #define HEADER_LUMPS      15
 
+// extra lump ordering
+#define LUMP_LIGHTVECS		0	// deluxemap data
+#define LUMP_FACEINFO		1	// landscape and lightmap resolution info
+#define LUMP_CUBEMAPS		2	// cubemap description
+#define LUMP_VERTNORMALS	3	// phong shaded vertex normals
+#define LUMP_LEAF_LIGHTING	4	// store vertex lighting for statics
+#define LUMP_WORLDLIGHTS	5	// list of all the virtual and real lights (used to relight models in-game)
+#define LUMP_COLLISION		6	// physics engine collision hull dump (userdata)
+#define LUMP_AINODEGRAPH	7	// node graph that stored into the bsp (userdata)
+#define LUMP_SHADOWMAP		8	// contains shadow map for direct light
+#define LUMP_VERTEX_LIGHT	9	// store vertex lighting for statics
+#define LUMP_VISLIGHTDATA	10	// how many lights affects to faces
+#define LUMP_SURFACE_LIGHT	11	// models lightmapping
+#define EXTRA_LUMPS			12	// count of the extra lumps
+#define EXTRA_LUMPS_OLD		8	// count of the extra lumps
+
 enum lump_copy_targets
 {
 	ENTITIES = 1,
@@ -133,10 +149,18 @@ struct BSPLUMP
 	int nLength; // Length of data
 };
 
+
 struct BSPHEADER
 {
 	int nVersion;           // Must be 30 for a valid HL BSP file
 	BSPLUMP lump[HEADER_LUMPS]; // Stores the directory of lumps
+};
+
+struct BSPHEADER_EX
+{
+	int	id;			// must be little endian XASH
+	int	version;
+	BSPLUMP	lump[EXTRA_LUMPS];
 };
 
 struct LumpState
@@ -245,6 +269,12 @@ struct BSPNODE
 };
 
 struct BSPCLIPNODE
+{
+	int iPlane;       // Index into planes
+	int iChildren[2]; // negative numbers are contents
+};
+
+struct BSPCLIPNODE16
 {
 	int iPlane;       // Index into planes
 	short iChildren[2]; // negative numbers are contents

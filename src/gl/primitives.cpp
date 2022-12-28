@@ -173,5 +173,5 @@ cCubeAxes::cCubeAxes(vec3 mins, vec3 maxs, COLOR4 c)
 	maxs.y = center.y - 2.5f;
 	maxs.z = center.z + 2.5f;
 
-	axes = cCube(mins, maxs, COLOR4(0.0f, 255, 255, 125));
+	axes = cCube(mins, maxs, COLOR4(0, 255, 255, 125));
 }

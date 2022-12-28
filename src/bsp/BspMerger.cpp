@@ -28,13 +28,13 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 				if (abs(block.offset.x) >= EPSILON || abs(block.offset.y) >= EPSILON || abs(block.offset.z) >= EPSILON)
 				{
 					logf("    Apply offset ({:6.0f}, {:6.0f}, {:6.0f}) to {}\n",
-						 block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
+						block.offset.x, block.offset.y, block.offset.z, block.map->bsp_name.c_str());
 					block.map->move(block.offset);
 				}
 
 				if (!noripent)
 				{
-	// tag ents with the map they belong to
+					// tag ents with the map they belong to
 					for (int i = 0; i < block.map->ents.size(); i++)
 					{
 						block.map->ents[i]->addKeyvalue("$s_bspguy_map_source", toLowerCase(block.map->bsp_name));
@@ -67,7 +67,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 				if (x != 0)
 				{
-	   //logf("Merge {},{},{} -> {},{},{}\n", x, y, z, 0, y, z);
+					//logf("Merge {},{},{} -> {},{},{}\n", x, y, z, 0, y, z);
 					std::string merge_name = ++mergeCount < maps.size() ? "row_" + std::to_string(rowId) : "result";
 					merge(rowStart, block, merge_name);
 				}
@@ -87,7 +87,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 			if (y != 0)
 			{
-   //logf("Merge {},{},{} -> {},{},{}\n", 0, y, z, 0, 0, z);
+				//logf("Merge {},{},{} -> {},{},{}\n", 0, y, z, 0, 0, z);
 				std::string merge_name = ++mergeCount < maps.size() ? "layer_" + std::to_string(colId) : "result";
 				merge(colStart, block, merge_name);
 			}
@@ -103,7 +103,7 @@ Bsp* BspMerger::merge(std::vector<Bsp*> maps, const vec3& gap, const std::string
 
 		if (z != 0)
 		{
-//logf("Merge {},{},{} -> {},{},{}\n", 0, 0, z, 0, 0, 0);
+			//logf("Merge {},{},{} -> {},{},{}\n", 0, 0, z, 0, 0, 0);
 			merge(layerStart, block, "result");
 		}
 	}
@@ -219,9 +219,9 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	logf("Merged map size:   {:.0f}x{:.0f}x{:.0f} maps\n", actualWidth, actualLength, actualHeight);
 
 	logf("Merged map bounds: min=({:.0f},{:.0f}, {:.0f})\n"
-		 "                   max=({:.0f}, {:.0f},{:.0f})\n",
-		 mergedMapMin.x, mergedMapMin.y, mergedMapMin.z,
-		 mergedMapMax.x, mergedMapMax.y, mergedMapMax.z);
+		"                   max=({:.0f}, {:.0f},{:.0f})\n",
+		mergedMapMin.x, mergedMapMin.y, mergedMapMin.z,
+		mergedMapMax.x, mergedMapMax.y, mergedMapMax.z);
 
 	vec3 targetMins = mergedMapMin;
 	int blockIdx = 0;
@@ -260,7 +260,7 @@ typedef std::map< std::string, std::set<std::string> > mapStringToSet;
 typedef std::map< std::string, MAPBLOCK > mapStringToMapBlock;
 
 void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBLOCK>& sourceMaps,
-											   std::vector<Bsp*>& mapOrder, const std::string& output_name, const std::string& firstMapName, bool noscript)
+	std::vector<Bsp*>& mapOrder, const std::string& output_name, const std::string& firstMapName, bool noscript)
 {
 	int originalEntCount = (int)mergedMap->ents.size();
 	int renameCount = force_unique_ent_names_per_map(mergedMap);
@@ -453,8 +453,8 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 		if (noscript && (cname == "info_player_start" || cname == "info_player_coop" || cname == "info_player_dm2"))
 		{
-// info_player_start ents are ignored if there is any active info_player_deathmatch,
-// so this may break spawns if there are a mix of spawn types
+			// info_player_start ents are ignored if there is any active info_player_deathmatch,
+			// so this may break spawns if there are a mix of spawn types
 			cname = ent->keyvalues["classname"] = "info_player_deathmatch";
 		}
 
@@ -487,7 +487,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 			}
 			if (cname.find("monster_") == 0 && cname.rfind("_dead") != cname.size() - 5)
 			{
-// replace with a squadmaker and spawn when this map section starts
+				// replace with a squadmaker and spawn when this map section starts
 
 				updated_monsters++;
 				hashmap oldKeys = ent->keyvalues;
@@ -906,7 +906,7 @@ int BspMerger::force_unique_ent_names_per_map(Bsp* mergedMap)
 
 bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 {
-// TODO: Create a new map and store result there. Don't break mapA.
+	// TODO: Create a new map and store result there. Don't break mapA.
 	BSPPLANE separationPlane = separate(mapA, mapB);
 	if (separationPlane.nType == -1 && !modelMerge)
 	{
@@ -922,7 +922,7 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 	leavesRemap.clear();
 	modelLeafRemap.clear();
 
-	bool shouldMerge[HEADER_LUMPS] = {false};
+	bool shouldMerge[HEADER_LUMPS] = { false };
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
@@ -947,8 +947,8 @@ bool BspMerger::merge(Bsp& mapA, Bsp& mapB, bool modelMerge)
 				// process the lump here (TODO: faster to just copy wtv needs copying)
 				switch (i)
 				{
-					case LUMP_ENTITIES:
-						mapA.load_ents(); break;
+				case LUMP_ENTITIES:
+					mapA.load_ents(); break;
 				}
 			}
 		}
@@ -1028,37 +1028,37 @@ BSPPLANE BspMerger::separate(Bsp& mapA, Bsp& mapB)
 	if (bmin.x >= amax.x)
 	{
 		separationPlane.nType = PLANE_X;
-		separationPlane.vNormal = {1, 0, 0};
+		separationPlane.vNormal = { 1, 0, 0 };
 		separationPlane.fDist = amax.x + (bmin.x - amax.x) * 0.5f;
 	}
 	else if (bmax.x <= amin.x)
 	{
 		separationPlane.nType = PLANE_X;
-		separationPlane.vNormal = {-1, 0, 0};
+		separationPlane.vNormal = { -1, 0, 0 };
 		separationPlane.fDist = bmax.x + (amin.x - bmax.x) * 0.5f;
 	}
 	else if (bmin.y >= amax.y)
 	{
 		separationPlane.nType = PLANE_Y;
-		separationPlane.vNormal = {0, 1, 0};
+		separationPlane.vNormal = { 0, 1, 0 };
 		separationPlane.fDist = bmin.y;
 	}
 	else if (bmax.y <= amin.y)
 	{
 		separationPlane.nType = PLANE_Y;
-		separationPlane.vNormal = {0, -1, 0};
+		separationPlane.vNormal = { 0, -1, 0 };
 		separationPlane.fDist = bmax.y;
 	}
 	else if (bmin.z >= amax.z)
 	{
 		separationPlane.nType = PLANE_Z;
-		separationPlane.vNormal = {0, 0, 1};
+		separationPlane.vNormal = { 0, 0, 1 };
 		separationPlane.fDist = bmin.z;
 	}
 	else if (bmax.z <= amin.z)
 	{
 		separationPlane.nType = PLANE_Z;
-		separationPlane.vNormal = {0, 0, -1};
+		separationPlane.vNormal = { 0, 0, -1 };
 		separationPlane.fDist = bmax.z;
 	}
 	else
@@ -1433,7 +1433,7 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 
 	for (unsigned int i = 0; i < totalFaceCount; i++)
 	{
-// only update B's faces
+		// only update B's faces
 		if (i < worldFaceCountA || i >= worldFaceCountA + mapB.faceCount)
 			continue;
 
@@ -1483,7 +1483,7 @@ void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB)
 		}
 		else
 		{
-	  // always exclude the first solid leaf since there can only be one per map, at index 0
+			// always exclude the first solid leaf since there can only be one per map, at index 0
 			leavesRemap.push_back(0);
 		}
 		g_progress.tick();
@@ -1612,7 +1612,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 				}
 				else
 				{
-					node.iChildren[k] = ~((short)modelLeafRemap[~node.iChildren[k]]);
+					node.iChildren[k] = ~(modelLeafRemap[~node.iChildren[k]]);
 				}
 			}
 		}
@@ -1633,11 +1633,11 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		{
 			if (node.iChildren[k] >= 0)
 			{
-				node.iChildren[k] += (short)thisNodeCount;
+				node.iChildren[k] += thisNodeCount;
 			}
 			else
 			{
-				node.iChildren[k] = ~((short)leavesRemap[~node.iChildren[k]]);
+				node.iChildren[k] = ~(leavesRemap[~node.iChildren[k]]);
 			}
 		}
 		node.iPlane = planeRemap[node.iPlane];
@@ -1765,8 +1765,8 @@ void BspMerger::merge_models(Bsp& mapA, Bsp& mapB)
 	vec3 bmin = mapB.models[0].nMins;
 	vec3 amax = mapA.models[0].nMaxs;
 	vec3 bmax = mapB.models[0].nMaxs;
-	mergedModels[0].nMins = {std::min(amin.x, bmin.x), std::min(amin.y, bmin.y), std::min(amin.z, bmin.z)};
-	mergedModels[0].nMaxs = {std::max(amax.x, bmax.x), std::max(amax.y, bmax.y), std::max(amax.z, bmax.z)};
+	mergedModels[0].nMins = { std::min(amin.x, bmin.x), std::min(amin.y, bmin.y), std::min(amin.z, bmin.z) };
+	mergedModels[0].nMaxs = { std::max(amax.x, bmax.x), std::max(amax.y, bmax.y), std::max(amax.z, bmax.z) };
 
 	size_t newLen = mergedModels.size() * sizeof(BSPMODEL);
 
@@ -1808,12 +1808,12 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	// decompress this map's world leaves
 	// model leaves don't need to be decompressed because the game ignores VIS for them.
 	decompress_vis_lump(allLeaves, mapA.visdata, decompressedVis,
-						thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_VISIBILITY].nLength, mapA.visDataLength);
+		thisWorldLeafCount, thisVisLeaves, totalVisLeaves, mapA.bsp_header.lump[LUMP_VISIBILITY].nLength, mapA.visDataLength);
 
 	// decompress other map's world-leaf vis data (skip empty first leaf, which now only the first map should have)
 	unsigned char* decompressedOtherVis = decompressedVis + thisWorldLeafCount * newVisRowSize;
 	decompress_vis_lump(allLeaves + thisWorldLeafCount, mapB.visdata, decompressedOtherVis,
-						otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_VISIBILITY].nLength,mapB.visDataLength);
+		otherWorldLeafCount, otherLeafCount, totalVisLeaves, mapB.bsp_header.lump[LUMP_VISIBILITY].nLength, mapB.visDataLength);
 
 	// shift mapB's world leaves after mapA's world leaves
 
@@ -1948,7 +1948,7 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 	{
 		BSPNODE headNode = {
 			separationPlaneIdx,			// plane idx
-			{(short)(mapA.nodeCount + 1), (short)1},		// child nodes
+			{mapA.nodeCount + 1, 1},		// child nodes
 			{ (short)bmin.x,(short)bmin.y,(short)bmin.z },	// mins
 			{(short)bmax.x, (short)bmax.y,(short)bmax.z },	// maxs
 			0, // first face
@@ -1977,12 +1977,12 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 		BSPCLIPNODE newHeadNodes[NEW_NODE_COUNT];
 		for (int i = 0; i < NEW_NODE_COUNT; i++)
 		{
-//logf("HULL {} starts at {}\n", i+1, thisWorld.iHeadnodes[i+1]);
+			//logf("HULL {} starts at {}\n", i+1, thisWorld.iHeadnodes[i+1]);
 			newHeadNodes[i] = {
 				separationPlaneIdx,	// plane idx
 				{	// child nodes
-					(short)(otherWorld.iHeadnodes[i + 1] + mapA.clipnodeCount + NEW_NODE_COUNT),
-					(short)(thisWorld.iHeadnodes[i + 1] + NEW_NODE_COUNT)
+					otherWorld.iHeadnodes[i + 1] + mapA.clipnodeCount + NEW_NODE_COUNT,
+					thisWorld.iHeadnodes[i + 1] + NEW_NODE_COUNT
 				},
 			};
 
@@ -1997,7 +1997,7 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 
 			if (swapNodeChildren)
 			{
-				short temp = newHeadNodes[i].iChildren[0];
+				int temp = newHeadNodes[i].iChildren[0];
 				newHeadNodes[i].iChildren[0] = newHeadNodes[i].iChildren[1];
 				newHeadNodes[i].iChildren[1] = temp;
 			}
