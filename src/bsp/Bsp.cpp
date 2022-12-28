@@ -2571,7 +2571,7 @@ void Bsp::write(const std::string& path)
 			offset += bsp_header_ex.lump[i].nLength;
 			file.write((char*)extralumps[i], bsp_header_ex.lump[i].nLength);
 #ifndef NDEBUG
-			logf("Write extra lump size {} offset {} ", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
+			logf("Write extra lump size {} offset {}\n", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
 #endif
 		}
 	}
@@ -2583,11 +2583,11 @@ void Bsp::write(const std::string& path)
 		offset += bsp_header.lump[i].nLength;
 		file.write((char*)lumps[i], bsp_header.lump[i].nLength);
 #ifndef NDEBUG
-		logf("Write lump size {} offset {} ", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
+		logf("Write lump size {} offset {}\n", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
 #endif
 	}
 
-	file.seekp(0, std::ios_base::_Seekbeg);
+	file.seekp(0);
 	file.write((char*)&bsp_header, sizeof(BSPHEADER));
 	if (is_bsp30ext)
 	{
