@@ -2583,7 +2583,7 @@ void Bsp::write(const std::string& path)
 		offset += bsp_header.lump[i].nLength;
 		file.write((char*)lumps[i], bsp_header.lump[i].nLength);
 #ifndef NDEBUG
-		logf("Write lump size {} offset {}\n", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
+		logf("Write lump size {} offset {}\n", bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
 #endif
 	}
 
