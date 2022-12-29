@@ -1,6 +1,10 @@
 #pragma once
 #include <stdint.h>
 
+#ifdef WIN32
+#define strcasecmp _stricmp
+#endif
+
 #define MAXTEXTURENAME 16
 #define MIPLEVELS 4
 #define MAX_MAP_HULLS 4

@@ -4,10 +4,6 @@
 #include "bsplimits.h"
 #include <vector>
 
-#ifdef WIN32
-#define strcasecmp _stricmp
-#endif
-
 #pragma pack(push, 1)
 
 #define	SIDESPACE	24

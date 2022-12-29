@@ -1822,7 +1822,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	memcpy(oldLeaves, lumps[LUMP_LEAVES], oldLeavesLumpLen);
 
 	int oldLeafCount = models[0].nVisLeafs;
-	
+
 	if (target & CLEAN_LIGHTMAP && lightDataLength > 0 && !is_bsp30ext)
 		removeCount.lightdata = remove_unused_lightmaps(usedStructures.faces);
 	if (target & CLEAN_PLANES)
@@ -2570,9 +2570,8 @@ void Bsp::write(const std::string& path)
 			bsp_header_ex.lump[i].nOffset = offset;
 			offset += bsp_header_ex.lump[i].nLength;
 			file.write((char*)extralumps[i], bsp_header_ex.lump[i].nLength);
-#ifndef NDEBUG
-			logf("Write extra lump size {} offset {}\n", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
-#endif
+			if (g_settings.verboseLogs)
+				logf("Write extra lump size {} offset {}\n", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
 		}
 	}
 
@@ -2582,9 +2581,8 @@ void Bsp::write(const std::string& path)
 		bsp_header.lump[i].nOffset = offset;
 		offset += bsp_header.lump[i].nLength;
 		file.write((char*)lumps[i], bsp_header.lump[i].nLength);
-#ifndef NDEBUG
-		logf("Write lump size {} offset {}\n", bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
-#endif
+		if (g_settings.verboseLogs)
+			logf("Write lump size {} offset {}\n", bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
 	}
 
 	file.seekp(0);
@@ -2621,9 +2619,8 @@ bool Bsp::load_lumps(std::string fpath)
 	for (int i = 0; i < HEADER_LUMPS; i++)
 	{
 		fin.read((char*)&bsp_header.lump[i], sizeof(BSPLUMP));
-#ifndef NDEBUG
-		logf("Lump id: {}. Len: {}. Offset {}.\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
-#endif
+		if (g_settings.verboseLogs)
+			logf("Lump id: {}. Len: {}. Offset {}.\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
 	}
 
 	fin.read((char*)&bsp_header_ex.id, sizeof(int));
@@ -2644,9 +2641,8 @@ bool Bsp::load_lumps(std::string fpath)
 		for (int i = 0; i < extralumpscount; i++)
 		{
 			fin.read((char*)&bsp_header_ex.lump[i], sizeof(BSPLUMP));
-#ifndef NDEBUG
-			logf("Extra lump id: {}. Len: {}. Offset {}.\n", i, bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
-#endif
+			if (g_settings.verboseLogs)
+				logf("Extra lump id: {}. Len: {}. Offset {}.\n", i, bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
 		}
 
 		for (int i = 0; i < extralumpscount; i++)

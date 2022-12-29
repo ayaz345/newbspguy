@@ -53,6 +53,7 @@ inline void logf(const std::string & format, Args ...args) noexcept
 	g_log_mutex.lock();
 
 	std::string log_line = fmt::vformat(format, fmt::make_format_args(args...));
+
 #ifndef NDEBUG
 	static std::ofstream outfile("log.txt", std::ios_base::app);
 	outfile << log_line;

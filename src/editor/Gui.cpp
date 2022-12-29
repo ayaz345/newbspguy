@@ -19,12 +19,6 @@
 
 #include "imgui_stdlib.h"
 
-#ifdef WIN32
-#include <Windows.h>
-#else
-#define MAX_PATH 256
-#endif
-
 #include "quantizer.h"
 
 #include <execution>
@@ -4456,12 +4450,8 @@ void Gui::drawSettings()
 		ImGui::Text(tab_titles[settingsTab]);
 		ImGui::Separator();
 
-
 		if (reloadSettings)
 		{
-			if (g_settings.gamedir.size() >= MAX_PATH)
-				g_settings.gamedir = g_settings.gamedir.substr(0, MAX_PATH - 1);
-
 			reloadSettings = false;
 		}
 

@@ -38,34 +38,56 @@ struct LeafDebug
 		leafVIS = 0;
 	}
 };
+
 class Bsp
 {
 public:
-	std::string bsp_path;
-	std::string bsp_name;
 	BSPHEADER bsp_header = BSPHEADER();
 	BSPHEADER_EX bsp_header_ex = BSPHEADER_EX();
+
 	unsigned char** lumps;
 	unsigned char** extralumps;
-	bool bsp_valid;
+
+	bool is_bsp30ext;
+	bool is_32bit_clipnodes;
+
+	std::vector<Entity*> ents;
+	int planeCount;
+	int textureCount;
+	int vertCount;
+	int lightDataLength;
+	int nodeCount;
+	int texinfoCount;
+	int faceCount;
+	int visDataLength;
+	int clipnodeCount;
+	int leafCount;
+	int marksurfCount;
+	int edgeCount;
+	int surfedgeCount;
+	int modelCount;
+
 	BSPPLANE* planes;
-	BSPTEXTUREINFO* texinfos;
 	unsigned char* textures;
-	BSPLEAF* leaves;
-	BSPMODEL* models;
-	BSPNODE* nodes;
-	BSPCLIPNODE* clipnodes;
-	BSPFACE* faces;
 	vec3* verts;
 	unsigned char* lightdata;
-	int* surfedges;
-	BSPEDGE* edges;
-	unsigned short* marksurfs;
+	BSPNODE* nodes;
+	BSPTEXTUREINFO* texinfos;
+	BSPFACE* faces;
 	unsigned char* visdata;
+	BSPCLIPNODE* clipnodes;
+	BSPLEAF* leaves;
+	unsigned short* marksurfs;
+	BSPEDGE* edges;
+	int* surfedges;
+	BSPMODEL* models;
+
+	std::string bsp_path;
+	std::string bsp_name;
 
 	bool replacedLump[32];
 
-
+	bool bsp_valid;
 	bool is_bsp_model;
 	bool is_mdl_model;
 	StudioModel* mdl;
@@ -73,25 +95,6 @@ public:
 	Bsp* parentMap = NULL;
 	void selectModelEnt();
 
-	bool is_bsp30ext;
-	bool is_32bit_clipnodes;
-
-	int planeCount;
-	int texinfoCount;
-	int leafCount;
-	int modelCount;
-	int nodeCount;
-	int vertCount;
-	int faceCount;
-	int clipnodeCount;
-	int marksurfCount;
-	int surfedgeCount;
-	int edgeCount;
-	int textureCount;
-	int lightDataLength;
-	int visDataLength;
-
-	std::vector<Entity*> ents;
 
 	Bsp();
 	Bsp(std::string fname);
