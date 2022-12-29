@@ -301,8 +301,8 @@ void Gui::pasteLightmap()
 		 // TODO: resize the lightmap, or maybe just shift if the face is the same size
 	}
 
-	BSPFACE& src = map->faces[copiedLightmapFace];
-	BSPFACE& dst = map->faces[faceIdx];
+	BSPFACE32& src = map->faces[copiedLightmapFace];
+	BSPFACE32& dst = map->faces[faceIdx];
 	dst.nLightmapOffset = src.nLightmapOffset;
 	memcpy(dst.nStyles, src.nStyles, 4);
 
@@ -375,7 +375,7 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 		int markid = 0;
 		for (int i = 0; i < tmpMap.leafCount; i++)
 		{
-			BSPLEAF& tmpLeaf = tmpMap.leaves[i];
+			BSPLEAF32& tmpLeaf = tmpMap.leaves[i];
 			tmpLeaf.iFirstMarkSurface = markid;
 			markid += tmpLeaf.nMarkSurfaces;
 		}
@@ -483,7 +483,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	/*int markid = 0;
 	for (int i = 0; i < tmpMap->leafCount; i++)
 	{
-		BSPLEAF& tmpLeaf = tmpMap->leaves[i];
+		BSPLEAF32& tmpLeaf = tmpMap->leaves[i];
 		if (tmpLeaf.nMarkSurfaces > 0)
 		{
 			tmpLeaf.iFirstMarkSurface = markid;
@@ -1893,7 +1893,7 @@ void Gui::drawMenuBar()
 			{
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					BSPFACE& face = map->faces[i];
+					BSPFACE32& face = map->faces[i];
 					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 					if (info.nFlags & TEX_SPECIAL)
 					{
@@ -1959,7 +1959,7 @@ void Gui::drawMenuBar()
 
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					BSPFACE& face = map->faces[i];
+					BSPFACE32& face = map->faces[i];
 					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
 					int texOffset = ((int*)map->textures)[info.iMiptex + 1];
 					if (info.iMiptex >= 0 && texOffset >= 0)
@@ -2531,7 +2531,7 @@ void Gui::drawDebugWidget()
 
 					if (app->pickInfo.selectedFaces.size())
 					{
-						BSPFACE& face = map->faces[app->pickInfo.selectedFaces[0]];
+						BSPFACE32& face = map->faces[app->pickInfo.selectedFaces[0]];
 
 						if (modelIdx > 0)
 						{
@@ -2850,7 +2850,7 @@ void Gui::drawDebugWidget()
 			int headNode = map->models[0].iHeadnodes[0];
 			int contents = map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
 
-			BSPLEAF& leaf = map->leaves[leafIdx];
+			BSPLEAF32& leaf = map->leaves[leafIdx];
 			int thisLeafCount = map->leafCount;
 
 			int oldVisRowSize = ((thisLeafCount + 63) & ~63) >> 3;
@@ -2908,7 +2908,7 @@ void Gui::drawDebugWidget()
 			int headNode = map->models[0].iHeadnodes[0];
 			int contents = map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
 
-			BSPLEAF& leaf = map->leaves[leafIdx];
+			BSPLEAF32& leaf = map->leaves[leafIdx];
 			int thisLeafCount = map->leafCount;
 			unsigned char* visData = new unsigned char[map->leafCount];
 			memset(visData, 0xFF, map->leafCount);
@@ -4530,8 +4530,19 @@ void Gui::drawSettings()
 				shouldReloadFonts = true;
 			}
 			ImGui::DragInt("Undo Levels", &g_settings.undoLevels, 0.05f, 0, 64);
+#ifndef NDEBUG
+			ImGui::BeginDisabled();
+#endif
 			ImGui::Checkbox("Verbose Logging", &g_verbose);
-
+#ifndef NDEBUG
+			ImGui::EndDisabled();
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Verbose logging can't be disabled in DEBUG MODE");
+				ImGui::EndTooltip();
+			}
+#endif
 			ImGui::SameLine();
 
 			ImGui::Checkbox("Make map backup", &g_settings.backUpMap);
@@ -5369,13 +5380,13 @@ void Gui::drawImportMapWidget()
 
 					std::vector<BSPPLANE> newPlanes;
 					std::vector<vec3> newVerts;
-					std::vector<BSPEDGE> newEdges;
+					std::vector<BSPEDGE32> newEdges;
 					std::vector<int> newSurfedges;
 					std::vector<BSPTEXTUREINFO> newTexinfo;
-					std::vector<BSPFACE> newFaces;
+					std::vector<BSPFACE32> newFaces;
 					std::vector<COLOR3> newLightmaps;
-					std::vector<BSPNODE> newNodes;
-					std::vector<BSPCLIPNODE> newClipnodes;
+					std::vector<BSPNODE32> newNodes;
+					std::vector<BSPCLIPNODE32> newClipnodes;
 
 					STRUCTREMAP* remap = new STRUCTREMAP(map);
 
@@ -5383,19 +5394,19 @@ void Gui::drawImportMapWidget()
 
 					if (newClipnodes.size())
 					{
-						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE) * newClipnodes.size());
+						map->append_lump(LUMP_CLIPNODES, &newClipnodes[0], sizeof(BSPCLIPNODE32) * newClipnodes.size());
 					}
 					if (newEdges.size())
 					{
-						map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE) * newEdges.size());
+						map->append_lump(LUMP_EDGES, &newEdges[0], sizeof(BSPEDGE32) * newEdges.size());
 					}
 					if (newFaces.size())
 					{
-						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE) * newFaces.size());
+						map->append_lump(LUMP_FACES, &newFaces[0], sizeof(BSPFACE32) * newFaces.size());
 					}
 					if (newNodes.size())
 					{
-						map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE) * newNodes.size());
+						map->append_lump(LUMP_NODES, &newNodes[0], sizeof(BSPNODE32) * newNodes.size());
 					}
 					if (newPlanes.size())
 					{
@@ -6663,7 +6674,7 @@ void Gui::ExportOneBigLightmap(Bsp* map)
 
 }
 
-void ExportLightmap(BSPFACE face, int faceIdx, Bsp* map)
+void ExportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 {
 	int size[2];
 	GetFaceLightmapSize(map, faceIdx, size);
@@ -6681,7 +6692,7 @@ void ExportLightmap(BSPFACE face, int faceIdx, Bsp* map)
 	}
 }
 
-void ImportLightmap(BSPFACE face, int faceIdx, Bsp* map)
+void ImportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 {
 	std::string filename;
 	int size[2];
@@ -6751,7 +6762,7 @@ void Gui::drawLightMapTool()
 		if (map && app->pickInfo.selectedFaces.size())
 		{
 			int faceIdx = app->pickInfo.selectedFaces[0];
-			BSPFACE& face = map->faces[faceIdx];
+			BSPFACE32& face = map->faces[faceIdx];
 			int size[2];
 			GetFaceLightmapSize(map, faceIdx, size);
 			if (showLightmapEditorUpdate)
@@ -7014,7 +7025,7 @@ void Gui::drawTextureTool()
 				int faceIdx = app->pickInfo.selectedFaces[0];
 				if (faceIdx >= 0)
 				{
-					BSPFACE& face = map->faces[faceIdx];
+					BSPFACE32& face = map->faces[faceIdx];
 					BSPPLANE& plane = map->planes[face.iPlane];
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					width = height = 0;
@@ -7060,7 +7071,7 @@ void Gui::drawTextureTool()
 					for (int i = 1; i < app->pickInfo.selectedFaces.size(); i++)
 					{
 						int faceIdx2 = app->pickInfo.selectedFaces[i];
-						BSPFACE& face2 = map->faces[faceIdx2];
+						BSPFACE32& face2 = map->faces[faceIdx2];
 						BSPTEXTUREINFO& texinfo2 = map->texinfos[face2.iTextureInfo];
 
 						if (scaleX != 1.0f / texinfo2.vS.length()) scaleX = 1.0f;
@@ -7085,7 +7096,7 @@ void Gui::drawTextureTool()
 					for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
 					{
 						int edgeIdx = map->surfedges[e];
-						BSPEDGE edge = map->edges[abs(edgeIdx)];
+						BSPEDGE32 edge = map->edges[abs(edgeIdx)];
 						vec3 v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
 						edgeVerts.push_back(v);
 					}
@@ -7215,7 +7226,7 @@ void Gui::drawTextureTool()
 
 			std::string tmplabel = "##unklabel";
 
-			BSPFACE face = map->faces[app->pickInfo.selectedFaces[0]];
+			BSPFACE32 face = map->faces[app->pickInfo.selectedFaces[0]];
 			int edgeIdx = 0;
 			for (auto& v : edgeVerts)
 			{
@@ -7355,7 +7366,7 @@ void Gui::drawTextureTool()
 				if (faceIdx < 0)
 					continue;
 
-				BSPFACE& face = map->faces[faceIdx];
+				BSPFACE32& face = map->faces[faceIdx];
 				BSPTEXTUREINFO* texinfo = map->get_unique_texinfo(faceIdx);
 
 				if (shiftedX)
@@ -7379,7 +7390,7 @@ void Gui::drawTextureTool()
 				{
 					for (int n = 0; n < MAXLIGHTMAPS; n++)
 					{
-						face.nStyles[n] = tmpStyles[n];
+						face.nStyles[n] = (unsigned char)tmpStyles[n];
 					}
 				}
 
@@ -7416,7 +7427,7 @@ void Gui::drawTextureTool()
 				for (int e = map->faces[faceIdx].iFirstEdge; e < map->faces[faceIdx].iFirstEdge + map->faces[faceIdx].nEdges; e++, vecId++)
 				{
 					int edgeIdx = map->surfedges[e];
-					BSPEDGE edge = map->edges[abs(edgeIdx)];
+					BSPEDGE32 edge = map->edges[abs(edgeIdx)];
 					vec3& v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
 					v = edgeVerts[vecId];
 				}

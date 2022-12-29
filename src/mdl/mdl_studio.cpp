@@ -483,10 +483,15 @@ void StudioModel::SetupModel(int bodypart)
 {
 	int index;
 
-	if (bodypart >= m_pstudiohdr->numbodyparts)
+	if (bodypart >= m_pstudiohdr->numbodyparts || bodypart < 0)
 	{
 		logf ("StudioModel::SetupModel: no such bodypart {}\n", bodypart);
 		bodypart = 0;
+	}
+
+	if (m_pstudiohdr->bodypartindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error m_pstudiohdr->bodypartindex is {}\n", m_pstudiohdr->bodypartindex);
 	}
 
 	mstudiobodyparts_t* pbodypart = (mstudiobodyparts_t*)((unsigned char*)m_pstudiohdr + m_pstudiohdr->bodypartindex) + bodypart;
@@ -498,8 +503,33 @@ void StudioModel::SetupModel(int bodypart)
 	{
 		index = m_bodynum / pbodypart->base;
 		index = index % pbodypart->nummodels;
-
 		m_pmodel = (mstudiomodel_t*)((unsigned char*)m_pstudiohdr + pbodypart->modelindex) + index;
+	}
+
+
+	if (m_ptexturehdr->skinindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error m_ptexturehdr->skinindex is {}\n", m_ptexturehdr->skinindex);
+	}
+
+	if (m_pmodel->normindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error m_pmodel->normindex is {}\n", m_pmodel->normindex);
+	}
+
+	if (m_pmodel->vertindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error  m_pmodel->vertindex is {}\n", m_pmodel->vertindex);
+	}
+
+	if (m_pmodel->vertinfoindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error  m_pmodel->vertinfoindex is {}\n", m_pmodel->vertinfoindex);
+	}
+
+	if (m_ptexturehdr->textureindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error  m_ptexturehdr->textureindex is {}\n", m_ptexturehdr->textureindex);
 	}
 }
 
@@ -549,6 +579,31 @@ void StudioModel::RefreshMeshList(int body)
 	pstudionorms = (vec3*)((unsigned char*)m_pstudiohdr + m_pmodel->normindex);
 
 	pskinref = (short*)((unsigned char*)m_ptexturehdr + m_ptexturehdr->skinindex);
+
+	if (m_ptexturehdr->skinindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error m_ptexturehdr->skinindex is {}\n", m_ptexturehdr->skinindex);
+	}
+
+	if (m_pmodel->normindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error m_pmodel->normindex is {}\n", m_pmodel->normindex);
+	}
+
+	if (m_pmodel->vertindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error  m_pmodel->vertindex is {}\n", m_pmodel->vertindex);
+	}
+
+	if (m_pmodel->vertinfoindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error  m_pmodel->vertinfoindex is {}\n", m_pmodel->vertinfoindex);
+	}
+
+	if (m_ptexturehdr->textureindex < 0)
+	{
+		logf("StudiModel::SetupModel fatal error  m_ptexturehdr->textureindex is {}\n", m_ptexturehdr->textureindex);
+	}
 
 	if (m_skinnum >= 0 && m_skinnum < m_ptexturehdr->numskinfamilies)
 		pskinref += (m_skinnum * m_ptexturehdr->numskinref);
@@ -933,6 +988,10 @@ void StudioModel::Init(std::string modelname)
 	{
 		logf("Can't load model {}\n", modelname);
 		return;
+	}
+	if (g_settings.verboseLogs)
+	{
+		logf("Load model {} version {}\n", modelname, m_pstudiohdr->version);
 	}
 	// preload textures
 	if (m_pstudiohdr->numtextures == 0)

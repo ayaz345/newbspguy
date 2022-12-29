@@ -49,7 +49,11 @@ public:
 	unsigned char** extralumps;
 
 	bool is_bsp30ext;
+	bool is_bsp2;
+	bool is_bsp2_old;
+	bool is_bsp29;
 	bool is_32bit_clipnodes;
+	bool is_broken_clipnodes;
 
 	std::vector<Entity*> ents;
 	int planeCount;
@@ -71,14 +75,14 @@ public:
 	unsigned char* textures;
 	vec3* verts;
 	unsigned char* lightdata;
-	BSPNODE* nodes;
+	BSPNODE32* nodes;
 	BSPTEXTUREINFO* texinfos;
-	BSPFACE* faces;
+	BSPFACE32* faces;
 	unsigned char* visdata;
-	BSPCLIPNODE* clipnodes;
-	BSPLEAF* leaves;
-	unsigned short* marksurfs;
-	BSPEDGE* edges;
+	BSPCLIPNODE32* clipnodes;
+	BSPLEAF32* leaves;
+	int* marksurfs;
+	BSPEDGE32* edges;
 	int* surfedges;
 	BSPMODEL* models;
 
@@ -224,9 +228,9 @@ public:
 	int create_texinfo();
 
 	void copy_bsp_model(int modelIdx, Bsp* targetMap, STRUCTREMAP& remap, std::vector<BSPPLANE>& newPlanes, std::vector<vec3>& newVerts,
-						std::vector<BSPEDGE>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
-						std::vector<BSPFACE>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE>& newNodes,
-						std::vector<BSPCLIPNODE>& newClipnodes);
+						std::vector<BSPEDGE32>& newEdges, std::vector<int>& newSurfedges, std::vector<BSPTEXTUREINFO>& newTexinfo,
+						std::vector<BSPFACE32>& newFaces, std::vector<COLOR3>& newLightmaps, std::vector<BSPNODE32>& newNodes,
+						std::vector<BSPCLIPNODE32>& newClipnodes);
 
 	int duplicate_model(int modelIdx);
 
@@ -277,13 +281,13 @@ public:
 	void hideEnts(bool hide = true);
 
 	std::vector<int> getLeafFaces(int leafIdx);
-	std::vector<int> getLeafFaces(BSPLEAF& leaf);
+	std::vector<int> getLeafFaces(BSPLEAF32& leaf);
 	std::vector<int> getFaceLeafs(int faceIdx);
 	int getFaceFromPlane(int iPlane);
 	std::vector<int> getFacesFromPlane(int iPlane);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
-	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
+	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
 	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes);
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
@@ -298,8 +302,8 @@ private:
 	void get_lightmap_shift(const LIGHTMAP& oldLightmap, const LIGHTMAP& newLightmap, int& srcOffsetX, int& srcOffsetY);
 
 	void print_model_bsp(int modelIdx);
-	void print_leaf(const BSPLEAF& leaf);
-	void print_node(const BSPNODE& node);
+	void print_leaf(const BSPLEAF32& leaf);
+	void print_node(const BSPNODE32& node);
 	void print_stat(const std::string& name, unsigned int val, unsigned int max, bool isMem);
 	void print_model_stat(STRUCTUSAGE* modelInfo, unsigned int val, int max, bool isMem);
 

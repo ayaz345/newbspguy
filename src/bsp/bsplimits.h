@@ -22,6 +22,7 @@ extern int LIGHTMAP_ATLAS_SIZE; //max for glTexImage2D
 extern float FLT_MAX_COORD;
 
 extern unsigned int MAX_MAP_MODELS;
+#define MAX_MAP_NODES_DEFAULT 32768
 extern unsigned int MAX_MAP_NODES;
 #define MAX_MAP_CLIPNODES_DEFAULT 32767
 extern unsigned int MAX_MAP_CLIPNODES;

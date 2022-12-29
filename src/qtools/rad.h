@@ -42,10 +42,10 @@ typedef struct
 }
 matrix_t;
 
-struct BSPEDGE;
+struct BSPEDGE32;
 struct BSPTEXTUREINFO;
 struct BSPPLANE;
-struct BSPFACE;
+struct BSPFACE32;
 class Winding;
 
 typedef enum
@@ -74,7 +74,7 @@ typedef struct
 {
 	int             texmins[2], texsize[2];
 	int             surfnum;
-	BSPFACE* face;
+	BSPFACE32* face;
 }
 lightinfo_t;
 
@@ -111,7 +111,7 @@ class Bsp;
 
 void qrad_get_lightmap_flags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut);
 
-const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE* const face);
+const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE32* const face);
 
 void GetFaceLightmapSize(Bsp* bsp, int facenum, int size[2]);
 int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum);

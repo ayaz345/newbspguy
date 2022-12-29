@@ -24,15 +24,15 @@ STRUCTCOUNT::STRUCTCOUNT(Bsp* map)
 {
 	planes = map->bsp_header.lump[LUMP_PLANES].nLength / sizeof(BSPPLANE);
 	texInfos = map->bsp_header.lump[LUMP_TEXINFO].nLength / sizeof(BSPTEXTUREINFO);
-	leaves = map->bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
-	nodes = map->bsp_header.lump[LUMP_NODES].nLength / sizeof(BSPNODE);
-	clipnodes = map->bsp_header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE);
+	leaves = map->bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF32);
+	nodes = map->bsp_header.lump[LUMP_NODES].nLength / sizeof(BSPNODE32);
+	clipnodes = map->bsp_header.lump[LUMP_CLIPNODES].nLength / sizeof(BSPCLIPNODE32);
 	verts = map->bsp_header.lump[LUMP_VERTICES].nLength / sizeof(vec3);
-	faces = map->bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE);
+	faces = map->bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE32);
 	textures = *((int*)(map->lumps[LUMP_TEXTURES]));
-	markSurfs = map->bsp_header.lump[LUMP_MARKSURFACES].nLength / sizeof(unsigned short);
+	markSurfs = map->bsp_header.lump[LUMP_MARKSURFACES].nLength / sizeof(int);
 	surfEdges = map->bsp_header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
-	edges = map->bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE);
+	edges = map->bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE32);
 	models = map->bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL);
 	lightdata = map->bsp_header.lump[LUMP_LIGHTING].nLength;
 	visdata = map->bsp_header.lump[LUMP_VISIBILITY].nLength;

@@ -6,7 +6,7 @@
 void qrad_get_lightmap_flags(Bsp* bsp, int faceIdx, unsigned char* luxelFlagsOut)
 {
 
-	BSPFACE* f = &bsp->faces[faceIdx];
+	BSPFACE32* f = &bsp->faces[faceIdx];
 
 	if (f->nStyles[0] == 255 || bsp->texinfos[f->iTextureInfo].nFlags & TEX_SPECIAL)
 		return;                                            // non-lit texture
@@ -91,7 +91,7 @@ bool InvertMatrix(const matrix_t& m, matrix_t& m_inverse)
 	return true;
 }
 
-const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE* const face)
+const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE32* const face)
 {
 	if (!face)
 	{
@@ -115,7 +115,7 @@ const BSPPLANE getPlaneFromFace(Bsp* bsp, const BSPFACE* const face)
 void TranslateWorldToTex(Bsp* bsp, int facenum, matrix_t& m)
 // without g_face_offset
 {
-	BSPFACE* f;
+	BSPFACE32* f;
 	BSPTEXTUREINFO* ti;
 
 	int i;
@@ -145,7 +145,7 @@ bool CanFindFacePosition(Bsp* bsp, int facenum)
 	matrix_t worldtotex;
 	matrix_t textoworld;
 
-	BSPFACE* f = &bsp->faces[facenum];
+	BSPFACE32* f = &bsp->faces[facenum];
 	if (bsp->texinfos[f->iTextureInfo].nFlags & TEX_SPECIAL)
 	{
 		return false;
@@ -214,7 +214,7 @@ static bool TestSampleFrag(Bsp* bsp, int facenum, float s, float t, const float 
 	// ChopFrag
 	// get the shape of the fragment by clipping the face using the boundaries
 	matrix_t worldtotex;
-	BSPFACE* f = &bsp->faces[head.facenum];
+	BSPFACE32* f = &bsp->faces[head.facenum];
 	Winding facewinding(bsp, *f);
 
 	TranslateWorldToTex(bsp, head.facenum, worldtotex);
@@ -271,7 +271,7 @@ int GetFaceLightmapSizeBytes(Bsp* bsp, int facenum)
 {
 	int size[2];
 	GetFaceLightmapSize(bsp, facenum, size);
-	BSPFACE& face = bsp->faces[facenum];
+	BSPFACE32& face = bsp->faces[facenum];
 
 	int lightmapCount = 0;
 	for (int k = 0; k < 4; k++)
@@ -289,7 +289,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 	mins[0] = mins[1] = 999999.0f;
 	maxs[0] = maxs[1] = -999999.0f;
 
-	BSPFACE & face = bsp->faces[facenum];
+	BSPFACE32 & face = bsp->faces[facenum];
 
 	BSPTEXTUREINFO tex = bsp->texinfos[face.iTextureInfo];
 
@@ -338,7 +338,7 @@ bool GetFaceExtents(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 
 bool GetFaceExtentsX(Bsp* bsp, int facenum, int mins_out[2], int maxs_out[2])
 {
-	BSPFACE* f;
+	BSPFACE32* f;
 	float mins[2], maxs[2], val;
 	int i, j, e;
 	vec3* v;

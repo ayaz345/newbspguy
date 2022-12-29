@@ -395,7 +395,7 @@ namespace ifd
 		quickAccess->Read = true;
 		m_treeCache.push_back(quickAccess);
 #ifdef _WIN32
-		wchar_t username[UNLEN + 1] = {0};
+		wchar_t username[UNLEN + 1] = { 0 };
 		DWORD username_len = UNLEN + 1;
 		GetUserNameW(username, &username_len);
 
@@ -429,7 +429,7 @@ namespace ifd
 		DWORD d = GetLogicalDrives();
 		for (int i = 0; i < 26; i++)
 			if (d & (1 << i))
-				thisPC->Children.push_back(new FileTreeNode(std::string(1, (int)('A' + i)) + ":"));
+				thisPC->Children.push_back(new FileTreeNode(std::string({ (char)('A' + i) }) + ":"));
 		m_treeCache.push_back(thisPC);
 #else
 		std::error_code ec;
@@ -688,7 +688,7 @@ namespace ifd
 
 			if (m_type == IFD_DIALOG_SAVE)
 			{
-// add the extension
+				// add the extension
 				if (m_filterSelection < m_filterExtensions.size() && m_filterExtensions[m_filterSelection].size() > 0)
 				{
 					if (!m_result.back().has_extension())
@@ -783,7 +783,7 @@ namespace ifd
 			attrs = FILE_ATTRIBUTE_DIRECTORY;
 		}
 
-		SHFILEINFOW fileInfo = {0};
+		SHFILEINFOW fileInfo = { 0 };
 		std::wstring spath = path.wstring();
 		for (int i = 0; i < spath.size(); i++)
 			if (spath[i] == '/')
@@ -805,7 +805,7 @@ namespace ifd
 		m_iconIndices.push_back(fileInfo.iIcon);
 		m_iconFilepaths.push_back(pathU8);
 
-		ICONINFO iconInfo = {0};
+		ICONINFO iconInfo = { 0 };
 		GetIconInfo(fileInfo.hIcon, &iconInfo);
 
 		if (iconInfo.hbmColor == nullptr)
@@ -883,11 +883,11 @@ namespace ifd
 			m_icons[pathU8] = this->CreateTexture(invData, DEFAULT_ICON_SIZE, DEFAULT_ICON_SIZE, 0);
 
 			free(invData);
-	}
+		}
 
 		return m_icons[pathU8];
 #endif
-}
+	}
 	void FileDialog::m_clearIcons()
 	{
 		std::vector<unsigned int> deletedIcons;
@@ -1055,10 +1055,8 @@ namespace ifd
 					{
 						std::string filename = info.Path.string();
 
-						std::string filenameSearch = filename;
-						std::string query(m_searchBuffer);
-						std::transform(filenameSearch.begin(), filenameSearch.end(), filenameSearch.begin(), ::tolower);
-						std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+						std::string filenameSearch = toLowerCase(filename);
+						std::string query = toLowerCase(m_searchBuffer);
 
 						if (filenameSearch.find(query, 0) == std::string::npos)
 							continue;
@@ -1095,28 +1093,25 @@ namespace ifd
 		m_sortDirection = sortDirection;
 
 		// split into directories and files
-		std::partition(m_content.begin(), m_content.end(), [](const FileData& data){
+		std::partition(m_content.begin(), m_content.end(), [](const FileData& data) {
 			return data.IsDirectory;
-		});
+			});
 
 		if (m_content.size() > 0)
 		{
-// find where the file list starts
+			// find where the file list starts
 			size_t fileIndex = 0;
 			for (; fileIndex < m_content.size(); fileIndex++)
 				if (!m_content[fileIndex].IsDirectory)
 					break;
 
 			// compare function
-			auto compareFn = [column, sortDirection](const FileData& left, const FileData& right) -> bool{
+			auto compareFn = [column, sortDirection](const FileData& left, const FileData& right) -> bool {
 				// name
 				if (column == 0)
 				{
-					std::string lName = left.Path.string();
-					std::string rName = right.Path.string();
-
-					std::transform(lName.begin(), lName.end(), lName.begin(), ::tolower);
-					std::transform(rName.begin(), rName.end(), rName.begin(), ::tolower);
+					std::string lName = toLowerCase(left.Path.string());
+					std::string rName = toLowerCase(right.Path.string());
 
 					int comp = lName.compare(rName);
 
@@ -1165,7 +1160,7 @@ namespace ifd
 		{
 			if (!node->Read)
 			{
-// cache children if it's not already cached
+				// cache children if it's not already cached
 				if (std::filesystem::exists(node->Path, ec))
 					for (const auto& entry : std::filesystem::directory_iterator(node->Path, ec))
 					{
@@ -1271,7 +1266,7 @@ namespace ifd
 		// "icon" view
 		else
 		{
-	  // content
+			// content
 			int fileId = 0;
 			for (auto& entry : m_content)
 			{
@@ -1505,7 +1500,7 @@ namespace ifd
 #else
 			(void)success;
 #endif
-	}
+		}
 		if (m_type != IFD_DIALOG_DIRECTORY)
 		{
 			ImGui::SameLine();

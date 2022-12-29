@@ -91,7 +91,11 @@ void AppSettings::loadDefault()
 
 	lastdir = "";
 	undoLevels = 64;
+
 	verboseLogs = false;
+#ifndef NDEBUG
+	verboseLogs = true;
+#endif
 	save_windows = false;
 	debug_open = false;
 	keyvalue_open = false;
@@ -298,6 +302,9 @@ void AppSettings::load()
 		else if (key == "verbose_logs")
 		{
 			g_settings.verboseLogs = atoi(val.c_str()) != 0;
+#ifndef NDEBUG
+			g_settings.verboseLogs = true;
+#endif
 		}
 		else if (key == "fov")
 		{
@@ -692,7 +699,9 @@ void AppSettings::save(std::string path)
 
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "show_transform_axes=" << g_settings.show_transform_axes << std::endl;
+#ifdef NDEBUG
 	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;
+#endif
 	file << "fov=" << g_settings.fov << std::endl;
 	file << "zfar=" << g_settings.zfar << std::endl;
 	file << "move_speed=" << g_settings.moveSpeed << std::endl;
@@ -1393,7 +1402,7 @@ void Renderer::loadFgds()
 		if (!g_settings.fgdPaths[i].enabled)
 			continue;
 		std::string newFgdPath;
-		if (FindPathInAssets(g_settings.fgdPaths[i].path, newFgdPath))
+		if (FindPathInAssets(NULL, g_settings.fgdPaths[i].path, newFgdPath))
 		{
 			Fgd* tmp = new Fgd(newFgdPath);
 			if (!tmp->parse())
@@ -1414,7 +1423,7 @@ void Renderer::loadFgds()
 		else
 		{
 			logf("Missing fgd {}. Now this path disabled.\n", g_settings.fgdPaths[i].path);
-			FindPathInAssets(g_settings.fgdPaths[i].path, newFgdPath, true);
+			FindPathInAssets(NULL, g_settings.fgdPaths[i].path, newFgdPath, true);
 			g_settings.fgdPaths[i].enabled = false;
 			continue;
 		}
@@ -1620,12 +1629,12 @@ void Renderer::controls()
 			if (map)
 			{
 				blockMoving = true;
-				BSPFACE& selface = map->faces[pickInfo.selectedFaces[0]];
+				BSPFACE32& selface = map->faces[pickInfo.selectedFaces[0]];
 				BSPTEXTUREINFO& seltexinfo = map->texinfos[selface.iTextureInfo];
 				deselectFaces();
 				for (int i = 0; i < map->faceCount; i++)
 				{
-					BSPFACE& face = map->faces[i];
+					BSPFACE32& face = map->faces[i];
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					if (texinfo.iMiptex == seltexinfo.iMiptex)
 					{
@@ -2736,7 +2745,7 @@ void Renderer::reloadBspModels()
 					if (toLowerCase(modelPath).ends_with(".bsp"))
 					{
 						std::string newBspPath;
-						if (FindPathInAssets(modelPath, newBspPath))
+						if (FindPathInAssets(bsprend->map, modelPath, newBspPath))
 						{
 							Bsp* tmpBsp = new Bsp(newBspPath);
 							tmpBsp->is_bsp_model = true;
@@ -2750,7 +2759,7 @@ void Renderer::reloadBspModels()
 						else
 						{
 							logf("Missing {} model file.\n", modelPath);
-							FindPathInAssets(modelPath, newBspPath, true);
+							FindPathInAssets(bsprend->map,modelPath, newBspPath, true);
 						}
 					}
 				}
@@ -2837,7 +2846,7 @@ void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activeP
 {
 	if (iNode < 0)
 		return;
-	BSPCLIPNODE& node = map->clipnodes[iNode];
+	BSPCLIPNODE32& node = map->clipnodes[iNode];
 
 	if (currentPlane == activePlane)
 		drawPlane(map->planes[node.iPlane], {255, 255, 255, 255}, offset);
@@ -2856,7 +2865,7 @@ void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane
 {
 	if (iNode < 0)
 		return;
-	BSPNODE& node = map->nodes[iNode];
+	BSPNODE32& node = map->nodes[iNode];
 
 	if (currentPlane == activePlane)
 		drawPlane(map->planes[node.iPlane], {255, 128, 128, 255}, offset);
@@ -3893,19 +3902,19 @@ bool Renderer::splitModelFace()
 		for (int i = 0; i < newSolid.faces.size(); i++)
 		{
 			Face& solidFace = newSolid.faces[i];
-			BSPFACE* bestMatch = NULL;
+			BSPFACE32* bestMatch = NULL;
 			float bestdot = -FLT_MAX_COORD;
 			for (int k = 0; k < oldModel.nFaces; k++)
 			{
-				BSPFACE& bspface = map->faces[oldModel.iFirstFace + k];
-				BSPPLANE& plane = map->planes[bspface.iPlane];
-				vec3 bspFaceNormal = bspface.nPlaneSide ? plane.vNormal.invert() : plane.vNormal;
+				BSPFACE32& BSPFACE32 = map->faces[oldModel.iFirstFace + k];
+				BSPPLANE& plane = map->planes[BSPFACE32.iPlane];
+				vec3 bspFaceNormal = BSPFACE32.nPlaneSide ? plane.vNormal.invert() : plane.vNormal;
 				vec3 solidFaceNormal = solidFace.planeSide ? solidFace.plane.vNormal.invert() : solidFace.plane.vNormal;
 				float dot = dotProduct(bspFaceNormal, solidFaceNormal);
 				if (dot > bestdot)
 				{
 					bestdot = dot;
-					bestMatch = &bspface;
+					bestMatch = &BSPFACE32;
 				}
 			}
 			if (bestMatch)
@@ -4247,14 +4256,14 @@ void Renderer::selectEnt(Bsp* map, int entIdx, bool add)
 }
 void Renderer::goToFace(Bsp* map, int faceIdx)
 {
-	BSPFACE& face = map->faces[faceIdx];
+	BSPFACE32& face = map->faces[faceIdx];
 	if (face.iFirstEdge >= 0 && face.nEdges)
 	{
 		std::vector<vec3> edgeVerts;
 		for (int i = 0; i < face.nEdges; i++)
 		{
 			int edgeIdx = map->surfedges[face.iFirstEdge + i];
-			BSPEDGE& edge = map->edges[abs(edgeIdx)];
+			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
 			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 			edgeVerts.push_back(map->verts[vertIdx]);
 		}

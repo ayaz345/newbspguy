@@ -20,6 +20,7 @@
 #include <set>
 #include "Renderer.h"
 
+#include "Bsp.h"
 
 bool DebugKeyPressed = false;
 ProgressMeter g_progress;
@@ -242,7 +243,7 @@ std::string toLowerCase(const std::string& s)
 {
 	std::string ret = s;
 	std::transform(ret.begin(), ret.end(), ret.begin(),
-				   [](unsigned char c){ return (unsigned char)std::tolower(c); }
+		[](unsigned char c) { return (unsigned char)std::tolower(c); }
 	);
 	return ret;
 }
@@ -373,12 +374,12 @@ bool operator==(COLOR4 c1, COLOR4 c2)
 
 bool pickAABB(vec3 start, vec3 rayDir, vec3 mins, vec3 maxs, float& bestDist)
 {
-/*
-Fast Ray-Box Intersection
-by Andrew Woo
-from "Graphics Gems", Academic Press, 1990
-https://web.archive.org/web/20090803054252/http://tog.acm.org/resources/GraphicsGems/gems/RayBox.c
-*/
+	/*
+	Fast Ray-Box Intersection
+	by Andrew Woo
+	from "Graphics Gems", Academic Press, 1990
+	https://web.archive.org/web/20090803054252/http://tog.acm.org/resources/GraphicsGems/gems/RayBox.c
+	*/
 
 	bool inside = true;
 	char quadrant[3];
@@ -612,42 +613,42 @@ int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p)
 	// general case
 	switch (signs)
 	{
-		case 0:
-			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
-			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
-			break;
-		case 1:
-			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
-			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
-			break;
-		case 2:
-			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
-			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
-			break;
-		case 3:
-			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
-			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
-			break;
-		case 4:
-			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
-			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
-			break;
-		case 5:
-			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
-			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
-			break;
-		case 6:
-			dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
-			dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
-			break;
-		case 7:
-			dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
-			dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
-			break;
-		default:
-			// shut up compiler
-			dist1 = dist2 = 0;
-			break;
+	case 0:
+		dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+		dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+		break;
+	case 1:
+		dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+		dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+		break;
+	case 2:
+		dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+		dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+		break;
+	case 3:
+		dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+		dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+		break;
+	case 4:
+		dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+		dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+		break;
+	case 5:
+		dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emins[2];
+		dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emaxs[2];
+		break;
+	case 6:
+		dist1 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+		dist2 = p->vNormal[0] * emins[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+		break;
+	case 7:
+		dist1 = p->vNormal[0] * emins[0] + p->vNormal[1] * emins[1] + p->vNormal[2] * emins[2];
+		dist2 = p->vNormal[0] * emaxs[0] + p->vNormal[1] * emaxs[1] + p->vNormal[2] * emaxs[2];
+		break;
+	default:
+		// shut up compiler
+		dist1 = dist2 = 0;
+		break;
 	}
 
 	if (dist1 >= p->fDist)
@@ -723,7 +724,7 @@ std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes)
 
 bool vertsAllOnOneSide(std::vector<vec3>& verts, BSPPLANE& plane)
 {
-// check that all verts are on one side of the plane.
+	// check that all verts are on one side of the plane.
 	int planeSide = 0;
 	for (int k = 0; k < verts.size(); k++)
 	{
@@ -768,7 +769,7 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i1 == -1)
 	{
-//logf("Only 1 unique vert!\n");
+		//logf("Only 1 unique vert!\n");
 		return std::vector<vec3>();
 	}
 
@@ -793,11 +794,11 @@ std::vector<vec3> getTriangularVerts(std::vector<vec3>& verts)
 
 	if (i2 == -1)
 	{
-//logf("All verts are colinear!\n");
+		//logf("All verts are colinear!\n");
 		return std::vector<vec3>();
 	}
 
-	return {verts[i0], verts[i1], verts[i2]};
+	return { verts[i0], verts[i1], verts[i2] };
 }
 
 vec3 getNormalFromVerts(std::vector<vec3>& verts)
@@ -912,7 +913,7 @@ std::vector<vec3> getSortedPlanarVerts(std::vector<vec3>& verts)
 
 bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 {
-// https://stackoverflow.com/a/34689268
+	// https://stackoverflow.com/a/34689268
 	bool inside = true;
 	float lastd = 0;
 	for (int i = 0; i < poly.size(); i++)
@@ -929,7 +930,7 @@ bool pointInsidePolygon(std::vector<vec2>& poly, vec2 p)
 
 		if ((d < 0 && lastd > 0) || (d > 0 && lastd < 0))
 		{
-// point is outside of this edge
+			// point is outside of this edge
 			inside = false;
 			break;
 		}
@@ -1051,7 +1052,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 			/* test path */
 			if (stat(tmp, &sb) != 0)
 			{
-/* path does not exist - create directory */
+				/* path does not exist - create directory */
 				if (mkdir(tmp, mode) < 0)
 				{
 					return -1;
@@ -1059,7 +1060,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 			}
 			else if (!S_ISDIR(sb.st_mode))
 			{
-/* not a directory */
+				/* not a directory */
 				return -1;
 			}
 			*p = '/';
@@ -1068,7 +1069,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 	/* test path */
 	if (stat(tmp, &sb) != 0)
 	{
-/* path does not exist - create directory */
+		/* path does not exist - create directory */
 		if (mkdir(tmp, mode) < 0)
 		{
 			return -1;
@@ -1076,7 +1077,7 @@ int mkdir_p(const char* dir, const mode_t mode)
 	}
 	else if (!S_ISDIR(sb.st_mode))
 	{
-/* not a directory */
+		/* not a directory */
 		return -1;
 	}
 	return 0;
@@ -1227,13 +1228,13 @@ void print_color(int colors)
 	const char* color = "37";
 	switch (colors & ~PRINT_BRIGHT)
 	{
-		case PRINT_RED:								color = "31"; break;
-		case PRINT_GREEN:							color = "32"; break;
-		case PRINT_RED | PRINT_GREEN:				color = "33"; break;
-		case PRINT_BLUE:							color = "34"; break;
-		case PRINT_RED | PRINT_BLUE:				color = "35"; break;
-		case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
-		case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
+	case PRINT_RED:								color = "31"; break;
+	case PRINT_GREEN:							color = "32"; break;
+	case PRINT_RED | PRINT_GREEN:				color = "33"; break;
+	case PRINT_BLUE:							color = "34"; break;
+	case PRINT_RED | PRINT_BLUE:				color = "35"; break;
+	case PRINT_GREEN | PRINT_BLUE:				color = "36"; break;
+	case PRINT_GREEN | PRINT_BLUE | PRINT_RED:	color = "36"; break;
 	}
 	logf("\x1B[{};{}m", mode, color);
 }
@@ -1406,7 +1407,7 @@ void SimpeColorReduce(COLOR3* image, int size)
 	}
 }
 
-bool FindPathInAssets(const std::string& path, std::string& outpath, bool tracesearch)
+bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, bool tracesearch)
 {
 	int fPathId = 1;
 	if (fileExists(path))
@@ -1458,6 +1459,20 @@ bool FindPathInAssets(const std::string& path, std::string& outpath, bool traces
 		outpath = GetWorkDir() + path;
 		return true;
 	}
+
+	if (map)
+	{
+		if (tracesearch)
+		{
+			outTrace << "Search paths [" << fPathId++ << "] : [" << (stripFileName(stripFileName(map->bsp_path)) + "/" + path) << "]\n";
+		}
+		if (fileExists((stripFileName(stripFileName(map->bsp_path)) + "/" + path)))
+		{
+			outpath = stripFileName(stripFileName(map->bsp_path)) + "/" + path;
+			return true;
+		}
+	}
+
 	if (tracesearch)
 	{
 		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetGameDir() + path) << "]\n";
@@ -1531,10 +1546,10 @@ void FixupAllSystemPaths()
 
 	if (g_settings.workingdir.find(':') == std::string::npos)
 	{
-		/* fixup workingdir for relative to gamedir 
+		/* fixup workingdir for relative to gamedir
 			like ./workidr/ or workir/
 		*/
-		
+
 		fixupPath(g_settings.workingdir, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_CREATE);
 	}
 	else

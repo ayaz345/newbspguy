@@ -11,7 +11,7 @@
 #define	SIDE_CROSS		-2
 
 struct BSPPLANE;
-struct BSPFACE;
+struct BSPFACE32;
 struct BSPPLANE;
 
 class Winding
@@ -20,7 +20,7 @@ public:
 	int  m_NumPoints;
 	vec3* m_Points;
 
-	Winding(Bsp* bsp, const BSPFACE& face, float epsilon = ON_EPSILON);
+	Winding(Bsp* bsp, const BSPFACE32& face, float epsilon = ON_EPSILON);
 	Winding(int numpoints);
 	Winding(const BSPPLANE& plane, float epsilon = ON_EPSILON);
 	Winding();

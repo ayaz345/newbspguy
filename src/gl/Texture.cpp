@@ -15,7 +15,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, const char* name)
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
-		logf("Texture: {} {}/{} is loaded.", name, width, height);
+		logf("Texture: {} {}/{} is loaded.\n", name, width, height);
 	this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
 	if (name && name[0] == '{')
 	{
@@ -33,7 +33,7 @@ Texture::Texture(GLsizei _width, GLsizei _height, unsigned char* data, const cha
 	this->id = this->format = this->iformat = 0;
 	snprintf(texName, 64, "%s", name);
 	if (g_settings.verboseLogs)
-		logf("Texture2 : {} {}/{}is loaded.", name, width, height);
+		logf("Texture with data : {} {}/{} is loaded.\n", name, width, height);
 	this->transparentMode = IsTextureTransparent(name) ? 1 : 0;
 	if (name && name[0] == '{')
 	{

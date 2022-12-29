@@ -19,6 +19,8 @@ namespace fs = std::filesystem;
 #include "bsptypes.h"
 #include <math.h>
 
+class Bsp;
+
 extern std::string g_version_string;
 
 #ifndef WIN32
@@ -180,7 +182,7 @@ int GetImageColors(COLOR3* image, int size);
 int ColorDistance(COLOR3 color, COLOR3 other);
 void SimpeColorReduce(COLOR3* image, int size);
 
-bool FindPathInAssets(const std::string& path, std::string& outpath, bool tracesearch = false);
+bool FindPathInAssets(Bsp * map, const std::string& path, std::string& outpath, bool tracesearch = false);
 void FixupAllSystemPaths();
 
 int BoxOnPlaneSide(const vec3& emins, const vec3& emaxs, const BSPPLANE* p);

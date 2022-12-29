@@ -82,6 +82,7 @@ enum clean_unused_lump
 	CLEAN_CLIPNODES_SOMETHING = 8192
 };
 
+#define MAX_AMBIENTS		  4
 
 #define CONTENTS_EMPTY        -1
 #define CONTENTS_SOLID        -2
@@ -214,7 +215,7 @@ struct BSPMIPTEX
 	int nOffsets[MIPLEVELS];	  // Offsets to texture mipmaps, relative to the start of this structure
 };
 
-struct BSPFACE
+struct BSPFACE16
 {
 	unsigned short iPlane;          // Plane the face is parallel to
 	short nPlaneSide;      // Set if different normals orientation
@@ -225,24 +226,70 @@ struct BSPFACE
 	int nLightmapOffset; // Offsets into the raw lightmap data
 };
 
-struct BSPLEAF
+struct BSPFACE32
+{
+	int iPlane;          // Plane the face is parallel to
+	int nPlaneSide;      // Set if different normals orientation
+	int iFirstEdge;      // Index of the first surfedge
+	int nEdges;          // Number of consecutive surfedges
+	int iTextureInfo;    // Index of the texture info structure
+	unsigned char nStyles[4];       // Specify lighting styles
+	int nLightmapOffset; // Offsets into the raw lightmap data
+};
+
+struct BSPLEAF16
 {
 	int nContents;                         // Contents enumeration
 	int nVisOffset;                        // Offset into the visibility lump
 	short nMins[3], nMaxs[3];                // Defines bounding box
-	unsigned short iFirstMarkSurface, nMarkSurfaces; // Index and count into marksurfaces array
-	unsigned char nAmbientLevels[4];                 // Ambient sound levels
+	unsigned short iFirstMarkSurface;
+	unsigned short nMarkSurfaces;	// Index and count into marksurfaces array
+	unsigned char nAmbientLevels[MAX_AMBIENTS];                 // Ambient sound levels
 
 	bool isEmpty();
 };
 
-struct BSPEDGE
+struct BSPLEAF32
+{
+	int	nContents;
+	int	nVisOffset;
+	float nMins[3];
+	float nMaxs[3];
+	int	iFirstMarkSurface;
+	int nMarkSurfaces;
+	unsigned char nAmbientLevels[MAX_AMBIENTS];
+
+	bool isEmpty();
+};
+
+struct BSPLEAF32A
+{
+	int	nContents;
+	int	nVisOffset;
+	short nMins[3];
+	short nMaxs[3];
+	int	iFirstMarkSurface;
+	int nMarkSurfaces;
+	unsigned char nAmbientLevels[MAX_AMBIENTS];
+
+	bool isEmpty();
+};
+
+struct BSPEDGE16
 {
 	unsigned short iVertex[2]; // Indices into vertex array
 
-	BSPEDGE();
-	BSPEDGE(unsigned int v1, unsigned int v2);
-	BSPEDGE(unsigned short v1, unsigned short v2);
+	BSPEDGE16();
+	BSPEDGE16(unsigned int v1, unsigned int v2);
+	BSPEDGE16(unsigned short v1, unsigned short v2);
+};
+
+struct BSPEDGE32
+{
+	int iVertex[2]; // Indices into vertex array
+
+	BSPEDGE32();
+	BSPEDGE32(unsigned int v1, unsigned int v2);
 };
 
 struct BSPMODEL
@@ -255,8 +302,7 @@ struct BSPMODEL
 	int iFirstFace, nFaces;        // Index and count into faces
 };
 
-
-struct BSPNODE
+struct BSPNODE16
 {
 	int iPlane;            // Index into Planes lump
 	short iChildren[2];       // If > 0, then indices into Nodes // otherwise bitwise inverse indices into Leafs
@@ -264,16 +310,36 @@ struct BSPNODE
 	unsigned short firstFace, nFaces; // Index and count into Faces
 };
 
-struct BSPCLIPNODE
+struct BSPNODE32
 {
-	int iPlane;       // Index into planes
-	int iChildren[2]; // negative numbers are contents
+	int	iPlane;
+	int	iChildren[2];		// negative numbers are -(leafs+1), not nodes
+	float nMins[3];			// for sphere culling
+	float nMaxs[3];
+	int	firstFace;
+	int	nFaces;			// counting both sides
+};
+
+struct BSPNODE32A
+{
+	int	iPlane;
+	int	iChildren[2];		// negative numbers are -(leafs+1), not nodes
+	short nMins[3];			// for sphere culling
+	short nMaxs[3];
+	int	firstFace;
+	int	nFaces;			// counting both sides
 };
 
 struct BSPCLIPNODE16
 {
 	int iPlane;       // Index into planes
 	short iChildren[2]; // negative numbers are contents
+};
+
+struct BSPCLIPNODE32
+{
+	int iPlane;       // Index into planes
+	int iChildren[2]; // negative numbers are contents
 };
 
 /*
@@ -410,7 +476,7 @@ struct COLOR3
 {
 	unsigned char r, g, b;
 
-	COLOR3() : r(0), g(0), b(0){};
+	COLOR3() : r(0), g(0), b(0) {};
 	COLOR3(unsigned char r, unsigned char g, unsigned char b) : r(r), g(g), b(b)
 	{}
 };
@@ -418,12 +484,12 @@ struct COLOR3
 struct COLOR4
 {
 	unsigned char r, g, b, a;
-	COLOR4() : r(0), g(0), b(0), a(0){};
+	COLOR4() : r(0), g(0), b(0), a(0) {};
 	COLOR4(unsigned char r, unsigned char g, unsigned char b, unsigned char a) : r(r), g(g), b(b), a(a)
 	{}
-	COLOR4(const COLOR3 & c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
+	COLOR4(const COLOR3& c, unsigned char a) : r(c.r), g(c.g), b(c.b), a(a)
 	{}
-	COLOR4(const COLOR3 & c) : r(c.r), g(c.g), b(c.b), a(255)
+	COLOR4(const COLOR3& c) : r(c.r), g(c.g), b(c.b), a(255)
 	{}
 };
 

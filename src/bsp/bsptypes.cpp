@@ -2,15 +2,29 @@
 #include <math.h>
 #include <string.h>
 
-BSPEDGE::BSPEDGE() = default;
+BSPEDGE16::BSPEDGE16()
+{
+	iVertex[0] = iVertex[1] = 0;
+}
 
-BSPEDGE::BSPEDGE(unsigned int v1, unsigned int v2)
+BSPEDGE16::BSPEDGE16(unsigned int v1, unsigned int v2)
 {
 	iVertex[0] = (unsigned short)v1;
 	iVertex[1] = (unsigned short)v2;
 }
 
-BSPEDGE::BSPEDGE(unsigned short v1, unsigned short v2)
+BSPEDGE16::BSPEDGE16(unsigned short v1, unsigned short v2)
+{
+	iVertex[0] = v1;
+	iVertex[1] = v2;
+}
+
+BSPEDGE32::BSPEDGE32()
+{
+	iVertex[0] = iVertex[1] = 0;
+}
+
+BSPEDGE32::BSPEDGE32(unsigned int v1, unsigned int v2)
 {
 	iVertex[0] = v1;
 	iVertex[1] = v2;
@@ -71,11 +85,30 @@ bool BSPPLANE::update(vec3 newNormal, float fdist)
 	return shouldFlip;
 }
 
-bool BSPLEAF::isEmpty()
+bool BSPLEAF16::isEmpty()
 {
-	BSPLEAF emptyLeaf;
-	memset(&emptyLeaf, 0, sizeof(BSPLEAF));
+	BSPLEAF16 emptyLeaf;
+	memset(&emptyLeaf, 0, sizeof(BSPLEAF16));
 	emptyLeaf.nContents = CONTENTS_SOLID;
 
-	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF)) == 0;
+	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF16)) == 0;
+}
+
+
+bool BSPLEAF32::isEmpty()
+{
+	BSPLEAF32 emptyLeaf;
+	memset(&emptyLeaf, 0, sizeof(BSPLEAF32));
+	emptyLeaf.nContents = CONTENTS_SOLID;
+
+	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF32)) == 0;
+}
+
+bool BSPLEAF32A::isEmpty()
+{
+	BSPLEAF32A emptyLeaf;
+	memset(&emptyLeaf, 0, sizeof(BSPLEAF32A));
+	emptyLeaf.nContents = CONTENTS_SOLID;
+
+	return memcmp(&emptyLeaf, this, sizeof(BSPLEAF32A)) == 0;
 }

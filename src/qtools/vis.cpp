@@ -172,7 +172,7 @@ bool shiftVis(unsigned char* vis, int len, int offsetLeaf, int shift)
 // iterationLeaves = number of leaves to decompress vis for
 // visDataLeafCount = total leaves in this map (exluding the shared solid leaf 0)
 // newNumLeaves = total leaves that will be in the map after merging is finished (again, excluding solid leaf 0)
-void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned char* output,
+void decompress_vis_lump(BSPLEAF32* leafLump, unsigned char* visLump, unsigned char* output,
 	int iterationLeaves, int visDataLeafCount, int newNumLeaves, int leafMemSize, int visLumpMemSize)
 {
 	unsigned char* dest;
@@ -193,9 +193,9 @@ void decompress_vis_lump(BSPLEAF* leafLump, unsigned char* visLump, unsigned cha
 		dest = output + i * newVisRowSize;
 		if (lastUsedIdx >= 0)
 		{
-			if ((i + 1) * sizeof(BSPLEAF) >= leafMemSize)
+			if ((i + 1) * sizeof(BSPLEAF32) >= leafMemSize)
 			{
-				logf("Fatal error! Overflow decompressing VIS lump! {} leaf of {} #0\n", i + 1, leafMemSize / sizeof(BSPLEAF));
+				logf("Fatal error! Overflow decompressing VIS lump! {} leaf of {} #0\n", i + 1, leafMemSize / sizeof(BSPLEAF32));
 				return;
 			}
 
@@ -345,7 +345,7 @@ int CompressVis(unsigned char* src, unsigned int src_length, unsigned char* dest
 	return (int)(dest_p - dest);
 }
 
-int CompressAll(BSPLEAF* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize, int maxLeafs)
+int CompressAll(BSPLEAF32* leafs, unsigned char* uncompressed, unsigned char* output, int numLeaves, int iterLeaves, int bufferSize, int maxLeafs)
 {
 	int x = 0;
 

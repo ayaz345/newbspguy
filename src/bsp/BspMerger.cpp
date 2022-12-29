@@ -1411,7 +1411,7 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 	g_progress.update("Merging faces", mapB.faceCount + 1);
 	g_progress.tick();
 
-	BSPFACE* newFaces = new BSPFACE[totalFaceCount];
+	BSPFACE32* newFaces = new BSPFACE32[totalFaceCount];
 
 	// world model faces come first so they can be merged into one group (model.nFaces is used to render models)
 	// assumes world model faces always come first
@@ -1419,17 +1419,17 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 	// copy world faces
 	unsigned int worldFaceCountA = thisWorldFaceCount;
 	unsigned int worldFaceCountB = mapB.models[0].nFaces;
-	memcpy(newFaces + appendOffset, mapA.faces, worldFaceCountA * sizeof(BSPFACE));
+	memcpy(newFaces + appendOffset, mapA.faces, worldFaceCountA * sizeof(BSPFACE32));
 	appendOffset += worldFaceCountA;
-	memcpy(newFaces + appendOffset, mapB.faces, worldFaceCountB * sizeof(BSPFACE));
+	memcpy(newFaces + appendOffset, mapB.faces, worldFaceCountB * sizeof(BSPFACE32));
 	appendOffset += worldFaceCountB;
 
 	// copy B's submodel faces followed by A's
 	unsigned int submodelFaceCountA = mapA.faceCount - worldFaceCountA;
 	unsigned int submodelFaceCountB = mapB.faceCount - worldFaceCountB;
-	memcpy(newFaces + appendOffset, mapB.faces + worldFaceCountB, submodelFaceCountB * sizeof(BSPFACE));
+	memcpy(newFaces + appendOffset, mapB.faces + worldFaceCountB, submodelFaceCountB * sizeof(BSPFACE32));
 	appendOffset += submodelFaceCountB;
-	memcpy(newFaces + appendOffset, mapA.faces + worldFaceCountA, submodelFaceCountA * sizeof(BSPFACE));
+	memcpy(newFaces + appendOffset, mapA.faces + worldFaceCountA, submodelFaceCountA * sizeof(BSPFACE32));
 
 	for (unsigned int i = 0; i < totalFaceCount; i++)
 	{
@@ -1437,26 +1437,26 @@ void BspMerger::merge_faces(Bsp& mapA, Bsp& mapB)
 		if (i < worldFaceCountA || i >= worldFaceCountA + mapB.faceCount)
 			continue;
 
-		BSPFACE& face = newFaces[i];
-		face.iPlane = (unsigned short)planeRemap[face.iPlane];
+		BSPFACE32& face = newFaces[i];
+		face.iPlane = planeRemap[face.iPlane];
 		face.iFirstEdge = face.iFirstEdge + thisSurfEdgeCount;
-		face.iTextureInfo = (short)texInfoRemap[face.iTextureInfo];
+		face.iTextureInfo = texInfoRemap[face.iTextureInfo];
 		g_progress.tick();
 	}
 
-	mapA.replace_lump(LUMP_FACES, newFaces, totalFaceCount * sizeof(BSPFACE));
+	mapA.replace_lump(LUMP_FACES, newFaces, totalFaceCount * sizeof(BSPFACE32));
 }
 
 void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB)
 {
-	thisLeafCount = mapA.bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
-	otherLeafCount = mapB.bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF);
+	thisLeafCount = mapA.bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF32);
+	otherLeafCount = mapB.bsp_header.lump[LUMP_LEAVES].nLength / sizeof(BSPLEAF32);
 
 	int tthisWorldLeafCount = ((BSPMODEL*)mapA.lumps[LUMP_MODELS])->nVisLeafs + 1; // include solid leaf
 
 	g_progress.update("Merging leaves", thisLeafCount + otherLeafCount);
 
-	std::vector<BSPLEAF> mergedLeaves;
+	std::vector<BSPLEAF32> mergedLeaves;
 	mergedLeaves.reserve(tthisWorldLeafCount + otherLeafCount);
 	modelLeafRemap.reserve(tthisWorldLeafCount + otherLeafCount);
 
@@ -1469,10 +1469,10 @@ void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB)
 
 	for (int i = 0; i < otherLeafCount; i++)
 	{
-		BSPLEAF& leaf = mapB.leaves[i];
+		BSPLEAF32& leaf = mapB.leaves[i];
 		if (leaf.nMarkSurfaces)
 		{
-			leaf.iFirstMarkSurface = (unsigned short)(leaf.iFirstMarkSurface + thisMarkSurfCount);
+			leaf.iFirstMarkSurface = (leaf.iFirstMarkSurface + thisMarkSurfCount);
 		}
 
 		bool isSharedSolidLeaf = i == 0;
@@ -1499,7 +1499,7 @@ void BspMerger::merge_leaves(Bsp& mapA, Bsp& mapB)
 
 	otherLeafCount -= 1; // solid leaf removed
 
-	size_t newLen = mergedLeaves.size() * sizeof(BSPLEAF);
+	size_t newLen = mergedLeaves.size() * sizeof(BSPLEAF32);
 
 	unsigned char* newLeavesData = new unsigned char[newLen];
 	memcpy(newLeavesData, &mergedLeaves[0], newLen);
@@ -1520,51 +1520,51 @@ void BspMerger::merge_marksurfs(Bsp& mapA, Bsp& mapB)
 	g_progress.update("Merging marksurfaces", totalSurfCount + 1);
 	g_progress.tick();
 
-	unsigned short* newSurfs = new unsigned short[totalSurfCount];
-	memcpy(newSurfs, mapA.marksurfs, thisMarkSurfCount * sizeof(unsigned short));
-	memcpy(newSurfs + thisMarkSurfCount, mapB.marksurfs, mapB.marksurfCount * sizeof(unsigned short));
+	int* newSurfs = new int[totalSurfCount];
+	memcpy(newSurfs, mapA.marksurfs, thisMarkSurfCount * sizeof(int));
+	memcpy(newSurfs + thisMarkSurfCount, mapB.marksurfs, mapB.marksurfCount * sizeof(int));
 
 	for (int i = 0; i < thisMarkSurfCount; i++)
 	{
-		unsigned short& mark = newSurfs[i];
+		int& mark = newSurfs[i];
 		if (mark >= thisWorldFaceCount)
 		{
-			mark += (unsigned short)otherFaceCount;
+			mark += otherFaceCount;
 		}
 		g_progress.tick();
 	}
 
 	for (int i = thisMarkSurfCount; i < totalSurfCount; i++)
 	{
-		unsigned short& mark = newSurfs[i];
-		mark += (unsigned short)thisWorldFaceCount;
+		int& mark = newSurfs[i];
+		mark += thisWorldFaceCount;
 		g_progress.tick();
 	}
 
-	mapA.replace_lump(LUMP_MARKSURFACES, newSurfs, totalSurfCount * sizeof(unsigned short));
+	mapA.replace_lump(LUMP_MARKSURFACES, newSurfs, totalSurfCount * sizeof(int));
 }
 
 void BspMerger::merge_edges(Bsp& mapA, Bsp& mapB)
 {
-	thisEdgeCount = mapA.bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE);
+	thisEdgeCount = mapA.bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE32);
 	int totalEdgeCount = thisEdgeCount + mapB.edgeCount;
 
 	g_progress.update("Merging edges", mapB.edgeCount + 1);
 	g_progress.tick();
 
-	BSPEDGE* newEdges = new BSPEDGE[totalEdgeCount];
-	memcpy(newEdges, mapA.edges, thisEdgeCount * sizeof(BSPEDGE));
-	memcpy(newEdges + thisEdgeCount, mapB.edges, mapB.edgeCount * sizeof(BSPEDGE));
+	BSPEDGE32* newEdges = new BSPEDGE32[totalEdgeCount];
+	memcpy(newEdges, mapA.edges, thisEdgeCount * sizeof(BSPEDGE32));
+	memcpy(newEdges + thisEdgeCount, mapB.edges, mapB.edgeCount * sizeof(BSPEDGE32));
 
 	for (int i = thisEdgeCount; i < totalEdgeCount; i++)
 	{
-		BSPEDGE& edge = newEdges[i];
-		edge.iVertex[0] += (unsigned short)thisVertCount;
-		edge.iVertex[1] += (unsigned short)thisVertCount;
+		BSPEDGE32& edge = newEdges[i];
+		edge.iVertex[0] += thisVertCount;
+		edge.iVertex[1] += thisVertCount;
 		g_progress.tick();
 	}
 
-	mapA.replace_lump(LUMP_EDGES, newEdges, totalEdgeCount * sizeof(BSPEDGE));
+	mapA.replace_lump(LUMP_EDGES, newEdges, totalEdgeCount * sizeof(BSPEDGE32));
 }
 
 void BspMerger::merge_surfedges(Bsp& mapA, Bsp& mapB)
@@ -1595,12 +1595,12 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 
 	g_progress.update("Merging nodes", thisNodeCount + mapB.nodeCount);
 
-	std::vector<BSPNODE> mergedNodes;
+	std::vector<BSPNODE32> mergedNodes;
 	mergedNodes.reserve(thisNodeCount + mapB.nodeCount);
 
 	for (int i = 0; i < thisNodeCount; i++)
 	{
-		BSPNODE node = mapA.nodes[i];
+		BSPNODE32 node = mapA.nodes[i];
 
 		if (i > 0)
 		{ // new headnode should already be correct
@@ -1618,7 +1618,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		}
 		if (node.nFaces && node.firstFace >= thisWorldFaceCount)
 		{
-			node.firstFace += (unsigned short)otherFaceCount;
+			node.firstFace += otherFaceCount;
 		}
 
 		mergedNodes.push_back(node);
@@ -1627,7 +1627,7 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 
 	for (int i = 0; i < mapB.nodeCount; i++)
 	{
-		BSPNODE node = mapB.nodes[i];
+		BSPNODE32 node = mapB.nodes[i];
 
 		for (int k = 0; k < 2; k++)
 		{
@@ -1643,14 +1643,14 @@ void BspMerger::merge_nodes(Bsp& mapA, Bsp& mapB)
 		node.iPlane = planeRemap[node.iPlane];
 		if (node.nFaces)
 		{
-			node.firstFace += (unsigned short)thisWorldFaceCount;
+			node.firstFace += thisWorldFaceCount;
 		}
 
 		mergedNodes.push_back(node);
 		g_progress.tick();
 	}
 
-	size_t newLen = mergedNodes.size() * sizeof(BSPNODE);
+	size_t newLen = mergedNodes.size() * sizeof(BSPNODE32);
 
 	unsigned char* newNodeData = new unsigned char[newLen];
 	memcpy(newNodeData, &mergedNodes[0], newLen);
@@ -1664,12 +1664,12 @@ void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
 
 	g_progress.update("Merging clipnodes", thisClipnodeCount + mapB.clipnodeCount);
 
-	std::vector<BSPCLIPNODE> mergedNodes;
+	std::vector<BSPCLIPNODE32> mergedNodes;
 	mergedNodes.reserve(thisClipnodeCount + mapB.clipnodeCount);
 
 	for (int i = 0; i < thisClipnodeCount; i++)
 	{
-		BSPCLIPNODE node = mapA.clipnodes[i];
+		BSPCLIPNODE32 node = mapA.clipnodes[i];
 		if (i > 2)
 		{ // new headnodes should already be correct
 			for (int k = 0; k < 2; k++)
@@ -1686,21 +1686,21 @@ void BspMerger::merge_clipnodes(Bsp& mapA, Bsp& mapB)
 
 	for (int i = 0; i < mapB.clipnodeCount; i++)
 	{
-		BSPCLIPNODE node = mapB.clipnodes[i];
+		BSPCLIPNODE32 node = mapB.clipnodes[i];
 		node.iPlane = planeRemap[node.iPlane];
 
 		for (int k = 0; k < 2; k++)
 		{
 			if (node.iChildren[k] >= 0)
 			{
-				node.iChildren[k] += (unsigned short)thisClipnodeCount;
+				node.iChildren[k] += thisClipnodeCount;
 			}
 		}
 		mergedNodes.push_back(node);
 		g_progress.tick();
 	}
 
-	size_t newLen = mergedNodes.size() * sizeof(BSPCLIPNODE);
+	size_t newLen = mergedNodes.size() * sizeof(BSPCLIPNODE32);
 
 	unsigned char* newClipnodeData = new unsigned char[newLen];
 	memcpy(newClipnodeData, &mergedNodes[0], newLen);
@@ -1788,7 +1788,7 @@ void BspMerger::merge_vis(Bsp& mapA, Bsp& mapB)
 	if (otherWorldLeafCount == 0)
 		otherWorldLeafCount = mapB.leafCount;
 
-	BSPLEAF* allLeaves = mapA.leaves; // combined with mapB's leaves earlier in merge_leaves
+	BSPLEAF32* allLeaves = mapA.leaves; // combined with mapB's leaves earlier in merge_leaves
 
 	int thisVisLeaves = thisLeafCount - 1; // VIS ignores the shared solid leaf 0
 	int otherVisLeaves = otherLeafCount; // already does not include the solid leaf (see merge_leaves)
@@ -1850,7 +1850,7 @@ void BspMerger::merge_lighting(Bsp& mapA, Bsp& mapB)
 	int thisColorCount = mapA.bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
 	int otherColorCount = mapB.bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
 	int totalColorCount = thisColorCount + otherColorCount;
-	int totalFaceCount = mapA.bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE);
+	int totalFaceCount = mapA.bsp_header.lump[LUMP_FACES].nLength / sizeof(BSPFACE32);
 
 	g_progress.update("Merging lightmaps", 4 + totalFaceCount);
 
@@ -1946,27 +1946,27 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 
 	// write new head node (visible BSP)
 	{
-		BSPNODE headNode = {
+		BSPNODE32 headNode = {
 			separationPlaneIdx,			// plane idx
 			{mapA.nodeCount + 1, 1},		// child nodes
-			{ (short)bmin.x,(short)bmin.y,(short)bmin.z },	// mins
-			{(short)bmax.x, (short)bmax.y,(short)bmax.z },	// maxs
+			{ bmin.x,bmin.y,bmin.z },	// mins
+			{ bmax.x, bmax.y,bmax.z },	// maxs
 			0, // first face
 			0  // n faces (none since this plane is in the void)
 		};
 
 		if (swapNodeChildren)
 		{
-			short temp = headNode.iChildren[0];
+			int temp = headNode.iChildren[0];
 			headNode.iChildren[0] = headNode.iChildren[1];
 			headNode.iChildren[1] = temp;
 		}
 
-		BSPNODE* newThisNodes = new BSPNODE[mapA.nodeCount + 1];
-		memcpy(newThisNodes + 1, mapA.nodes, mapA.nodeCount * sizeof(BSPNODE));
+		BSPNODE32* newThisNodes = new BSPNODE32[mapA.nodeCount + 1];
+		memcpy(newThisNodes + 1, mapA.nodes, mapA.nodeCount * sizeof(BSPNODE32));
 		newThisNodes[0] = headNode;
 
-		mapA.replace_lump(LUMP_NODES, newThisNodes, (mapA.nodeCount + 1) * sizeof(BSPNODE));
+		mapA.replace_lump(LUMP_NODES, newThisNodes, (mapA.nodeCount + 1) * sizeof(BSPNODE32));
 	}
 
 
@@ -1974,7 +1974,7 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 	{
 		const int NEW_NODE_COUNT = MAX_MAP_HULLS - 1;
 
-		BSPCLIPNODE newHeadNodes[NEW_NODE_COUNT];
+		BSPCLIPNODE32 newHeadNodes[NEW_NODE_COUNT];
 		for (int i = 0; i < NEW_NODE_COUNT; i++)
 		{
 			//logf("HULL {} starts at {}\n", i+1, thisWorld.iHeadnodes[i+1]);
@@ -2003,10 +2003,10 @@ void BspMerger::create_merge_headnodes(Bsp& mapA, Bsp& mapB, BSPPLANE separation
 			}
 		}
 
-		BSPCLIPNODE* newThisNodes = new BSPCLIPNODE[mapA.clipnodeCount + NEW_NODE_COUNT];
-		memcpy(newThisNodes, newHeadNodes, NEW_NODE_COUNT * sizeof(BSPCLIPNODE));
-		memcpy(newThisNodes + NEW_NODE_COUNT, mapA.clipnodes, mapA.clipnodeCount * sizeof(BSPCLIPNODE));
+		BSPCLIPNODE32* newThisNodes = new BSPCLIPNODE32[mapA.clipnodeCount + NEW_NODE_COUNT];
+		memcpy(newThisNodes, newHeadNodes, NEW_NODE_COUNT * sizeof(BSPCLIPNODE32));
+		memcpy(newThisNodes + NEW_NODE_COUNT, mapA.clipnodes, mapA.clipnodeCount * sizeof(BSPCLIPNODE32));
 
-		mapA.replace_lump(LUMP_CLIPNODES, newThisNodes, (mapA.clipnodeCount + NEW_NODE_COUNT) * sizeof(BSPCLIPNODE));
+		mapA.replace_lump(LUMP_CLIPNODES, newThisNodes, (mapA.clipnodeCount + NEW_NODE_COUNT) * sizeof(BSPCLIPNODE32));
 	}
 }

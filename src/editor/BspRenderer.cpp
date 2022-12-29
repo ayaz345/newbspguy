@@ -10,7 +10,7 @@
 #include "Clipper.h"
 #include "Command.h"
 #include "icons/missing.h"
-
+#include <execution>
 
 BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _fullBrightBspShader,
 	ShaderProgram* _colorShader, PointEntRenderer* _pointEntRenderer)
@@ -38,12 +38,12 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	blackTex = new Texture(1, 1, "black");
 	blueTex = new Texture(1, 1, "blue");
 
-	*((COLOR3*)(whiteTex->data)) = {255, 255, 255};
-	*((COLOR3*)(redTex->data)) = {110, 0, 0};
-	*((COLOR3*)(yellowTex->data)) = {255, 255, 0};
-	*((COLOR3*)(greyTex->data)) = {64, 64, 64};
-	*((COLOR3*)(blackTex->data)) = {0, 0, 0};
-	*((COLOR3*)(blueTex->data)) = {0, 0, 200};
+	*((COLOR3*)(whiteTex->data)) = { 255, 255, 255 };
+	*((COLOR3*)(redTex->data)) = { 110, 0, 0 };
+	*((COLOR3*)(yellowTex->data)) = { 255, 255, 0 };
+	*((COLOR3*)(greyTex->data)) = { 64, 64, 64 };
+	*((COLOR3*)(blackTex->data)) = { 0, 0, 0 };
+	*((COLOR3*)(blueTex->data)) = { 0, 0, 200 };
 
 	whiteTex->upload(GL_RGB);
 	redTex->upload(GL_RGB);
@@ -343,15 +343,27 @@ void BspRenderer::loadLightmaps()
 	logf("Calculating lightmaps\n");
 
 	int lightmapCount = 0;
-	int atlasId = 0;
+
+	std::vector<int> tmpFaceCount;
 	for (int i = 0; i < map->faceCount; i++)
 	{
-		BSPFACE& face = map->faces[i];
-		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+		tmpFaceCount.push_back(i);
+	}
 
-		if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
-			continue;
+	std::for_each(std::execution::par_unseq, tmpFaceCount.begin(), tmpFaceCount.end(), [&](int i)
+		{
+			BSPFACE32& face = map->faces[i];
+	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 
+	if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
+	{
+
+	}
+	else
+	{
+		g_log_mutex2.lock();
+		int atlasId = atlases.size() - 1;
+		g_log_mutex2.unlock();
 		int size[2];
 		int imins[2];
 		int imaxs[2];
@@ -373,6 +385,7 @@ void BspRenderer::loadLightmaps()
 			if (face.nStyles[s] == 255)
 				continue;
 
+			g_log_mutex2.lock();
 			// TODO: Try fitting in earlier atlases before using the latest one
 			if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 			{
@@ -392,6 +405,7 @@ void BspRenderer::loadLightmaps()
 
 			info.atlasId[s] = atlasId;
 
+			g_log_mutex2.unlock();
 			// copy lightmap data into atlas
 			int lightmapSz = info.w * info.h * sizeof(COLOR3);
 			int offset = face.nLightmapOffset + s * lightmapSz;
@@ -411,12 +425,17 @@ void BspRenderer::loadLightmaps()
 					else
 					{
 						bool checkers = x % 2 == 0 != y % 2 == 0;
-						lightDst[dst] = {(unsigned char)(checkers ? 255 : 0), 0, (unsigned char)(checkers ? 255 : 0)};
+						lightDst[dst] = { (unsigned char)(checkers ? 255 : 0), 0, (unsigned char)(checkers ? 255 : 0) };
 					}
 				}
 			}
 		}
 	}
+		}
+	);
+
+
+
 
 	glLightmapTextures = new Texture * [atlasTextures.size()];
 	for (unsigned int i = 0; i < atlasTextures.size(); i++)
@@ -428,7 +447,7 @@ void BspRenderer::loadLightmaps()
 	numLightmapAtlases = atlasTextures.size();
 
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
-	logf("Fit {} lightmaps into {} atlases\n", lightmapCount, atlasId + 1);
+	logf("Loaded {} lightmaps into {} atlases\n", lightmapCount, atlases.size());
 }
 
 void BspRenderer::updateLightmapInfos()
@@ -632,7 +651,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 	for (int i = 0; i < model.nFaces; i++)
 	{
 		int faceIdx = model.iFirstFace + i;
-		BSPFACE& face = map->faces[faceIdx];
+		BSPFACE32& face = map->faces[faceIdx];
 		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 		BSPMIPTEX* tex = NULL;
 
@@ -646,7 +665,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		}
 		else
 		{
-	  // missing texture
+			// missing texture
 			texWidth = 16;
 			texHeight = 16;
 		}
@@ -656,7 +675,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		lightmapVert* verts = new lightmapVert[face.nEdges];
 		int vertCount = face.nEdges;
-		Texture* lightmapAtlas[MAXLIGHTMAPS]{NULL};
+		Texture* lightmapAtlas[MAXLIGHTMAPS]{ NULL };
 
 		float lw = 0;
 		float lh = 0;
@@ -701,7 +720,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		for (int e = 0; e < face.nEdges; e++)
 		{
 			int edgeIdx = map->surfedges[face.iFirstEdge + e];
-			BSPEDGE& edge = map->edges[abs(edgeIdx)];
+			BSPEDGE32& edge = map->edges[abs(edgeIdx)];
 			int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 
 			vec3& vert = map->verts[vertIdx];
@@ -928,14 +947,21 @@ void BspRenderer::loadClipnodes()
 	for (int i = 0; i < numRenderClipnodes; i++)
 		renderClipnodes[i] = RenderClipnodes();
 
+	std::vector<int> tmpNumRenderClipnodes;
+	for (int i = 0; i < numRenderClipnodes; i++)
+	{
+		tmpNumRenderClipnodes.push_back(i);
+	}
 	if (map)
 	{
-		for (int i = 0; i < numRenderClipnodes; i++)
+		// Speed up x100 times :)
+		for (int hull = 0; hull < MAX_MAP_HULLS; hull++)
 		{
-			for (int hull = 0; hull < MAX_MAP_HULLS; hull++)
-			{
-				generateClipnodeBufferForHull(i, hull);
-			}
+			std::for_each(std::execution::par_unseq, tmpNumRenderClipnodes.begin(), tmpNumRenderClipnodes.end(), [&](int i)
+				{
+					generateClipnodeBufferForHull(i, hull);
+				}
+			);
 		}
 	}
 	debugClipnodeVis = false;
@@ -1066,13 +1092,13 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 			}
 
 			tfaceMaths.push_back(faceMath);
-		// create the verts for rendering
+			// create the verts for rendering
 			for (int c = 0; c < faceVerts.size(); c++)
 			{
 				faceVerts[c] = faceVerts[c].flip();
 			}
 
-			COLOR4 wireframeColor = {0, 0, 0, 255};
+			COLOR4 wireframeColor = { 0, 0, 0, 255 };
 			for (int k = 0; k < faceVerts.size(); k++)
 			{
 				wireframeVerts.emplace_back(cVert(faceVerts[k], wireframeColor));
@@ -1394,7 +1420,7 @@ void BspRenderer::refreshEnt(int entIdx)
 				std::string newModelPath;
 				if (lowerpath.ends_with(".mdl"))
 				{
-					if (FindPathInAssets(modelpath, newModelPath))
+					if (FindPathInAssets(map, modelpath, newModelPath))
 					{
 						if (renderEnts[entIdx].mdl)
 						{
@@ -1407,7 +1433,7 @@ void BspRenderer::refreshEnt(int entIdx)
 					else
 					{
 						if (modelpath.size())
-							FindPathInAssets(modelpath, newModelPath, true);
+							FindPathInAssets(map, modelpath, newModelPath, true);
 						if (renderEnts[entIdx].mdl)
 						{
 							delete renderEnts[entIdx].mdl;
@@ -1563,7 +1589,7 @@ void BspRenderer::refreshFace(int faceIdx)
 	const vec3 world_z = vec3(0, 0, 1);
 
 	FaceMath& faceMath = faceMaths[faceIdx];
-	BSPFACE& face = map->faces[faceIdx];
+	BSPFACE32& face = map->faces[faceIdx];
 	BSPPLANE& plane = map->planes[face.iPlane];
 	vec3 planeNormal = face.nPlaneSide ? plane.vNormal * -1 : plane.vNormal;
 	float fDist = face.nPlaneSide ? -plane.fDist : plane.fDist;
@@ -1576,7 +1602,7 @@ void BspRenderer::refreshFace(int faceIdx)
 	for (int e = 0; e < face.nEdges; e++)
 	{
 		int edgeIdx = map->surfedges[face.iFirstEdge + e];
-		BSPEDGE& edge = map->edges[abs(edgeIdx)];
+		BSPEDGE32& edge = map->edges[abs(edgeIdx)];
 		int vertIdx = edgeIdx < 0 ? edge.iVertex[1] : edge.iVertex[0];
 		allVerts[e] = map->verts[vertIdx];
 
@@ -1766,7 +1792,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 		return;
 	}
 
-	BSPFACE& face = map->faces[faceIdx];
+	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 	int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 	if (texOffset != -1 && texinfo.iMiptex != -1)
@@ -1808,7 +1834,7 @@ bool BspRenderer::getRenderPointers(int faceIdx, RenderFace** renderFace, Render
 
 unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 {
-	BSPFACE& face = map->faces[faceIdx];
+	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 	if (texinfo.iMiptex == -1)
 		return 0;
@@ -2317,7 +2343,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 	if (map->modelCount <= 0 || modelIdx < 0)
 		return false;
 
-	
+
 	int entidx = map->get_ent_from_model(modelIdx);
 
 	if (entidx >= 0)
@@ -2325,7 +2351,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 		if (map->ents[entidx]->hide)
 			return false;
 	}
-		
+
 	BSPMODEL& model = map->models[modelIdx];
 
 	start -= offset;
@@ -2336,7 +2362,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 	for (int k = 0; k < model.nFaces; k++)
 	{
 		FaceMath& faceMath = faceMaths[model.iFirstFace + k];
-		BSPFACE& face = map->faces[model.iFirstFace + k];
+		BSPFACE32& face = map->faces[model.iFirstFace + k];
 
 		if (skipSpecial && modelIdx == 0)
 		{
@@ -2362,7 +2388,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 
 	if (hullIdx == -1 && renderModels[modelIdx].groupCount == 0)
 	{
-// clipnodes are visible for this model because it has no faces
+		// clipnodes are visible for this model because it has no faces
 		hullIdx = getBestClipnodeHull(modelIdx);
 	}
 
@@ -2538,7 +2564,7 @@ void BspRenderer::pushModelUndoState(const std::string& actionDesc, unsigned int
 
 	LumpState newLumps = map->duplicate_lumps(targetLumps);
 
-	bool differences[HEADER_LUMPS] = {false};
+	bool differences[HEADER_LUMPS] = { false };
 
 	bool anyDifference = false;
 	for (int i = 0; i < HEADER_LUMPS; i++)

@@ -140,7 +140,7 @@ void Winding::getPlane(BSPPLANE& plane)
 	}
 }
 
-Winding::Winding(Bsp* bsp, const BSPFACE& face, float epsilon)
+Winding::Winding(Bsp* bsp, const BSPFACE32& face, float epsilon)
 {
 	int             se;
 	vec3* dv;
