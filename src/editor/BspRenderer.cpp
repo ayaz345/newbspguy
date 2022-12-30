@@ -949,6 +949,18 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 		logf("Bad model idx\n");
 		return false;
 	}
+	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
+	{
+		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+		{
+			clipnodesBufferCache.erase(nodeIdx);
+		}
+		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+		{
+			nodesBufferCache.erase(nodeIdx); 
+		}
+	}
 
 	deleteRenderModelClipnodes(&renderClipnodes[modelIdx]);
 	generateClipnodeBuffer(modelIdx);
