@@ -311,7 +311,7 @@ void BspRenderer::addClipnodeModel(int modelIdx)
 	{
 		newRenderClipnodes[i] = renderClipnodes[i];
 	}
-	memset(&newRenderClipnodes[numRenderClipnodes], 0, sizeof(RenderClipnodes));
+	newRenderClipnodes[numRenderClipnodes] = RenderClipnodes();
 	numRenderClipnodes++;
 	renderClipnodes = newRenderClipnodes;
 
@@ -385,8 +385,8 @@ void BspRenderer::loadLightmaps()
 		info.midTexV = (float)(size[1]) / 2.0f;
 
 		// TODO: float mins/maxs not needed?
-		info.midPolyU = (imins[0] + imaxs[0]) * 16 / 2.0f;
-		info.midPolyV = (imins[1] + imaxs[1]) * 16 / 2.0f;
+		info.midPolyU = (imins[0] + imaxs[0]) * 16.0f / 2.0f;
+		info.midPolyV = (imins[1] + imaxs[1]) * 16.0f / 2.0f;
 
 		for (int s = 0; s < MAXLIGHTMAPS; s++)
 		{
@@ -949,6 +949,9 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 
 void BspRenderer::loadClipnodes()
 {
+	if (!map)
+		return;
+
 	numRenderClipnodes = map->modelCount;
 	renderClipnodes = new RenderClipnodes[numRenderClipnodes];
 
@@ -1062,7 +1065,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 			vec3 normal = getNormalFromVerts(faceVerts);
 
 
-			if (dotProduct(mesh.faces[n].normal, normal) > 0)
+			if (dotProduct(mesh.faces[n].normal, normal) > 0.0f)
 			{
 				reverse(faceVerts.begin(), faceVerts.end());
 				normal = normal.invert();
@@ -1116,7 +1119,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 				wireframeVerts.emplace_back(cVert(faceVerts[(k + 1) % faceVerts.size()], wireframeColor));
 			}
 
-			vec3 lightDir = vec3(1, 1, -1).normalize();
+			vec3 lightDir = vec3(1.0f, 1.0f, -1.0f).normalize();
 			float dot = (dotProduct(normal, lightDir) + 1) / 2.0f;
 			if (dot > 0.5f)
 			{
@@ -1176,6 +1179,14 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 		}
 	}
 
+
+	renderClip->faceMaths[hullId].clear();
+
+	if (allVerts.empty() || wireframeVerts.empty())
+	{
+		return;
+	}
+
 	cVert* output = new cVert[allVerts.size()];
 	for (int c = 0; c < allVerts.size(); c++)
 	{
@@ -1186,13 +1197,6 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 	for (int c = 0; c < wireframeVerts.size(); c++)
 	{
 		wireOutput[c] = wireframeVerts[c];
-	}
-
-	renderClip->faceMaths[hullId].clear();
-
-	if (allVerts.empty() || wireframeVerts.empty())
-	{
-		return;
 	}
 
 	renderClip->clipnodeBuffer[hullId] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
@@ -1585,9 +1589,9 @@ void BspRenderer::calcFaceMaths()
 	numFaceMaths = map->faceCount;
 	faceMaths = new FaceMath[map->faceCount];
 
-	vec3 world_x = vec3(1, 0, 0);
-	vec3 world_y = vec3(0, 1, 0);
-	vec3 world_z = vec3(0, 0, 1);
+	vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
+	vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
+	vec3 world_z = vec3(0.0f, 0.0f, 1.0f);
 
 	for (int i = 0; i < map->faceCount; i++)
 	{
@@ -1597,9 +1601,9 @@ void BspRenderer::calcFaceMaths()
 
 void BspRenderer::refreshFace(int faceIdx)
 {
-	const vec3 world_x = vec3(1, 0, 0);
-	const vec3 world_y = vec3(0, 1, 0);
-	const vec3 world_z = vec3(0, 0, 1);
+	const vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
+	const vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
+	const vec3 world_z = vec3(0.0f, 0.0f, 1.0f);
 
 	FaceMath& faceMath = faceMaths[faceIdx];
 	BSPFACE32& face = map->faces[faceIdx];
@@ -1638,7 +1642,7 @@ void BspRenderer::refreshFace(int faceIdx)
 	faceMath.localVerts = std::vector<vec2>(allVerts.size());
 	for (int i = 0; i < allVerts.size(); i++)
 	{
-		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1)).xy();
+		faceMath.localVerts[i] = (faceMath.worldToLocal * vec4(allVerts[i], 1.0f)).xy();
 	}
 }
 
@@ -1777,8 +1781,8 @@ void BspRenderer::highlightFace(int faceIdx, bool highlight, COLOR4 color, bool 
 	if (highlight)
 	{
 		r = 0.86f;
-		g = 0;
-		b = 0;
+		g = 0.0f;
+		b = 0.0f;
 	}
 
 	if (useColor)
@@ -1965,14 +1969,14 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 
 					if (hightlighted)
 					{
-						glUniform4f(colorShaderMultId, 1, 0.25f, 0.25f, 1);
+						glUniform4f(colorShaderMultId, 1.0f, 0.25f, 0.25f, 1.0f);
 					}
 
 					drawModelClipnodes(renderEnts[i].modelIdx, false, clipnodeHull);
 
 					if (hightlighted)
 					{
-						glUniform4f(colorShaderMultId, 1, 1, 1, 1);
+						glUniform4f(colorShaderMultId, 1.0f, 1.0f, 1.0f, 1.0f);
 					}
 
 					colorShader->popMatrix(MAT_MODEL);
@@ -2430,7 +2434,7 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 bool BspRenderer::pickFaceMath(const vec3& start, const vec3& dir, FaceMath& faceMath, float& bestDist)
 {
 	float dot = dotProduct(dir, faceMath.normal);
-	if (dot >= 0)
+	if (dot >= 0.0f)
 	{
 		return false; // don't select backfaces or parallel faces
 	}
@@ -2443,7 +2447,7 @@ bool BspRenderer::pickFaceMath(const vec3& start, const vec3& dir, FaceMath& fac
 
 	// transform intersection point to the plane's coordinate system
 	vec3 intersection = start + dir * t;
-	vec2 localRayPoint = (faceMath.worldToLocal * vec4(intersection, 1)).xy();
+	vec2 localRayPoint = (faceMath.worldToLocal * vec4(intersection, 1.0f)).xy();
 
 	// check if point is inside the polygon using the plane's 2D coordinate system
 	if (!pointInsidePolygon(faceMath.localVerts, localRayPoint))

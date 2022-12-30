@@ -59,7 +59,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANEX& clip)
 			else
 			{
 		  // on the plane
-				vert.distance = 0;
+				vert.distance = 0.0f;
 			}
 		}
 	}
@@ -90,7 +90,7 @@ void Clipper::clipEdges(CMesh& mesh, BSPPLANEX& clip)
 			float d0 = v0.distance;
 			float d1 = v1.distance;
 
-			if (d0 <= 0 && d1 <= 0)
+			if (d0 <= 0.0f && d1 <= 0.0f)
 			{
 // edge is culled, remove edge from faces sharing it
 				for (int k = 0; k < 2; k++)
@@ -122,11 +122,11 @@ void Clipper::clipEdges(CMesh& mesh, BSPPLANEX& clip)
 			// the edge is split by the plane. Compute the point of intersection.
 
 			float t = d0 / (d0 - d1);
-			vec3 intersect = v0.pos * (1 - t) + v1.pos * t;
+			vec3 intersect = v0.pos * (1.0f - t) + v1.pos * t;
 			int idx = (int)mesh.verts.size();
 			mesh.verts.push_back(intersect);
 
-			if (d0 > 0)
+			if (d0 > 0.0f)
 			{
 				edge.verts[1] = idx;
 			}
@@ -222,7 +222,7 @@ bool Clipper::getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final)
 
 CMesh Clipper::createMaxSizeVolume(int startface)
 {
-	const int MAX_DIM = 131072;
+	const float MAX_DIM = 131072;
 	const vec3 min = vec3(-MAX_DIM, -MAX_DIM, -MAX_DIM);
 	const vec3 max = vec3(MAX_DIM, MAX_DIM, MAX_DIM);
 
@@ -259,12 +259,12 @@ CMesh Clipper::createMaxSizeVolume(int startface)
 	}
 
 	{
-		mesh.faces.emplace_back(CFace({0, 1, 2, 3}, vec3(0, -1, 0), startface));	// 0 front
-		mesh.faces.emplace_back(CFace({4, 5, 6, 7}, vec3(0, 1, 0), startface));	// 1 back
-		mesh.faces.emplace_back(CFace({1, 5, 8, 9}, vec3(-1, 0, 0), startface));	// 2 left
-		mesh.faces.emplace_back(CFace({3, 7, 10, 11}, vec3(1, 0, 0), startface));	// 3 right
-		mesh.faces.emplace_back(CFace({2, 6, 9, 11}, vec3(0, 0, 1), startface));	// 4 top
-		mesh.faces.emplace_back(CFace({0, 4, 8, 10}, vec3(0, 0, -1), startface));	// 5 bottom
+		mesh.faces.emplace_back(CFace({0, 1, 2, 3}, vec3(0.0f, -1.0f, 0.0f), startface));	// 0 front
+		mesh.faces.emplace_back(CFace({4, 5, 6, 7}, vec3(0.0f, 1.0f, 0.0f), startface));	// 1 back
+		mesh.faces.emplace_back(CFace({1, 5, 8, 9}, vec3(-1.0f, 0.0f, 0.0f), startface));	// 2 left
+		mesh.faces.emplace_back(CFace({3, 7, 10, 11}, vec3(1.0f, 0.0f, 0.0f), startface));	// 3 right
+		mesh.faces.emplace_back(CFace({2, 6, 9, 11}, vec3(0.0f, 0.0f, 1.0f), startface));	// 4 top
+		mesh.faces.emplace_back(CFace({0, 4, 8, 10}, vec3(0.0f, 0.0f, -1.0f), startface));	// 5 bottom
 	}
 
 	return mesh;

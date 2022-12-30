@@ -2691,8 +2691,6 @@ void Bsp::write(const std::string& path)
 			lumps[LUMP_MODELS] = tmpNewModelds;
 			bsp_header.lump[LUMP_MODELS].nLength += sizeof(BSPMODEL);
 
-			update_lump_pointers();
-
 			crc32 = UINT32_C(0xFFFFFFFF);
 
 
