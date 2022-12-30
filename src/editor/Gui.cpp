@@ -1638,7 +1638,7 @@ void Gui::drawMenuBar()
 			{
 				g_settings.save();
 				glfwTerminate();
-				std::exit(0);
+				std::quick_exit(0);
 			}
 			g_settings.save();
 			if (fileSize(g_settings_path) == 0)
@@ -1648,7 +1648,7 @@ void Gui::drawMenuBar()
 			else
 			{
 				glfwTerminate();
-				std::exit(0);
+				std::quick_exit(0);
 			}
 		}
 		ImGui::EndMenu();
