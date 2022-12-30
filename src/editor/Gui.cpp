@@ -2547,13 +2547,16 @@ void Gui::drawDebugWidget()
 						if (face.iTextureInfo < map->texinfoCount)
 						{
 							BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
-							int texOffset = ((int*)map->textures)[info.iMiptex + 1];
-							if (texOffset != -1 && info.iMiptex != -1)
+							if (info.iMiptex >= 0)
 							{
-								BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-								ImGui::Text(fmt::format("Texinfo ID: {}", face.iTextureInfo).c_str());
-								ImGui::Text(fmt::format("Texture ID: {}", info.iMiptex).c_str());
-								ImGui::Text(fmt::format("Texture: {} ({}x{})", tex.szName, tex.nWidth, tex.nHeight).c_str());
+								int texOffset = ((int*)map->textures)[info.iMiptex + 1];
+								if (texOffset >= 0)
+								{
+									BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+									ImGui::Text(fmt::format("Texinfo ID: {}", face.iTextureInfo).c_str());
+									ImGui::Text(fmt::format("Texture ID: {}", info.iMiptex).c_str());
+									ImGui::Text(fmt::format("Texture: {} ({}x{})", tex.szName, tex.nWidth, tex.nHeight).c_str());
+								}
 							}
 							BSPPLANE& plane = map->planes[face.iPlane];
 							BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
@@ -2780,36 +2783,39 @@ void Gui::drawDebugWidget()
 		for (int i = 0; i < map->faceCount; i++)
 		{
 			BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
-			int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-			if (texOffset != -1 && texinfo.iMiptex != -1)
+			if (texinfo.iMiptex >= 0)
 			{
-				BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-
-				if (tex.szName[0] != '\0')
+				int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+				if (texOffset >= 0)
 				{
-					if (tex.nOffsets[0] <= 0)
-					{
-						bool fondTex = false;
-						for (auto& s : renderer->wads)
-						{
-							if (s->hasTexture(tex.szName))
-							{
-								if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
-									mapTexsUsage[basename(s->filename)].insert(tex.szName);
+					BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 
-								fondTex = true;
+					if (tex.szName[0] != '\0')
+					{
+						if (tex.nOffsets[0] <= 0)
+						{
+							bool fondTex = false;
+							for (auto& s : renderer->wads)
+							{
+								if (s->hasTexture(tex.szName))
+								{
+									if (!mapTexsUsage[basename(s->filename)].count(tex.szName))
+										mapTexsUsage[basename(s->filename)].insert(tex.szName);
+
+									fondTex = true;
+								}
+							}
+							if (!fondTex)
+							{
+								if (!mapTexsUsage["notfound"].count(tex.szName))
+									mapTexsUsage["notfound"].insert(tex.szName);
 							}
 						}
-						if (!fondTex)
+						else
 						{
-							if (!mapTexsUsage["notfound"].count(tex.szName))
-								mapTexsUsage["notfound"].insert(tex.szName);
+							if (!mapTexsUsage["internal"].count(tex.szName))
+								mapTexsUsage["internal"].insert(tex.szName);
 						}
-					}
-					else
-					{
-						if (!mapTexsUsage["internal"].count(tex.szName))
-							mapTexsUsage["internal"].insert(tex.szName);
 					}
 				}
 			}
@@ -5381,9 +5387,11 @@ void Gui::drawImportMapWidget()
 					{
 						for (auto& texinfo : newTexinfo)
 						{
+							if (texinfo.iMiptex < 0)
+								continue;
 							int newMiptex = -1;
 							int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
-							if (texOffset == -1 || texinfo.iMiptex == -1)
+							if (texOffset < 0)
 								continue;
 							BSPMIPTEX& tex = *((BSPMIPTEX*)(bspModel->textures + texOffset));
 							for (int i = 0; i < map->textureCount; i++)
@@ -6991,13 +6999,20 @@ void Gui::drawTextureTool()
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					width = height = 0;
 
-					int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-					if (texOffset != -1 && texinfo.iMiptex != -1)
+					if (texinfo.iMiptex >= 0)
 					{
-						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-						width = tex.nWidth * 1.0f;
-						height = tex.nHeight * 1.0f;
-						memcpy(textureName, tex.szName, MAXTEXTURENAME);
+						int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+						if (texOffset >= 0)
+						{
+							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+							width = tex.nWidth * 1.0f;
+							height = tex.nHeight * 1.0f;
+							memcpy(textureName, tex.szName, MAXTEXTURENAME);
+						}
+						else
+						{
+							textureName[0] = '\0';
+						}
 					}
 					else
 					{
@@ -7256,7 +7271,7 @@ void Gui::drawTextureTool()
 			textureChanged = true;
 			refreshSelectedFaces = false;
 			int texOffset = ((int*)map->textures)[copiedMiptex + 1];
-			if (texOffset != -1)
+			if (texOffset >= 0)
 			{
 				BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 				memcpy(textureName, tex.szName, MAXTEXTURENAME);
@@ -7286,7 +7301,7 @@ void Gui::drawTextureTool()
 				for (int i = 0; i < map->textureCount; i++)
 				{
 					int texOffset = ((int*)map->textures)[i + 1];
-					if (texOffset != -1)
+					if (texOffset >= 0)
 					{
 						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 						if (strcasecmp(tex.szName, textureName) == 0)

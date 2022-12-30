@@ -1082,6 +1082,9 @@ void Bsp::move_texinfo(int idx, vec3 offset)
 	BSPTEXTUREINFO& info = texinfos[idx];
 
 	int texOffset = ((int*)textures)[info.iMiptex + 1];
+	if (texOffset < 0)
+		return;
+
 	BSPMIPTEX& tex = *((BSPMIPTEX*)(textures + texOffset));
 
 	vec3 offsetDir = offset.normalize();
@@ -3250,7 +3253,7 @@ bool Bsp::load_lumps(std::string fpath)
 	int iFirstFace = -1;
 	int nOffseLight = 0;
 
-	for (int i = 0; i < faceCount; i++)
+	for (int i = faceCount - 1; i >= 0; i--)
 	{
 		BSPFACE32& face = faces[i];
 		if (face.nLightmapOffset >= 0 && face.nLightmapOffset < bsp_header.lump[LUMP_LIGHTING].nLength)
@@ -3262,9 +3265,9 @@ bool Bsp::load_lumps(std::string fpath)
 	}
 
 	int iNextFace = -1;
-	int nNextOffseLight = INT_MAX;
+	int nNextOffseLight = lightDataLength;
 
-	for (int i = iFirstFace + 1; i < faceCount; i++)
+	for (int i = iFirstFace - 1; i >= 0; i--)
 	{
 		BSPFACE32& face = faces[i];
 		if (face.nLightmapOffset >= 0 && face.nLightmapOffset < bsp_header.lump[LUMP_LIGHTING].nLength)
@@ -3278,11 +3281,11 @@ bool Bsp::load_lumps(std::string fpath)
 	}
 
 	float fLightSamples = is_bsp2 || is_bsp2_old || is_bsp29 ? 1.0 : 3.0;
-
+	//logf("{} {} {} -> {}\n", is_bsp2, is_bsp2_old, is_bsp29, fLightSamples);
 	if (fLightSamples < 3.0 && iNextFace >= 0 && iFirstFace >= 0 && iFirstFace != iNextFace)
 	{
-		int face1light = GetFaceLightmapSizeBytes(this, iFirstFace);
-		int face2light = GetFaceLightmapSizeBytes(this, iNextFace);
+		float face1light = GetFaceLightmapSizeBytes(this, iFirstFace) / sizeof(COLOR3);
+		float face2light = GetFaceLightmapSizeBytes(this, iNextFace) / sizeof(COLOR3);
 
 		int memsize = abs(nOffseLight - nNextOffseLight);
 
@@ -3300,7 +3303,6 @@ bool Bsp::load_lumps(std::string fpath)
 		if (abs(fLightSamples - (int)fLightSamples) > 0.01f)
 		{
 			memsize = (memsize + 3) & ~3;
-
 			if (iFirstFace > iNextFace)
 			{
 				fLightSamples = memsize / face1light;
@@ -3309,6 +3311,8 @@ bool Bsp::load_lumps(std::string fpath)
 			{
 				fLightSamples = memsize / face2light;
 			}
+
+			//logf("mem size : {} - {} - {} or {}\n", fLightSamples, memsize, face1light, face2light);
 		}
 	}
 
@@ -4657,6 +4661,8 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
 
 		int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
+		if (texOffset < 0)
+			continue;
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + texOffset));
 		if (tex == oldtex)
 			texinfo.iMiptex = textureCount;
@@ -5918,6 +5924,7 @@ void Bsp::update_lump_pointers()
 	surfedgeCount = bsp_header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
 	edgeCount = bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE32);
 	textureCount = *((int*)(textures));
+	textureDataLength = bsp_header.lump[LUMP_TEXTURES].nLength;
 	lightDataLength = bsp_header.lump[LUMP_LIGHTING].nLength;
 	visDataLength = bsp_header.lump[LUMP_VISIBILITY].nLength;
 
@@ -6100,7 +6107,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 				{
 					if (texOffset >= 0)
 					{
-						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)));
+						COLOR3* imageData = ConvertMipTexToRGB(((BSPMIPTEX*)(textures + texOffset)), is_texture_with_pal(texinfo.iMiptex) ? NULL : (COLOR3*)quakeDefaultPalette);
 
 						for (int k = 0; k < tex.nHeight * tex.nWidth; k++)
 						{
@@ -6481,4 +6488,45 @@ std::vector<int> Bsp::getFacesFromPlane(int iPlane)
 		}
 	}
 	return retval;
+}
+
+bool Bsp::is_texture_with_pal(int textureid)
+{
+	if (textureid < 0 || textureid >= textureCount)
+		return false;
+
+	int iStartOffset = ((int*)textures)[textureid + 1];
+	unsigned char* pStartOffset = (unsigned char*)textures + iStartOffset;
+	unsigned char* pEndOffset = (unsigned char*)textures + textureDataLength;
+
+	if (iStartOffset >= 0)
+	{
+		for (int i = 0; i < textureCount; i++)
+		{
+			int iCurOffset = ((int*)textures)[i + 1];
+			if (iCurOffset < 0 || i == textureid || iCurOffset == iStartOffset)
+			{
+				continue;
+			}
+
+			unsigned char* pCurOffset = (unsigned char*)textures + iCurOffset;
+
+			if (pCurOffset < pEndOffset && pCurOffset > pStartOffset)
+			{
+				pEndOffset = pCurOffset;
+			}
+		}
+
+		BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
+		int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
+		int palOffset = tex->nOffsets[3] + lastMipSize + 2;
+
+		//logf("{}-{}={}\n", (void*)(pStartOffset + palOffset), (void*)(pEndOffset), (int)((pStartOffset + palOffset) - pEndOffset));
+		if (abs((pStartOffset + palOffset) - pEndOffset) == 768 + 2)
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

@@ -205,12 +205,13 @@ void BspRenderer::loadTextures()
 	for (int i = 0; i < map->textureCount; i++)
 	{
 		int texOffset = ((int*)map->textures)[i + 1];
-		if (texOffset == -1)
+		if (texOffset < 0)
 		{
 			glTexturesSwap[i] = missingTex;
 			continue;
 		}
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
+
 		COLOR3* imageData = NULL;
 		WADTEX* wadTex = NULL;
 		if (tex->nOffsets[0] <= 0)
@@ -237,7 +238,7 @@ void BspRenderer::loadTextures()
 		}
 		else
 		{
-			imageData = ConvertMipTexToRGB(tex);
+			imageData = ConvertMipTexToRGB(tex, map->is_texture_with_pal(i) ? NULL : (COLOR3*)quakeDefaultPalette);
 			embedCount++;
 		}
 		if (wadTex)
@@ -658,12 +659,21 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		BSPMIPTEX* tex = NULL;
 
 		int texWidth, texHeight;
-		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-		if (texOffset != -1 && texinfo.iMiptex != -1)
+		if (texinfo.iMiptex >= 0)
 		{
-			tex = ((BSPMIPTEX*)(map->textures + texOffset));
-			texWidth = tex->nWidth;
-			texHeight = tex->nHeight;
+			int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+			if (texOffset >= 0)
+			{
+				tex = ((BSPMIPTEX*)(map->textures + texOffset));
+				texWidth = tex->nWidth;
+				texHeight = tex->nHeight;
+			}
+			else
+			{
+				// missing texture
+				texWidth = 16;
+				texHeight = 16;
+			}
 		}
 		else
 		{
@@ -1751,22 +1761,25 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 
 	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-	int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
-	if (texOffset != -1 && texinfo.iMiptex != -1)
+	if (texinfo.iMiptex >= 0)
 	{
-		BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-
-		for (int i = 0; i < rface->vertCount; i++)
+		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
+		if (texOffset >= 0)
 		{
-			lightmapVert& vert = rgroup->verts[rface->vertOffset + i];
-			vec3 pos = vert.pos.flipUV();
+			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 
-			float tw = 1.0f / (float)tex.nWidth;
-			float th = 1.0f / (float)tex.nHeight;
-			float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
-			float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
-			vert.u = fU * tw;
-			vert.v = fV * th;
+			for (int i = 0; i < rface->vertCount; i++)
+			{
+				lightmapVert& vert = rgroup->verts[rface->vertOffset + i];
+				vec3 pos = vert.pos.flipUV();
+
+				float tw = 1.0f / (float)tex.nWidth;
+				float th = 1.0f / (float)tex.nHeight;
+				float fU = dotProduct(texinfo.vS, pos) + texinfo.shiftS;
+				float fV = dotProduct(texinfo.vT, pos) + texinfo.shiftT;
+				vert.u = fU * tw;
+				vert.v = fV * th;
+			}
 		}
 	}
 

@@ -9,7 +9,7 @@
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
-    <LocalDebuggerCommandArguments>"c:\Projects\CounterStrikeTools\bspguy\vs-project\Release\wicked.bsp"</LocalDebuggerCommandArguments>
+    <LocalDebuggerCommandArguments>"c:\Users\Admin\Downloads\ad_v1_80p1final\pak2\maps\ad_akalakha.bsp"</LocalDebuggerCommandArguments>
     <DebuggerFlavor>WindowsLocalDebugger</DebuggerFlavor>
   </PropertyGroup>
 </Project>

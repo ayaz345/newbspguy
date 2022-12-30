@@ -332,7 +332,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 {
 	COLOR3 palette[256];
 	memset(&palette, 0, sizeof(COLOR3) * 256);
-	unsigned char* mip[MIPLEVELS] = {NULL};
+	unsigned char* mip[MIPLEVELS] = { NULL };
 
 	COLOR3* src = rgbdata;
 	int colorCount = 0;
@@ -474,13 +474,13 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	return newMipTex;
 }
 
-COLOR3* ConvertWadTexToRGB(WADTEX* wadTex)
+COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
 		logf("Convert WADTEX to RGB name {} size {}/{}\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
-
-	COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
+	if (palette == NULL)
+		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
 	unsigned char* src = wadTex->data;
 
 	int sz = wadTex->nWidth * wadTex->nHeight;
@@ -497,13 +497,14 @@ COLOR3* ConvertWadTexToRGB(WADTEX* wadTex)
 	return imageData;
 }
 
-COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex)
+COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
 		logf("Convert BSPMIPTEX to RGB name {} size {}/{}\n", tex->szName, tex->nWidth, tex->nHeight);
 	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 
-	COLOR3* palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+	if (palette == NULL)
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
 	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 
 	int sz = tex->nWidth * tex->nHeight;
@@ -520,13 +521,14 @@ COLOR3* ConvertMipTexToRGB(BSPMIPTEX* tex)
 }
 
 
-COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex)
+COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
 		logf("Convert WADTEX to RGBA name {} size {}/{}\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 
-	COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
+	if (palette == NULL)
+		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
 	unsigned char* src = wadTex->data;
 
 	int sz = wadTex->nWidth * wadTex->nHeight;
@@ -534,7 +536,7 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex)
 
 	for (int k = 0; k < sz; k++)
 	{
-		if (wadTex->szName[0] == '{' && (255 == src[k] || palette[src[k]] == COLOR3(0,0,255)))
+		if (wadTex->szName[0] == '{' && (255 == src[k] || palette[src[k]] == COLOR3(0, 0, 255)))
 		{
 			imageData[k] = COLOR4(255, 255, 255, 0);
 		}
@@ -549,13 +551,14 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex)
 	return imageData;
 }
 
-COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex)
+COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex, COLOR3* palette)
 {
 	if (g_settings.verboseLogs)
 		logf("Convert BSPMIPTEX to RGBA name {} size {}/{}\n", tex->szName, tex->nWidth, tex->nHeight);
 	int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 
-	COLOR3* palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
+	if (palette == NULL)
+		palette = (COLOR3*)(((unsigned char*)tex) + tex->nOffsets[3] + lastMipSize + 2);
 	unsigned char* src = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 
 	int sz = tex->nWidth * tex->nHeight;
@@ -565,7 +568,7 @@ COLOR4* ConvertMipTexToRGBA(BSPMIPTEX* tex)
 	{
 		if (tex->szName[0] == '{' && palette[255] == palette[src[k]])
 		{
-			imageData[k] = COLOR4(0,0,0,0);
+			imageData[k] = COLOR4(0, 0, 0, 0);
 		}
 		else
 		{

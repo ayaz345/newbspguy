@@ -58,6 +58,7 @@ public:
 	std::vector<Entity*> ents;
 	int planeCount;
 	int textureCount;
+	int textureDataLength;
 	int vertCount;
 	int lightDataLength;
 	int nodeCount;
@@ -287,6 +288,7 @@ public:
 	std::vector<int> getFaceLeafs(int faceIdx);
 	int getFaceFromPlane(int iPlane);
 	std::vector<int> getFacesFromPlane(int iPlane);
+	bool is_texture_with_pal(int textureid);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
