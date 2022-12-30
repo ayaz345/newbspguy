@@ -292,12 +292,12 @@ private:
 
 	struct nodeBuffStr
 	{
-		int modelIdx = -1;
-		int hullIdx = -1;
+		int modelIdx = 0;
+		int hullIdx = 0;
 		nodeBuffStr()
 		{
-			modelIdx = -1;
-			hullIdx = -1;
+			modelIdx = 0;
+			hullIdx = 0;
 		}
 	};
 

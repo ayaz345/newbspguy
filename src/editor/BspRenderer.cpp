@@ -400,7 +400,7 @@ void BspRenderer::loadLightmaps()
 			{
 				atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
 				atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
-				
+
 				atlasId++;
 				memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
@@ -973,25 +973,23 @@ void BspRenderer::loadClipnodes()
 	for (int i = 0; i < numRenderClipnodes; i++)
 		renderClipnodes[i] = RenderClipnodes();
 
-	std::vector<int> tmpNumRenderClipnodes;
-	for (int i = 0; i < numRenderClipnodes; i++)
+	std::vector<int> tmpRenderHulls;
+	for (int i = 0; i < MAX_MAP_HULLS; i++)
 	{
-		tmpNumRenderClipnodes.push_back(i);
+		tmpRenderHulls.push_back(i);
 	}
 	if (map)
 	{
-		// Speed up x100 times :)
-		for (int hull = 0; hull < MAX_MAP_HULLS; hull++)
-		{
-			std::for_each(std::execution::par_unseq, tmpNumRenderClipnodes.begin(), tmpNumRenderClipnodes.end(), [&](int i)
+		// Using 4x threads instead of very big count
+		std::for_each(std::execution::par_unseq, tmpRenderHulls.begin(), tmpRenderHulls.end(),
+			[&](int hull)
+			{
+				for (int i = 0; i < numRenderClipnodes; i++)
 				{
-#ifdef WIN32
-					SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-#endif
-			generateClipnodeBufferForHull(i, hull);
+					generateClipnodeBufferForHull(i, hull);
 				}
-			);
-		}
+			}
+		);
 	}
 }
 
@@ -1018,9 +1016,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
 
 	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
-	nodeBuffStr curHullIdxStruct = nodeBuffStr();
-	curHullIdxStruct.hullIdx = hullIdx;
-	curHullIdxStruct.modelIdx = modelIdx;
+	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
 	g_log_mutex2.lock();
 
@@ -1037,6 +1033,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
 	{
+		return;/* // Instead of cache.... Just do nothing.
 		RenderClipnodes* cachedRenderClip = &renderClipnodes[oldHullIdxStruct.modelIdx];
 
 
@@ -1059,7 +1056,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 		renderClip->wireframeClipnodeBuffer[hullIdx]->ownData = true;
 
 		renderClip->faceMaths[hullIdx] = tfaceMaths;
-		return;
+		return;*/
 	}
 
 
@@ -1218,11 +1215,15 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	renderClip->wireframeClipnodeBuffer[hullIdx]->ownData = true;
 
 
+	nodeBuffStr curHullIdxStruct = nodeBuffStr();
+	curHullIdxStruct.hullIdx = hullIdx;
+	curHullIdxStruct.modelIdx = modelIdx;
+
 	if (hullIdx == 0)
 	{
 		clipnodesBufferCache[nodeIdx] = curHullIdxStruct;
 	}
-	else if (hullIdx > 0)
+	else
 	{
 		nodesBufferCache[nodeIdx] = curHullIdxStruct;
 	}
@@ -2192,28 +2193,6 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 
 void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 {
-	RenderClipnodes& clip = renderClipnodes[modelIdx];
-
-	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
-
-	if (hullIdx == 0)
-	{
-		if (drawedClipnodes.count(nodeIdx))
-		{
-			return;
-		}
-
-		drawedClipnodes.insert(nodeIdx);
-	}
-	else
-	{
-		if (drawedNodes.count(nodeIdx))
-		{
-			return;
-		}
-
-		drawedNodes.insert(nodeIdx);
-	}
 	if (hullIdx == -1)
 	{
 		hullIdx = getBestClipnodeHull(modelIdx);
@@ -2223,10 +2202,60 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 		}
 	}
 
-	if (clip.clipnodeBuffer[hullIdx])
+	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+
+	if (hullIdx == 0)
 	{
-		clip.clipnodeBuffer[hullIdx]->drawFull();
-		clip.wireframeClipnodeBuffer[hullIdx]->drawFull();
+		if (drawedClipnodes.count(nodeIdx) > 0)
+		{
+			return;
+		}
+
+		drawedClipnodes.insert(nodeIdx);
+	}
+	else
+	{
+		if (drawedNodes.count(nodeIdx) > 0)
+		{
+			return;
+		}
+
+		drawedNodes.insert(nodeIdx);
+	}
+
+	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
+	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
+
+
+	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+	{
+		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
+
+	}
+	else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+	{
+		oldHullIdxStruct = nodesBufferCache[nodeIdx];
+	}
+
+	if (oldHullIdxStruct.hullIdx > 0 && oldHullIdxStruct.modelIdx > 0)
+	{
+		RenderClipnodes& clip = renderClipnodes[oldHullIdxStruct.modelIdx];
+
+		if (clip.clipnodeBuffer[oldHullIdxStruct.hullIdx])
+		{
+			clip.clipnodeBuffer[oldHullIdxStruct.hullIdx]->drawFull();
+			clip.wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->drawFull();
+		}
+	}
+	else
+	{
+		RenderClipnodes& clip = renderClipnodes[modelIdx];
+
+		if (clip.clipnodeBuffer[hullIdx])
+		{
+			clip.clipnodeBuffer[hullIdx]->drawFull();
+			clip.wireframeClipnodeBuffer[hullIdx]->drawFull();
+		}
 	}
 }
 
