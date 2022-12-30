@@ -518,9 +518,13 @@ void Gui::draw3dContextMenus()
 	ImGuiContext& g = *GImGui;
 
 	Bsp* map = app->getSelectedMap();
+
+	if (!map)
+		return;
+
 	int entIdx = app->pickInfo.GetSelectedEnt();
 
-	if (map && app->originHovered && entIdx >= 0)
+	if (app->originHovered && entIdx >= 0)
 	{
 		Entity* ent = map->ents[entIdx];
 		if (ImGui::BeginPopup("ent_context") || ImGui::BeginPopup("empty_context"))
@@ -622,18 +626,21 @@ void Gui::draw3dContextMenus()
 		{
 			Entity* ent = map->ents[entIdx];
 			int modelIdx = ent->getBspModelIdx();
-			if (entIdx == 0 && modelIdx <= 0)
+			if (modelIdx < 0 && ent->isWorldSpawn())
 				modelIdx = 0;
 
-			if (modelIdx > 0)
+			if (modelIdx != 0 || app->copiedEnt)
 			{
-				if (ImGui::MenuItem("Cut", "Ctrl+X", false, app->pickInfo.selectedEnts.size() == 1))
+				if (modelIdx != 0)
 				{
-					app->cutEnt();
-				}
-				if (ImGui::MenuItem("Copy", "Ctrl+C", false, app->pickInfo.selectedEnts.size() == 1))
-				{
-					app->copyEnt();
+					if (ImGui::MenuItem("Cut", "Ctrl+X", false, app->pickInfo.selectedEnts.size() == 1))
+					{
+						app->cutEnt();
+					}
+					if (ImGui::MenuItem("Copy", "Ctrl+C", false, app->pickInfo.selectedEnts.size() == 1))
+					{
+						app->copyEnt();
+					}
 				}
 
 				if (app->copiedEnt)
@@ -648,9 +655,12 @@ void Gui::draw3dContextMenus()
 					}
 				}
 
-				if (ImGui::MenuItem("Delete", "Del"))
+				if (modelIdx != 0)
 				{
-					app->deleteEnts();
+					if (ImGui::MenuItem("Delete", "Del"))
+					{
+						app->deleteEnts();
+					}
 				}
 			}
 			if (entIdx >= 0 && map && map->ents[entIdx]->hide)
