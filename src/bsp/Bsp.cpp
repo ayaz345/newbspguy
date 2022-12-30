@@ -17,10 +17,10 @@
 typedef std::map< std::string, vec3 > mapStringToVector;
 
 vec3 default_hull_extents[MAX_MAP_HULLS] = {
-	vec3(0,  0,  0),	// hull 0
-	vec3(16, 16, 36),	// hull 1
-	vec3(32, 32, 64),	// hull 2
-	vec3(16, 16, 18)	// hull 3
+	vec3(0.0f,  0.0f,  0.0f),	// hull 0
+	vec3(16.0f, 16.0f, 36.0f),	// hull 1
+	vec3(32.0f, 32.0f, 64.0f),	// hull 2
+	vec3(16.0f, 16.0f, 18.0f)	// hull 3
 };
 
 int g_sort_mode = SORT_CLIPNODES;
@@ -440,10 +440,10 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 		BSPPLANE& plane = nodePlanes[i];
 		vec3 planePoint = plane.vNormal * plane.fDist;
 		vec3 planeDir = (planePoint - modelCenter).normalize(1.0f);
-		if (dotProduct(planeDir, plane.vNormal) > 0)
+		if (dotProduct(planeDir, plane.vNormal) > 0.0f)
 		{
-			plane.vNormal *= -1;
-			plane.fDist *= -1;
+			plane.vNormal *= -1.0f;
+			plane.fDist *= -1.0f;
 		}
 	}
 
@@ -801,7 +801,7 @@ bool Bsp::vertex_manipulation_sync(int modelIdx, std::vector<TransformVert>& hul
 		}
 
 		vec3 oldNormal = planes[iPlane].vNormal;
-		if (dotProduct(oldNormal, newPlane.vNormal) < 0)
+		if (dotProduct(oldNormal, newPlane.vNormal) < 0.0f)
 		{
 			newPlane.vNormal = newPlane.vNormal.invert(); // TODO: won't work for big changes
 			newPlane.fDist = -newPlane.fDist;
@@ -1107,11 +1107,11 @@ void Bsp::move_texinfo(int idx, vec3 offset)
 	// minimize shift values (just to be safe. floats can be p wacky and zany)
 	while (abs(info.shiftS) > tex.nWidth)
 	{
-		info.shiftS += (info.shiftS < 0) ? (int)tex.nWidth : -(int)(tex.nWidth);
+		info.shiftS += (info.shiftS < 0.0f) ? (int)tex.nWidth : -(int)(tex.nWidth);
 	}
 	while (abs(info.shiftT) > tex.nHeight)
 	{
-		info.shiftT += (info.shiftT < 0) ? (int)tex.nHeight : -(int)(tex.nHeight);
+		info.shiftT += (info.shiftT < 0.0f) ? (int)tex.nHeight : -(int)(tex.nHeight);
 	}
 }
 
@@ -2726,7 +2726,7 @@ void Bsp::write(const std::string& path)
 
 	if (is_bsp30ext)
 	{
-		int extralumpscount = extralumpscount = bsp_header_ex.version <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
+		int extralumpscount = bsp_header_ex.version <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
 		for (int i = 0; i < extralumpscount; i++)
 		{
 			bsp_header_ex.lump[i].nOffset = offset;
@@ -3283,8 +3283,8 @@ bool Bsp::load_lumps(std::string fpath)
 
 	if (fLightSamples < 3.0 && iNextFace >= 0 && iFirstFace >= 0 && iFirstFace != iNextFace)
 	{
-		float face1light = (float)GetFaceLightmapSizeBytes(this, iFirstFace);
-		float face2light = (float)GetFaceLightmapSizeBytes(this, iNextFace);
+		int face1light = GetFaceLightmapSizeBytes(this, iFirstFace);
+		int face2light = GetFaceLightmapSizeBytes(this, iNextFace);
 
 		int memsize = abs(nOffseLight - nNextOffseLight);
 
@@ -3292,14 +3292,14 @@ bool Bsp::load_lumps(std::string fpath)
 		{
 			fLightSamples = memsize / face1light;
 		}
-		else if (iNextFace < iFirstFace)
+		else if (iNextFace > iFirstFace)
 		{
 			fLightSamples = memsize / face2light;
 		}
 
 		//logf("mem size : {} - {} - {} or {}\n", fLightSamples, memsize, face1light, face2light);
 
-		if (abs(fLightSamples - (int)fLightSamples) > 0.01)
+		if (abs(fLightSamples - (int)fLightSamples) > 0.01f)
 		{
 			memsize = (memsize + 3) & ~3;
 
@@ -3307,7 +3307,7 @@ bool Bsp::load_lumps(std::string fpath)
 			{
 				fLightSamples = memsize / face1light;
 			}
-			else if (iNextFace < iFirstFace)
+			else if (iNextFace > iFirstFace)
 			{
 				fLightSamples = memsize / face2light;
 			}
@@ -4818,12 +4818,12 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 		BSPPLANE* newPlanes = new BSPPLANE[planeCount + 6];
 		memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
 
-		newPlanes[startPlane + 0] = { vec3(1, 0, 0), min.x, PLANE_X }; // left
-		newPlanes[startPlane + 1] = { vec3(1, 0, 0), max.x, PLANE_X }; // right
-		newPlanes[startPlane + 2] = { vec3(0, 1, 0), min.y, PLANE_Y }; // front
-		newPlanes[startPlane + 3] = { vec3(0, 1, 0), max.y, PLANE_Y }; // back
-		newPlanes[startPlane + 4] = { vec3(0, 0, 1), min.z, PLANE_Z }; // bottom
-		newPlanes[startPlane + 5] = { vec3(0, 0, 1), max.z, PLANE_Z }; // top
+		newPlanes[startPlane + 0] = { vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X }; // left
+		newPlanes[startPlane + 1] = { vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X }; // right
+		newPlanes[startPlane + 2] = { vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y }; // front
+		newPlanes[startPlane + 3] = { vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y }; // back
+		newPlanes[startPlane + 4] = { vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z }; // bottom
+		newPlanes[startPlane + 5] = { vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z }; // top
 
 		replace_lump(LUMP_PLANES, newPlanes, (planeCount + 6) * sizeof(BSPPLANE));
 	}
@@ -5176,12 +5176,12 @@ int Bsp::create_clipnode_box(const vec3& mins, const vec3& maxs, BSPMODEL* targe
 		int clipnodeIdx = clipnodeCount + (int)addNodes.size();
 		int planeIdx = planeCount + (int)addPlanes.size();
 
-		addPlanes.push_back({ vec3(1, 0, 0), min.x, PLANE_X }); // left
-		addPlanes.push_back({ vec3(1, 0, 0), max.x, PLANE_X }); // right
-		addPlanes.push_back({ vec3(0, 1, 0), min.y, PLANE_Y }); // front
-		addPlanes.push_back({ vec3(0, 1, 0), max.y, PLANE_Y }); // back
-		addPlanes.push_back({ vec3(0, 0, 1), min.z, PLANE_Z }); // bottom
-		addPlanes.push_back({ vec3(0, 0, 1), max.z, PLANE_Z }); // top
+		addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), min.x, PLANE_X }); // left
+		addPlanes.push_back({ vec3(1.0f, 0.0f, 0.0f), max.x, PLANE_X }); // right
+		addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), min.y, PLANE_Y }); // front
+		addPlanes.push_back({ vec3(0.0f, 1.0f, 0.0f), max.y, PLANE_Y }); // back
+		addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), min.z, PLANE_Z }); // bottom
+		addPlanes.push_back({ vec3(0.0f, 0.0f, 1.0f), max.z, PLANE_Z }); // top
 
 		targetModel->iHeadnodes[i] = clipnodeCount + (int)addNodes.size();
 
@@ -5727,9 +5727,9 @@ void Bsp::write_csg_outputs(const std::string& path)
 	for (int i = 0; i < numPlanes; i++)
 	{
 		BSPPLANE flipped = thisPlanes[i];
-		flipped.vNormal = { flipped.vNormal.x > 0 ? -flipped.vNormal.x : flipped.vNormal.x,
-							flipped.vNormal.y > 0 ? -flipped.vNormal.y : flipped.vNormal.y,
-							flipped.vNormal.z > 0 ? -flipped.vNormal.z : flipped.vNormal.z, };
+		flipped.vNormal = { flipped.vNormal.x > 0.0f ? -flipped.vNormal.x : flipped.vNormal.x,
+							flipped.vNormal.y > 0.0f ? -flipped.vNormal.y : flipped.vNormal.y,
+							flipped.vNormal.z > 0.0f ? -flipped.vNormal.z : flipped.vNormal.z, };
 		flipped.fDist = -flipped.fDist;
 		newPlanes[numPlanes + i] = flipped;
 	}

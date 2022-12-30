@@ -5,10 +5,10 @@
 void mat4x4::loadIdentity()
 {
 	memset(m, 0, sizeof(m));
-	m[4 * 0 + 0] = 1;
-	m[4 * 1 + 1] = 1;
-	m[4 * 2 + 2] = 1;
-	m[4 * 3 + 3] = 1;
+	m[4 * 0 + 0] = 1.0f;
+	m[4 * 1 + 1] = 1.0f;
+	m[4 * 2 + 2] = 1.0f;
+	m[4 * 3 + 3] = 1.0f;
 }
 
 void glhFrustumf2(float* matrix, float left, float right, float bottom, float top,
