@@ -841,30 +841,11 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {
 	glfwTerminate();
+	std::exit(0);
 }
 
-VertexBuffer* tempmodelBuff;
-StudioModel* tempmodel;
 void Renderer::renderLoop()
 {
-	/*tempmodel = new StudioModel("d:\\Games\\CS16\\cstrike\\models\\arcticorange.mdl");
-	tempmodel->SetSequence(0);
-	tempmodel->SetController(0, 0.0);
-	tempmodel->SetController(1, 0.0);
-	tempmodel->SetController(2, 0.0);
-	tempmodel->SetController(3, 0.0);
-	tempmodel->SetMouth(0);
-	tempmodelBuff = new VertexBuffer(bspShader, 0, GL_TRIANGLES);
-	tempmodelBuff->addAttribute(TEX_2F, "vTex");
-	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex0");
-	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex1");
-	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex2");
-	tempmodelBuff->addAttribute(3, GL_FLOAT, 0, "vLightmapTex3");
-	tempmodelBuff->addAttribute(4, GL_FLOAT, 0, "vColor");
-	tempmodelBuff->addAttribute(POS_3F, "vPosition");
-	tempmodel->UpdateModelMeshList();
-	tempmodelBuff->setData(&tempmodel->mdl_meshes[0][0].verts[0], tempmodel->mdl_meshes[0][0].verts.size());*/
-
 	int value;
 	glGetIntegerv(GL_MAX_TEXTURE_SIZE, &value);
 
@@ -2329,7 +2310,6 @@ bool Renderer::transformAxisControls()
 	if (showDragAxes && !movingEnt && hoverAxis != -1 && draggingAxis == -1)
 	{
 		draggingAxis = hoverAxis;
-		;
 
 		axisDragEntOriginStart = getEntOrigin(map, ent);
 		axisDragStart = getAxisDragPoint(axisDragEntOriginStart);

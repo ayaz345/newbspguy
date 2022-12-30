@@ -167,7 +167,7 @@ Bsp::Bsp(std::string fpath)
 			is_mdl_model = true;
 			if (fileExists(fpath))
 			{
-				mdl = new StudioModel(fpath);
+				mdl = AddNewModelToRender(fpath.c_str());
 			}
 			init_empty_bsp();
 			return;
@@ -302,10 +302,10 @@ Bsp::~Bsp()
 		replacedLump[i] = false;
 	}
 
-	if (mdl)
-	{
-		delete mdl;
-	}
+	//if (mdl)
+	//{
+	//	delete mdl;
+	//}
 }
 
 
@@ -2657,11 +2657,11 @@ void Bsp::write(const std::string& path)
 		if (ents.size() && ents[0]->hasKey("CRC"))
 		{
 			originCrc32 = reverse_bits(std::stoul(ents[0]->keyvalues["CRC"]));
-			logf("HACKING CRC value. Loading original CRC key from WORLDSPAWN: {}. ",
+			logf("SPOOFING CRC value.\nLoading original CRC key from WORLDSPAWN: {}. ",
 				reverse_bits(originCrc32));
 		}
 		else
-			logf("HACKING CRC value. Original crc: {}. ", reverse_bits(originCrc32));
+			logf("SPOOFING CRC value.\nOriginal crc: {}. ", reverse_bits(originCrc32));
 
 		unsigned int crc32 = UINT32_C(0xFFFFFFFF);
 

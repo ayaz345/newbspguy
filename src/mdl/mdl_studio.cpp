@@ -22,6 +22,8 @@
 #include "util.h"
 #include "mdl_studio.h"
 #include "Renderer.h"
+
+#include "forcecrc32.h"
 ////////////////////////////////////////////////////////////////////////
 
 void StudioModel::CalcBoneAdj()
@@ -664,16 +666,16 @@ void StudioModel::RefreshMeshList(int body)
 		{
 			if (texidx < mdl_textures.size())
 			{
-				mdl_mesh_groups[body][j].texure = mdl_textures[texidx];
+				mdl_mesh_groups[body][j].texture = mdl_textures[texidx];
 			}
 			else
 			{
-				mdl_mesh_groups[body][j].texure = NULL;
+				mdl_mesh_groups[body][j].texture = NULL;
 			}
 		}
 		else
 		{
-			mdl_mesh_groups[body][j].texure = NULL;
+			mdl_mesh_groups[body][j].texture = NULL;
 		}
 
 
@@ -900,21 +902,24 @@ void StudioModel::GetModelMeshes(int& bodies, int& subbodies, int& skins, int& m
 
 void StudioModel::DrawModel(int meshnum)
 {
-	frametime += g_app->curTime - g_app->oldTime;
-	if (needForceUpdate || (this->frametime > (1.0f / fps) && (g_render_flags & RENDER_MODELS_ANIMATED)))
+	if (frametime < 0.0f)
+		frametime = g_app->curTime;
+	if (needForceUpdate || (g_app->curTime - frametime > (1.0f / fps) && (g_render_flags & RENDER_MODELS_ANIMATED)))
 	{
 		if (needForceUpdate)
 		{
-			for (auto& body : mdl_mesh_groups)
+			if (mdl_mesh_groups.size())
 			{
-				//for (auto& subbody : body)
+				for (auto& body : mdl_mesh_groups)
 				{
-					//for (auto& submesh : subbody)
-					for (auto& submesh : body)
+					if (body.size())
 					{
-						if (submesh.buffer)
+						for (auto& submesh : body)
 						{
-							delete submesh.buffer;
+							if (submesh.buffer)
+							{
+								delete submesh.buffer;
+							}
 						}
 					}
 				}
@@ -922,9 +927,9 @@ void StudioModel::DrawModel(int meshnum)
 			mdl_mesh_groups = std::vector<std::vector<StudioMesh>>();
 		}
 
-		AdvanceFrame(this->frametime);
+		AdvanceFrame((1.0f / fps));
 		UpdateModelMeshList();
-		this->frametime = 0.0f;
+		this->frametime = -1.0f;
 	}
 	needForceUpdate = false;
 
@@ -935,12 +940,12 @@ void StudioModel::DrawModel(int meshnum)
 	{
 		if (meshnum < mdl_mesh_groups[0].size())
 		{
-			if (validTexture == NULL && mdl_mesh_groups[0][meshnum].texure)
-				validTexture = mdl_mesh_groups[0][meshnum].texure;
+			if (validTexture == NULL && mdl_mesh_groups[0][meshnum].texture)
+				validTexture = mdl_mesh_groups[0][meshnum].texture;
 
-			if (mdl_mesh_groups[0][meshnum].texure)
+			if (mdl_mesh_groups[0][meshnum].texture)
 			{
-				mdl_mesh_groups[0][meshnum].texure->bind(0);
+				mdl_mesh_groups[0][meshnum].texture->bind(0);
 			}
 			else if (validTexture)
 			{
@@ -959,12 +964,12 @@ void StudioModel::DrawModel(int meshnum)
 		{
 			for (int meshid = 0; meshid < mdl_mesh_groups[group].size(); meshid++)
 			{
-				if (validTexture == NULL && mdl_mesh_groups[group][meshid].texure)
-					validTexture = mdl_mesh_groups[group][meshid].texure;
+				if (validTexture == NULL && mdl_mesh_groups[group][meshid].texture)
+					validTexture = mdl_mesh_groups[group][meshid].texture;
 
-				if (mdl_mesh_groups[group][meshid].texure)
+				if (mdl_mesh_groups[group][meshid].texture)
 				{
-					mdl_mesh_groups[group][meshid].texure->bind(0);
+					mdl_mesh_groups[group][meshid].texture->bind(0);
 				}
 				else if (validTexture)
 				{
@@ -1245,3 +1250,20 @@ int StudioModel::SetSkin(int iValue)
 	return iValue;
 }
 
+std::map<int, StudioModel *> mdl_models;
+
+StudioModel * AddNewModelToRender(const char * path)
+{
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path, strlen(path), UINT32_C(0xFFFFFFFF));
+
+	if (mdl_models.find(crc32) != mdl_models.end())
+	{
+		return mdl_models[crc32];
+	}
+	else
+	{
+		StudioModel * newModel = new StudioModel(path);
+		mdl_models[crc32] = newModel;
+		return newModel;
+	}
+}

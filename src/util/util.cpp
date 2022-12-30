@@ -1460,19 +1460,6 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 		return true;
 	}
 
-	if (map)
-	{
-		if (tracesearch)
-		{
-			outTrace << "Search paths [" << fPathId++ << "] : [" << (stripFileName(stripFileName(map->bsp_path)) + "/" + path) << "]\n";
-		}
-		if (fileExists((stripFileName(stripFileName(map->bsp_path)) + "/" + path)))
-		{
-			outpath = stripFileName(stripFileName(map->bsp_path)) + "/" + path;
-			return true;
-		}
-	}
-
 	if (tracesearch)
 	{
 		outTrace << "Search paths [" << fPathId++ << "] : [" << (GetGameDir() + path) << "]\n";
@@ -1527,6 +1514,19 @@ bool FindPathInAssets(Bsp* map, const std::string& path, std::string& outpath, b
 			}
 
 #endif
+		}
+	}
+
+	if (map)
+	{
+		if (tracesearch)
+		{
+			outTrace << "Search paths [" << fPathId++ << "] : [" << (stripFileName(stripFileName(map->bsp_path)) + "/" + path) << "]\n";
+		}
+		if (fileExists((stripFileName(stripFileName(map->bsp_path)) + "/" + path)))
+		{
+			outpath = stripFileName(stripFileName(map->bsp_path)) + "/" + path;
+			return true;
 		}
 	}
 

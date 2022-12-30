@@ -76,8 +76,8 @@ struct RenderEnt
 	}
 	~RenderEnt()
 	{
-		if (mdl)
-			delete mdl;
+		/*if (mdl)
+			delete mdl;*/
 
 		mdl = NULL;
 	}

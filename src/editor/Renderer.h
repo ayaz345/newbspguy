@@ -18,9 +18,6 @@
 extern std::string g_settings_path;
 extern std::string g_config_dir;
 
-
-extern StudioModel * tempmodel;
-extern VertexBuffer* tempmodelBuff;
 class Gui;
 
 enum transform_modes

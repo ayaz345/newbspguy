@@ -1439,32 +1439,19 @@ void BspRenderer::refreshEnt(int entIdx)
 				{
 					if (FindPathInAssets(map, modelpath, newModelPath))
 					{
-						if (renderEnts[entIdx].mdl)
-						{
-							delete renderEnts[entIdx].mdl;
-							renderEnts[entIdx].mdl = NULL;
-						}
-						renderEnts[entIdx].mdl = new StudioModel(newModelPath);
+						renderEnts[entIdx].mdl = AddNewModelToRender(newModelPath.c_str());
 						renderEnts[entIdx].mdl->UpdateModelMeshList();
 					}
 					else
 					{
 						if (modelpath.size())
 							FindPathInAssets(map, modelpath, newModelPath, true);
-						if (renderEnts[entIdx].mdl)
-						{
-							delete renderEnts[entIdx].mdl;
-							renderEnts[entIdx].mdl = NULL;
-						}
+						renderEnts[entIdx].mdl = NULL;
 					}
 				}
 				else
 				{
-					if (renderEnts[entIdx].mdl)
-					{
-						delete renderEnts[entIdx].mdl;
-						renderEnts[entIdx].mdl = NULL;
-					}
+					renderEnts[entIdx].mdl = NULL;
 				}
 			}
 		}

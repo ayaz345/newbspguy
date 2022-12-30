@@ -8,6 +8,9 @@
 #include "VertexBuffer.h"
 #include "shaders.h"
 #include "Texture.h"
+
+
+#include <map>
 /***
 *
 *	Copyright (c) 1996-2002, Valve LLC. All rights reserved.
@@ -31,9 +34,9 @@ Studio models are position independent, so the cache manager can move them.
 */
 #pragma pack(push, 1)
 #define MAXSTUDIOTRIANGLES	20000	// TODO: tune this
-#define MAXSTUDIOVERTS		2048	// TODO: tune this
+#define MAXSTUDIOVERTS		16384	// TODO: tune this
 #define MAXSTUDIOSEQUENCES	2048	// total animation sequences -- KSH incremented
-#define MAXSTUDIOSKINS		100		// total textures
+#define MAXSTUDIOSKINS		256		// total textures
 #define MAXSTUDIOSRCBONES	512		// bones allowed at source movement
 #define MAXSTUDIOBONES		128		// total bones actually used
 #define MAXSTUDIOMODELS		32		// sub-models per model
@@ -43,7 +46,54 @@ Studio models are position independent, so the cache manager can move them.
 #define MAXSTUDIOMESHES		256
 #define MAXSTUDIOEVENTS		1024
 #define MAXSTUDIOPIVOTS		256
-#define MAXSTUDIOCONTROLLERS 8
+#define MAXSTUDIOCONTROLLERS 32
+
+
+
+#define MAX_TRIS_PER_BODYGROUP  MAXSTUDIOTRIANGLES
+#define MAX_VERTS_PER_CALL (MAX_TRIS_PER_BODYGROUP * 3)
+
+
+// lighting options
+#define STUDIO_NF_FLATSHADE		0x0001
+#define STUDIO_NF_CHROME		0x0002
+#define STUDIO_NF_FULLBRIGHT	0x0004
+#define STUDIO_NF_NOMIPS        0x0008
+#define STUDIO_NF_ALPHA         0x0010
+#define STUDIO_NF_ADDITIVE      0x0020
+#define STUDIO_NF_MASKED        0x0040
+
+// motion flags
+#define STUDIO_X		0x0001
+#define STUDIO_Y		0x0002	
+#define STUDIO_Z		0x0004
+#define STUDIO_XR		0x0008
+#define STUDIO_YR		0x0010
+#define STUDIO_ZR		0x0020
+#define STUDIO_LX		0x0040
+#define STUDIO_LY		0x0080
+#define STUDIO_LZ		0x0100
+#define STUDIO_AX		0x0200
+#define STUDIO_AY		0x0400
+#define STUDIO_AZ		0x0800
+#define STUDIO_AXR		0x1000
+#define STUDIO_AYR		0x2000
+#define STUDIO_AZR		0x4000
+#define STUDIO_TYPES	0x7FFF
+#define STUDIO_RLOOP	0x8000	// controller that wraps shortest distance
+
+// sequence flags
+#define STUDIO_LOOPING	0x0001
+
+// bone flags
+#define STUDIO_HAS_NORMALS	0x0001
+#define STUDIO_HAS_VERTICES 0x0002
+#define STUDIO_HAS_BBOX		0x0004
+#define STUDIO_HAS_CHROME	0x0008	// if any of the textures have chrome on them
+
+#define RAD_TO_STUDIO		(32768.0/M_PI)
+#define STUDIO_TO_RAD		(M_PI/32768.0)
+#define MAXEVENTSTRING      64
 
 typedef struct
 {
@@ -315,46 +365,6 @@ typedef struct
 } mstudiotrivert_t;
 #endif
 
-// lighting options
-#define STUDIO_NF_FLATSHADE		0x0001
-#define STUDIO_NF_CHROME		0x0002
-#define STUDIO_NF_FULLBRIGHT	0x0004
-#define STUDIO_NF_NOMIPS        0x0008
-#define STUDIO_NF_ALPHA         0x0010
-#define STUDIO_NF_ADDITIVE      0x0020
-#define STUDIO_NF_MASKED        0x0040
-
-// motion flags
-#define STUDIO_X		0x0001
-#define STUDIO_Y		0x0002	
-#define STUDIO_Z		0x0004
-#define STUDIO_XR		0x0008
-#define STUDIO_YR		0x0010
-#define STUDIO_ZR		0x0020
-#define STUDIO_LX		0x0040
-#define STUDIO_LY		0x0080
-#define STUDIO_LZ		0x0100
-#define STUDIO_AX		0x0200
-#define STUDIO_AY		0x0400
-#define STUDIO_AZ		0x0800
-#define STUDIO_AXR		0x1000
-#define STUDIO_AYR		0x2000
-#define STUDIO_AZR		0x4000
-#define STUDIO_TYPES	0x7FFF
-#define STUDIO_RLOOP	0x8000	// controller that wraps shortest distance
-
-// sequence flags
-#define STUDIO_LOOPING	0x0001
-
-// bone flags
-#define STUDIO_HAS_NORMALS	0x0001
-#define STUDIO_HAS_VERTICES 0x0002
-#define STUDIO_HAS_BBOX		0x0004
-#define STUDIO_HAS_CHROME	0x0008	// if any of the textures have chrome on them
-
-#define RAD_TO_STUDIO		(32768.0/M_PI)
-#define STUDIO_TO_RAD		(M_PI/32768.0)
-#define MAXEVENTSTRING      64
 typedef struct mstudioevent_s
 {
 	int 				frame;
@@ -366,12 +376,15 @@ typedef struct mstudioevent_s
 struct StudioMesh
 {
 	VertexBuffer* buffer;
-	Texture* texure;
+	Texture* texture;
 	std::vector<lightmapVert> verts;
+	StudioMesh()
+	{
+		buffer = NULL;
+		texture = NULL;
+		verts = std::vector<lightmapVert>();
+	}
 };
-
-const int MAX_TRIS_PER_BODYGROUP = 4080;
-const int MAX_VERTS_PER_CALL = MAX_TRIS_PER_BODYGROUP * 3;
 
 class StudioModel
 {
@@ -565,3 +578,6 @@ private:
 	float texCoordData[MAX_VERTS_PER_CALL * 2];
 	//float colorData[MAX_VERTS_PER_CALL * 4];
 };
+
+extern std::map<int, StudioModel *> mdl_models;
+StudioModel* AddNewModelToRender(const char * path);
