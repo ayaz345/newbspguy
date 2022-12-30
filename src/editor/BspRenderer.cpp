@@ -26,12 +26,6 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	this->fullBrightBspShader = _fullBrightBspShader;
 	this->colorShader = _colorShader;
 	this->pointEntRenderer = _pointEntRenderer;
-
-
-	debugEntOffset = vec3();
-	debugClipnodeVis = false;
-	debugLeafIdx = std::vector<LeafDebug>();
-
 	renderEnts = NULL;
 	renderModels = NULL;
 	faceMaths = NULL;
@@ -978,14 +972,10 @@ void BspRenderer::loadClipnodes()
 			);
 		}
 	}
-	debugClipnodeVis = false;
 }
 
 void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 {
-	if (debugClipnodeVis && debugLeafIdx.empty())
-		return;
-
 	BSPMODEL& model = map->models[modelIdx];
 	RenderClipnodes* renderClip = &renderClipnodes[modelIdx];
 
@@ -1127,46 +1117,6 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 			}
 
 			COLOR4 faceColor = color * (dot);
-
-			bool isVisibled = false;
-			if (debugClipnodeVis)
-			{
-				auto faceIdxs = map->getFacesFromPlane(mesh.faces[n].planeIdx);
-				for (auto faceIdx : faceIdxs)
-				{
-					auto faceLeafs = map->getFaceLeafs(faceIdx);
-
-					if (mesh.faces[n].planeIdx >= 0)
-					{
-						for (auto leafIdx : debugLeafIdx)
-						{
-							if (leafIdx.leafIdx < 0)
-							{
-								continue;
-							}
-							for (auto fLeaf : faceLeafs)
-							{
-								if (fLeaf < 0)
-									continue;
-
-								if (CHECKVISBIT(leafIdx.leafVIS, fLeaf))
-								{
-									isVisibled = true;
-									break;
-								}
-							}
-
-							if (isVisibled)
-								break;
-						}
-					}
-				}
-			}
-
-			if (isVisibled)
-			{
-				faceColor = COLOR4(255, 0, 0, 150);
-			}
 
 			// convert from TRIANGLE_FAN style verts to TRIANGLES
 			for (int k = 2; k < faceVerts.size(); k++)

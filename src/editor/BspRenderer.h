@@ -167,10 +167,6 @@ public:
 	bool texturesLoaded = false;
 	bool needReloadDebugTextures = false;
 
-	vec3 debugEntOffset;
-	bool debugClipnodeVis;
-	std::vector<LeafDebug> debugLeafIdx;
-
 	BspRenderer(Bsp* map, ShaderProgram* bspShader, ShaderProgram* fullBrightBspShader, ShaderProgram* colorShader, PointEntRenderer* pointEntRenderer);
 	~BspRenderer();
 

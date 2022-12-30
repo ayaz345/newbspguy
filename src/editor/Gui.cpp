@@ -40,7 +40,7 @@ Gui::Gui(Renderer* app)
 void Gui::init()
 {
 	iniPath = getConfigDir() + "imgui.ini";
-// Setup Dear ImGui context
+	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	imgui_io = &ImGui::GetIO();
@@ -72,7 +72,7 @@ void Gui::init()
 		glBindTexture(GL_TEXTURE_2D, 0);
 		return (void*)(uint64_t)tex;
 	};
-	ifd::FileDialog::Instance().DeleteTexture = [](void* tex){
+	ifd::FileDialog::Instance().DeleteTexture = [](void* tex) {
 		GLuint texID = (GLuint)((uintptr_t)tex);
 		glDeleteTextures(1, &texID);
 	};
@@ -96,7 +96,7 @@ void Gui::init()
 
 void Gui::draw()
 {
-// Start the Dear ImGui frame
+	// Start the Dear ImGui frame
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -294,11 +294,11 @@ void Gui::pasteLightmap()
 	if (dstLightmap.width != copiedLightmap.width || dstLightmap.height != copiedLightmap.height)
 	{
 		logf("WARNING: lightmap sizes don't match ({}x{} != {}{})",
-			 copiedLightmap.width,
-			 copiedLightmap.height,
-			 dstLightmap.width,
-			 dstLightmap.height);
-		 // TODO: resize the lightmap, or maybe just shift if the face is the same size
+			copiedLightmap.width,
+			copiedLightmap.height,
+			dstLightmap.width,
+			dstLightmap.height);
+		// TODO: resize the lightmap, or maybe just shift if the face is the same size
 	}
 
 	BSPFACE32& src = map->faces[copiedLightmapFace];
@@ -365,7 +365,7 @@ void ExportModelOrigin(Bsp* map, int id, int ExportType)
 	}
 
 	STRUCTCOUNT removed = tmpMap.remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-																CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
+		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
@@ -461,7 +461,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 
 	logf("Remove all unused map data #1.\n");
 	STRUCTCOUNT removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-																 CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
+		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
@@ -1376,30 +1376,30 @@ void Gui::drawMenuBar()
 						}
 
 						std::for_each(std::execution::par_unseq, texturesIds.begin(), texturesIds.end(), [&](int file)
-						{
 							{
-								WADTEX* texture = wad->readTexture(file);
-
-								if (texture->szName[0] != '\0')
 								{
-									logf("Exporting {} from {} to working directory.\n", texture->szName, basename(wad->filename));
-									COLOR4* texturedata = ConvertWadTexToRGBA(texture);
+									WADTEX* texture = wad->readTexture(file);
 
-									lodepng_encode32_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
-														  , (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
+									if (texture->szName[0] != '\0')
+									{
+										logf("Exporting {} from {} to working directory.\n", texture->szName, basename(wad->filename));
+										COLOR4* texturedata = ConvertWadTexToRGBA(texture);
+
+										lodepng_encode32_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".png").c_str()
+											, (unsigned char*)texturedata, texture->nWidth, texture->nHeight);
 
 
-								/*	int lastMipSize = (texture->nWidth / 8) * (texture->nHeight / 8);
+										/*	int lastMipSize = (texture->nWidth / 8) * (texture->nHeight / 8);
 
-									COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + 2 - 40);
+											COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + 2 - 40);
 
-									lodepng_encode24_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".pal.png").c_str()
-														  , (unsigned char*)palette, 8, 32);*/
-									delete texturedata;
+											lodepng_encode24_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".pal.png").c_str()
+																  , (unsigned char*)palette, 8, 32);*/
+										delete texturedata;
+									}
+									delete texture;
 								}
-								delete texture;
-							}
-						});
+							});
 					}
 				}
 
@@ -1517,13 +1517,13 @@ void Gui::drawMenuBar()
 							}
 
 							std::for_each(std::execution::par_unseq, files.begin(), files.end(), [&](const auto file)
-							{
+								{
 
-								logf("Importing {} from workdir {} wad.\n", basename(file), basename(wad->filename));
+									logf("Importing {} from workdir {} wad.\n", basename(file), basename(wad->filename));
 							COLOR4* image_bytes = NULL;
 							unsigned int w2, h2;
 							auto error = lodepng_decode_file((unsigned char**)&image_bytes, &w2, &h2, file.c_str(),
-															 LodePNGColorType::LCT_RGBA, 8);
+								LodePNGColorType::LCT_RGBA, 8);
 							COLOR3* image_bytes_rgb = (COLOR3*)&image_bytes[0];
 							if (error == 0 && image_bytes)
 							{
@@ -1564,7 +1564,7 @@ void Gui::drawMenuBar()
 								g_log_mutex2.unlock();
 								free(image_bytes);
 							}
-							});
+								});
 							logf("Success load all textures\n");
 
 							tmpWad->write(textureList);
@@ -1846,8 +1846,8 @@ void Gui::drawMenuBar()
 			{
 				if (ImGui::MenuItem(("Hull " + std::to_string(i)).c_str(), NULL, false, anyHullValid[i]))
 				{
-//for (int k = 0; k < app->mapRenderers.size(); k++) {
-//	Bsp* map = app->mapRenderers[k]->map;
+					//for (int k = 0; k < app->mapRenderers.size(); k++) {
+					//	Bsp* map = app->mapRenderers[k]->map;
 					map->delete_hull(i, -1);
 					map->getBspRender()->reloadClipnodes();
 					//	app->mapRenderers[k]->reloadClipnodes();
@@ -1871,8 +1871,8 @@ void Gui::drawMenuBar()
 							continue;
 						if (ImGui::MenuItem(("Hull " + std::to_string(k)).c_str(), "", false, anyHullValid[k]))
 						{
-//for (int j = 0; j < app->mapRenderers.size(); j++) {
-//	Bsp* map = app->mapRenderers[j]->map;
+							//for (int j = 0; j < app->mapRenderers.size(); j++) {
+							//	Bsp* map = app->mapRenderers[j]->map;
 							map->delete_hull(i, k);
 							map->getBspRender()->reloadClipnodes();
 							//	app->mapRenderers[j]->reloadClipnodes();
@@ -2432,7 +2432,7 @@ void Gui::drawStatusMessage()
 	if (app->isLoading)
 	{
 		ImVec2 window_pos = ImVec2((app->windowWidth - loadingWindowWidth) / 2,
-								   (app->windowHeight - loadingWindowHeight) / 2);
+			(app->windowHeight - loadingWindowHeight) / 2);
 		ImGui::SetNextWindowPos(window_pos, ImGuiCond_Always);
 
 		if (ImGui::Begin("loader", 0, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav))
@@ -2449,15 +2449,15 @@ void Gui::drawStatusMessage()
 			ImGui::PushFont(consoleFontLarge);
 			switch (loadTick)
 			{
-				case 0: ImGui::Text("Loading |"); break;
-				case 1: ImGui::Text("Loading /"); break;
-				case 2: ImGui::Text("Loading -"); break;
-				case 3: ImGui::Text("Loading \\"); break;
-				case 4: ImGui::Text("Loading |"); break;
-				case 5: ImGui::Text("Loading /"); break;
-				case 6: ImGui::Text("Loading -"); break;
-				case 7: ImGui::Text("Loading |"); break;
-				default:  break;
+			case 0: ImGui::Text("Loading |"); break;
+			case 1: ImGui::Text("Loading /"); break;
+			case 2: ImGui::Text("Loading -"); break;
+			case 3: ImGui::Text("Loading \\"); break;
+			case 4: ImGui::Text("Loading |"); break;
+			case 5: ImGui::Text("Loading /"); break;
+			case 6: ImGui::Text("Loading -"); break;
+			case 7: ImGui::Text("Loading |"); break;
+			default:  break;
 			}
 			ImGui::PopFont();
 
@@ -2561,15 +2561,15 @@ void Gui::drawDebugWidget()
 							vec3 xv, yv;
 							int val = TextureAxisFromPlane(plane, xv, yv);
 							ImGui::Text(fmt::format("Plane type {} : axis ({}x{})", val, anglex = AngleFromTextureAxis(texinfo.vS, true, val),
-										angley = AngleFromTextureAxis(texinfo.vT, false, val)).c_str());
+								angley = AngleFromTextureAxis(texinfo.vT, false, val)).c_str());
 							ImGui::Text(fmt::format("Texinfo: {}/{}/{} + {} / {}/{}/{} + {} ", texinfo.vS.x, texinfo.vS.y, texinfo.vS.z, texinfo.shiftS,
-										texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT).c_str());
+								texinfo.vT.x, texinfo.vT.y, texinfo.vT.z, texinfo.shiftT).c_str());
 
 							xv = AxisFromTextureAngle(anglex, true, val);
 							yv = AxisFromTextureAngle(angley, false, val);
 
 							ImGui::Text(fmt::format("AxisBack: {}/{}/{} + {} / {}/{}/{} + {} ", xv.x, xv.y, xv.z, texinfo.shiftS,
-										yv.x, yv.y, yv.z, texinfo.shiftT).c_str());
+								yv.x, yv.y, yv.z, texinfo.shiftT).c_str());
 
 						}
 						ImGui::Text(fmt::format("Lightmap Offset: {}", face.nLightmapOffset).c_str());
@@ -2629,8 +2629,8 @@ void Gui::drawDebugWidget()
 								ImGui::Text(fmt::format("Leaf: {}", leafIdx).c_str());
 							}
 							ImGui::Text(fmt::format("Parent Node: {} (child {})",
-										nodeBranch.size() ? nodeBranch[nodeBranch.size() - 1] : headNode,
-										childIdx).c_str());
+								nodeBranch.size() ? nodeBranch[nodeBranch.size() - 1] : headNode,
+								childIdx).c_str());
 							ImGui::Text(fmt::format("Head Node: {}", headNode).c_str());
 							ImGui::Text(fmt::format("Depth: {}", nodeBranch.size()).c_str());
 
@@ -2720,7 +2720,7 @@ void Gui::drawDebugWidget()
 			ImGui::Text(fmt::format("modelUsesSharedStructures {}", app->modelUsesSharedStructures).c_str());
 
 			ImGui::Text(fmt::format("showDragAxes {}\nmovingEnt {}\nanyAltPressed {}",
-						app->showDragAxes, app->movingEnt, app->anyAltPressed).c_str());
+				app->showDragAxes, app->movingEnt, app->anyAltPressed).c_str());
 
 
 		}
@@ -2836,94 +2836,56 @@ void Gui::drawDebugWidget()
 
 	if (debugVisMode > 0 && !g_app->reloading)
 	{
-		if (debugVisMode == 2)
+		vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
+
+		vec3 renderOffset;
+		vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
+		renderOffset = mapOffset.flip();
+
+		std::vector<int> nodeBranch;
+		int childIdx = -1;
+		int leafIdx = -1;
+		int headNode = map->models[0].iHeadnodes[0];
+		map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
+
+		BSPLEAF32& leaf = map->leaves[leafIdx];
+		int thisLeafCount = map->leafCount;
+
+		int oldVisRowSize = ((thisLeafCount + 63) & ~63) >> 3;
+
+		unsigned char* visData = new unsigned char[oldVisRowSize];
+		memset(visData, 0xFF, oldVisRowSize);
+		//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
+		DecompressVis(map->visdata + leaf.nVisOffset, visData, oldVisRowSize, map->leafCount, map->visDataLength - leaf.nVisOffset);
+
+
+		for (int l = 0; l < map->leafCount - 1; l++)
 		{
-			vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
-
-			vec3 renderOffset;
-			vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
-			renderOffset = mapOffset.flip();
-
-			std::vector<int> nodeBranch;
-			int childIdx = -1;
-			int leafIdx = -1;
-			int headNode = map->models[0].iHeadnodes[0];
-			map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
-
-			BSPLEAF32& leaf = map->leaves[leafIdx];
-			int thisLeafCount = map->leafCount;
-
-			int oldVisRowSize = ((thisLeafCount + 63) & ~63) >> 3;
-
-			unsigned char* visData = new unsigned char[oldVisRowSize];
-			memset(visData, 0xFF, oldVisRowSize);
-			//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount - leaf.nVisOffset, visData, map->leafCount);
-			DecompressVis(map->visdata + leaf.nVisOffset, visData, oldVisRowSize, map->leafCount, map->visDataLength - leaf.nVisOffset);
-
-
-			for (int l = 0; l < map->leafCount - 1; l++)
+			if (l == leafIdx || CHECKVISBIT(visData, l))
 			{
-				if (l == leafIdx || CHECKVISBIT(visData, l))
+			}
+			else
+			{
+				auto faceList = map->getLeafFaces(l + 1);
+				for (const auto& idx : faceList)
 				{
-				}
-				else
-				{
-					auto faceList = map->getLeafFaces(l + 1);
-					for (const auto& idx : faceList)
-					{
-						map->getBspRender()->highlightFace(idx, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
-					}
+					map->getBspRender()->highlightFace(idx, true, COLOR4(230 + rand() % 25, 0, 0, 255), true);
 				}
 			}
+		}
 
-			for (int l = 0; l < map->leafCount - 1; l++)
+		for (int l = 0; l < map->leafCount - 1; l++)
+		{
+			if (l == leafIdx || CHECKVISBIT(visData, l))
 			{
-				if (l == leafIdx || CHECKVISBIT(visData, l))
+				auto faceList = map->getLeafFaces(l + 1);
+				for (const auto& idx : faceList)
 				{
-					auto faceList = map->getLeafFaces(l + 1);
-					for (const auto& idx : faceList)
-					{
-						map->getBspRender()->highlightFace(idx, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
-					}
+					map->getBspRender()->highlightFace(idx, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
 				}
 			}
-			delete[] visData;
-			//auto curFaces = map->getLeafFaces(leafIdx);
-			//for (const auto& f : curFaces)
-			//{
-			//	map->getBspRender()->highlightFace(f, true, COLOR4(0, 0, 230 + rand() % 25, 255), true);
-			//}
 		}
-		else
-		{
-			vec3 localCamera = cameraOrigin - map->getBspRender()->mapOffset;
-
-			vec3 renderOffset;
-			vec3 mapOffset = map->ents.size() ? map->ents[0]->getOrigin() : vec3();
-			renderOffset = mapOffset.flip();
-
-			std::vector<int> nodeBranch;
-			int childIdx = -1;
-			int leafIdx = -1;
-			int headNode = map->models[0].iHeadnodes[0];
-			map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
-
-			BSPLEAF32& leaf = map->leaves[leafIdx];
-			unsigned char* visData = new unsigned char[map->leafCount];
-			memset(visData, 0xFF, map->leafCount);
-			//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount, visData, map->leafCount);
-			DecompressVis(map->visdata + leaf.nVisOffset, visData, map->leafCount - 1, map->leafCount - 1, map->visDataLength);
-			LeafDebug tmpLeafDebug = LeafDebug();
-			tmpLeafDebug.leafIdx = leafIdx;
-			tmpLeafDebug.leafVIS = visData;
-
-			map->getBspRender()->debugClipnodeVis = true;
-			map->getBspRender()->debugLeafIdx = std::vector<LeafDebug>();
-			map->getBspRender()->debugLeafIdx.push_back(tmpLeafDebug);
-			map->getBspRender()->debugEntOffset = renderOffset;
-
-			map->getBspRender()->reloadClipnodes();
-		}
+		delete[] visData;
 	}
 }
 
@@ -3334,8 +3296,8 @@ void Gui::drawKeyvalueEditor_SmartEditTab(int entIdx)
 				if (keyvalue.iType == FGD_KEY_INTEGER)
 				{
 					ImGui::InputText(("##inval" + std::to_string(i)).c_str(), &ent->keyvalues[key.c_str()],
-									 ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackEdit,
-									 InputChangeCallback::keyValueChanged, &inputData[i]);
+						ImGuiInputTextFlags_CallbackCharFilter | ImGuiInputTextFlags_CallbackEdit,
+						InputChangeCallback::keyValueChanged, &inputData[i]);
 				}
 				else
 				{
@@ -3667,7 +3629,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 
 			ImGui::SetNextItemWidth(inputWidth);
 			ImGui::InputText(("##key" + std::to_string(i)).c_str(), &ent->keyOrder[i], ImGuiInputTextFlags_CallbackEdit,
-							 TextChangeCallback::keyNameChanged, &keyIds[i]);
+				TextChangeCallback::keyNameChanged, &keyIds[i]);
 
 
 			if (invalidKey || hoveredDrag[i])
@@ -3689,7 +3651,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 			}
 			ImGui::SetNextItemWidth(inputWidth);
 			ImGui::InputText(("##val" + std::to_string(i)).c_str(), &ent->keyvalues[ent->keyOrder[i]], ImGuiInputTextFlags_CallbackEdit,
-							 TextChangeCallback::keyValueChanged, &valueIds[i]);
+				TextChangeCallback::keyValueChanged, &valueIds[i]);
 
 			if (ent->keyOrder[i] == "angles" ||
 				ent->keyOrder[i] == "angle")
@@ -4145,7 +4107,7 @@ void Gui::drawTransformWidget()
 			ImGui::Columns(1);
 
 			const int grid_snap_modes = 11;
-			const char* element_names[grid_snap_modes] = {"0", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512"};
+			const char* element_names[grid_snap_modes] = { "0", "1", "2", "4", "8", "16", "32", "64", "128", "256", "512" };
 			static int current_element = app->gridSnapLevel + 1;
 
 			ImGui::Columns(2, 0, false);
@@ -4288,7 +4250,7 @@ void Gui::addLog(const char* s)
 
 void Gui::loadFonts()
 {
-// data copied to new array so that ImGui doesn't delete static data
+	// data copied to new array so that ImGui doesn't delete static data
 	unsigned char* smallFontData = new unsigned char[sizeof(robotomedium)];
 	unsigned char* largeFontData = new unsigned char[sizeof(robotomedium)];
 	unsigned char* consoleFontData = new unsigned char[sizeof(robotomono)];
@@ -4646,7 +4608,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button("Add fgd path"))
 			{
-				g_settings.fgdPaths.push_back({std::string(),true});
+				g_settings.fgdPaths.push_back({ std::string(),true });
 			}
 		}
 		else if (settingsTab == 2)
@@ -4686,7 +4648,7 @@ void Gui::drawSettings()
 
 			if (ImGui::Button("Add res path"))
 			{
-				g_settings.resPaths.push_back({std::string(), true});
+				g_settings.resPaths.push_back({ std::string(), true });
 			}
 		}
 		else if (settingsTab == 3)
@@ -5663,10 +5625,10 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 	const char* countName = "None";
 	switch (sortMode)
 	{
-		case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
-		case SORT_NODES:		maxCount = map->nodeCount; countName = "Nodes";  break;
-		case SORT_CLIPNODES:	maxCount = map->clipnodeCount; countName = "Clipnodes";  break;
-		case SORT_FACES:		maxCount = map->faceCount; countName = "Faces";  break;
+	case SORT_VERTS:		maxCount = map->vertCount; countName = "Vertexes";  break;
+	case SORT_NODES:		maxCount = map->nodeCount; countName = "Nodes";  break;
+	case SORT_CLIPNODES:	maxCount = map->clipnodeCount; countName = "Clipnodes";  break;
+	case SORT_FACES:		maxCount = map->faceCount; countName = "Faces";  break;
 	}
 
 	if (!loadedLimit[sortMode])
@@ -5680,10 +5642,10 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 
 			switch (sortMode)
 			{
-				case SORT_VERTS:		val = modelInfos[i]->sum.verts; break;
-				case SORT_NODES:		val = modelInfos[i]->sum.nodes; break;
-				case SORT_CLIPNODES:	val = modelInfos[i]->sum.clipnodes; break;
-				case SORT_FACES:		val = modelInfos[i]->sum.faces; break;
+			case SORT_VERTS:		val = modelInfos[i]->sum.verts; break;
+			case SORT_NODES:		val = modelInfos[i]->sum.nodes; break;
+			case SORT_CLIPNODES:	val = modelInfos[i]->sum.clipnodes; break;
+			case SORT_FACES:		val = modelInfos[i]->sum.faces; break;
 			}
 
 			ModelInfo stat = calcModelStat(map, modelInfos[i], val, maxCount, false);
@@ -5752,18 +5714,18 @@ void Gui::drawLimitTab(Bsp* map, int sortMode)
 		ImGui::NextColumn();
 
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth()
-							 - ImGui::CalcTextSize(modelInfos[i].model.c_str()).x
-							 - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+			- ImGui::CalcTextSize(modelInfos[i].model.c_str()).x
+			- ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
 		ImGui::Text(modelInfos[i].model.c_str()); ImGui::NextColumn();
 
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth()
-							 - ImGui::CalcTextSize(modelInfos[i].val.c_str()).x
-							 - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+			- ImGui::CalcTextSize(modelInfos[i].val.c_str()).x
+			- ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
 		ImGui::Text(modelInfos[i].val.c_str()); ImGui::NextColumn();
 
 		ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetColumnWidth()
-							 - ImGui::CalcTextSize(modelInfos[i].usage.c_str()).x
-							 - ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
+			- ImGui::CalcTextSize(modelInfos[i].usage.c_str()).x
+			- ImGui::GetScrollX() - 2 * ImGui::GetStyle().ItemSpacing.x);
 		ImGui::Text(modelInfos[i].usage.c_str()); ImGui::NextColumn();
 	}
 
@@ -6250,20 +6212,20 @@ static bool ColorPicker(ImGuiIO* imgui_io, float* col, bool alphabar)
 
 	// draw hue bar
 
-	ImColor colors[] = {ImColor(255, 0, 0),
+	ImColor colors[] = { ImColor(255, 0, 0),
 		ImColor(255, 255, 0),
 		ImColor(0, 255, 0),
 		ImColor(0, 255, 255),
 		ImColor(0, 0, 255),
 		ImColor(255, 0, 255),
-		ImColor(255, 0, 0)};
+		ImColor(255, 0, 0) };
 
 	for (int i = 0; i < 6; ++i)
 	{
 		draw_list->AddRectFilledMultiColor(
 			ImVec2(picker_pos.x + SV_PICKER_SIZE.x + SPACING, picker_pos.y + i * (SV_PICKER_SIZE.y / 6)),
 			ImVec2(picker_pos.x + SV_PICKER_SIZE.x + SPACING + HUE_PICKER_WIDTH,
-			picker_pos.y + (i + 1) * (SV_PICKER_SIZE.y / 6)),
+				picker_pos.y + (i + 1) * (SV_PICKER_SIZE.y / 6)),
 			colors[i],
 			colors[i],
 			colors[i + 1],
@@ -6401,7 +6363,7 @@ static bool ColorPicker(ImGuiIO* imgui_io, float* col, bool alphabar)
 
 	bool widget_used;
 	ImGui::PushItemWidth((alphabar ? SPACING + HUE_PICKER_WIDTH : 0) +
-						 SV_PICKER_SIZE.x + SPACING + HUE_PICKER_WIDTH - 2 * ImGui::GetStyle().FramePadding.x);
+		SV_PICKER_SIZE.x + SPACING + HUE_PICKER_WIDTH - 2 * ImGui::GetStyle().FramePadding.x);
 	widget_used = alphabar ? ImGui::ColorEdit4("", col) : ImGui::ColorEdit3("", col);
 	ImGui::PopItemWidth();
 
@@ -6730,7 +6692,7 @@ void ImportLightmap(BSPFACE32 face, int faceIdx, Bsp* map)
 void Gui::drawLightMapTool()
 {
 	static float colourPatch[3];
-	static Texture* currentlightMap[MAXLIGHTMAPS] = {NULL};
+	static Texture* currentlightMap[MAXLIGHTMAPS] = { NULL };
 	static float windowWidth = 570;
 	static float windowHeight = 600;
 	static int lightmaps = 0;
@@ -6879,7 +6841,7 @@ void Gui::drawLightMapTool()
 					else
 					{
 						lighdata[offset] = COLOR3((unsigned char)(colourPatch[0] * 255.f),
-												  (unsigned char)(colourPatch[1] * 255.f), (unsigned char)(colourPatch[2] * 255.f));
+							(unsigned char)(colourPatch[1] * 255.f), (unsigned char)(colourPatch[2] * 255.f));
 						currentlightMap[i]->upload(GL_RGB, true);
 					}
 				}
@@ -6998,7 +6960,7 @@ void Gui::drawTextureTool()
 		static bool updatedTexVec = false;
 		static bool updatedFaceVec = false;
 
-		static int tmpStyles[4] = {255,255,255,255};
+		static int tmpStyles[4] = { 255,255,255,255 };
 		static bool stylesChanged = false;
 
 		Bsp* map = app->getSelectedMap();
@@ -7267,7 +7229,7 @@ void Gui::drawTextureTool()
 		{
 			ImGui::BeginTooltip();
 			ImGui::TextUnformatted("Used with invisible faces to bypass the surface extent limit."
-								   "\nLightmaps may break in strange ways if this is used on a normal face.");
+				"\nLightmaps may break in strange ways if this is used on a normal face.");
 			ImGui::EndTooltip();
 		}
 

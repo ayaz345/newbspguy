@@ -70,6 +70,7 @@ void window_close_callback(GLFWwindow* window)
 {
 	g_settings.save();
 	logf("adios\n");
+	std::exit(0);
 }
 
 void AppSettings::loadDefault()
@@ -841,7 +842,6 @@ Renderer::Renderer()
 Renderer::~Renderer()
 {
 	glfwTerminate();
-	std::exit(0);
 }
 
 void Renderer::renderLoop()
