@@ -2609,6 +2609,7 @@ void Bsp::write(const std::string& path)
 		bsp_header.lump[LUMP_MARKSURFACES].nLength = marksurfCount * sizeof(unsigned short);
 		lumps[LUMP_MARKSURFACES] = (unsigned char*)freemarksurfs16;
 	}
+
 	unsigned char* oldleaves = (unsigned char*)leaves;
 	BSPLEAF16* freeleaves16 = NULL;
 
@@ -2732,7 +2733,7 @@ void Bsp::write(const std::string& path)
 			offset += bsp_header_ex.lump[i].nLength;
 			file.write((char*)extralumps[i], bsp_header_ex.lump[i].nLength);
 			if (g_settings.verboseLogs)
-				logf("Write extra lump size {} offset {}\n", bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
+				logf("Write extra lump {} size {} offset {}\n", i, bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
 		}
 	}
 
@@ -2743,7 +2744,7 @@ void Bsp::write(const std::string& path)
 		offset += bsp_header.lump[i].nLength;
 		file.write((char*)lumps[i], bsp_header.lump[i].nLength);
 		if (g_settings.verboseLogs)
-			logf("Write lump size {} offset {}\n", bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
+			logf("Write lump {} size {} offset {}\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
 	}
 
 	file.seekp(0);
@@ -2795,6 +2796,7 @@ void Bsp::write(const std::string& path)
 		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32);
 	}
 
+	// revert monochrome lighting and face offsets
 	if (freelighting)
 	{
 		delete[] freelighting;
@@ -2805,6 +2807,8 @@ void Bsp::write(const std::string& path)
 			faces[n].nLightmapOffset = faces[n].nLightmapOffset / sizeof(COLOR3);
 		}
 	}
+
+	update_lump_pointers();
 }
 
 bool Bsp::load_lumps(std::string fpath)

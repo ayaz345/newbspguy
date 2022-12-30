@@ -986,7 +986,7 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 		}
 		for (int i = 0; i < app->mapRenderers.size(); i++)
 		{
-			app->mapRenderers[i]->reuploadTextures();
+			app->mapRenderers[i]->reloadTextures();
 		}
 	}
 
@@ -7347,7 +7347,7 @@ void Gui::drawTextureTool()
 							validTexture = true;
 							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
-							mapRenderer->reuploadTextures();
+							mapRenderer->reloadTextures();
 
 							delete[] imageData;
 							delete wadTex;

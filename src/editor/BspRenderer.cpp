@@ -360,7 +360,7 @@ void BspRenderer::loadLightmaps()
 #ifdef WIN32
 			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 #endif
-			BSPFACE32& face = map->faces[i];
+	BSPFACE32& face = map->faces[i];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 
 	if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
@@ -970,7 +970,7 @@ void BspRenderer::loadClipnodes()
 #ifdef WIN32
 					SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
 #endif
-					generateClipnodeBufferForHull(i, hull);
+			generateClipnodeBufferForHull(i, hull);
 				}
 			);
 		}
@@ -1217,6 +1217,8 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 
 void BspRenderer::updateClipnodeOpacity(unsigned char newValue)
 {
+	if (!renderClipnodes)
+		return;
 	for (int i = 0; i < numRenderClipnodes; i++)
 	{
 		for (int k = 0; k < MAX_MAP_HULLS; k++)
@@ -1691,7 +1693,7 @@ void BspRenderer::reuploadTextures()
 {
 	deleteTextures();
 
-	loadTextures();
+	//loadTextures();
 
 	glTextures = glTexturesSwap;
 
@@ -1732,15 +1734,18 @@ void BspRenderer::delayLoadData()
 
 	if (!clipnodesLoaded && clipnodesFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-		for (int i = 0; i < numRenderClipnodes; i++)
+		if (renderClipnodes)
 		{
-			RenderClipnodes& clip = renderClipnodes[i];
-			for (int k = 0; k < MAX_MAP_HULLS; k++)
+			for (int i = 0; i < numRenderClipnodes; i++)
 			{
-				if (clip.clipnodeBuffer[k])
+				RenderClipnodes& clip = renderClipnodes[i];
+				for (int k = 0; k < MAX_MAP_HULLS; k++)
 				{
-					clip.clipnodeBuffer[k]->bindAttributes(true);
-					clip.clipnodeBuffer[k]->upload();
+					if (clip.clipnodeBuffer[k])
+					{
+						clip.clipnodeBuffer[k]->bindAttributes(true);
+						clip.clipnodeBuffer[k]->upload();
+					}
 				}
 			}
 		}
