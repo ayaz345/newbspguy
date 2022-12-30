@@ -6,13 +6,13 @@ Clipper::Clipper()
 {
 
 }
-CMesh Clipper::clip(std::vector<BSPPLANEX>& clips)
+CMesh Clipper::clip(std::vector<BSPPLANE>& clips)
 {
-	CMesh mesh = createMaxSizeVolume(clips.size() ? clips[0].planeId : -1);
+	CMesh mesh = createMaxSizeVolume();
 
 	for (int i = 0; i < clips.size(); i++)
 	{
-		BSPPLANEX clip = clips[i];
+		BSPPLANE clip = clips[i];
 
 		int result = clipVertices(mesh, clip);
 
@@ -34,7 +34,7 @@ CMesh Clipper::clip(std::vector<BSPPLANEX>& clips)
 	return mesh;
 }
 
-int Clipper::clipVertices(CMesh& mesh, BSPPLANEX& clip)
+int Clipper::clipVertices(CMesh& mesh, BSPPLANE& clip)
 {
 	int positive = 0;
 	int negative = 0;
@@ -42,16 +42,15 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANEX& clip)
 	for (int i = 0; i < mesh.verts.size(); i++)
 	{
 		CVertex& vert = mesh.verts[i];
-
-		if (vert.visible)
+		//if (vert.visible)
 		{
-			vert.distance = dotProduct(clip.vNormal, vert.pos) - clip.fDist;
+			vert.distance = dotProduct(vert.pos,clip.vNormal) - clip.fDist;
 
-			if (vert.distance > EPSILON)
+			if (vert.distance > ON_EPSILON)
 			{
 				positive++;
 			}
-			else if (std::signbit(vert.distance))
+			else if (vert.distance < -ON_EPSILON)
 			{
 				negative++;
 				vert.visible = false;
@@ -77,7 +76,7 @@ int Clipper::clipVertices(CMesh& mesh, BSPPLANEX& clip)
 	return 0;
 }
 
-void Clipper::clipEdges(CMesh& mesh, BSPPLANEX& clip)
+void Clipper::clipEdges(CMesh& mesh, BSPPLANE& clip)
 {
 	for (int i = 0; i < mesh.edges.size(); i++)
 	{
@@ -138,9 +137,9 @@ void Clipper::clipEdges(CMesh& mesh, BSPPLANEX& clip)
 	}
 }
 
-void Clipper::clipFaces(CMesh& mesh, BSPPLANEX& clip)
+void Clipper::clipFaces(CMesh& mesh, BSPPLANE& clip)
 {
-	CFace closeFace({}, clip.vNormal.invert(),clip.planeId);
+	CFace closeFace({}, clip.vNormal.invert());
 	int findex = (int)mesh.faces.size();
 
 	for (size_t i = 0; i < mesh.faces.size(); i++)
@@ -220,7 +219,7 @@ bool Clipper::getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final)
 	return start != -1 && final != -1;
 }
 
-CMesh Clipper::createMaxSizeVolume(int startface)
+CMesh Clipper::createMaxSizeVolume()
 {
 	const float MAX_DIM = 131072;
 	const vec3 min = vec3(-MAX_DIM, -MAX_DIM, -MAX_DIM);
@@ -259,12 +258,12 @@ CMesh Clipper::createMaxSizeVolume(int startface)
 	}
 
 	{
-		mesh.faces.emplace_back(CFace({0, 1, 2, 3}, vec3(0.0f, -1.0f, 0.0f), startface));	// 0 front
-		mesh.faces.emplace_back(CFace({4, 5, 6, 7}, vec3(0.0f, 1.0f, 0.0f), startface));	// 1 back
-		mesh.faces.emplace_back(CFace({1, 5, 8, 9}, vec3(-1.0f, 0.0f, 0.0f), startface));	// 2 left
-		mesh.faces.emplace_back(CFace({3, 7, 10, 11}, vec3(1.0f, 0.0f, 0.0f), startface));	// 3 right
-		mesh.faces.emplace_back(CFace({2, 6, 9, 11}, vec3(0.0f, 0.0f, 1.0f), startface));	// 4 top
-		mesh.faces.emplace_back(CFace({0, 4, 8, 10}, vec3(0.0f, 0.0f, -1.0f), startface));	// 5 bottom
+		mesh.faces.emplace_back(CFace({0, 1, 2, 3}, vec3(0.0f, -1.0f, 0.0f)));	// 0 front
+		mesh.faces.emplace_back(CFace({4, 5, 6, 7}, vec3(0.0f, 1.0f, 0.0f)));	// 1 back
+		mesh.faces.emplace_back(CFace({1, 5, 8, 9}, vec3(-1.0f, 0.0f, 0.0f)));	// 2 left
+		mesh.faces.emplace_back(CFace({3, 7, 10, 11}, vec3(1.0f, 0.0f, 0.0f)));	// 3 right
+		mesh.faces.emplace_back(CFace({2, 6, 9, 11}, vec3(0.0f, 0.0f, 1.0f)));	// 4 top
+		mesh.faces.emplace_back(CFace({0, 4, 8, 10}, vec3(0.0f, 0.0f, -1.0f)));	// 5 bottom
 	}
 
 	return mesh;

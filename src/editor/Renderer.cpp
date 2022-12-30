@@ -1058,6 +1058,13 @@ void Renderer::renderLoop()
 		{
 			std::vector<int> highlightEnts;
 
+			if (!mapRenderers[i])
+			{
+				continue;
+			}
+
+			mapRenderers[i]->clearDrawCache();
+
 			Bsp* curMap = mapRenderers[i]->map;
 			if (!curMap || !curMap->bsp_name.size())
 				continue;
@@ -3461,7 +3468,7 @@ bool Renderer::getModelSolid(std::vector<TransformVert>& hullVerts, Bsp* map, So
 				int iPlane2 = it2->first;
 				BSPPLANE& p = map->planes[iPlane2];
 				float dist = dotProduct(midPoint, p.vNormal) - p.fDist;
-				if (abs(dist) < 0.035)
+				if (abs(dist) < ON_EPSILON)
 				{
 					edge.planes[planeCount % 2] = iPlane2;
 					planeCount++;

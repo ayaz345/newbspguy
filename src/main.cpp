@@ -860,6 +860,7 @@ int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, ".utf8");
 	setlocale(LC_NUMERIC, "C");
+	//std::fesetround(FE_TONEAREST);
 #ifdef WIN32
 	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
 #ifndef NDEBUG

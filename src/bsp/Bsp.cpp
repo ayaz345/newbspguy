@@ -462,7 +462,7 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 			if (i == k)
 				continue;
 
-			if (nodePlanes[i].vNormal == nodePlanes[k].vNormal && abs(nodePlanes[i].fDist - nodePlanes[k].fDist) < EPSILON)
+			if (nodePlanes[i].vNormal == nodePlanes[k].vNormal && abs(nodePlanes[i].fDist - nodePlanes[k].fDist) < ON_EPSILON)
 			{
 				return false;
 			}
@@ -569,7 +569,7 @@ std::vector<NodeVolumeCuts> Bsp::get_model_leaf_volume_cuts(int modelIdx, int hu
 
 		if (nodeIdx >= 0 && is_valid_node)
 		{
-			std::vector<BSPPLANEX> clipOrder;
+			std::vector<BSPPLANE> clipOrder;
 			if (hullIdx == 0)
 			{
 				get_node_leaf_cuts(nodeIdx, 0, clipOrder, modelVolumeCuts);
@@ -583,7 +583,7 @@ std::vector<NodeVolumeCuts> Bsp::get_model_leaf_volume_cuts(int modelIdx, int hu
 	return modelVolumeCuts;
 }
 
-void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANEX>& clipOrder, std::vector<NodeVolumeCuts>& output)
+void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
 {
 	BSPCLIPNODE32& node = clipnodes[iNode];
 
@@ -594,8 +594,7 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE
 
 	for (int i = 0; i < 2; i++)
 	{
-		BSPPLANEX plane = planes[node.iPlane];
-		plane.planeId = node.iPlane;
+		BSPPLANE plane = planes[node.iPlane];
 		if (i != 0)
 		{
 			plane.vNormal = plane.vNormal.invert();
@@ -633,15 +632,13 @@ void Bsp::get_clipnode_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE
 	}
 }
 
-void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANEX>& clipOrder, std::vector<NodeVolumeCuts>& output)
+void Bsp::get_node_leaf_cuts(int iNode, int iStartNode, std::vector<BSPPLANE>& clipOrder, std::vector<NodeVolumeCuts>& output)
 {
 	BSPNODE32& node = nodes[iNode];
 
 	for (int i = 0; i < 2; i++)
 	{
-		BSPPLANEX plane = planes[node.iPlane];
-		plane.planeId = node.iPlane;
-
+		BSPPLANE plane = planes[node.iPlane];
 		if (i != 0)
 		{
 			plane.vNormal = plane.vNormal.invert();
@@ -1110,11 +1107,11 @@ void Bsp::move_texinfo(int idx, vec3 offset)
 	// minimize shift values (just to be safe. floats can be p wacky and zany)
 	while (abs(info.shiftS) > tex.nWidth)
 	{
-		info.shiftS += (info.shiftS < 0.0f) ? (int)tex.nWidth : -(int)(tex.nWidth);
+		info.shiftS += (info.shiftS < 0.0f) ? (float)tex.nWidth : (float)(-tex.nWidth);
 	}
 	while (abs(info.shiftT) > tex.nHeight)
 	{
-		info.shiftT += (info.shiftT < 0.0f) ? (int)tex.nHeight : -(int)(tex.nHeight);
+		info.shiftT += (info.shiftT < 0.0f) ? (float)tex.nHeight : (float)(-tex.nHeight);
 	}
 }
 
@@ -2567,8 +2564,8 @@ void Bsp::write(const std::string& path)
 			freenodes16[n].nFaces = (unsigned short)nodes[n].nFaces;
 			for (int m = 0; m < 3; m++)
 			{
-				freenodes16[n].nMaxs[m] = (short)nodes[n].nMaxs[m];
-				freenodes16[n].nMins[m] = (short)nodes[n].nMins[m];
+				freenodes16[n].nMaxs[m] = (short)round(nodes[n].nMaxs[m]);
+				freenodes16[n].nMins[m] = (short)round(nodes[n].nMins[m]);
 			}
 		}
 		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE16);
@@ -2631,8 +2628,8 @@ void Bsp::write(const std::string& path)
 			freeleaves16[n].nVisOffset = leaves[n].nVisOffset;
 			for (int m = 0; m < 3; m++)
 			{
-				freeleaves16[n].nMaxs[m] = (short)leaves[n].nMaxs[m];
-				freeleaves16[n].nMins[m] = (short)leaves[n].nMins[m];
+				freeleaves16[n].nMaxs[m] = (short)round(leaves[n].nMaxs[m]);
+				freeleaves16[n].nMins[m] = (short)round(leaves[n].nMins[m]);
 			}
 		}
 		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF16);
@@ -3280,12 +3277,12 @@ bool Bsp::load_lumps(std::string fpath)
 		}
 	}
 
-	float fLightSamples = is_bsp2 || is_bsp2_old || is_bsp29 ? 1.0 : 3.0;
+	float fLightSamples = is_bsp2 || is_bsp2_old || is_bsp29 ? 1.0f : 3.0f;
 	//logf("{} {} {} -> {}\n", is_bsp2, is_bsp2_old, is_bsp29, fLightSamples);
 	if (fLightSamples < 3.0 && iNextFace >= 0 && iFirstFace >= 0 && iFirstFace != iNextFace)
 	{
-		float face1light = GetFaceLightmapSizeBytes(this, iFirstFace) / sizeof(COLOR3);
-		float face2light = GetFaceLightmapSizeBytes(this, iNextFace) / sizeof(COLOR3);
+		float face1light = GetFaceLightmapSizeBytes(this, iFirstFace) / (float)sizeof(COLOR3);
+		float face2light = GetFaceLightmapSizeBytes(this, iNextFace) / (float)sizeof(COLOR3);
 
 		int memsize = abs(nOffseLight - nNextOffseLight);
 
@@ -3316,11 +3313,10 @@ bool Bsp::load_lumps(std::string fpath)
 		}
 	}
 
-	lightmap_samples = (int)fLightSamples;
+	lightmap_samples = (int)(fLightSamples + 0.5f);
 
 	if (g_settings.verboseLogs)
-		logf("lighting: {}\n", lightmap_samples ? "monochrome" : "colored");
-
+		logf("lighting: {}\n", lightmap_samples == 1 ? "monochrome" : "colored");
 
 	if (lightmap_samples == 1)
 	{
@@ -6288,7 +6284,7 @@ void Bsp::ExportPortalFile()
 	/*int nodeIdx = models[0].iHeadnodes[0];
 
 	std::vector<NodeVolumeCuts> solidNodes;
-	std::vector<BSPPLANEX> planesx;
+	std::vector<BSPPLANE> planesx;
 	get_node_leaf_cuts(nodeIdx,0, planesx, solidNodes);
 
 	targetFile << fmt::format("{}\n", solidNodes.size());

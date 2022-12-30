@@ -33,7 +33,7 @@ enum RenderFlags
 
 struct LightmapInfo
 {
-// each face can have 4 lightmaps, and those may be split across multiple atlases
+	// each face can have 4 lightmaps, and those may be split across multiple atlases
 	int atlasId[MAXLIGHTMAPS];
 	int x[MAXLIGHTMAPS];
 	int y[MAXLIGHTMAPS];
@@ -199,7 +199,7 @@ public:
 	void preRenderFaces();
 	void preRenderEnts();
 	void calcFaceMaths();
-	
+
 	void loadTextures(); // will reload them if already loaded
 	void reloadTextures();
 	void reuploadTextures();
@@ -287,6 +287,22 @@ public:
 	void calcUndoMemoryUsage();
 	void updateEntityState(int entIdx);
 	void saveLumpState(int targetLumps, bool deleteOldState);
+	void clearDrawCache();
+private:
 
-	void SetRenderMode(RenderEnt* ent);
+	struct nodeBuffStr
+	{
+		int modelIdx = -1;
+		int hullIdx = -1;
+		nodeBuffStr()
+		{
+			modelIdx = -1;
+			hullIdx = -1;
+		}
+	};
+
+	std::map<int, nodeBuffStr> nodesBufferCache, clipnodesBufferCache;
+
+	std::set<int> drawedNodes;
+	std::set<int> drawedClipnodes;
 };

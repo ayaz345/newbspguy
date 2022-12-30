@@ -4,11 +4,9 @@
 
 #define PI 3.141592f
 
-#define EPSILON 0.0001f // NORMAL_EPSILON from rad.h / 10
+#define EPSILON 0.0001f // EPSILON from rad.h / 10
 
-#define NORMAL_EPSILON   0.00001
-
-#define ON_EPSILON       0.04 // we should ensure that (float)BOGUS_RANGE < (float)(BOGUA_RANGE + 0.2 * ON_EPSILON)
+#define ON_EPSILON 0.03125f
 
 
 struct vec3

@@ -12,7 +12,6 @@
 
 struct BSPPLANE;
 struct BSPFACE32;
-struct BSPPLANE;
 
 class Winding
 {

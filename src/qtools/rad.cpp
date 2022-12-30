@@ -59,7 +59,7 @@ bool InvertMatrix(const matrix_t& m, matrix_t& m_inverse)
 	sqrlen1 = DotProduct(texplanes[0], texplanes[0]);
 	sqrlen2 = DotProduct(texplanes[1], texplanes[1]);
 	sqrlen3 = DotProduct(faceplane, faceplane);
-	if (sqrlen1 <= NORMAL_EPSILON * NORMAL_EPSILON || sqrlen2 <= NORMAL_EPSILON * NORMAL_EPSILON || sqrlen3 <= NORMAL_EPSILON * NORMAL_EPSILON)
+	if (sqrlen1 <= EPSILON * EPSILON || sqrlen2 <= EPSILON * EPSILON || sqrlen3 <= EPSILON * EPSILON)
 		// s gradient, t gradient or face normal is too close to 0
 	{
 		return false;
@@ -67,7 +67,7 @@ bool InvertMatrix(const matrix_t& m, matrix_t& m_inverse)
 
 	CrossProduct(texplanes[0], texplanes[1], normalaxis);
 	det = DotProduct(normalaxis, faceplane);
-	if (det * det <= sqrlen1 * sqrlen2 * sqrlen3 * NORMAL_EPSILON * NORMAL_EPSILON)
+	if (det * det <= sqrlen1 * sqrlen2 * sqrlen3 * EPSILON * EPSILON)
 		// s gradient, t gradient and face normal are coplanar
 	{
 		return false;

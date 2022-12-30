@@ -354,82 +354,6 @@ struct ScalableTexinfo
 	int planeIdx;
 	int faceIdx;
 };
-#pragma pack(pop)
-struct TransformVert
-{
-	vec3 pos;
-	vec3* ptr; // face vertex to move with (null for invisible faces)
-	std::vector<int> iPlanes;
-	vec3 startPos; // for dragging
-	vec3 undoPos; // for undoing invalid solid stuff
-	bool selected;
-};
-#pragma pack(push, 1)
-struct HullEdge
-{
-	int verts[2]; // index into modelVerts/hullVerts
-	int planes[2]; // index into iPlanes
-	bool selected;
-};
-
-struct Face
-{
-	std::vector<int> verts; // index into hullVerts
-	BSPPLANE plane;
-	int planeSide;
-	int iTextureInfo;
-};
-
-struct Solid
-{
-	std::vector<Face> faces;
-	std::vector<TransformVert> hullVerts; // control points for hull 0
-	std::vector<HullEdge> hullEdges; // for vertex manipulation (holds indexes into hullVerts)
-};
-#pragma pack(pop)
-// used to construct bounding volumes for solid leaves
-
-struct BSPPLANEX
-{
-	vec3 vNormal;
-	float fDist;
-	int nType;
-	int planeId;
-	// returns true if the plane was flipped
-	bool update(vec3 newNormal, float fdist);
-
-	BSPPLANEX()
-	{
-		vNormal = vec3();
-		fDist = 0.0f;
-		nType = 0;
-		planeId = -1;
-	}
-
-	BSPPLANEX(const BSPPLANE& other)
-	{
-		vNormal = other.vNormal;
-		fDist = other.fDist;
-		nType = other.nType;
-		planeId = -1;
-	}
-
-	BSPPLANEX(vec3 normal, float dist, int type)
-	{
-		vNormal = normal;
-		fDist = dist;
-		nType = type;
-		planeId = -1;
-	}
-};
-
-
-struct NodeVolumeCuts
-{
-	int nodeIdx;
-	std::vector<BSPPLANEX> cuts; // cuts which define the leaf boundaries when applied to a bounding box, in order.
-};
-#pragma pack(push, 1)
 // Rendering constants
 enum RenderMode : int
 {
@@ -494,3 +418,43 @@ struct COLOR4
 };
 
 #pragma pack(pop)
+
+
+struct TransformVert
+{
+	vec3 pos;
+	vec3* ptr; // face vertex to move with (null for invisible faces)
+	std::vector<int> iPlanes;
+	vec3 startPos; // for dragging
+	vec3 undoPos; // for undoing invalid solid stuff
+	bool selected;
+};
+struct HullEdge
+{
+	int verts[2]; // index into modelVerts/hullVerts
+	int planes[2]; // index into iPlanes
+	bool selected;
+};
+
+struct Face
+{
+	std::vector<int> verts; // index into hullVerts
+	BSPPLANE plane;
+	int planeSide;
+	int iTextureInfo;
+};
+
+struct Solid
+{
+	std::vector<Face> faces;
+	std::vector<TransformVert> hullVerts; // control points for hull 0
+	std::vector<HullEdge> hullEdges; // for vertex manipulation (holds indexes into hullVerts)
+};
+
+// used to construct bounding volumes for solid leaves
+
+struct NodeVolumeCuts
+{
+	int nodeIdx;
+	std::vector<BSPPLANE> cuts; // cuts which define the leaf boundaries when applied to a bounding box, in order.
+};

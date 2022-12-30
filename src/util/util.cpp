@@ -686,7 +686,7 @@ std::vector<vec3> getPlaneIntersectVerts(std::vector<BSPPLANE>& planes)
 					n0.y * (n1.z * n2.x - n1.x * n2.z) +
 					n0.z * (n1.x * n2.y - n1.y * n2.x);
 
-				if (abs(t) < EPSILON)
+				if (abs(t) < ON_EPSILON)
 				{
 					continue;
 				}

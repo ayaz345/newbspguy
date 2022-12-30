@@ -218,11 +218,11 @@ bool Winding::Clip(BSPPLANE& split, bool keepon, float epsilon)
 		dot = DotProduct(m_Points[i], (float*)(&split.vNormal));
 		dot -= split.fDist;
 		dists[i] = dot;
-		if (dot > ON_EPSILON)
+		if (dot > epsilon)
 		{
 			sides[i] = SIDE_FRONT;
 		}
-		else if (dot < -ON_EPSILON)
+		else if (dot < -epsilon)
 		{
 			sides[i] = SIDE_BACK;
 		}

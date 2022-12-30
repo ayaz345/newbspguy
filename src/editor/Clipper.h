@@ -44,12 +44,10 @@ struct CFace
 	std::vector<int> edges;
 	bool visible = true;
 	vec3 normal;
-	int planeIdx;
-	CFace(std::vector<int> edges, vec3 normal, int planeIdx)
+	CFace(std::vector<int> edges, vec3 normal)
 	{
 		this->edges = std::move(edges);
 		this->normal = normal;
-		this->planeIdx = planeIdx;
 	}
 };
 
@@ -67,18 +65,13 @@ public:
 	Clipper();
 
 	// clips a box against the list of clipping planes, in order, to create a convex volume
-	CMesh clip(std::vector<BSPPLANEX>& clips);
+	CMesh clip(std::vector<BSPPLANE>& clips);
 
 private:
-
 	int clipVertices(CMesh& mesh, BSPPLANE& clip);
 	void clipEdges(CMesh& mesh, BSPPLANE& clip);
 	void clipFaces(CMesh& mesh, BSPPLANE& clip);
-
-	int clipVertices(CMesh& mesh, BSPPLANEX& clip);
-	void clipEdges(CMesh& mesh, BSPPLANEX& clip);
-	void clipFaces(CMesh& mesh, BSPPLANEX& clip);
 	bool getOpenPolyline(CMesh& mesh, CFace& face, int& start, int& final);
 
-	CMesh createMaxSizeVolume(int face);
+	CMesh createMaxSizeVolume();
 };

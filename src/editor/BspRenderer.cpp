@@ -57,6 +57,9 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	missingTex = new Texture(w, h, img_dat, "missing");
 	missingTex->upload(GL_RGB);
 
+	nodesBufferCache.clear();
+	clipnodesBufferCache.clear();
+	clearDrawCache();
 	//loadTextures();
 	//loadLightmaps();
 	calcFaceMaths();
@@ -294,6 +297,9 @@ void BspRenderer::reloadClipnodes()
 
 	deleteRenderClipnodes();
 
+	clipnodesBufferCache.clear();
+	nodesBufferCache.clear();
+
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
 }
 
@@ -394,21 +400,23 @@ void BspRenderer::loadLightmaps()
 			{
 				atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
 				atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
+				
 				atlasId++;
 				memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
 					logf("Lightmap too big for atlas size ( {}x{} but allowed {}x{} )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
+					g_log_mutex2.unlock();
 					continue;
 				}
 			}
-
+			g_log_mutex2.unlock();
 			lightmapCount++;
 
 			info.atlasId[s] = atlasId;
 
-			g_log_mutex2.unlock();
+
 			// copy lightmap data into atlas
 			int lightmapSz = info.w * info.h * sizeof(COLOR3);
 			int offset = face.nLightmapOffset + s * lightmapSz;
@@ -956,6 +964,9 @@ void BspRenderer::loadClipnodes()
 	if (!map)
 		return;
 
+	clipnodesBufferCache.clear();
+	nodesBufferCache.clear();
+
 	numRenderClipnodes = map->modelCount;
 	renderClipnodes = new RenderClipnodes[numRenderClipnodes];
 
@@ -984,7 +995,7 @@ void BspRenderer::loadClipnodes()
 	}
 }
 
-void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
+void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 {
 	BSPMODEL& model = map->models[modelIdx];
 	RenderClipnodes* renderClip = &renderClipnodes[modelIdx];
@@ -994,16 +1005,66 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 	vec3 min = vec3(model.nMins.x, model.nMins.y, model.nMins.z);
 	vec3 max = vec3(model.nMaxs.x, model.nMaxs.y, model.nMaxs.z);
 
-	if (renderClip->clipnodeBuffer[hullId])
-		delete renderClip->clipnodeBuffer[hullId];
-	if (renderClip->wireframeClipnodeBuffer[hullId])
-		delete renderClip->wireframeClipnodeBuffer[hullId];
+	if (renderClip->clipnodeBuffer[hullIdx])
+		delete renderClip->clipnodeBuffer[hullIdx];
+	if (renderClip->wireframeClipnodeBuffer[hullIdx])
+		delete renderClip->wireframeClipnodeBuffer[hullIdx];
 
-	renderClip->clipnodeBuffer[hullId] = NULL;
-	renderClip->wireframeClipnodeBuffer[hullId] = NULL;
+	renderClip->faceMaths[hullIdx].clear();
 
-	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullId);
+	renderClip->clipnodeBuffer[hullIdx] = NULL;
+	renderClip->wireframeClipnodeBuffer[hullIdx] = NULL;
 
+	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+
+	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
+	nodeBuffStr curHullIdxStruct = nodeBuffStr();
+	curHullIdxStruct.hullIdx = hullIdx;
+	curHullIdxStruct.modelIdx = modelIdx;
+
+	g_log_mutex2.lock();
+
+	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+	{
+		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
+	}
+	else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+	{
+		oldHullIdxStruct = nodesBufferCache[nodeIdx];
+	}
+
+	g_log_mutex2.unlock();
+
+	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
+	{
+		RenderClipnodes* cachedRenderClip = &renderClipnodes[oldHullIdxStruct.modelIdx];
+
+
+		std::vector<FaceMath>& tfaceMaths = cachedRenderClip->faceMaths[oldHullIdxStruct.hullIdx];
+
+		cVert* output = new cVert[cachedRenderClip->clipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts];
+		memcpy(output, cachedRenderClip->clipnodeBuffer[oldHullIdxStruct.hullIdx]->data,
+			cachedRenderClip->clipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts * sizeof(cVert));
+
+		cVert* wireOutput = new cVert[cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts];
+		memcpy(wireOutput, cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->data,
+			cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts * sizeof(cVert));
+
+		renderClip->clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output,
+			(GLsizei)cachedRenderClip->clipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts, GL_TRIANGLES);
+		renderClip->clipnodeBuffer[hullIdx]->ownData = true;
+
+		renderClip->wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput,
+			(GLsizei)cachedRenderClip->wireframeClipnodeBuffer[oldHullIdxStruct.hullIdx]->numVerts, GL_LINES);
+		renderClip->wireframeClipnodeBuffer[hullIdx]->ownData = true;
+
+		renderClip->faceMaths[hullIdx] = tfaceMaths;
+		return;
+	}
+
+
+	std::vector<NodeVolumeCuts> solidNodes = map->get_model_leaf_volume_cuts(modelIdx, hullIdx);
+	//logf("{} for {} {}\n", solidNodes.size(), modelIdx, hullIdx);
 	std::vector<CMesh> meshes;
 	for (int k = 0; k < solidNodes.size(); k++)
 	{
@@ -1017,11 +1078,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 		COLOR4(255, 96, 255, 128),
 		COLOR4(255, 255, 96, 128),
 	};
-	COLOR4 color = hullColors[hullId];
+	COLOR4 color = hullColors[hullIdx];
 
 	std::vector<cVert> allVerts;
 	std::vector<cVert> wireframeVerts;
-	std::vector<FaceMath> tfaceMaths;
+	std::vector<FaceMath>& tfaceMaths = renderClip->faceMaths[hullIdx];
 
 	for (int m = 0; m < meshes.size(); m++)
 	{
@@ -1139,33 +1200,32 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullId)
 		}
 	}
 
-
-	renderClip->faceMaths[hullId].clear();
-
 	if (allVerts.empty() || wireframeVerts.empty())
 	{
 		return;
 	}
 
 	cVert* output = new cVert[allVerts.size()];
-	for (int c = 0; c < allVerts.size(); c++)
-	{
-		output[c] = allVerts[c];
-	}
+	memcpy(output, &allVerts[0], allVerts.size() * sizeof(cVert));
 
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
-	for (int c = 0; c < wireframeVerts.size(); c++)
+	memcpy(wireOutput, &wireframeVerts[0], wireframeVerts.size() * sizeof(cVert));
+
+	renderClip->clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
+	renderClip->clipnodeBuffer[hullIdx]->ownData = true;
+
+	renderClip->wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
+	renderClip->wireframeClipnodeBuffer[hullIdx]->ownData = true;
+
+
+	if (hullIdx == 0)
 	{
-		wireOutput[c] = wireframeVerts[c];
+		clipnodesBufferCache[nodeIdx] = curHullIdxStruct;
 	}
-
-	renderClip->clipnodeBuffer[hullId] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
-	renderClip->clipnodeBuffer[hullId]->ownData = true;
-
-	renderClip->wireframeClipnodeBuffer[hullId] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
-	renderClip->wireframeClipnodeBuffer[hullId]->ownData = true;
-
-	renderClip->faceMaths[hullId] = std::move(tfaceMaths);
+	else if (hullIdx > 0)
+	{
+		nodesBufferCache[nodeIdx] = curHullIdxStruct;
+	}
 }
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
@@ -1433,13 +1493,13 @@ void BspRenderer::refreshEnt(int entIdx)
 			{
 				renderEnts[entIdx].angles.y = y;
 			}
-			else if ((int)y == -1)
+			else if (y == -1.0f)
 			{
 				renderEnts[entIdx].angles.x = -90.0f;
 				renderEnts[entIdx].angles.y = 0.0f;
 				renderEnts[entIdx].angles.z = 0.0f;
 			}
-			else if ((int)y <= -2)
+			else if (y <= -2.0f)
 			{
 				renderEnts[entIdx].angles.x = 90.0f;
 				renderEnts[entIdx].angles.y = 0.0f;
@@ -1625,6 +1685,9 @@ BspRenderer::~BspRenderer()
 	deleteRenderFaces();
 	deleteRenderClipnodes();
 	deleteFaceMaths();
+
+	clipnodesBufferCache.clear();
+	nodesBufferCache.clear();
 
 	// TODO: share these with all renderers
 	delete whiteTex;
@@ -2131,6 +2194,26 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 {
 	RenderClipnodes& clip = renderClipnodes[modelIdx];
 
+	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+
+	if (hullIdx == 0)
+	{
+		if (drawedClipnodes.count(nodeIdx))
+		{
+			return;
+		}
+
+		drawedClipnodes.insert(nodeIdx);
+	}
+	else
+	{
+		if (drawedNodes.count(nodeIdx))
+		{
+			return;
+		}
+
+		drawedNodes.insert(nodeIdx);
+	}
 	if (hullIdx == -1)
 	{
 		hullIdx = getBestClipnodeHull(modelIdx);
@@ -2665,6 +2748,12 @@ void BspRenderer::calcUndoMemoryUsage()
 	}
 }
 
+void BspRenderer::clearDrawCache()
+{
+	drawedClipnodes.clear();
+	drawedNodes.clear();
+}
+
 PickInfo::PickInfo()
 {
 	selectedEnts.clear();
@@ -2704,3 +2793,4 @@ bool PickInfo::IsSelectedEnt(int entIdx)
 {
 	return std::find(selectedEnts.begin(), selectedEnts.end(), entIdx) != selectedEnts.end();
 }
+
