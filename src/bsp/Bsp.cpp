@@ -2495,9 +2495,17 @@ void Bsp::write(const std::string& path)
 		return;
 	}
 
+	//if (is_bsp2_old)
+	//{
+	//	is_bsp2_old = false;
+	//	is_bsp2 = true;
+	//	bsp_header.nVersion = 30;
+	//}
+
 	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
 
 	file.write((const char*)nulls, is_bsp30ext ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
+
 
 	unsigned char* oldLighting = (unsigned char*)lightdata;
 	unsigned char* freelighting = NULL;
@@ -2836,7 +2844,8 @@ bool Bsp::load_lumps(std::string fpath)
 
 	if (bsp_header.nVersion == 'BSP2')
 	{
-		is_bsp2 = true; is_bsp2_old = true;
+		is_bsp2 = true; 
+		is_bsp2_old = true;
 		logf("Found old '2PSB' map format, unsupported?\n");
 	}
 
@@ -3126,7 +3135,7 @@ bool Bsp::load_lumps(std::string fpath)
 			{
 				if (is_bsp2)
 				{
-					if (is_bsp2_old)
+					if (!is_bsp2_old)
 					{
 						leafCount = bsp_header.lump[i].nLength / sizeof(BSPLEAF32);
 						logf("Using extended leaves [32 bit]\n");
@@ -3153,6 +3162,9 @@ bool Bsp::load_lumps(std::string fpath)
 								tmpleaves[n].nMaxs[m] = (float)leaves16[n].nMaxs[m];
 								tmpleaves[n].nMins[m] = (float)leaves16[n].nMins[m];
 							}
+
+							//logf("Leaf iFirstMarkSurface {} nMarkSurfaces {} nContents {} nVisOffset {} \n", 
+							//	tmpleaves[n].iFirstMarkSurface, tmpleaves[n].nMarkSurfaces, tmpleaves[n].nContents, tmpleaves[n].nVisOffset);
 						}
 
 						delete[] lumps[i];
