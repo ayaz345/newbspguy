@@ -358,21 +358,14 @@ void BspRenderer::loadLightmaps()
 
 	std::for_each(std::execution::par_unseq, tmpFaceCount.begin(), tmpFaceCount.end(), [&](int i)
 		{
-#ifdef WIN32
-			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
-#endif
 	BSPFACE32& face = map->faces[i];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-
 	if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
 	{
 
 	}
 	else
 	{
-		g_log_mutex2.lock();
-		int atlasId = atlases.size() - 1;
-		g_log_mutex2.unlock();
 		int size[2];
 		int imins[2];
 		int imaxs[2];
@@ -394,7 +387,9 @@ void BspRenderer::loadLightmaps()
 			if (face.nStyles[s] == 255)
 				continue;
 
-			g_log_mutex2.lock();
+			g_mutex_list[1].lock();
+			int atlasId = atlases.size() - 1;
+
 			// TODO: Try fitting in earlier atlases before using the latest one
 			if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 			{
@@ -406,16 +401,15 @@ void BspRenderer::loadLightmaps()
 
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
+					g_mutex_list[1].unlock();
 					logf("Lightmap too big for atlas size ( {}x{} but allowed {}x{} )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
-					g_log_mutex2.unlock();
 					continue;
 				}
 			}
-			g_log_mutex2.unlock();
 			lightmapCount++;
 
 			info.atlasId[s] = atlasId;
-
+			g_mutex_list[1].unlock();
 
 			// copy lightmap data into atlas
 			int lightmapSz = info.w * info.h * sizeof(COLOR3);
@@ -459,6 +453,8 @@ void BspRenderer::loadLightmaps()
 
 	//lodepng_encode24_file("atlas.png", atlasTextures[0]->data, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
 	logf("Loaded {} lightmaps into {} atlases\n", lightmapCount, atlases.size());
+
+	lightmapsGenerated = true;
 }
 
 void BspRenderer::updateLightmapInfos()
@@ -1018,8 +1014,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	nodeBuffStr oldHullIdxStruct = nodeBuffStr();
 	oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
 
-	g_log_mutex2.lock();
-
+	g_mutex_list[2].lock();
 	if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 	{
 		oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
@@ -1028,10 +1023,9 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	{
 		oldHullIdxStruct = nodesBufferCache[nodeIdx];
 	}
+	g_mutex_list[2].unlock();
 
-	g_log_mutex2.unlock();
-
-	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
+	if ((oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0) || nodeIdx < 0)
 	{
 		return;/* // Instead of cache.... Just do nothing.
 		RenderClipnodes* cachedRenderClip = &renderClipnodes[oldHullIdxStruct.modelIdx];
@@ -1730,14 +1724,15 @@ void BspRenderer::delayLoadData()
 {
 	if (!lightmapsUploaded && lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-		for (int i = 0; i < numLightmapAtlases; i++)
+		if (lightmapsGenerated)
 		{
-			glLightmapTextures[i]->upload(GL_RGB);
+			for (int i = 0; i < numLightmapAtlases; i++)
+			{
+				glLightmapTextures[i]->upload(GL_RGB);
+			}
+
+			preRenderFaces();
 		}
-
-		lightmapsGenerated = true;
-
-		preRenderFaces();
 
 		lightmapsUploaded = true;
 	}
@@ -2134,7 +2129,7 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 				{
 					redTex->bind(s + 1);
 				}
-				else if (lightmapsUploaded)
+				else if (lightmapsUploaded && lightmapsGenerated)
 				{
 					if (showLightFlag != -1)
 					{
@@ -2213,7 +2208,7 @@ void BspRenderer::drawModelClipnodes(int modelIdx, bool highlight, int hullIdx)
 
 		drawedClipnodes.insert(nodeIdx);
 	}
-	else
+	else if (hullIdx > 0)
 	{
 		if (drawedNodes.count(nodeIdx) > 0)
 		{

@@ -1559,9 +1559,9 @@ void Gui::drawMenuBar()
 								std::string tmpTexName = stripExt(basename(file));
 
 								WADTEX* tmpWadTex = create_wadtex(tmpTexName.c_str(), (COLOR3*)image_bytes, w2, h2);
-								g_log_mutex2.lock();
+								g_mutex_list[1].lock();
 								textureList.push_back(tmpWadTex);
-								g_log_mutex2.unlock();
+								g_mutex_list[1].unlock();
 								free(image_bytes);
 							}
 								});
@@ -4297,13 +4297,13 @@ void Gui::drawLog()
 		return;
 	}
 
-	g_log_mutex.lock();
+	g_mutex_list[4].lock();
 	for (int i = 0; i < g_log_buffer.size(); i++)
 	{
 		addLog(g_log_buffer[i].c_str());
 	}
 	g_log_buffer.clear();
-	g_log_mutex.unlock();
+	g_mutex_list[4].unlock();
 
 	static int i = 0;
 

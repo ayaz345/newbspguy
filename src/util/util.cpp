@@ -26,9 +26,7 @@ bool DebugKeyPressed = false;
 ProgressMeter g_progress;
 int g_render_flags;
 std::vector<std::string> g_log_buffer;
-std::mutex g_log_mutex;
-std::mutex g_log_mutex2;
-
+std::mutex g_mutex_list[10] = {};
 
 bool fileExists(const std::string& fileName)
 {

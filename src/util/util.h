@@ -45,14 +45,13 @@ extern bool DebugKeyPressed;
 extern bool g_verbose;
 extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;
-extern std::mutex g_log_mutex;
-extern std::mutex g_log_mutex2;
+extern std::mutex g_mutex_list[10];
 
 extern int g_render_flags;
 template<class ...Args>
 inline void logf(const std::string & format, Args ...args) noexcept
 {
-	g_log_mutex.lock();
+	g_mutex_list[0].lock();
 
 	std::string log_line = fmt::vformat(format, fmt::make_format_args(args...));
 
@@ -65,7 +64,7 @@ inline void logf(const std::string & format, Args ...args) noexcept
 	std::cout << log_line;
 	g_log_buffer.push_back(log_line);
 
-	g_log_mutex.unlock();
+	g_mutex_list[0].unlock();
 }
 
 

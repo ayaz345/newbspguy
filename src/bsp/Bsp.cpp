@@ -523,6 +523,8 @@ bool Bsp::getModelPlaneIntersectVerts(int modelIdx, const std::vector<int>& node
 
 void Bsp::getNodePlanes(int iNode, std::vector<int>& nodePlanes)
 {
+	if (iNode < 0)
+		return;
 	BSPNODE32& node = nodes[iNode];
 	nodePlanes.push_back(node.iPlane);
 
