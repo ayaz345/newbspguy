@@ -125,11 +125,18 @@ Bsp::Bsp()
 	is_bsp29 = false;
 	is_broken_clipnodes = false;
 
+
+	bsp_header = BSPHEADER();
+	bsp_header_ex = BSPHEADER_EX();
+	lightmap_samples = 3;
+	parentMap = NULL;
+
 	init_empty_bsp();
 }
 
 Bsp::Bsp(std::string fpath)
 {
+	is_bsp_model = false;
 	is_bsp_model = false;
 	is_mdl_model = false;
 	mdl = NULL;
@@ -140,6 +147,11 @@ Bsp::Bsp(std::string fpath)
 	is_32bit_clipnodes = false;
 	is_bsp29 = false;
 	is_broken_clipnodes = false;
+
+	bsp_header = BSPHEADER();
+	bsp_header_ex = BSPHEADER_EX();
+	lightmap_samples = 3;
+	parentMap = NULL;
 
 	if (fpath.empty())
 	{
@@ -1835,8 +1847,6 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	unsigned char* oldLeaves = new unsigned char[oldLeavesLumpLen];
 	memcpy(oldLeaves, lumps[LUMP_LEAVES], oldLeavesLumpLen);
 
-	int oldLeafCount = models[0].nVisLeafs;
-
 	if (target & CLEAN_LIGHTMAP && lightDataLength > 0 && !is_bsp30ext)
 		removeCount.lightdata = remove_unused_lightmaps(usedStructures.faces);
 	if (target & CLEAN_PLANES)
@@ -2487,6 +2497,31 @@ void Bsp::write(const std::string& path)
 
 	file.write((const char*)nulls, is_bsp30ext ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
 
+	unsigned char* oldLighting = (unsigned char*)lightdata;
+	unsigned char* freelighting = NULL;
+
+	// first process, for face restore offsets
+	if (lightmap_samples == 1)
+	{
+		int lightPixels = bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
+
+		COLOR3* oldLight = (COLOR3*)lightdata;
+		freelighting = new unsigned char[lightPixels];
+
+		for (int m = 0; m < lightPixels; m++)
+		{
+			freelighting[m] = (oldLight[m].r + oldLight[m].g + oldLight[m].b) / 3;
+		}
+
+		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels;
+		lumps[LUMP_LIGHTING] = (unsigned char*)freelighting;
+
+		for (int n = 0; n < faceCount; n++)
+		{
+			faces[n].nLightmapOffset = faces[n].nLightmapOffset / sizeof(COLOR3);
+		}
+	}
+
 	unsigned char* oldClipnodes = (unsigned char*)clipnodes;
 	BSPCLIPNODE16* freeClipnodes16 = NULL;
 
@@ -2497,9 +2532,9 @@ void Bsp::write(const std::string& path)
 		{
 			if (is_broken_clipnodes)
 			{
-				freeClipnodes16[n].iChildren[0] = 
+				freeClipnodes16[n].iChildren[0] =
 					(unsigned short)clipnodes[n].iChildren[0] > clipnodeCount ? 65536 - (unsigned short)clipnodes[n].iChildren[0] : clipnodes[n].iChildren[0];
-				freeClipnodes16[n].iChildren[1] = 
+				freeClipnodes16[n].iChildren[1] =
 					(unsigned short)clipnodes[n].iChildren[1] > clipnodeCount ? 65536 - (unsigned short)clipnodes[n].iChildren[0] : clipnodes[n].iChildren[1];
 			}
 			else
@@ -2574,7 +2609,6 @@ void Bsp::write(const std::string& path)
 		bsp_header.lump[LUMP_MARKSURFACES].nLength = marksurfCount * sizeof(unsigned short);
 		lumps[LUMP_MARKSURFACES] = (unsigned char*)freemarksurfs16;
 	}
-
 	unsigned char* oldleaves = (unsigned char*)leaves;
 	BSPLEAF16* freeleaves16 = NULL;
 
@@ -2753,6 +2787,24 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_FACES] = (unsigned char*)oldfaces;
 		bsp_header.lump[LUMP_FACES].nLength = faceCount * sizeof(BSPFACE32);
 	}
+
+	if (freeleaves16)
+	{
+		delete[] freeleaves16;
+		lumps[LUMP_LEAVES] = (unsigned char*)oldleaves;
+		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32);
+	}
+
+	if (freelighting)
+	{
+		delete[] freelighting;
+		lumps[LUMP_LIGHTING] = (unsigned char*)oldLighting;
+		bsp_header.lump[LUMP_LIGHTING].nLength = lightDataLength * sizeof(COLOR3);
+		for (int n = 0; n < faceCount; n++)
+		{
+			faces[n].nLightmapOffset = faces[n].nLightmapOffset / sizeof(COLOR3);
+		}
+	}
 }
 
 bool Bsp::load_lumps(std::string fpath)
@@ -2871,22 +2923,6 @@ bool Bsp::load_lumps(std::string fpath)
 			{
 				crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
 			}
-
-			//if (i == LUMP_LIGHTING)
-			//{
-			//	if (is_bsp2 || is_bsp29)
-			//	{
-			//		int lightPixels = bsp_header.lump[i].nLength;
-			//		COLOR3* newLight = new COLOR3[lightPixels];
-			//		for (int m = 0; m < lightPixels; m++)
-			//		{
-			//			newLight[i] = COLOR3(lumps[i][m], lumps[i][m], lumps[i][m]);
-			//		}
-			//		delete lumps[i];
-			//		lumps[i] = (unsigned char*)newLight;
-			//		bsp_header.lump[i].nLength *= sizeof(COLOR3);
-			//	}
-			//}
 
 			if (i == LUMP_NODES)
 			{
@@ -3007,14 +3043,6 @@ bool Bsp::load_lumps(std::string fpath)
 					lumps[i] = (unsigned char*)tmpfaces;
 
 					bsp_header.lump[i].nLength = faceCount * sizeof(BSPFACE32);
-				}
-
-				if (is_bsp2 || is_bsp29)
-				{
-					for (int n = 0; n < faceCount; n++)
-					{
-						tmpMapFaces[n].nLightmapOffset *= sizeof(COLOR3);
-					}
 				}
 			}
 			if (i == LUMP_CLIPNODES)
@@ -3215,10 +3243,107 @@ bool Bsp::load_lumps(std::string fpath)
 		}
 	}
 
+	update_lump_pointers();
+
+	int iFirstFace = -1;
+	int nOffseLight = 0;
+
+	for (int i = 0; i < faceCount; i++)
+	{
+		BSPFACE32& face = faces[i];
+		if (face.nLightmapOffset >= 0 && face.nLightmapOffset < bsp_header.lump[LUMP_LIGHTING].nLength)
+		{
+			iFirstFace = i;
+			nOffseLight = face.nLightmapOffset;
+			break;
+		}
+	}
+
+	int iNextFace = -1;
+	int nNextOffseLight = INT_MAX;
+
+	for (int i = iFirstFace + 1; i < faceCount; i++)
+	{
+		BSPFACE32& face = faces[i];
+		if (face.nLightmapOffset >= 0 && face.nLightmapOffset < bsp_header.lump[LUMP_LIGHTING].nLength)
+		{
+			if (abs(face.nLightmapOffset - nOffseLight) < abs(nNextOffseLight - nOffseLight))
+			{
+				nNextOffseLight = face.nLightmapOffset;
+				iNextFace = i;
+			}
+		}
+	}
+
+	float fLightSamples = is_bsp2 || is_bsp2_old || is_bsp29 ? 1.0 : 3.0;
+
+	if (fLightSamples < 3.0 && iNextFace >= 0 && iFirstFace >= 0 && iFirstFace != iNextFace)
+	{
+		float face1light = (float)GetFaceLightmapSizeBytes(this, iFirstFace);
+		float face2light = (float)GetFaceLightmapSizeBytes(this, iNextFace);
+
+		int memsize = abs(nOffseLight - nNextOffseLight);
+
+		if (iFirstFace > iNextFace)
+		{
+			fLightSamples = memsize / face1light;
+		}
+		else if (iNextFace < iFirstFace)
+		{
+			fLightSamples = memsize / face2light;
+		}
+
+		//logf("mem size : {} - {} - {} or {}\n", fLightSamples, memsize, face1light, face2light);
+
+		if (abs(fLightSamples - (int)fLightSamples) > 0.01)
+		{
+			memsize = (memsize + 3) & ~3;
+
+			if (iFirstFace > iNextFace)
+			{
+				fLightSamples = memsize / face1light;
+			}
+			else if (iNextFace < iFirstFace)
+			{
+				fLightSamples = memsize / face2light;
+			}
+		}
+	}
+
+	lightmap_samples = (int)fLightSamples;
+
+	if (g_settings.verboseLogs)
+		logf("lighting: {}\n", lightmap_samples ? "monochrome" : "colored");
+
+
+	if (lightmap_samples == 1)
+	{
+		int lightPixels = bsp_header.lump[LUMP_LIGHTING].nLength;
+
+		COLOR3* newLight = new COLOR3[lightPixels];
+
+		for (int m = 0; m < lightPixels; m++)
+		{
+			newLight[m] = COLOR3(lumps[LUMP_LIGHTING][m], lumps[LUMP_LIGHTING][m], lumps[LUMP_LIGHTING][m]);
+		}
+
+		delete lumps[LUMP_LIGHTING];
+
+		lumps[LUMP_LIGHTING] = (unsigned char*)newLight;
+		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels * sizeof(COLOR3);
+
+
+		for (int n = 0; n < faceCount; n++)
+		{
+			faces[n].nLightmapOffset = faces[n].nLightmapOffset * sizeof(COLOR3);
+		}
+	}
+
 	originCrc32 = crc32;
 
 	fin.close();
 
+	update_lump_pointers();
 	return valid;
 }
 
@@ -4939,7 +5064,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 		for (unsigned int i = 0; i < solid.faces.size(); i++)
 		{
 			BSPFACE32& face = newFaces[faceCount + i];
-			face.iFirstEdge = startSurfedge + surfedgeOffset;
+			face.iFirstEdge = (int)(startSurfedge + surfedgeOffset);
 			face.iPlane = (startPlane + i);
 			face.nEdges = solid.faces[i].verts.size();
 			face.nPlaneSide = solid.faces[i].planeSide;
@@ -6116,7 +6241,7 @@ void recurse_node(Bsp* map, int nodeIdx)
 {
 	if (nodeIdx < 0)
 	{
-		BSPLEAF32& leaf = map->leaves[~nodeIdx];
+		//BSPLEAF32& leaf = map->leaves[~nodeIdx];
 		logf(" (LEAF {})\n", ~nodeIdx);
 		return;
 	}

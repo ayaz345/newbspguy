@@ -12,6 +12,11 @@
 #include "icons/missing.h"
 #include <execution>
 
+#ifdef WIN32
+#include <Windows.h>
+#endif
+
+
 BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _fullBrightBspShader,
 	ShaderProgram* _colorShader, PointEntRenderer* _pointEntRenderer)
 {
@@ -352,6 +357,9 @@ void BspRenderer::loadLightmaps()
 
 	std::for_each(std::execution::par_unseq, tmpFaceCount.begin(), tmpFaceCount.end(), [&](int i)
 		{
+#ifdef WIN32
+			SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+#endif
 			BSPFACE32& face = map->faces[i];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 
@@ -959,6 +967,9 @@ void BspRenderer::loadClipnodes()
 		{
 			std::for_each(std::execution::par_unseq, tmpNumRenderClipnodes.begin(), tmpNumRenderClipnodes.end(), [&](int i)
 				{
+#ifdef WIN32
+					SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_LOWEST);
+#endif
 					generateClipnodeBufferForHull(i, hull);
 				}
 			);

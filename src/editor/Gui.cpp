@@ -2848,7 +2848,7 @@ void Gui::drawDebugWidget()
 			int childIdx = -1;
 			int leafIdx = -1;
 			int headNode = map->models[0].iHeadnodes[0];
-			int contents = map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
+			map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
 
 			BSPLEAF32& leaf = map->leaves[leafIdx];
 			int thisLeafCount = map->leafCount;
@@ -2906,10 +2906,9 @@ void Gui::drawDebugWidget()
 			int childIdx = -1;
 			int leafIdx = -1;
 			int headNode = map->models[0].iHeadnodes[0];
-			int contents = map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
+			map->pointContents(headNode, localCamera, 0, nodeBranch, leafIdx, childIdx);
 
 			BSPLEAF32& leaf = map->leaves[leafIdx];
-			int thisLeafCount = map->leafCount;
 			unsigned char* visData = new unsigned char[map->leafCount];
 			memset(visData, 0xFF, map->leafCount);
 			//DecompressLeafVis(map->visdata + leaf.nVisOffset, map->leafCount, visData, map->leafCount);

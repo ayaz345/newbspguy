@@ -125,6 +125,11 @@ bool start_viewer(const char* map)
 	renderer.addMap(new Bsp(map));
 	renderer.reloadBspModels();
 	hideConsoleWindow();
+
+#ifdef WIN32
+	SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+#endif
+
 	renderer.renderLoop();
 	return true;
 }

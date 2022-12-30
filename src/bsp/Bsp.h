@@ -42,8 +42,8 @@ struct LeafDebug
 class Bsp
 {
 public:
-	BSPHEADER bsp_header = BSPHEADER();
-	BSPHEADER_EX bsp_header_ex = BSPHEADER_EX();
+	BSPHEADER bsp_header;
+	BSPHEADER_EX bsp_header_ex;
 
 	unsigned char** lumps;
 	unsigned char** extralumps;
@@ -86,6 +86,8 @@ public:
 	int* surfedges;
 	BSPMODEL* models;
 
+	int lightmap_samples;
+
 	std::string bsp_path;
 	std::string bsp_name;
 
@@ -96,7 +98,7 @@ public:
 	bool is_mdl_model;
 	StudioModel* mdl;
 
-	Bsp* parentMap = NULL;
+	Bsp* parentMap;
 	void selectModelEnt();
 
 

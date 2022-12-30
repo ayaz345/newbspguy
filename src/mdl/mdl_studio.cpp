@@ -681,7 +681,6 @@ void StudioModel::RefreshMeshList(int body)
 		int texCoordIdx = 0;
 		int colorIdx = 0;
 		int vertexIdx = 0;
-		int stripIdx = 0;
 		while (int i = *(ptricmds++))
 		{
 			int drawMode = GL_TRIANGLE_STRIP;
