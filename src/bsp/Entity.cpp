@@ -80,8 +80,8 @@ void Entity::removeKeyvalue(const std::string key)
 		return;
 	if (std::find(keyOrder.begin(), keyOrder.end(), key) != keyOrder.end())
 		keyOrder.erase(std::find(keyOrder.begin(), keyOrder.end(), key));
-	if (keyvalues.find(key) != keyvalues.end())
-		keyvalues.erase(key);
+	
+	keyvalues.erase(key);
 	cachedModelIdx = -2;
 	targetsCached = false; 
 	updateRenderModes();

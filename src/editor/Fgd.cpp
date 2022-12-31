@@ -186,7 +186,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 	{
 		std::string lpart = toLowerCase(typeParts[i]);
 
-		if (lpart.find("base(") == 0)
+		if (lpart.starts_with("base("))
 		{
 			std::vector<std::string> baseClassList = splitString(getValueInParens(typeParts[i]), ",");
 			for (int k = 0; k < baseClassList.size(); k++)
@@ -195,7 +195,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 				fgdClass.baseClasses.push_back(baseClass);
 			}
 		}
-		else if (lpart.find("size(") == 0)
+		else if (lpart.starts_with("size("))
 		{
 			std::vector<std::string> sizeList = splitString(getValueInParens(typeParts[i]), ",");
 
@@ -217,7 +217,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 
 			fgdClass.sizeSet = true;
 		}
-		else if (lpart.find("color(") == 0)
+		else if (lpart.starts_with("color("))
 		{
 			std::vector<std::string> nums = splitString(getValueInParens(typeParts[i]), " ");
 
@@ -231,7 +231,7 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			fgdClass.colorSet = true;
 		}
-		else if (lpart.find("studio(") == 0)
+		else if (lpart.starts_with("studio("))
 		{
 			std::string mdlpath = getValueInParens(typeParts[i]);
 			if (mdlpath.size())
@@ -241,29 +241,29 @@ void Fgd::parseClassHeader(FgdClass& fgdClass)
 			}
 			fgdClass.isModel = true;
 		}
-		else if (lpart.find("sequence(") == 0)
+		else if (lpart.starts_with("sequence("))
 		{
 			fgdClass.modelSequence = atoi(getValueInParens(typeParts[i]).c_str());
 		}
-		else if (lpart.find("body(") == 0)
+		else if (lpart.starts_with("body("))
 		{
 			fgdClass.modelBody = atoi(getValueInParens(typeParts[i]).c_str());
 		}
-		else if (lpart.find("iconsprite(") == 0)
+		else if (lpart.starts_with("iconsprite("))
 		{
 			fgdClass.iconSprite = getValueInParens(typeParts[i]);
 			fixupPath(fgdClass.iconSprite, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE, FIXUPPATH_SLASH::FIXUPPATH_SLASH_REMOVE);
 		}
-		else if (lpart.find("sprite(") == 0)
+		else if (lpart.starts_with("sprite("))
 		{
 			fgdClass.sprite = getValueInParens(typeParts[i]);
 			fgdClass.isSprite = true;
 		}
-		else if (lpart.find("decal(") == 0)
+		else if (lpart.starts_with("decal("))
 		{
 			fgdClass.isDecal = true;
 		}
-		else if (lpart.find("flags(") == 0)
+		else if (lpart.starts_with("flags("))
 		{
 			std::vector<std::string> flagsList = splitString(getValueInParens(typeParts[i]), ",");
 			for (int k = 0; k < flagsList.size(); k++)

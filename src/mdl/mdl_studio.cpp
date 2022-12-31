@@ -807,7 +807,7 @@ void StudioModel::RefreshMeshList(int body)
 			{
 				vert.r = vert.g = vert.b = vert.a = 1.0;
 				vert.luv[0][2] = 1.0;
-				vert.luv[1][2] = vert.luv[2][2] = vert.luv[2][2] = vert.luv[3][2] = 0.0f;
+				vert.luv[1][2] = vert.luv[2][2] = vert.luv[3][2] = 0.0f;
 			}
 			mdl_mesh_groups[body][j].buffer->setData(&mdl_mesh_groups[body][j].verts[0], (int)mdl_mesh_groups[body][j].verts.size());
 		}

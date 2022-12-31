@@ -137,7 +137,6 @@ Bsp::Bsp()
 Bsp::Bsp(std::string fpath)
 {
 	is_bsp_model = false;
-	is_bsp_model = false;
 	is_mdl_model = false;
 	mdl = NULL;
 
@@ -2733,10 +2732,7 @@ void Bsp::write(const std::string& path)
 	if (is_bsp30ext)
 	{
 		offset += sizeof(BSPHEADER_EX);
-	}
-
-	if (is_bsp30ext)
-	{
+		
 		int extralumpscount = bsp_header_ex.version <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
 		for (int i = 0; i < extralumpscount; i++)
 		{
@@ -4739,11 +4735,10 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 
 int Bsp::create_leaf(int contents)
 {
-	BSPLEAF32* newLeaves = new BSPLEAF32[leafCount + 1];
+	BSPLEAF32* newLeaves = new BSPLEAF32[leafCount + 1]{};
 	memcpy(newLeaves, leaves, leafCount * sizeof(BSPLEAF32));
 
 	BSPLEAF32& newLeaf = newLeaves[leafCount];
-	memset(&newLeaf, 0, sizeof(BSPLEAF32));
 
 	newLeaf.nVisOffset = -1;
 	newLeaf.nContents = contents;
@@ -4938,13 +4933,11 @@ void Bsp::create_node_box(const vec3& min, const vec3& max, BSPMODEL* targetMode
 	// add new nodes
 	unsigned int startNode = nodeCount;
 	{
-		BSPNODE32* newNodes = new BSPNODE32[nodeCount + 6];
+		BSPNODE32* newNodes = new BSPNODE32[nodeCount + 6]{};
 		memcpy(newNodes, nodes, nodeCount * sizeof(BSPNODE32));
-
 		for (int k = 0; k < 6; k++)
 		{
 			BSPNODE32& node = newNodes[nodeCount + k];
-			memset(&node, 0, sizeof(BSPNODE32));
 
 			node.firstFace = (startFace + k); // face required for decals
 			node.nFaces = 1;
@@ -5087,7 +5080,7 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 			BSPFACE32& face = newFaces[faceCount + i];
 			face.iFirstEdge = (int)(startSurfedge + surfedgeOffset);
 			face.iPlane = (startPlane + i);
-			face.nEdges = solid.faces[i].verts.size();
+			face.nEdges = (int)solid.faces[i].verts.size();
 			face.nPlaneSide = solid.faces[i].planeSide;
 			face.iTextureInfo = solid.faces[i].iTextureInfo;
 			face.nLightmapOffset = -1; // TODO: Lighting
@@ -5122,13 +5115,12 @@ void Bsp::create_nodes(Solid& solid, BSPMODEL* targetModel)
 	// add new nodes
 	unsigned int startNode = nodeCount;
 	{
-		BSPNODE32* newNodes = new BSPNODE32[nodeCount + solid.faces.size() + 1];
+		BSPNODE32* newNodes = new BSPNODE32[nodeCount + solid.faces.size() + 1]{};
 		memcpy(newNodes, nodes, nodeCount * sizeof(BSPNODE32));
 
 		for (int k = 0; k < solid.faces.size(); k++)
 		{
 			BSPNODE32& node = newNodes[nodeCount + k];
-			memset(&node, 0, sizeof(BSPNODE32));
 
 			node.firstFace = (startFace + k); // face required for decals
 			node.nFaces = 1;
@@ -5300,11 +5292,10 @@ int Bsp::create_clipnode()
 
 int Bsp::create_plane()
 {
-	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 1];
+	BSPPLANE* newPlanes = new BSPPLANE[planeCount + 1]{};
 	memcpy(newPlanes, planes, planeCount * sizeof(BSPPLANE));
 
 	BSPPLANE& newPlane = newPlanes[planeCount];
-	memset(&newPlane, 0, sizeof(BSPPLANE));
 
 	replace_lump(LUMP_PLANES, newPlanes, (planeCount + 1) * sizeof(BSPPLANE));
 
@@ -5313,11 +5304,10 @@ int Bsp::create_plane()
 
 int Bsp::create_model()
 {
-	BSPMODEL* newModels = new BSPMODEL[modelCount + 1];
+	BSPMODEL* newModels = new BSPMODEL[modelCount + 1]{};
 	memcpy(newModels, models, modelCount * sizeof(BSPMODEL));
 
 	BSPMODEL& newModel = newModels[modelCount];
-	newModel = BSPMODEL();
 
 	int newModelIdx = modelCount;
 	replace_lump(LUMP_MODELS, newModels, (modelCount + 1) * sizeof(BSPMODEL));
@@ -5327,12 +5317,11 @@ int Bsp::create_model()
 
 int Bsp::create_texinfo()
 {
-	BSPTEXTUREINFO* newTexinfos = new BSPTEXTUREINFO[texinfoCount + 1];
+	BSPTEXTUREINFO* newTexinfos = new BSPTEXTUREINFO[texinfoCount + 1]{};
 	memcpy(newTexinfos, texinfos, texinfoCount * sizeof(BSPTEXTUREINFO));
 
 	BSPTEXTUREINFO& newTexinfo = newTexinfos[texinfoCount];
-	memset(&newTexinfo, 0, sizeof(BSPTEXTUREINFO));
-
+	
 	replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 1) * sizeof(BSPTEXTUREINFO));
 
 	return texinfoCount - 1;

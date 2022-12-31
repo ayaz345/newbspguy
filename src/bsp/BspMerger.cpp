@@ -485,7 +485,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 				ent->addKeyvalue("targetname", "bspguy_autos_" + source_map);
 				ent->keyvalues["classname"] = "trigger_relay";
 			}
-			if (cname.find("monster_") == 0 && cname.rfind("_dead") != cname.size() - 5)
+			if (cname.starts_with("monster_") && cname.rfind("_dead") != cname.size() - 5)
 			{
 				// replace with a squadmaker and spawn when this map section starts
 
@@ -1021,8 +1021,7 @@ BSPPLANE BspMerger::separate(Bsp& mapA, Bsp& mapB)
 	vec3 bmin = otherWorld.nMins;
 	vec3 bmax = otherWorld.nMaxs;
 
-	BSPPLANE separationPlane;
-	memset(&separationPlane, 0, sizeof(BSPPLANE));
+	BSPPLANE separationPlane = BSPPLANE();
 
 	// separating plane points toward the other map (b)
 	if (bmin.x >= amax.x)

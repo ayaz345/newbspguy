@@ -33,8 +33,8 @@ struct WADDIRENTRY
 struct WADTEX
 {
 	char szName[MAXTEXTURENAME];
-	unsigned int nWidth, nHeight;
-	unsigned int nOffsets[MIPLEVELS];
+	int nWidth, nHeight;
+	int nOffsets[MIPLEVELS];
 	unsigned char* data; // all mip-maps and pallete
 	bool needclean = false;
 	WADTEX()

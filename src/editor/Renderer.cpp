@@ -1954,7 +1954,7 @@ void Renderer::cameraObjectHovering()
 
 	int modelIdx = -1;
 	int entIdx = pickInfo.GetSelectedEnt();
-	if (map && entIdx >= 0)
+	if (entIdx >= 0)
 	{
 		modelIdx = map->ents[entIdx]->getBspModelIdx();
 	}
@@ -2100,10 +2100,7 @@ void Renderer::cameraContextMenus()
 
 		if (tmpSelectedEnt >= 0 && tmpSelectedEnt == pickInfo.GetSelectedEnt())
 		{
-			if (tmpSelectedEnt >= 0)
-			{
-				gui->openContextMenu(pickInfo.GetSelectedEnt());
-			}
+			gui->openContextMenu(pickInfo.GetSelectedEnt());
 		}
 		else
 		{
@@ -2347,7 +2344,7 @@ bool Renderer::transformAxisControls()
 	bool movingOrigin = (transformTarget == TRANSFORM_ORIGIN && transformMode == TRANSFORM_MODE_MOVE)
 		|| (transformTarget == TRANSFORM_OBJECT && transformMode == TRANSFORM_MODE_MOVE);
 
-	bool canTransform = transformingVerts | scalingObject | movingOrigin;
+	bool canTransform = transformingVerts || scalingObject || movingOrigin;
 
 	if (!isTransformableSolid || pickClickHeld || entIdx < 0 || !map || !canTransform)
 	{
@@ -3254,7 +3251,7 @@ void Renderer::updateSelectionSize()
 	int modelIdx = -1;
 	int entIdx = pickInfo.GetSelectedEnt();
 
-	if (map && entIdx >= 0)
+	if (entIdx >= 0)
 	{
 		modelIdx = map->ents[entIdx]->getBspModelIdx();
 	}
@@ -3633,10 +3630,7 @@ void Renderer::scaleSelectedObject(vec3 dir, const vec3& fromDir)
 	}
 	int modelIdx = -1;
 
-	if (entIdx >= 0)
-	{
-		modelIdx = map->ents[entIdx]->getBspModelIdx();
-	}
+	modelIdx = map->ents[entIdx]->getBspModelIdx();
 
 	updateSelectionSize();
 
@@ -4020,14 +4014,11 @@ void Renderer::scaleSelectedVerts(float x, float y, float z)
 	Bsp* map = SelectedMap;
 	if (map)
 	{
-		int modelIdx = -1;
+		//int modelIdx = -1;
 
-		if (map && entIdx >= 0)
-		{
-			modelIdx = map->ents[entIdx]->getBspModelIdx();
-		}
 		if (entIdx >= 0)
 		{
+			//modelIdx = map->ents[entIdx]->getBspModelIdx();
 			Entity* ent = map->ents[entIdx];
 			map->getBspRender()->refreshModel(ent->getBspModelIdx());
 		}

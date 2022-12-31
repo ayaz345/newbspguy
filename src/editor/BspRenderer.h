@@ -64,10 +64,8 @@ struct RenderEnt
 	bool hide = false;
 	StudioModel* mdl;
 	std::string mdlFileName;
-	RenderEnt()
+	RenderEnt() : modelMatAngles(mat4x4()), modelMatOrigin(mat4x4()), offset(vec3()), angles(vec3())
 	{
-		modelMatAngles = modelMatOrigin = mat4x4();
-		offset = angles = vec3();
 		modelIdx = 0;
 		pointEntCube = NULL;
 		mdl = NULL;

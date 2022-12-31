@@ -587,7 +587,7 @@ void Gui::draw3dContextMenus()
 	}
 	if (app->pickMode == PICK_FACE)
 	{
-		if (map && ImGui::BeginPopup("face_context"))
+		if (ImGui::BeginPopup("face_context"))
 		{
 			if (ImGui::MenuItem("Copy texture", "Ctrl+C"))
 			{
@@ -663,7 +663,7 @@ void Gui::draw3dContextMenus()
 					}
 				}
 			}
-			if (entIdx >= 0 && map && map->ents[entIdx]->hide)
+			if (map->ents[entIdx]->hide)
 			{
 				if (ImGui::MenuItem("Unhide", "Ctrl+H"))
 				{
@@ -1197,59 +1197,45 @@ void Gui::drawMenuBar()
 		{
 			if ((map && !map->is_mdl_model) && ImGui::MenuItem("Entity file", NULL))
 			{
-				if (map)
-				{
-					std::string entFilePath;
-					if (g_settings.sameDirForEnt) {
-						std::string bspFilePath = map->bsp_path;
-						if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
-							entFilePath = bspFilePath + ".ent";
-						}
-						else {
-							entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
-						}
+				std::string entFilePath;
+				if (g_settings.sameDirForEnt) {
+					std::string bspFilePath = map->bsp_path;
+					if (bspFilePath.size() < 4 || bspFilePath.rfind(".bsp") != bspFilePath.size() - 4) {
+						entFilePath = bspFilePath + ".ent";
 					}
 					else {
-						entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
-						createDir(GetWorkDir());
-					}
-
-					logf("Export entities: {}\n", entFilePath);
-					std::ofstream entFile(entFilePath, std::ios::trunc);
-					map->update_ent_lump();
-					if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
-					{
-						std::string entities = std::string(map->lumps[LUMP_ENTITIES], map->lumps[LUMP_ENTITIES] + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
-						entFile.write(entities.c_str(), entities.size());
+						entFilePath = bspFilePath.substr(0, bspFilePath.size() - 4) + ".ent";
 					}
 				}
-				else
+				else {
+					entFilePath = GetWorkDir() + (map->bsp_name + ".ent");
+					createDir(GetWorkDir());
+				}
+
+				logf("Export entities: {}\n", entFilePath);
+				std::ofstream entFile(entFilePath, std::ios::trunc);
+				map->update_ent_lump();
+				if (map->bsp_header.lump[LUMP_ENTITIES].nLength > 0)
 				{
-					logf("Select map first\n");
+					std::string entities = std::string(map->lumps[LUMP_ENTITIES], map->lumps[LUMP_ENTITIES] + map->bsp_header.lump[LUMP_ENTITIES].nLength - 1);
+					entFile.write(entities.c_str(), entities.size());
 				}
 			}
 			if ((map && !map->is_mdl_model) && ImGui::MenuItem("All embedded textures to wad", NULL))
 			{
-				if (map)
+				logf("Export wad: {}{}\n", GetWorkDir(), map->bsp_name + ".wad");
+				if (ExportWad(map))
 				{
-					logf("Export wad: {}{}\n", GetWorkDir(), map->bsp_name + ".wad");
-					if (ExportWad(map))
+					logf("Remove all embedded textures\n");
+					map->delete_embedded_textures();
+					if (map->ents.size())
 					{
-						logf("Remove all embedded textures\n");
-						map->delete_embedded_textures();
-						if (map->ents.size())
+						std::string wadstr = map->ents[0]->keyvalues["wad"];
+						if (wadstr.find(map->bsp_name + ".wad" + ";") == std::string::npos)
 						{
-							std::string wadstr = map->ents[0]->keyvalues["wad"];
-							if (wadstr.find(map->bsp_name + ".wad" + ";") == std::string::npos)
-							{
-								map->ents[0]->keyvalues["wad"] += map->bsp_name + ".wad" + ";";
-							}
+							map->ents[0]->keyvalues["wad"] += map->bsp_name + ".wad" + ";";
 						}
 					}
-				}
-				else
-				{
-					logf("Select map first\n");
 				}
 			}
 			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]"))
@@ -5228,7 +5214,7 @@ void Gui::drawMergeWindow()
 		if (ImGui::Button("Merge maps", ImVec2(120, 0)))
 		{
 			std::vector<Bsp*> maps;
-			for (int i = 0; i < 16; i++)
+			for (int i = 1; i < 16; i++)
 			{
 				if (i == 0 || inPaths[i - 1].size())
 				{

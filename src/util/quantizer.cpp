@@ -537,9 +537,12 @@ void Quantizer::GenColorTable()
 				nb += tmppal[k].b * nSum[k];
 				ns += nSum[k];
 			}
-			m_pPalette[j].r = FixBounds((int)(nr / ns));
-			m_pPalette[j].g = FixBounds((int)(ng / ns));
-			m_pPalette[j].b = FixBounds((int)(nb / ns));
+			if (ns != 0)
+			{
+				m_pPalette[j].r = FixBounds((int)(nr / ns));
+				m_pPalette[j].g = FixBounds((int)(ng / ns));
+				m_pPalette[j].b = FixBounds((int)(nb / ns));
+			}
 		}
 	}
 	else

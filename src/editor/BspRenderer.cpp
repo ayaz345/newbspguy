@@ -448,8 +448,7 @@ void BspRenderer::loadLightmaps()
 	memset(atlasTextures[0]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
 	numRenderLightmapInfos = map->faceCount;
-	lightmaps = new LightmapInfo[map->faceCount];
-	memset(lightmaps, 0, map->faceCount * sizeof(LightmapInfo));
+	lightmaps = new LightmapInfo[map->faceCount]{};
 
 	logf("Calculating lightmaps\n");
 

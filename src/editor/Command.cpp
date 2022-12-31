@@ -614,7 +614,7 @@ void CleanMapCommand::execute()
 		return;
 
 	BspRenderer* renderer = getBspRenderer();
-	if (!map || !renderer)
+	if (!renderer)
 		return;
 	logf("Cleaning {}\n", map->bsp_name);
 	map->remove_unused_model_structures().print_delete_stats(1);
