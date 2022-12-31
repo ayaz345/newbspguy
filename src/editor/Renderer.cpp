@@ -150,6 +150,7 @@ void AppSettings::loadDefault()
 		| RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED;
 
 	vsync = true;
+	start_at_entity = false;
 	backUpMap = true;
 	preserveCrc32 = false;
 	autoImportEnt = false;
@@ -337,6 +338,10 @@ void AppSettings::load()
 		else if (key == "show_transform_axes")
 		{
 			g_settings.show_transform_axes = atoi(val.c_str()) != 0;
+		}
+		else if (key == "start_at_entity")
+		{
+			g_settings.start_at_entity = atoi(val.c_str()) != 0;
 		}
 		else if (key == "verbose_logs")
 		{
@@ -738,6 +743,7 @@ void AppSettings::save(std::string path)
 
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "show_transform_axes=" << g_settings.show_transform_axes << std::endl;
+	file << "start_at_entity=" << g_settings.start_at_entity << std::endl;
 #ifdef NDEBUG
 	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;
 #endif

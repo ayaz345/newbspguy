@@ -30,71 +30,76 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	renderCameraOrigin = renderCameraAngles = vec3();
 
 	// Setup Deafult Camera
-	for (auto ent : map->ents)
+
+	if (g_settings.start_at_entity)
 	{
-		if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
+
+		for (auto ent : map->ents)
 		{
-			renderCameraOrigin = ent->getOrigin();
-
-			/*for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
+			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
 			{
-				if (ent->keyOrder[i] == "angles")
+				renderCameraOrigin = ent->getOrigin();
+
+				/*for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
 				{
-					renderCameraAngles = parseVector(ent->keyvalues["angles"]);
-				}
-				if (ent->keyOrder[i] == "angle")
-				{
-					float y = (float)atof(ent->keyvalues["angle"].c_str());
-
-					if (y >= 0.0f)
+					if (ent->keyOrder[i] == "angles")
 					{
-						renderCameraAngles.y = y;
+						renderCameraAngles = parseVector(ent->keyvalues["angles"]);
 					}
-					else if (y == -1.0f)
+					if (ent->keyOrder[i] == "angle")
 					{
-						renderCameraAngles.x = -90.0f;
-						renderCameraAngles.y = 0.0f;
-						renderCameraAngles.z = 0.0f;
-					}
-					else if (y <= -2.0f)
-					{
-						renderCameraAngles.x = 90.0f;
-						renderCameraAngles.y = 0.0f;
-						renderCameraAngles.z = 0.0f;
-					}
-				}
-			}
-*/
+						float y = (float)atof(ent->keyvalues["angle"].c_str());
 
-			break;
-		}
-
-
-		//if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
-		//{
-		//	this->renderCameraOrigin = ent->getOrigin();
-			/*	
-			auto targets = ent->getTargets();
-			bool found = false;
-			for (auto ent2 : map->ents)
-			{
-				if (found)
-					break;
-				if (ent2->hasKey("targetname"))
-				{
-					for (auto target : targets)
-					{
-						if (ent2->keyvalues["targetname"] == target)
+						if (y >= 0.0f)
 						{
-							found = true;
-							break;
+							renderCameraAngles.y = y;
+						}
+						else if (y == -1.0f)
+						{
+							renderCameraAngles.x = -90.0f;
+							renderCameraAngles.y = 0.0f;
+							renderCameraAngles.z = 0.0f;
+						}
+						else if (y <= -2.0f)
+						{
+							renderCameraAngles.x = 90.0f;
+							renderCameraAngles.y = 0.0f;
+							renderCameraAngles.z = 0.0f;
 						}
 					}
 				}
+	*/
+
+				break;
 			}
-			*/
-	/*		break;
-		}*/
+
+
+			//if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
+			//{
+			//	this->renderCameraOrigin = ent->getOrigin();
+				/*
+				auto targets = ent->getTargets();
+				bool found = false;
+				for (auto ent2 : map->ents)
+				{
+					if (found)
+						break;
+					if (ent2->hasKey("targetname"))
+					{
+						for (auto target : targets)
+						{
+							if (ent2->keyvalues["targetname"] == target)
+							{
+								found = true;
+								break;
+							}
+						}
+					}
+				}
+				*/
+				/*		break;
+					}*/
+		}
 	}
 
 	cameraOrigin = renderCameraOrigin;

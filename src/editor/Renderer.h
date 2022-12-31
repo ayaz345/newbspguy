@@ -71,14 +71,22 @@ struct AppSettings
 	int windowX;
 	int windowY;
 	int maximized;
+	int undoLevels;
+	int settings_tab;
+	int render_flags;
+
+	float fov;
+	float zfar;
+	float moveSpeed;
+	float rotSpeed;
 	float fontSize;
+
 	std::string gamedir;
 	std::string workingdir;
 	std::string lastdir;
-	bool settingLoaded; // Settings loaded
-	int undoLevels;
-	bool verboseLogs;
 
+	bool settingLoaded; // Settings loaded
+	bool verboseLogs;
 	bool save_windows;
 	bool debug_open;
 	bool keyvalue_open;
@@ -86,30 +94,19 @@ struct AppSettings
 	bool log_open;
 	bool limits_open;
 	bool entreport_open;
-	int settings_tab;
-
-	float fov;
-	float zfar;
-	float moveSpeed;
-	float rotSpeed;
-	int render_flags;
 	bool vsync;
 	bool show_transform_axes;
+	bool start_at_entity;
 	bool backUpMap;
-
 	bool preserveCrc32;
 	bool autoImportEnt;
 	bool sameDirForEnt;
-
 	bool entListReload;
 	bool stripWad;
-
 	bool defaultIsEmpty;
 
 	std::vector<PathToggleStruct> fgdPaths;
 	std::vector<PathToggleStruct> resPaths;
-
-
 
 	std::vector<std::string> conditionalPointEntTriggers;
 	std::vector<std::string> entsThatNeverNeedAnyHulls;

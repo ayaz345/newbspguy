@@ -4597,6 +4597,15 @@ void Gui::drawSettings()
 				ImGui::TextUnformatted("(example entities list, res paths, etc)");
 				ImGui::EndTooltip();
 			}
+
+			ImGui::SameLine();
+
+			ImGui::Checkbox("Camera at player_start entity", &g_settings.start_at_entity);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("If enabled, camera moved to first player_start entity.");
+				ImGui::EndTooltip();
+			}
 			ImGui::Separator();
 
 			if (ImGui::Button("RESET ALL SETTINGS"))
