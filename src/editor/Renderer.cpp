@@ -4170,15 +4170,17 @@ void Renderer::deleteEnts()
 
 		entList.insert(pickInfo.selectedEnts.begin(), pickInfo.selectedEnts.end());
 
-		for (auto rit = entList.rbegin(); rit != entList.rend(); ++rit)
+		for (auto entIdx : entList)
 		{
-			if (map->ents[*rit]->hasKey("model") &&
-				toLowerCase(map->ents[*rit]->keyvalues["model"]).find(".bsp") != std::string::npos)
+			if (entIdx < 0)
+				continue;
+			if (map->ents[entIdx]->hasKey("model") &&
+				toLowerCase(map->ents[entIdx]->keyvalues["model"]).ends_with(".bsp"))
 			{
 				reloadbspmdls = true;
 			}
 
-			deleteEnt(*rit);
+			deleteEnt(entIdx);
 		}
 
 		if (reloadbspmdls)
