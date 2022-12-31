@@ -7,6 +7,8 @@
 #include <algorithm>
 #include <map>
 #include <sstream>
+#include <chrono>
+#include <execution>
 #include "filedialog/ImFileDialog.h"
 
 AppSettings g_settings;
@@ -37,6 +39,42 @@ void key_callback(GLFWwindow* window, int key, int scancode, int action, int mod
 	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS)
 	{
 		g_app->hideGui = !g_app->hideGui;
+	}
+}
+
+void drop_callback(GLFWwindow* window, int count, const char** paths)
+{
+	if (!g_app->isLoading && count > 0 && paths[0] && paths[0][0] != '\0')
+	{
+		fs::path tmpPath = paths[0];
+
+		std::string lowerPath = toLowerCase(tmpPath.string());
+
+		if (fileExists(tmpPath.string()))
+		{
+			if (lowerPath.ends_with(".bsp"))
+			{
+				logf("Loading map {}...\n", tmpPath.string());
+				g_app->addMap(new Bsp(tmpPath.string()));
+			}
+			else if (lowerPath.ends_with(".mdl"))
+			{
+				logf("Loading model {}...\n", tmpPath.string());
+				g_app->addMap(new Bsp(tmpPath.string()));
+			}
+			else
+			{
+				logf("Skipping unsupported file {}...\n", tmpPath.string());
+			}
+		}
+		else
+		{
+			logf("{} file not found!\n", tmpPath.string());
+		}
+	}
+	else if (g_app->isLoading)
+	{
+		logf("Can't load file while loading!\n");
 	}
 }
 
@@ -148,11 +186,11 @@ void AppSettings::reset()
 	loadDefault();
 
 	fgdPaths.clear();
-	fgdPaths.push_back({"/moddir/GameDefinitionFile.fgd",true});
+	fgdPaths.push_back({ "/moddir/GameDefinitionFile.fgd",true });
 
 	resPaths.clear();
-	resPaths.push_back({"/moddir/",true});
-	resPaths.push_back({"/moddir_addon/",true});
+	resPaths.push_back({ "/moddir/",true });
+	resPaths.push_back({ "/moddir_addon/",true });
 
 	conditionalPointEntTriggers.clear();
 	conditionalPointEntTriggers.push_back("trigger_once");
@@ -355,26 +393,26 @@ void AppSettings::load()
 		else if (key == "fgd")
 		{
 			if (val.find('?') == std::string::npos)
-				fgdPaths.push_back({val,true});
+				fgdPaths.push_back({ val,true });
 			else
 			{
 				auto vals = splitString(val, "?");
 				if (vals.size() == 2)
 				{
-					fgdPaths.push_back({vals[1],vals[0] == "enabled"});
+					fgdPaths.push_back({ vals[1],vals[0] == "enabled" });
 				}
 			}
 		}
 		else if (key == "res")
 		{
 			if (val.find('?') == std::string::npos)
-				resPaths.push_back({val,true});
+				resPaths.push_back({ val,true });
 			else
 			{
 				auto vals = splitString(val, "?");
 				if (vals.size() == 2)
 				{
-					resPaths.push_back({vals[1],vals[0] == "enabled"});
+					resPaths.push_back({ vals[1],vals[0] == "enabled" });
 				}
 			}
 		}
@@ -506,14 +544,14 @@ void AppSettings::load()
 
 
 #ifdef WIN32
-		// Fix invisibled window header for primary screen.
+	// Fix invisibled window header for primary screen.
 	if (g_settings.windowY >= 0 && g_settings.windowY < 30)
 	{
 		g_settings.windowY = 30;
 	}
 #endif
 
-		// Restore default window height if invalid.
+	// Restore default window height if invalid.
 	if (windowHeight <= 0 || windowWidth <= 0)
 	{
 		windowHeight = 600;
@@ -527,13 +565,13 @@ void AppSettings::load()
 
 	if (defaultIsEmpty && fgdPaths.empty())
 	{
-		fgdPaths.push_back({"/moddir/GameDefinitionFile.fgd",true});
+		fgdPaths.push_back({ "/moddir/GameDefinitionFile.fgd",true });
 	}
 
 	if (defaultIsEmpty && resPaths.empty())
 	{
-		resPaths.push_back({"/moddir/",true});
-		resPaths.push_back({"/moddir_addon/",true});
+		resPaths.push_back({ "/moddir/",true });
+		resPaths.push_back({ "/moddir_addon/",true });
 	}
 
 	if (entListReload || defaultIsEmpty)
@@ -792,6 +830,7 @@ Renderer::Renderer()
 	}
 
 	glfwMakeContextCurrent(window);
+	glfwSetDropCallback(window, drop_callback);
 	glfwSetKeyCallback(window, key_callback);
 	glfwSetScrollCallback(window, scroll_callback);
 	glfwSetWindowSizeCallback(window, window_size_callback);
@@ -835,8 +874,6 @@ Renderer::Renderer()
 
 	reloading = true;
 	fgdFuture = std::async(std::launch::async, &Renderer::loadFgds, this);
-	//cameraOrigin = vec3(51, 427, 234);
-	//cameraAngles = vec3(41, 0, -170);
 }
 
 Renderer::~Renderer()
@@ -871,15 +908,15 @@ void Renderer::renderLoop()
 	}
 
 	{
-		moveAxes.dimColor[0] = {110, 0, 160, 255};
-		moveAxes.dimColor[1] = {0, 0, 220, 255};
-		moveAxes.dimColor[2] = {0, 160, 0, 255};
-		moveAxes.dimColor[3] = {160, 160, 160, 255};
+		moveAxes.dimColor[0] = { 110, 0, 160, 255 };
+		moveAxes.dimColor[1] = { 0, 0, 220, 255 };
+		moveAxes.dimColor[2] = { 0, 160, 0, 255 };
+		moveAxes.dimColor[3] = { 160, 160, 160, 255 };
 
-		moveAxes.hoverColor[0] = {128, 64, 255, 255};
-		moveAxes.hoverColor[1] = {64, 64, 255, 255};
-		moveAxes.hoverColor[2] = {64, 255, 64, 255};
-		moveAxes.hoverColor[3] = {255, 255, 255, 255};
+		moveAxes.hoverColor[0] = { 128, 64, 255, 255 };
+		moveAxes.hoverColor[1] = { 64, 64, 255, 255 };
+		moveAxes.hoverColor[2] = { 64, 255, 64, 255 };
+		moveAxes.hoverColor[3] = { 255, 255, 255, 255 };
 
 		// flipped for HL coords
 		moveAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &moveAxes.model, 6 * 6 * 4, GL_TRIANGLES);
@@ -887,21 +924,21 @@ void Renderer::renderLoop()
 	}
 
 	{
-		scaleAxes.dimColor[0] = {110, 0, 160, 255};
-		scaleAxes.dimColor[1] = {0, 0, 220, 255};
-		scaleAxes.dimColor[2] = {0, 160, 0, 255};
+		scaleAxes.dimColor[0] = { 110, 0, 160, 255 };
+		scaleAxes.dimColor[1] = { 0, 0, 220, 255 };
+		scaleAxes.dimColor[2] = { 0, 160, 0, 255 };
 
-		scaleAxes.dimColor[3] = {110, 0, 160, 255};
-		scaleAxes.dimColor[4] = {0, 0, 220, 255};
-		scaleAxes.dimColor[5] = {0, 160, 0, 255};
+		scaleAxes.dimColor[3] = { 110, 0, 160, 255 };
+		scaleAxes.dimColor[4] = { 0, 0, 220, 255 };
+		scaleAxes.dimColor[5] = { 0, 160, 0, 255 };
 
-		scaleAxes.hoverColor[0] = {128, 64, 255, 255};
-		scaleAxes.hoverColor[1] = {64, 64, 255, 255};
-		scaleAxes.hoverColor[2] = {64, 255, 64, 255};
+		scaleAxes.hoverColor[0] = { 128, 64, 255, 255 };
+		scaleAxes.hoverColor[1] = { 64, 64, 255, 255 };
+		scaleAxes.hoverColor[2] = { 64, 255, 64, 255 };
 
-		scaleAxes.hoverColor[3] = {128, 64, 255, 255};
-		scaleAxes.hoverColor[4] = {64, 64, 255, 255};
-		scaleAxes.hoverColor[5] = {64, 255, 64, 255};
+		scaleAxes.hoverColor[3] = { 128, 64, 255, 255 };
+		scaleAxes.hoverColor[4] = { 64, 64, 255, 255 };
+		scaleAxes.hoverColor[5] = { 64, 255, 64, 255 };
 
 		// flipped for HL coords
 		scaleAxes.buffer = new VertexBuffer(colorShader, COLOR_4B | POS_3F, &scaleAxes.model, 6 * 6 * 6, GL_TRIANGLES);
@@ -1183,13 +1220,13 @@ void Renderer::renderLoop()
 				colorShader->updateMatrixes();
 				vec3 p1 = debugPoint - vec3(32, 0, 0);
 				vec3 p2 = debugPoint + vec3(32, 0, 0);
-				drawLine(p1, p2, {128, 128, 255, 255});
+				drawLine(p1, p2, { 128, 128, 255, 255 });
 				p1 = debugPoint - vec3(0, 32, 0);
 				p2 = debugPoint + vec3(0, 32, 0);
-				drawLine(p1, p2, {0, 255, 0, 255});
+				drawLine(p1, p2, { 0, 255, 0, 255 });
 				p1 = debugPoint - vec3(0, 0, 32);
 				p2 = debugPoint + vec3(0, 0, 32);
-				drawLine(p1, p2, {0, 0, 255, 255});
+				drawLine(p1, p2, { 0, 0, 255, 255 });
 				colorShader->popMatrix(MAT_MODEL);
 			}
 		}
@@ -1442,18 +1479,18 @@ void Renderer::drawModelVerts()
 	vec3 renderOffset = mapOffset.flip();
 	vec3 localCameraOrigin = cameraOrigin - mapOffset;
 
-	COLOR4 vertDimColor = {200, 200, 200, 255};
-	COLOR4 vertHoverColor = {255, 255, 255, 255};
-	COLOR4 edgeDimColor = {255, 128, 0, 255};
-	COLOR4 edgeHoverColor = {255, 255, 0, 255};
-	COLOR4 selectColor = {0, 128, 255, 255};
-	COLOR4 hoverSelectColor = {96, 200, 255, 255};
+	COLOR4 vertDimColor = { 200, 200, 200, 255 };
+	COLOR4 vertHoverColor = { 255, 255, 255, 255 };
+	COLOR4 edgeDimColor = { 255, 128, 0, 255 };
+	COLOR4 edgeHoverColor = { 255, 255, 0, 255 };
+	COLOR4 selectColor = { 0, 128, 255, 255 };
+	COLOR4 hoverSelectColor = { 96, 200, 255, 255 };
 	vec3 entOrigin = ent->getOrigin();
 
 	if (modelUsesSharedStructures)
 	{
-		vertDimColor = {32, 32, 32, 255};
-		edgeDimColor = {64, 64, 32, 255};
+		vertDimColor = { 32, 32, 32, 255 };
+		edgeDimColor = { 64, 64, 32, 255 };
 	}
 
 	int cubeIdx = 0;
@@ -1523,14 +1560,14 @@ void Renderer::drawModelOrigin()
 	Bsp* map = SelectedMap;
 	vec3 mapOffset = map->getBspRender()->mapOffset;
 
-	COLOR4 vertDimColor = {0, 200, 0, 255};
-	COLOR4 vertHoverColor = {128, 255, 128, 255};
-	COLOR4 selectColor = {0, 128, 255, 255};
-	COLOR4 hoverSelectColor = {96, 200, 255, 255};
+	COLOR4 vertDimColor = { 0, 200, 0, 255 };
+	COLOR4 vertHoverColor = { 128, 255, 128, 255 };
+	COLOR4 selectColor = { 0, 128, 255, 255 };
+	COLOR4 hoverSelectColor = { 96, 200, 255, 255 };
 
 	if (modelUsesSharedStructures)
 	{
-		vertDimColor = {32, 32, 32, 255};
+		vertDimColor = { 32, 32, 32, 255 };
 	}
 
 	vec3 ori = transformedOrigin + mapOffset;
@@ -1863,7 +1900,7 @@ void Renderer::applyTransform(Bsp* map, bool forceUpdate)
 
 void Renderer::cameraRotationControls()
 {
-// camera rotation
+	// camera rotation
 	if (draggingAxis == -1 && curRightMouse == GLFW_PRESS)
 	{
 		if (!cameraIsRotating)
@@ -2018,7 +2055,7 @@ void Renderer::cameraObjectHovering()
 
 void Renderer::cameraContextMenus()
 {
-// context menus
+	// context menus
 	bool wasTurning = cameraIsRotating && totalMouseDrag.length() >= 1;
 	if (draggingAxis == -1 && curRightMouse == GLFW_RELEASE && oldRightMouse != GLFW_RELEASE && !wasTurning)
 	{
@@ -2594,7 +2631,7 @@ void Renderer::getPickRay(vec3& start, vec3& pickDir)
 
 Bsp* Renderer::getSelectedMap()
 {
-// auto select if one map
+	// auto select if one map
 	if (!SelectedMap && mapRenderers.size() == 1)
 	{
 		SelectedMap = mapRenderers[0]->map;
@@ -2746,7 +2783,7 @@ void Renderer::reloadBspModels()
 						else
 						{
 							logf("Missing {} model file.\n", modelPath);
-							FindPathInAssets(bsprend->map,modelPath, newBspPath, true);
+							FindPathInAssets(bsprend->map, modelPath, newBspPath, true);
 						}
 					}
 				}
@@ -2836,7 +2873,7 @@ void Renderer::drawClipnodes(Bsp* map, int iNode, int& currentPlane, int activeP
 	BSPCLIPNODE32& node = map->clipnodes[iNode];
 
 	if (currentPlane == activePlane)
-		drawPlane(map->planes[node.iPlane], {255, 255, 255, 255}, offset);
+		drawPlane(map->planes[node.iPlane], { 255, 255, 255, 255 }, offset);
 	currentPlane++;
 
 	for (int i = 0; i < 2; i++)
@@ -2855,7 +2892,7 @@ void Renderer::drawNodes(Bsp* map, int iNode, int& currentPlane, int activePlane
 	BSPNODE32& node = map->nodes[iNode];
 
 	if (currentPlane == activePlane)
-		drawPlane(map->planes[node.iPlane], {255, 128, 128, 255}, offset);
+		drawPlane(map->planes[node.iPlane], { 255, 128, 128, 255 }, offset);
 	currentPlane++;
 
 	for (int i = 0; i < 2; i++)
@@ -3046,7 +3083,7 @@ void Renderer::updateDragAxes(vec3 delta)
 	}
 	else
 	{
-  // flipped for HL coords
+		// flipped for HL coords
 		moveAxes.model[0] = cCube(vec3(0, -s, -s), vec3(d, s, s), moveAxes.dimColor[0]);
 		moveAxes.model[2] = cCube(vec3(-s, 0, -s), vec3(s, d, s), moveAxes.dimColor[2]);
 		moveAxes.model[1] = cCube(vec3(-s, -s, 0), vec3(s, s, -d), moveAxes.dimColor[1]);
@@ -3107,9 +3144,9 @@ vec3 Renderer::getAxisDragPoint(vec3 origin)
 	int bestMovementPlane = 0;
 	switch (draggingAxis % 3)
 	{
-		case 0: bestMovementPlane = dots[1] > dots[2] ? 1 : 2; break;
-		case 1: bestMovementPlane = dots[0] > dots[2] ? 0 : 2; break;
-		case 2: bestMovementPlane = dots[1] > dots[0] ? 1 : 0; break;
+	case 0: bestMovementPlane = dots[1] > dots[2] ? 1 : 2; break;
+	case 1: bestMovementPlane = dots[0] > dots[2] ? 0 : 2; break;
+	case 2: bestMovementPlane = dots[1] > dots[0] ? 1 : 0; break;
 	}
 
 	float fDist = ((float*)&origin)[bestMovementPlane];
@@ -3323,9 +3360,9 @@ void Renderer::updateEntConnections()
 	cVert* lines = new cVert[numVerts + 9];
 	cCube* points = new cCube[numPoints + 3];
 
-	const COLOR4 targetColor = {255, 255, 0, 255};
-	const COLOR4 callerColor = {0, 255, 255, 255};
-	const COLOR4 bothColor = {0, 255, 0, 255};
+	const COLOR4 targetColor = { 255, 255, 0, 255 };
+	const COLOR4 callerColor = { 0, 255, 255, 255 };
+	const COLOR4 bothColor = { 0, 255, 0, 255 };
 
 	vec3 srcPos = getEntOrigin(map, ent).flip();
 	int idx = 0;
@@ -4091,7 +4128,7 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 
 	if (!noModifyOrigin)
 	{
-// can't just set camera origin directly because solid ents can have (0,0,0) origins
+		// can't just set camera origin directly because solid ents can have (0,0,0) origins
 		vec3 tmpOrigin = getEntOrigin(map, &insertEnt);
 		vec3 modelOffset = getEntOffset(map, &insertEnt);
 		vec3 mapOffset = map->getBspRender()->mapOffset;

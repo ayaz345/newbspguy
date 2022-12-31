@@ -1159,20 +1159,37 @@ void Gui::drawMenuBar()
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem("Close All", NULL, false, !app->isLoading))
+		if (ImGui::MenuItem("Close", NULL, false, !app->isLoading))
 		{
 			filterNeeded = true;
-			if (map)
+			int mapRenderId = map->getBspRenderId();
+			BspRenderer* mapRender = map->getBspRender();
+			if (mapRenderId >= 0)
 			{
 				app->deselectObject();
 				app->clearSelection();
 				app->deselectMap();
-				app->clearMaps();
-				ImGui::EndMenu();
-				ImGui::EndMainMenuBar();
-				app->addMap(new Bsp(""));
+				delete mapRender;
+				app->mapRenderers.erase(app->mapRenderers.begin() + mapRenderId);
 				app->selectMapId(0);
-				return;
+			}
+		}
+
+
+		if (app->mapRenderers.size() > 1)
+		{
+			if (ImGui::MenuItem("Close All", NULL, false, !app->isLoading))
+			{
+				filterNeeded = true;
+				if (map)
+				{
+					app->deselectObject();
+					app->clearSelection();
+					app->deselectMap();
+					app->clearMaps();
+					app->addMap(new Bsp(""));
+					app->selectMapId(0);
+				}
 			}
 		}
 
@@ -2194,16 +2211,21 @@ void Gui::drawMenuBar()
 
 	if (ImGui::BeginMenu("Windows"))
 	{
+		Bsp* selectedMap = app->getSelectedMap();
 		for (BspRenderer* bspRend : app->mapRenderers)
 		{
-			Bsp* selectedMap = app->getSelectedMap();
 			if (bspRend->map && !bspRend->map->is_bsp_model)
 			{
 				if (ImGui::MenuItem(bspRend->map->bsp_name.c_str(), NULL, selectedMap == bspRend->map))
 				{
+					selectedMap->getBspRender()->renderCameraAngles = cameraAngles;
+					selectedMap->getBspRender()->renderCameraOrigin = cameraOrigin;
 					app->deselectObject();
 					app->clearSelection();
 					app->selectMap(bspRend->map);
+					cameraAngles = bspRend->renderCameraAngles;
+					cameraOrigin = bspRend->renderCameraOrigin;
+					makeVectors(cameraAngles, app->cameraForward, app->cameraRight, app->cameraUp);
 				}
 			}
 		}

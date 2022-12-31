@@ -2844,7 +2844,7 @@ bool Bsp::load_lumps(std::string fpath)
 
 	if (bsp_header.nVersion == 'BSP2')
 	{
-		is_bsp2 = true; 
+		is_bsp2 = true;
 		is_bsp2_old = true;
 		logf("Found old '2PSB' map format, unsupported?\n");
 	}
@@ -6365,6 +6365,14 @@ BspRenderer* Bsp::getBspRender()
 			if (g_app->mapRenderers[i]->map == this)
 				renderer = g_app->mapRenderers[i];
 	return renderer;
+}
+
+int Bsp::getBspRenderId()
+{
+	for (int i = 0; i < g_app->mapRenderers.size(); i++)
+		if (g_app->mapRenderers[i]->map == this)
+			return i;
+	return -1;
 }
 
 void Bsp::setBspRender(BspRenderer* rnd)

@@ -26,6 +26,80 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	this->fullBrightBspShader = _fullBrightBspShader;
 	this->colorShader = _colorShader;
 	this->pointEntRenderer = _pointEntRenderer;
+
+	renderCameraOrigin = renderCameraAngles = vec3();
+
+	// Setup Deafult Camera
+	for (auto ent : map->ents)
+	{
+		if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
+		{
+			renderCameraOrigin = ent->getOrigin();
+
+			/*for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
+			{
+				if (ent->keyOrder[i] == "angles")
+				{
+					renderCameraAngles = parseVector(ent->keyvalues["angles"]);
+				}
+				if (ent->keyOrder[i] == "angle")
+				{
+					float y = (float)atof(ent->keyvalues["angle"].c_str());
+
+					if (y >= 0.0f)
+					{
+						renderCameraAngles.y = y;
+					}
+					else if (y == -1.0f)
+					{
+						renderCameraAngles.x = -90.0f;
+						renderCameraAngles.y = 0.0f;
+						renderCameraAngles.z = 0.0f;
+					}
+					else if (y <= -2.0f)
+					{
+						renderCameraAngles.x = 90.0f;
+						renderCameraAngles.y = 0.0f;
+						renderCameraAngles.z = 0.0f;
+					}
+				}
+			}
+*/
+
+			break;
+		}
+
+
+		//if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
+		//{
+		//	this->renderCameraOrigin = ent->getOrigin();
+			/*	
+			auto targets = ent->getTargets();
+			bool found = false;
+			for (auto ent2 : map->ents)
+			{
+				if (found)
+					break;
+				if (ent2->hasKey("targetname"))
+				{
+					for (auto target : targets)
+					{
+						if (ent2->keyvalues["targetname"] == target)
+						{
+							found = true;
+							break;
+						}
+					}
+				}
+			}
+			*/
+	/*		break;
+		}*/
+	}
+
+	cameraOrigin = renderCameraOrigin;
+	cameraAngles = renderCameraAngles;
+
 	renderEnts = NULL;
 	renderModels = NULL;
 	faceMaths = NULL;
@@ -358,7 +432,7 @@ void BspRenderer::loadLightmaps()
 
 	std::for_each(std::execution::par_unseq, tmpFaceCount.begin(), tmpFaceCount.end(), [&](int i)
 		{
-	BSPFACE32& face = map->faces[i];
+			BSPFACE32& face = map->faces[i];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 	if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
 	{
@@ -958,7 +1032,7 @@ bool BspRenderer::refreshModelClipnodes(int modelIdx)
 		}
 		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
 		{
-			nodesBufferCache.erase(nodeIdx); 
+			nodesBufferCache.erase(nodeIdx);
 		}
 	}
 
@@ -1324,11 +1398,6 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 		renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
 		renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 		renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
-
-		renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
-		renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
-		renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
-
 		renderEnts[entIdx].needAngles = false;
 	}
 	else
@@ -1341,10 +1410,6 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 			renderEnts[entIdx].modelMatAngles.rotateY(0.0f);
 			renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 			renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
-
-			renderEnts[entIdx].modelMatAngles2.rotateY(0.0f);
-			renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
-			renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 		}
 		else if (IsEntNotSupportAngles(entClassName))
 		{
@@ -1358,20 +1423,12 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 				renderEnts[entIdx].modelMatAngles.rotateY(0.0);
 				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateX((angles.y * (PI / 180.0f)));
-
-				renderEnts[entIdx].modelMatAngles2.rotateY(0.0);
-				renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles2.rotateX((angles.y * (PI / 180.0f)));
 			}
 			else
 			{
 				renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
-
-				renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 		else
@@ -1384,10 +1441,6 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 					renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
 					renderEnts[entIdx].modelMatAngles.rotateZ((angles.x * (PI / 180.0f)));
 					renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
-
-					renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
-					renderEnts[entIdx].modelMatAngles2.rotateZ((angles.x * (PI / 180.0f)));
-					renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 					foundAngles = true;
 					break;
 				}
@@ -1397,11 +1450,6 @@ void BspRenderer::setRenderAngles(int entIdx, vec3 angles)
 				renderEnts[entIdx].modelMatAngles.rotateY((angles.y * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateZ(-(angles.x * (PI / 180.0f)));
 				renderEnts[entIdx].modelMatAngles.rotateX((angles.z * (PI / 180.0f)));
-
-
-				renderEnts[entIdx].modelMatAngles2.rotateY((angles.y * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles2.rotateZ(-(angles.x * (PI / 180.0f)));
-				renderEnts[entIdx].modelMatAngles2.rotateX((angles.z * (PI / 180.0f)));
 			}
 		}
 	}
@@ -1420,7 +1468,6 @@ void BspRenderer::refreshEnt(int entIdx)
 	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
 	renderEnts[entIdx].modelMatAngles.loadIdentity();
-	renderEnts[entIdx].modelMatAngles2.loadIdentity();
 	renderEnts[entIdx].modelMatOrigin.loadIdentity();
 	renderEnts[entIdx].offset = vec3();
 	renderEnts[entIdx].angles = vec3();
@@ -1433,7 +1480,7 @@ void BspRenderer::refreshEnt(int entIdx)
 	{
 		vec3 origin = parseVector(ent->keyvalues["origin"]);
 		renderEnts[entIdx].modelMatAngles.translate(origin.x, origin.z, -origin.y);
-		renderEnts[entIdx].modelMatAngles2 = renderEnts[entIdx].modelMatOrigin = renderEnts[entIdx].modelMatAngles;
+		renderEnts[entIdx].modelMatOrigin = renderEnts[entIdx].modelMatAngles;
 		renderEnts[entIdx].offset = origin;
 	}
 
@@ -1512,7 +1559,6 @@ void BspRenderer::refreshEnt(int entIdx)
 				renderEnts[entIdx].angles.y = 0.0f;
 				renderEnts[entIdx].angles.z = 0.0f;
 			}
-
 		}
 	}
 
