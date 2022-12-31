@@ -144,20 +144,33 @@ struct BSPLUMP
 {
 	int nOffset; // File offset to data
 	int nLength; // Length of data
+	BSPLUMP()
+	{
+		nOffset = nLength = 0;
+	}
 };
 
 
 struct BSPHEADER
 {
 	int nVersion;           // Must be 30 for a valid HL BSP file
-	BSPLUMP lump[HEADER_LUMPS]; // Stores the directory of lumps
+	BSPLUMP lump[HEADER_LUMPS]{}; // Stores the directory of lumps
+	BSPHEADER()
+	{
+		nVersion = 0;
+	}
 };
 
 struct BSPHEADER_EX
 {
 	int	id;			// must be little endian XASH
-	int	version;
+	int	nVersion;
 	BSPLUMP	lump[EXTRA_LUMPS];
+	BSPHEADER_EX()
+	{
+		id = 0;
+		nVersion = 0;
+	}
 };
 
 struct LumpState

@@ -1192,7 +1192,7 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, COLOR
 		g_progress.update("Resize lightmaps", faceCount);
 
 		int newColorCount = tmpLightDataSz / sizeof(COLOR3);
-		COLOR3 * tmpLightData = new COLOR3[newColorCount];
+		COLOR3* tmpLightData = new COLOR3[newColorCount];
 		memset(tmpLightData, 255, newColorCount * sizeof(COLOR3));
 		int lightmapOffset = 0;
 
@@ -2562,6 +2562,7 @@ void Bsp::write(const std::string& path)
 
 	unsigned char* oldnodes = (unsigned char*)nodes;
 	BSPNODE16* freenodes16 = NULL;
+	BSPNODE32A* freenodes32a = NULL;
 
 	if (!is_bsp2)
 	{
@@ -2582,6 +2583,26 @@ void Bsp::write(const std::string& path)
 		}
 		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE16);
 		lumps[LUMP_NODES] = (unsigned char*)freenodes16;
+	}
+	else if (is_bsp2_old)
+	{
+		freenodes32a = new BSPNODE32A[nodeCount];
+		for (int n = 0; n < nodeCount; n++)
+		{
+			freenodes32a[n].iChildren[0] = nodes[n].iChildren[0];
+			freenodes32a[n].iChildren[1] = nodes[n].iChildren[1];
+			freenodes32a[n].iPlane = nodes[n].iPlane;
+
+			freenodes32a[n].firstFace = nodes[n].firstFace;
+			freenodes32a[n].nFaces = nodes[n].nFaces;
+			for (int m = 0; m < 3; m++)
+			{
+				freenodes32a[n].nMaxs[m] = (short)round(nodes[n].nMaxs[m]);
+				freenodes32a[n].nMins[m] = (short)round(nodes[n].nMins[m]);
+			}
+		}
+		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE32A);
+		lumps[LUMP_NODES] = (unsigned char*)freenodes32a;
 	}
 
 
@@ -2624,6 +2645,7 @@ void Bsp::write(const std::string& path)
 
 	unsigned char* oldleaves = (unsigned char*)leaves;
 	BSPLEAF16* freeleaves16 = NULL;
+	BSPLEAF32A* freeleaves32a = NULL;
 
 	if (!is_bsp2)
 	{
@@ -2647,7 +2669,28 @@ void Bsp::write(const std::string& path)
 		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF16);
 		lumps[LUMP_LEAVES] = (unsigned char*)freeleaves16;
 	}
-
+	else if (is_bsp2_old)
+	{
+		freeleaves32a = new BSPLEAF32A[leafCount];
+		for (int n = 0; n < leafCount; n++)
+		{
+			freeleaves32a[n].iFirstMarkSurface = leaves[n].iFirstMarkSurface;
+			freeleaves32a[n].nMarkSurfaces = leaves[n].nMarkSurfaces;
+			for (int m = 0; m < MAX_AMBIENTS; m++)
+			{
+				freeleaves32a[n].nAmbientLevels[m] = leaves[n].nAmbientLevels[m];
+			}
+			freeleaves32a[n].nContents = leaves[n].nContents;
+			freeleaves32a[n].nVisOffset = leaves[n].nVisOffset;
+			for (int m = 0; m < 3; m++)
+			{
+				freeleaves32a[n].nMaxs[m] = (short)round(leaves[n].nMaxs[m]);
+				freeleaves32a[n].nMins[m] = (short)round(leaves[n].nMins[m]);
+			}
+		}
+		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32A);
+		lumps[LUMP_LEAVES] = (unsigned char*)freeleaves32a;
+	}
 
 	unsigned char* oldedges = (unsigned char*)edges;
 	BSPEDGE16* freeedges16 = NULL;
@@ -2732,8 +2775,8 @@ void Bsp::write(const std::string& path)
 	if (is_bsp30ext)
 	{
 		offset += sizeof(BSPHEADER_EX);
-		
-		int extralumpscount = bsp_header_ex.version <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
+
+		int extralumpscount = bsp_header_ex.nVersion <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
 		for (int i = 0; i < extralumpscount; i++)
 		{
 			bsp_header_ex.lump[i].nOffset = offset;
@@ -2774,6 +2817,12 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_NODES] = (unsigned char*)oldnodes;
 		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE32);
 	}
+	else if (freenodes32a)
+	{
+		delete[] freenodes32a;
+		lumps[LUMP_NODES] = (unsigned char*)oldnodes;
+		bsp_header.lump[LUMP_NODES].nLength = nodeCount * sizeof(BSPNODE32);
+	}
 
 	if (freeedges16)
 	{
@@ -2799,6 +2848,12 @@ void Bsp::write(const std::string& path)
 	if (freeleaves16)
 	{
 		delete[] freeleaves16;
+		lumps[LUMP_LEAVES] = (unsigned char*)oldleaves;
+		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32);
+	}
+	else if (freeleaves32a)
+	{
+		delete[] freeleaves32a;
 		lumps[LUMP_LEAVES] = (unsigned char*)oldleaves;
 		bsp_header.lump[LUMP_LEAVES].nLength = leafCount * sizeof(BSPLEAF32);
 	}
@@ -2868,11 +2923,11 @@ bool Bsp::load_lumps(std::string fpath)
 		logf("Found 'BSP30ext' format from 'XASH' engine.\n");
 		is_bsp30ext = true;
 
-		fin.read((char*)&bsp_header_ex.version, sizeof(int));
+		fin.read((char*)&bsp_header_ex.nVersion, sizeof(int));
 
 
-		int extralumpscount = bsp_header_ex.version <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
-		logf("BSP30ext version {}. Extra lumps {}\n", bsp_header_ex.version, extralumpscount);
+		int extralumpscount = bsp_header_ex.nVersion <= 3 ? EXTRA_LUMPS_OLD : EXTRA_LUMPS;
+		logf("BSP30ext version {}. Extra lumps {}\n", bsp_header_ex.nVersion, extralumpscount);
 
 		extralumps = new unsigned char* [EXTRA_LUMPS];
 		memset(extralumps, 0, sizeof(unsigned char*) * EXTRA_LUMPS);
@@ -5321,7 +5376,7 @@ int Bsp::create_texinfo()
 	memcpy(newTexinfos, texinfos, texinfoCount * sizeof(BSPTEXTUREINFO));
 
 	BSPTEXTUREINFO& newTexinfo = newTexinfos[texinfoCount];
-	
+
 	replace_lump(LUMP_TEXINFO, newTexinfos, (texinfoCount + 1) * sizeof(BSPTEXTUREINFO));
 
 	return texinfoCount - 1;
