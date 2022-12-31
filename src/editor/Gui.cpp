@@ -5802,6 +5802,7 @@ void Gui::drawEntityReport()
 		else
 		{
 			ImGui::BeginGroup();
+			static int startFrom = 0;
 			static int MAX_FILTERS = 1;
 			static std::vector<std::string> keyFilter = std::vector<std::string>();
 			static std::vector<std::string> valueFilter = std::vector<std::string>();
@@ -5941,6 +5942,13 @@ void Gui::drawEntityReport()
 			filterNeeded = false;
 
 			ImGuiListClipper clipper;
+
+			if (startFrom >= 0)
+			{
+				ImGui::SetScrollY(startFrom);
+				startFrom = -1;
+			}
+
 			clipper.Begin((int)visibleEnts.size());
 			static bool needhover = true;
 			while (clipper.Step())
@@ -6204,6 +6212,7 @@ void Gui::drawEntityReport()
 						break;
 					}
 				}
+
 				if (i == 1)
 				{
 					ImGui::SameLine();
@@ -6223,9 +6232,18 @@ void Gui::drawEntityReport()
 
 			ImGui::SameLine();
 
-			if (ImGui::Button("GO TO"))
+			if (ImGui::Button("GO TO ENT"))
 			{
 				app->goToEnt(map, app->pickInfo.GetSelectedEnt());
+			}
+
+			ImGui::SameLine();
+
+			if (ImGui::Button("SHOW ENT"))
+			{
+				startFrom = (app->pickInfo.GetSelectedEnt() - 8) * clipper.ItemsHeight;
+				if (startFrom < 0)
+					startFrom = 0;
 			}
 
 			ImGui::EndChild();
