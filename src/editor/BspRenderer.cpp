@@ -1345,6 +1345,19 @@ void BspRenderer::generateClipnodeBuffer(int modelIdx)
 	if (!map)
 		return;
 
+	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)
+	{
+		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
+		{
+			clipnodesBufferCache.erase(nodeIdx);
+		}
+		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+		{
+			nodesBufferCache.erase(nodeIdx);
+		}
+	}
+
 	for (int i = 0; i < MAX_MAP_HULLS; i++)
 	{
 		generateClipnodeBufferForHull(modelIdx, i);
