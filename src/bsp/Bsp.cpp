@@ -1067,7 +1067,7 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 			}
 		}
 		delete[] oldLightmaps;
-		delete[] newLightmaps;
+		//delete[] newLightmaps;
 	}
 
 	if (logged)
@@ -1263,7 +1263,8 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int& 
 			face.nLightmapOffset = lightmapOffset;
 			lightmapOffset += newSz;
 		}
-		delete[] newLightData;
+	
+		//delete[] newLightData;
 	}
 	newLightmapSize = lightmapOffset;
 }
@@ -1849,7 +1850,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	unsigned char* oldLeaves = new unsigned char[oldLeavesLumpLen];
 	memcpy(oldLeaves, lumps[LUMP_LEAVES], oldLeavesLumpLen);
 
-	if (target & CLEAN_LIGHTMAP && lightDataLength > 0 && !is_bsp30ext)
+	if (target & CLEAN_LIGHTMAP && lightDataLength > 0)
 		removeCount.lightdata = remove_unused_lightmaps(usedStructures.faces);
 	if (target & CLEAN_PLANES)
 		removeCount.planes = remove_unused_structs(LUMP_PLANES, usedStructures.planes, remap.planes);
