@@ -5937,6 +5937,7 @@ void Gui::drawEntityReport()
 
 			clipper.Begin((int)visibleEnts.size());
 			static bool needhover = true;
+			static bool isHovered = false;
 			while (clipper.Step())
 			{
 				for (int line = clipper.DisplayStart; line < clipper.DisplayEnd && line < visibleEnts.size() && visibleEnts[line] < map->ents.size(); line++)
@@ -5950,15 +5951,10 @@ void Gui::drawEntityReport()
 					{
 						cname = ent->keyvalues["classname"];
 					}
-					bool isHovered = false;
-					if (ImGui::IsItemHovered() && needhover)
-					{
-						isHovered = true;
-					}
 					if (g_app->curRightMouse == GLFW_RELEASE)
 						needhover = true;
 
-					bool isSelectableSelcted = false;
+					bool isSelectableSelected = false;
 					if (!app->fgd || !app->fgd->getFgdClass(cname) || ent->hide)
 					{
 						if (!app->fgd || !app->fgd->getFgdClass(cname))
@@ -5969,13 +5965,16 @@ void Gui::drawEntityReport()
 						{
 							ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0, 255, 255, 255));
 						}
-						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
+						isSelectableSelected = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
+
+						isHovered = ImGui::IsItemHovered() && needhover;
+
 						if (isHovered)
 						{
 							ImGui::BeginTooltip();
 							if (!app->fgd || !app->fgd->getFgdClass(cname))
 							{
-								ImGui::Text(fmt::format("Classname \"{}\" not found in fgd files!", cname.c_str()).c_str());
+								ImGui::Text(fmt::format("Classname \"{}\" not found in fgd files!", cname).c_str());
 							}
 							else
 							{
@@ -5986,15 +5985,17 @@ void Gui::drawEntityReport()
 						ImGui::PopStyleColor();
 					}
 					else
-						isSelectableSelcted = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
+					{
+						isSelectableSelected = ImGui::Selectable((cname + "##ent" + std::to_string(i)).c_str(), selectedItems[i], ImGuiSelectableFlags_AllowDoubleClick);
 
+						isHovered = ImGui::IsItemHovered() && needhover;
+					}
 					bool isForceOpen = (isHovered && g_app->oldRightMouse == GLFW_RELEASE && g_app->curRightMouse == GLFW_PRESS);
 
-					if (isSelectableSelcted || isForceOpen)
+					if (isSelectableSelected || isForceOpen)
 					{
 						if (isForceOpen)
 						{
-							i--;
 							needhover = false;
 						}
 						if (expected_key_mod_flags & ImGuiModFlags_Ctrl)
@@ -6038,6 +6039,8 @@ void Gui::drawEntityReport()
 						{
 							for (int k = 0; k < selectedItems.size(); k++)
 								selectedItems[k] = false;
+							if (i < 0)
+								i = 0;
 							selectedItems[i] = true;
 							lastSelect = i;
 							app->pickInfo.selectedEnts.clear();
@@ -6049,7 +6052,6 @@ void Gui::drawEntityReport()
 						}
 						if (isForceOpen)
 						{
-							i--;
 							needhover = false;
 							ImGui::OpenPopup("ent_context");
 						}
