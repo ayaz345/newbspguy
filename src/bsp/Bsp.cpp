@@ -4774,8 +4774,15 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
 		size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
 
-		newTexData[-1] = 0x01;
-		newTexData[-2] = 0x00;
+		int w = newMipTex->nWidth;
+		int h = newMipTex->nHeight;
+		int sz = w * h;	   // miptex 0
+		int sz2 = sz / 4;  // miptex 1
+		int sz3 = sz2 / 4; // miptex 2
+		int sz4 = sz3 / 4; // miptex 3
+		// 256 palette
+		((unsigned char*)newTexData)[sz + sz2 + sz3 + sz4] = 0x00;
+		((unsigned char*)newTexData)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
 
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[0], mip[0], width * height);
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));

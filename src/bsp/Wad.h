@@ -69,12 +69,12 @@ struct WADTEX
 		int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
 		data = new unsigned char[szAll];
 
-		unsigned char* palleteOffset = data + tex->nOffsets[3] + (w >> 3) * (h >> 3) + 2;
 		unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 		memcpy(data, texdata, szAll);
 
-		palleteOffset[-1] = 0x01;
-		palleteOffset[-2] = 0x00;
+		// 256 palette
+		((unsigned char*)data)[sz + sz2 + sz3 + sz4] = 0x00;
+		((unsigned char*)data)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
 
 		needclean = true;
 	}

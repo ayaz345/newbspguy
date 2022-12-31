@@ -289,6 +289,11 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			miptex.nOffsets[3] = sizeof(BSPMIPTEX) + sz + sz2 + sz3;
 
 			myFile.write((char*)&miptex, sizeof(BSPMIPTEX));
+
+			// 256 palette
+			((unsigned char*)textures[i]->data)[sz + sz2 + sz3 + sz4] = 0x00;
+			((unsigned char*)textures[i]->data)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
+
 			myFile.write((char*)textures[i]->data, szAll);
 		}
 
