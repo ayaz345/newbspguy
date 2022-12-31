@@ -33,8 +33,34 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 
 	if (g_settings.start_at_entity)
 	{
-
 		for (auto ent : map->ents)
+		{
+			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
+			{
+				renderCameraOrigin = ent->getOrigin();
+			}
+		}
+		if (renderCameraOrigin == vec3())
+		{
+			for (auto ent : map->ents)
+			{
+				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_deathmatch")
+				{
+					renderCameraOrigin = ent->getOrigin();
+				}
+			}
+		}
+		if (renderCameraOrigin == vec3())
+		{
+			for (auto ent : map->ents)
+			{
+				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
+				{
+					renderCameraOrigin = ent->getOrigin();
+				}
+			}
+		}
+		/*for (auto ent : map->ents)
 		{
 			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
 			{
@@ -68,10 +94,10 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 						}
 					}
 				}
-	*/
-
+	
 				break;
 			}
+*/
 
 
 			//if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
@@ -98,8 +124,8 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 				}
 				*/
 				/*		break;
-					}*/
-		}
+					}
+		}*/
 	}
 
 	cameraOrigin = renderCameraOrigin;

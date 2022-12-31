@@ -4600,10 +4600,10 @@ void Gui::drawSettings()
 
 			ImGui::SameLine();
 
-			ImGui::Checkbox("Camera at player_start entity", &g_settings.start_at_entity);
+			ImGui::Checkbox("Move camera to first entity", &g_settings.start_at_entity);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("If enabled, camera moved to first player_start entity.");
+				ImGui::TextUnformatted("If enabled, camera moved to first player_start/player_deathmatch/trigger_camera entity.");
 				ImGui::EndTooltip();
 			}
 			ImGui::Separator();
