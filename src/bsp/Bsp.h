@@ -298,7 +298,7 @@ private:
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
 	void get_lightmaps(LIGHTMAP* outLightmaps, BSPMODEL* target, bool logged = false);
-	void resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, int& newLightmapSize);
+	void resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, COLOR3** newLightData, int& newLightDataSize);
 
 	bool load_lumps(std::string fname);
 
