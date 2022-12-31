@@ -4179,7 +4179,6 @@ void Renderer::deleteEnts()
 			{
 				reloadbspmdls = true;
 			}
-
 			deleteEnt(entIdx);
 		}
 
@@ -4187,6 +4186,8 @@ void Renderer::deleteEnts()
 		{
 			reloadBspModels();
 		}
+
+		clearSelection();
 	}
 }
 

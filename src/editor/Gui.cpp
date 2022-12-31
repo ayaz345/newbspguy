@@ -523,7 +523,7 @@ void Gui::draw3dContextMenus()
 		return;
 
 	int entIdx = app->pickInfo.GetSelectedEnt();
-
+	
 	if (app->originHovered && entIdx >= 0)
 	{
 		Entity* ent = map->ents[entIdx];
