@@ -1248,7 +1248,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 		else
 		{
 			BSPMIPTEX* tex = (BSPMIPTEX*)(mapA.textures + offset);
-			int sz = getBspTextureSize(tex);
+			int sz = mapA.getBspTextureSize(i);
 			//memset(tex->nOffsets, 0, sizeof(unsigned int) * 4);
 
 			mipTexOffsets[newTexCount] = (int)(mipTexWritePtr - newMipTexData);
@@ -1269,7 +1269,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 		{
 			bool isUnique = true;
 			BSPMIPTEX* tex = (BSPMIPTEX*)(mapB.textures + offset);
-			int sz = getBspTextureSize(tex);
+			int sz = mapB.getBspTextureSize(i);
 
 			for (int k = 0; k < mapA.textureCount; k++)
 			{

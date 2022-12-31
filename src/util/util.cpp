@@ -263,7 +263,7 @@ std::string trimSpaces(std::string s)
 	return s;
 }
 
-int getBspTextureSize(BSPMIPTEX* bspTexture)
+int getTextureSizeInBytes(BSPMIPTEX* bspTexture)
 {
 	int sz = sizeof(BSPMIPTEX);
 	if (bspTexture->nOffsets[0] > 0)

@@ -1597,7 +1597,7 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 					// TODO: delete all frames if none are used
 					continue;
 				}
-				removeSize += getBspTextureSize(tex) + sizeof(int);
+				removeSize += getBspTextureSize(i) + sizeof(int);
 			}
 			removeCount++;
 		}
@@ -1625,7 +1625,7 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 		else
 		{
 			BSPMIPTEX* tex = (BSPMIPTEX*)(textures + oldOffset);
-			int sz = getBspTextureSize(tex);
+			int sz = getBspTextureSize(i);
 
 			memcpy(newTexData + newOffset, textures + oldOffset, sz);
 			texHeader[k + 1] = newOffset;
@@ -2522,7 +2522,7 @@ void Bsp::write(const std::string& path)
 
 		for (int m = 0; m < lightPixels; m++)
 		{
-			freelighting[m] = (oldLight[m].r + oldLight[m].g + oldLight[m].b) / 3;
+			freelighting[m] = (unsigned char)(oldLight[m].r + oldLight[m].g + oldLight[m].b) / 3;
 		}
 
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels;
@@ -2864,9 +2864,12 @@ void Bsp::write(const std::string& path)
 		delete[] freelighting;
 		lumps[LUMP_LIGHTING] = (unsigned char*)oldLighting;
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightDataLength * sizeof(COLOR3);
-		for (int n = 0; n < faceCount; n++)
+		if (lightmap_samples == 1)
 		{
-			faces[n].nLightmapOffset = faces[n].nLightmapOffset / sizeof(COLOR3);
+			for (int n = 0; n < faceCount; n++)
+			{
+				faces[n].nLightmapOffset = faces[n].nLightmapOffset * sizeof(COLOR3);
+			}
 		}
 	}
 
@@ -2893,20 +2896,20 @@ bool Bsp::load_lumps(std::string fpath)
 	if (bsp_header.nVersion == '2PSB')
 	{
 		is_bsp2 = true;
-		logf("Found true 'BSP2' map format.\n");
+		logf("Found 'BSP2' map format.\n");
 	}
 
 	if (bsp_header.nVersion == 'BSP2')
 	{
 		is_bsp2 = true;
 		is_bsp2_old = true;
-		logf("Found old '2PSB' map format, unsupported?\n");
+		logf("Found old '2PSB' (bsp29a) map format\n");
 	}
 
 	if (bsp_header.nVersion == 29)
 	{
 		is_bsp29 = true;
-		logf("Found old 'BSP29' map format.\n");
+		logf("Found 'BSP29' map format.\n");
 	}
 
 	for (int i = 0; i < HEADER_LUMPS; i++)
@@ -4543,7 +4546,7 @@ BSPMIPTEX* Bsp::find_embedded_wad_texture(const char* name, int& texid)
 		if (oldOffset != -1)
 		{
 			BSPMIPTEX* oldTex = (BSPMIPTEX*)(textures + oldOffset);
-			if (oldTex->szName[0] != '\0' && strcasecmp(name, oldTex->szName) == 0 && oldTex->nOffsets[0] == 0)
+			if (oldTex->szName[0] != '\0' && strcasecmp(name, oldTex->szName) == 0 && oldTex->nOffsets[0] <= 0)
 			{
 				texid = i;
 				return oldTex;
@@ -4770,6 +4773,9 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
 		newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
 		size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
+
+		newTexData[-1] = 0x01;
+		newTexData[-2] = 0x00;
 
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[0], mip[0], width * height);
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
@@ -6360,6 +6366,118 @@ void Bsp::ExportPortalFile()
 	targetFile.flush();*/
 }
 
+void Bsp::ExportExtFile()
+{
+	if (bsp_path.size() < 4)
+	{
+		logf("ExportExtFile: Invalid filename!\n");
+		return;
+	}
+
+	std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4);
+	std::string targetFileName = targetMapFileName + "_nolight.ext";
+	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
+	if (!targetFile.is_open())
+	{
+		logf("Failed to open extents file for writing:\n{}\n", targetFileName);
+		return;
+	}
+
+	logf("Save map copy to {}_nolight.bsp", targetFileName);
+	write(targetMapFileName + "_nolight.bsp");
+
+	Bsp* tmpBsp = new Bsp(targetMapFileName + "_nolight.bsp");
+
+
+	logf("Remove temp file\n");
+
+	removeFile(targetMapFileName + "_nolight.bsp");
+
+	logf("Remove light data from {}\n", targetMapFileName + "_nolight.bsp");
+
+	tmpBsp->lumps[LUMP_LIGHTING] = NULL;
+	tmpBsp->bsp_header.lump[LUMP_LIGHTING].nOffset = 0;
+	tmpBsp->bsp_header.lump[LUMP_LIGHTING].nLength = 0;
+
+	for (int i = 0; i < tmpBsp->faceCount; i++)
+	{
+		faces[i].nLightmapOffset = -1;
+	}
+
+	tmpBsp->update_lump_pointers();
+
+	logf("Save map without lightdata to {}_nolight.bsp", targetMapFileName);
+
+	tmpBsp->write(targetMapFileName + "_nolight.bsp");
+
+	logf("Writing extents file to {}\n", targetFileName);
+
+	targetFile << fmt::format("{}\n", faceCount);
+	for (int i = 0; i < faceCount; i++)
+	{
+		int mins[2]; int maxs[2];
+		GetFaceExtents(this, i, mins, maxs);
+		targetFile << fmt::format("{} {} {} {}\n", mins[0], mins[1], maxs[0], maxs[1]);
+	}
+
+	logf("Writing all external textures to {}\n", targetMapFileName + "_nolight.wa_");
+	Wad* tmpWad = new Wad();
+
+	std::vector<std::string> addedTextures;
+	std::vector<WADTEX*> outTextures;
+
+	int missingTex = 0;
+
+	for (int i = 0; i < faceCount; i++)
+	{
+		BSPFACE32& face = faces[i];
+		BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
+		if (info.iMiptex >= 0)
+		{
+			int texOffset = ((int*)textures)[info.iMiptex + 1];
+			if (texOffset >= 0)
+			{
+				BSPMIPTEX& tex = *((BSPMIPTEX*)(textures + texOffset));
+				if (tex.nOffsets[0] <= 0 && tex.szName[0] != '\0')
+				{
+					if (std::find(addedTextures.begin(), addedTextures.end(), tex.szName) != addedTextures.end())
+					{
+						continue;
+					}
+					WADTEX* texture = NULL;
+					for (auto& wad : renderer->wads)
+					{
+						if (wad->hasTexture(tex.szName))
+						{
+							addedTextures.push_back(tex.szName);
+							texture = wad->readTexture(tex.szName);
+							outTextures.push_back(texture);
+							break;
+						}
+					}
+					if (!texture)
+					{
+						COLOR3* tmpColor = new COLOR3[tex.nWidth * tex.nHeight];
+						memset(tmpColor, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
+						texture = create_wadtex(tex.szName, tmpColor, tex.nWidth, tex.nHeight);
+						delete[] tmpColor;
+						missingTex++;
+
+						addedTextures.push_back(tex.szName);
+						outTextures.push_back(texture);
+					}
+				}
+			}
+		}
+	}
+
+	logf("Found {} external textures. Missing {} textures replaced by white.\n", addedTextures.size() - missingTex, missingTex);
+
+	tmpWad->write(targetMapFileName + "_nolight.wa_", outTextures);
+
+	delete tmpBsp;
+}
+
 struct ENTDATA
 {
 	int entid;
@@ -6555,6 +6673,33 @@ std::vector<int> Bsp::getFacesFromPlane(int iPlane)
 	return retval;
 }
 
+int Bsp::getBspTextureSize(int textureid)
+{
+	if (textureid < 0 || textureid >= textureCount)
+		return 0;
+
+	int iStartOffset = ((int*)textures)[textureid + 1];
+
+	if (iStartOffset < 0)
+		return 0;
+
+	BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
+
+
+	int sz = sizeof(BSPMIPTEX);
+	if (tex->nOffsets[0] > 0)
+	{
+		if (is_texture_with_pal(textureid))
+			sz += 256 * 3 + 4; // pallette + padding
+
+		for (int i = 0; i < MIPLEVELS; i++)
+		{
+			sz += (tex->nWidth >> i) * (tex->nHeight >> i);
+		}
+	}
+	return sz;
+}
+
 bool Bsp::is_texture_with_pal(int textureid)
 {
 	if (textureid < 0 || textureid >= textureCount)
@@ -6583,6 +6728,10 @@ bool Bsp::is_texture_with_pal(int textureid)
 		}
 
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + iStartOffset));
+
+		if (tex->nOffsets[0] <= 0) // wad texture
+			return true;
+
 		int lastMipSize = (tex->nWidth / 8) * (tex->nHeight / 8);
 		int palOffset = tex->nOffsets[3] + lastMipSize + 2;
 

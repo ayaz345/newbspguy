@@ -413,7 +413,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 		std::swap(palette[0], palette[255]);
 	}
 
-	int texDataSize = width * height + sizeof(COLOR3) * 256;
+	int texDataSize = width * height + 2 + sizeof(COLOR3) * 256 + 2;
 
 	// generate mipmaps
 	for (int i = 1; i < MIPLEVELS; i++)
@@ -461,12 +461,14 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
 
 	unsigned char* palleteOffset = newTexData + newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
-
 	memcpy(newTexData + newMipTex->nOffsets[0], mip[0], width * height);
 	memcpy(newTexData + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
 	memcpy(newTexData + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 	memcpy(newTexData + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 	memcpy(palleteOffset, palette, sizeof(COLOR3) * 256);
+
+	palleteOffset[-1] = 0x01;
+	palleteOffset[-2] = 0x00;
 
 	newMipTex->data = newTexData + sizeof(BSPMIPTEX);
 	newMipTex->needclean = true;

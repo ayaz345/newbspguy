@@ -1340,6 +1340,25 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
+			if ((map && !map->is_mdl_model) && ImGui::MenuItem("RAD .ext & .wa_ files", NULL))
+			{
+				if (map)
+				{
+					map->ExportExtFile();
+				}
+				else
+				{
+					logf("Select map first\n");
+				}
+			}
+
+			if ((map && !map->is_mdl_model) && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Export face extens (.ext) file for rad.exe");
+				ImGui::EndTooltip();
+			}
+
 
 			if ((map && !map->is_mdl_model) && ImGui::BeginMenu(".bsp MODEL with collision"))
 			{
@@ -2680,7 +2699,7 @@ void Gui::drawDebugWidget()
 				if (oldOffset > 0)
 				{
 					BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
-					if (bspTex->nOffsets[0] > -1)
+					if (bspTex->nOffsets[0] >= 0)
 					{
 						TotalInternalTextures++;
 					}

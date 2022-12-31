@@ -280,7 +280,7 @@ public:
 	void ExportToMapWIP(const std::string& path);
 
 	void ExportPortalFile();
-
+	void ExportExtFile();
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 
 	void hideEnts(bool hide = true);
@@ -291,6 +291,7 @@ public:
 	int getFaceFromPlane(int iPlane);
 	std::vector<int> getFacesFromPlane(int iPlane);
 	bool is_texture_with_pal(int textureid);
+	int getBspTextureSize(int textureid);
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves

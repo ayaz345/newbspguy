@@ -68,8 +68,14 @@ struct WADTEX
 		int sz4 = sz3 / 4; // miptex 3
 		int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
 		data = new unsigned char[szAll];
+
+		unsigned char* palleteOffset = data + tex->nOffsets[3] + (w >> 3) * (h >> 3) + 2;
 		unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);
 		memcpy(data, texdata, szAll);
+
+		palleteOffset[-1] = 0x01;
+		palleteOffset[-2] = 0x00;
+
 		needclean = true;
 	}
 	~WADTEX()

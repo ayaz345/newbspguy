@@ -26,6 +26,9 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	this->fullBrightBspShader = _fullBrightBspShader;
 	this->colorShader = _colorShader;
 	this->pointEntRenderer = _pointEntRenderer;
+	this->lightmaps = NULL;
+	this->glTexturesSwap = NULL;
+	this->glTextures = NULL;
 
 	renderCameraOrigin = renderCameraAngles = vec3();
 
@@ -94,38 +97,38 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 						}
 					}
 				}
-	
+
 				break;
 			}
 */
 
 
-			//if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
-			//{
-			//	this->renderCameraOrigin = ent->getOrigin();
-				/*
-				auto targets = ent->getTargets();
-				bool found = false;
-				for (auto ent2 : map->ents)
+//if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
+//{
+//	this->renderCameraOrigin = ent->getOrigin();
+	/*
+	auto targets = ent->getTargets();
+	bool found = false;
+	for (auto ent2 : map->ents)
+	{
+		if (found)
+			break;
+		if (ent2->hasKey("targetname"))
+		{
+			for (auto target : targets)
+			{
+				if (ent2->keyvalues["targetname"] == target)
 				{
-					if (found)
-						break;
-					if (ent2->hasKey("targetname"))
-					{
-						for (auto target : targets)
-						{
-							if (ent2->keyvalues["targetname"] == target)
-							{
-								found = true;
-								break;
-							}
-						}
-					}
+					found = true;
+					break;
 				}
-				*/
-				/*		break;
-					}
-		}*/
+			}
+		}
+	}
+	*/
+	/*		break;
+		}
+}*/
 	}
 
 	cameraOrigin = renderCameraOrigin;
@@ -391,6 +394,7 @@ void BspRenderer::reloadLightmaps()
 	if (lightmaps)
 	{
 		delete[] lightmaps;
+		lightmaps = NULL;
 	}
 	lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
 }
@@ -542,9 +546,6 @@ void BspRenderer::loadLightmaps()
 	}
 		}
 	);
-
-
-
 
 	glLightmapTextures = new Texture * [atlasTextures.size()];
 	for (unsigned int i = 0; i < atlasTextures.size(); i++)
@@ -791,7 +792,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		}
 
 
-		LightmapInfo* lmap = lightmapsGenerated ? &lightmaps[faceIdx] : NULL;
+		LightmapInfo* lmap = lightmapsGenerated && lightmaps ? &lightmaps[faceIdx] : NULL;
 
 		lightmapVert* verts = new lightmapVert[face.nEdges];
 		int vertCount = face.nEdges;
@@ -799,7 +800,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 		float lw = 0;
 		float lh = 0;
-		if (lightmapsGenerated)
+		if (lmap)
 		{
 			lw = (float)lmap->w / (float)LIGHTMAP_ATLAS_SIZE;
 			lh = (float)lmap->h / (float)LIGHTMAP_ATLAS_SIZE;
@@ -809,7 +810,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		bool hasLighting = face.nStyles[0] != 255 && face.nLightmapOffset >= 0 && !isSpecial;
 		for (int s = 0; s < MAXLIGHTMAPS; s++)
 		{
-			lightmapAtlas[s] = lightmapsGenerated ? glLightmapTextures[lmap->atlasId[s]] : NULL;
+			lightmapAtlas[s] = lmap ? glLightmapTextures[lmap->atlasId[s]] : NULL;
 		}
 
 		if (isSpecial)
@@ -867,7 +868,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			verts[e].v = fV * th;
 
 			// lightmap texture coords
-			if (hasLighting && lightmapsGenerated)
+			if (hasLighting && lmap)
 			{
 				float fLightMapU = lmap->midTexU + (fU - lmap->midPolyU) / 16.0f;
 				float fLightMapV = lmap->midTexV + (fV - lmap->midPolyV) / 16.0f;
@@ -1801,6 +1802,9 @@ BspRenderer::~BspRenderer()
 
 void BspRenderer::reuploadTextures()
 {
+	if (!glTexturesSwap)
+		return;
+
 	deleteTextures();
 
 	//loadTextures();
@@ -1825,15 +1829,13 @@ void BspRenderer::delayLoadData()
 {
 	if (!lightmapsUploaded && lightmapFuture.wait_for(std::chrono::milliseconds(0)) == std::future_status::ready)
 	{
-		if (lightmapsGenerated)
+		for (int i = 0; i < numLightmapAtlases; i++)
 		{
-			for (int i = 0; i < numLightmapAtlases; i++)
-			{
+			if (glLightmapTextures[i])
 				glLightmapTextures[i]->upload(GL_RGB);
-			}
-
-			preRenderFaces();
 		}
+
+		preRenderFaces();
 
 		lightmapsUploaded = true;
 	}
@@ -2240,7 +2242,8 @@ void BspRenderer::drawModel(RenderEnt* ent, bool transparent, bool highlight, bo
 							continue;
 						}
 					}
-					rgroup.lightmapAtlas[s]->bind(s + 1);
+					if (rgroup.lightmapAtlas[s])
+						rgroup.lightmapAtlas[s]->bind(s + 1);
 				}
 				else
 				{
