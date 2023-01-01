@@ -13,6 +13,7 @@
 #include "Wad.h"
 #include <vector>
 #include "forcecrc32.h"
+#include "quantizer.h"
 
 typedef std::map< std::string, vec3 > mapStringToVector;
 
@@ -4643,15 +4644,29 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		}
 	}
 
+
+
 	int texDataSize = 4; // 4 = padding
 	COLOR3 palette[256];
 	memset(&palette, 0, sizeof(COLOR3) * 256);
+
+
 	unsigned char* mip[MIPLEVELS] = { NULL };
 
 	if (data)
 	{
 		COLOR3* src = (COLOR3*)data;
 		int colorCount = 0;
+
+		if (is_bsp2 || is_bsp29)
+		{
+			memcpy(&palette, quakeDefaultPalette, 256);
+			colorCount = 256;
+			Quantizer* tmpCQuantizer = new Quantizer(256, 8);
+			tmpCQuantizer->SetColorTable(palette, 256);
+			tmpCQuantizer->ApplyColorTable((COLOR3*)data, width* height);
+			delete tmpCQuantizer;
+		}
 
 		// create pallete and full-rez mipmap
 		mip[0] = new unsigned char[width * height];
@@ -6712,6 +6727,9 @@ bool Bsp::is_texture_with_pal(int textureid)
 	if (textureid < 0 || textureid >= textureCount)
 		return false;
 
+	if (bsp_header.nVersion == 30)
+		return true;
+
 	int iStartOffset = ((int*)textures)[textureid + 1];
 	unsigned char* pStartOffset = (unsigned char*)textures + iStartOffset;
 	unsigned char* pEndOffset = (unsigned char*)textures + textureDataLength;
@@ -6743,7 +6761,7 @@ bool Bsp::is_texture_with_pal(int textureid)
 		int palOffset = tex->nOffsets[3] + lastMipSize + 2;
 
 		//logf("{}-{}={}\n", (void*)(pStartOffset + palOffset), (void*)(pEndOffset), (int)((pStartOffset + palOffset) - pEndOffset));
-		if (abs((pStartOffset + palOffset) - pEndOffset) == 768 + 2)
+		if (abs((pStartOffset + palOffset) - pEndOffset) >= 768) // +2, check for broken 
 		{
 			return true;
 		}

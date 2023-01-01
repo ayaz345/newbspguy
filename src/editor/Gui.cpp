@@ -497,6 +497,11 @@ void ExportModel(Bsp* map, int id, int ExportType)
 
 	tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
 
+	//for (int i = 0; i < tmpMap->leafCount; i++)
+	//{
+	//	tmpMap->leaves[i].nVisOffset = -1;
+	//}
+
 	tmpMap->move(-modelOrigin, 0, true, true);
 
 	tmpMap->update_lump_pointers();

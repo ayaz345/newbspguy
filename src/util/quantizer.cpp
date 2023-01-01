@@ -45,7 +45,7 @@ Quantizer::Quantizer(unsigned int nMaxColors, unsigned char nColorBits)
 	for (unsigned char i = 0; i <= m_nColorBits; i++)
 		m_pReducibleNodes[i] = 0;
 	m_nMaxColors = nMaxColors;
-	m_pPalette = new COLOR3[nMaxColors];
+	m_pPalette = NULL;
 }
 
 Quantizer::~Quantizer()
@@ -352,7 +352,7 @@ void Quantizer::AddColor(Node** ppNode, COLOR3 c, int nLevel, unsigned int* pLea
 	}
 	else
 	{
-		static unsigned char mask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+		static unsigned char mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 		int	shift = 7 - (int)nLevel;
 		int	nIndex = (((c.r & mask[nLevel]) >> shift) << 2) | (((c.g & mask[nLevel]) >> shift) << 1) | ((c.b & mask[nLevel]) >> shift);
 		AddColor(&((*ppNode)->pChild[nIndex]), c, nLevel + 1, pLeafCount, pReducibleNodes);
@@ -473,7 +473,7 @@ unsigned int Quantizer::GetNextBestLeaf(Node** pTree, unsigned int nLevel, COLOR
 	}
 	else
 	{
-		static unsigned char mask[8] = {0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01};
+		static unsigned char mask[8] = { 0x80, 0x40, 0x20, 0x10, 0x08, 0x04, 0x02, 0x01 };
 		int	shift = 7 - (int)nLevel;
 		int	nIndex = (((c.r & mask[nLevel]) >> shift) << 2) | (((c.g & mask[nLevel]) >> shift) << 1) | ((c.b & mask[nLevel]) >> shift);
 		if ((*pTree)->pChild[nIndex])
@@ -553,7 +553,8 @@ void Quantizer::GenColorTable()
 
 void Quantizer::ApplyColorTable(COLOR3* image, unsigned int size)
 {
-	ProcessImage(image, size);
+	if (!m_pPalette)
+		ProcessImage(image, size);
 
 	for (unsigned int i = 0; i < size; i++)
 	{
@@ -563,7 +564,8 @@ void Quantizer::ApplyColorTable(COLOR3* image, unsigned int size)
 
 void Quantizer::ApplyColorTableDither(COLOR3* image, unsigned int width, unsigned int height)
 {
-	ProcessImage(image, width * height);
+	if (!m_pPalette)
+		ProcessImage(image, width * height);
 
 	unsigned int* tmpcolorarray = new unsigned int[width * height];
 	FloydSteinbergDither((COLOR3*)image, width, height, tmpcolorarray);
