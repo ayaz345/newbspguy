@@ -3385,10 +3385,12 @@ bool Bsp::load_lumps(std::string fpath)
 		}
 	}
 
-	lightmap_samples = (int)(fLightSamples + 0.5f);
+	lightmap_samples = (int)round(fLightSamples);
+	if (lightmap_samples < 1)
+		lightmap_samples = 1;
 
 	if (g_settings.verboseLogs)
-		logf("lighting: {}\n", lightmap_samples == 1 ? "monochrome" : "colored");
+		logf("lighting: {}\n", lightmap_samples <= 1 ? "monochrome" : "colored");
 
 	if (lightmap_samples == 1)
 	{
