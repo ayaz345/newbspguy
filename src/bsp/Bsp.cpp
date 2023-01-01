@@ -1886,11 +1886,11 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 
 		if (!(target & CLEAN_LEAVES))
 		{
-			for (int n = 0; n < leafCount; n++)
+			for (unsigned int n = 1; n < newCounts.leaves; n++)
 			{
 				if (leaves[n].nMarkSurfaces > 0 && leaves[n].iFirstMarkSurface >= 0)
 				{
-					leaves[n].iFirstMarkSurface = remap.markSurfs[leaves[i].iFirstMarkSurface];
+					leaves[n].iFirstMarkSurface = remap.markSurfs[leaves[n].iFirstMarkSurface];
 				}
 			}
 		}
