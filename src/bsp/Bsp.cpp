@@ -3631,16 +3631,16 @@ bool sortModelInfos(const STRUCTUSAGE* a, const STRUCTUSAGE* b)
 bool Bsp::isValid()
 {
 	return modelCount < (int)MAX_MAP_MODELS
-		&& planeCount < MAX_MAP_PLANES
+		&& planeCount < (is_bsp2 ? INT_MAX : MAX_MAP_PLANES)
 		&& vertCount < MAX_MAP_VERTS
 		&& nodeCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES)
-		&& texinfoCount < MAX_MAP_TEXINFOS
-		&& faceCount < MAX_MAP_FACES
-		&& clipnodeCount < (int)(is_32bit_clipnodes ? INT_MAX : MAX_MAP_CLIPNODES)
-		&& leafCount < (int)MAX_MAP_LEAVES
-		&& marksurfCount < MAX_MAP_MARKSURFS
-		&& surfedgeCount < (int)MAX_MAP_SURFEDGES
-		&& edgeCount < (int)MAX_MAP_SURFEDGES
+		&& texinfoCount < (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS)
+		&& faceCount < (is_bsp2 ? INT_MAX : MAX_MAP_FACES)
+		&& clipnodeCount < (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES)
+		&& leafCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES)
+		&& marksurfCount < (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS)
+		&& surfedgeCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
+		&& edgeCount < (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES)
 		&& textureCount < (int)MAX_MAP_TEXTURES
 		&& lightDataLength < (int)MAX_MAP_LIGHTDATA
 		&& visDataLength < (int)MAX_MAP_VISDATA
@@ -3900,10 +3900,10 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 	{
 		g_sort_mode = sortMode;
 
-		if (planeCount >= MAX_MAP_PLANES || texinfoCount >= MAX_MAP_TEXINFOS || leafCount >= (int)MAX_MAP_LEAVES ||
+		if (planeCount >= (is_bsp2 ? INT_MAX : MAX_MAP_PLANES) || texinfoCount >= (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS) || leafCount >= (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES) ||
 			modelCount >= (int)MAX_MAP_MODELS || nodeCount >= (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES) || vertCount >= MAX_MAP_VERTS ||
-			faceCount >= MAX_MAP_FACES || clipnodeCount >= (int)(is_32bit_clipnodes ? INT_MAX : MAX_MAP_CLIPNODES) || marksurfCount >= MAX_MAP_MARKSURFS ||
-			surfedgeCount >= (int)MAX_MAP_SURFEDGES || edgeCount >= (int)MAX_MAP_EDGES || textureCount >= (int)MAX_MAP_TEXTURES ||
+			faceCount >= (is_bsp2 ? INT_MAX : MAX_MAP_FACES) || clipnodeCount >= (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES) || marksurfCount >= (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS) ||
+			surfedgeCount >= (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES) || (is_bsp2 ? INT_MAX : edgeCount >= (int)MAX_MAP_EDGES) || textureCount >= (int)MAX_MAP_TEXTURES ||
 			lightDataLength >= (int)MAX_MAP_LIGHTDATA || visDataLength >= (int)MAX_MAP_VISDATA)
 		{
 			logf("Unable to show model stats while BSP limits are exceeded.\n");
@@ -3949,16 +3949,16 @@ void Bsp::print_info(bool perModelStats, int perModelLimit, int sortMode)
 		logf(" Data Type     Current / Max       Fullness\n");
 		logf("------------  -------------------  --------\n");
 		print_stat("models", modelCount, MAX_MAP_MODELS, false);
-		print_stat("planes", planeCount, MAX_MAP_PLANES, false);
+		print_stat("planes", planeCount, (is_bsp2 ? INT_MAX : MAX_MAP_PLANES), false);
 		print_stat("vertexes", vertCount, MAX_MAP_VERTS, false);
 		print_stat("nodes", nodeCount, is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES, false);
-		print_stat("texinfos", texinfoCount, MAX_MAP_TEXINFOS, false);
-		print_stat("faces", faceCount, MAX_MAP_FACES, false);
+		print_stat("texinfos", texinfoCount, (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS), false);
+		print_stat("faces", faceCount, (is_bsp2 ? INT_MAX : MAX_MAP_FACES), false);
 		print_stat("clipnodes", clipnodeCount, (is_32bit_clipnodes ? INT_MAX : MAX_MAP_CLIPNODES), false);
-		print_stat("leaves", leafCount, MAX_MAP_LEAVES, false);
-		print_stat("marksurfaces", marksurfCount, MAX_MAP_MARKSURFS, false);
-		print_stat("surfedges", surfedgeCount, MAX_MAP_SURFEDGES, false);
-		print_stat("edges", edgeCount, MAX_MAP_SURFEDGES, false);
+		print_stat("leaves", leafCount, (is_bsp2 ? INT_MAX : MAX_MAP_LEAVES), false);
+		print_stat("marksurfaces", marksurfCount, (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS), false);
+		print_stat("surfedges", surfedgeCount, (is_bsp2 ? INT_MAX : MAX_MAP_SURFEDGES), false);
+		print_stat("edges", edgeCount, (is_bsp2 ? INT_MAX : MAX_MAP_EDGES), false);
 		print_stat("textures", textureCount, MAX_MAP_TEXTURES, false);
 		print_stat("lightdata", lightDataLength, MAX_MAP_LIGHTDATA, true);
 		print_stat("visdata", visDataLength, MAX_MAP_VISDATA, true);
@@ -4664,7 +4664,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			colorCount = 256;
 			Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 			tmpCQuantizer->SetColorTable(palette, 256);
-			tmpCQuantizer->ApplyColorTable((COLOR3*)data, width* height);
+			tmpCQuantizer->ApplyColorTable((COLOR3*)data, width * height);
 			delete tmpCQuantizer;
 		}
 
@@ -6013,27 +6013,27 @@ void Bsp::update_lump_pointers()
 	lightDataLength = bsp_header.lump[LUMP_LIGHTING].nLength;
 	visDataLength = bsp_header.lump[LUMP_VISIBILITY].nLength;
 
-	if (planeCount > MAX_MAP_PLANES)
+	if (planeCount > (is_bsp2 ? INT_MAX : MAX_MAP_PLANES))
 		logf("Overflowed Planes !!!\n");
-	if (texinfoCount > MAX_MAP_TEXINFOS)
+	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
 		logf("Overflowed texinfos !!!\n");
-	if (leafCount > (int)MAX_MAP_LEAVES)
+	if (leafCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_LEAVES))
 		logf("Overflowed leaves !!!\n");
 	if (modelCount > (int)MAX_MAP_MODELS)
 		logf("Overflowed models !!!\n");
-	if (texinfoCount > MAX_MAP_TEXINFOS)
+	if (texinfoCount > (is_bsp2 ? INT_MAX : MAX_MAP_TEXINFOS))
 		logf("Overflowed texinfos !!!\n");
 	if (nodeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_NODES))
 		logf("Overflowed nodes !!!\n");
 	if (vertCount > (is_bsp2 ? INT_MAX : MAX_MAP_VERTS))
 		logf("Overflowed verts !!!\n");
-	if (faceCount > MAX_MAP_FACES)
+	if (faceCount > (is_bsp2 ? INT_MAX : MAX_MAP_FACES))
 		logf("Overflowed faces !!!\n");
 	if (clipnodeCount > (int)(is_32bit_clipnodes ? INT_MAX : is_broken_clipnodes ? (MAX_MAP_CLIPNODES_DEFAULT * 2 - 15) : MAX_MAP_CLIPNODES))
 		logf("Overflowed clipnodes !!!\n");
 	if (marksurfCount > (is_bsp2 ? INT_MAX : MAX_MAP_MARKSURFS))
 		logf("Overflowed marksurfs !!!\n");
-	if (surfedgeCount > (int)MAX_MAP_SURFEDGES)
+	if (surfedgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_SURFEDGES))
 		logf("Overflowed surfedges !!!\n");
 	if (edgeCount > (is_bsp2 ? INT_MAX : (int)MAX_MAP_EDGES))
 		logf("Overflowed edges !!!\n");
