@@ -1,8 +1,10 @@
 # bspguy
 A tool for view and edit GoldSrc maps, and merging Sven Co-op maps without decompiling.
 
+This fork support multiple bsp formats: BSP2,2PSB,29,bsp30ex,broken clipnodes.
+
 # Usage
-To launch the 3D editor, drag and drop a .bsp file onto the executable, or "Open with" bspguy, or run `bspguy` without args.
+To launch the 3D editor, drag and drop a .bsp file onto the executable/window, or "Open with" bspguy, or run `bspguy` without args.
 
 See the [wiki](https://github.com/wootguy/bspguy/wiki) for tutorials.
 
@@ -23,13 +25,13 @@ Added new features in this fork:
 - Face Editor Update(better texture support, verts manual editor, etc, but without texture browser)
 - Export obj, wad, ent, bsp(like "valve hammer prefabs", model with working collision, can be used in any entity instead of MDL models)
 - Import wad, ent, bsp(in two modes)
-- Render bsp models(no MDL render at this time)
+- Render bsp and mdl models(MDL with no rendermodes/lightings support)
 - Full support for "angle" and "angles" keyvalue.
 - Render ents and models using these keyvalues.
 - Full featured LightMap Editor.
-- Sorting by fgd flags.
+- Updated Entity Report, added search by any parameters and sorting by fgd flags.
 - Added "undo/redo" for any manipulation. (Move ents/origin, etc)
-- Added move model(as option for transforming)
+- Added move model(as option for transforming, like move origin)
 - Added CRC-Spoofing(now possible to replace original map and play it on any servers)
 - Updated controls logic(now can't using hotkeys and manipulation, if any input/window is active)
 - Replaced and edited many functions(using static analysis proposals, compiler warnings)
@@ -43,12 +45,13 @@ Requires OpenGL 3.0 or later.
 
 ## First-time Setup
 1. Click `File` -> `Settings` -> `General`
-1. Set the `Game Directory` to your `Sven Co-op` folder path, then click `Apply Changes`.
-    - This will fix the missing textures.
-1. Click the `FGDs` tab and add the full path to your sven-coop.fgd (found in `Sven Co-op/svencoop/`). Click `Apply Changes`.
+2. Set the `Game Directory`, then click `Apply Changes`.
+3. Click the 'Assets' tab and enter full or relative path to mod directories (cstrike/valve and etc)
+    - This will fix the missing textures
+4. Click the `FGDs` tab and add the full or relative path to your mod_name.fgd. Click `Apply Changes`.
     - This will give point entities more colorful cubes, and enable the `Attributes` tab in the `Keyvalue editor`.
 
-bspguy saves configuration files to `%APPDATA%/bspguy` on Windows.
+bspguy saves configuration files to executable folder or in '%APPDATA%/bspguy` if not found.
 
 
 ## Command Line
@@ -70,26 +73,17 @@ Run 'bspguy <command> help' to read about a specific command.
 
 # Building the source
 ### Windows users:
-1. Install CMake and Visual Studio.
+1. Install Visual Studio 2022
     * Visual Studio: Make sure to checkmark "Desktop development with C++" if you're installing for the first time. 
-1. Download and extract [the source](https://github.com/wootguy/bspguy/archive/master.zip) somewhere
-1. Download [Dear ImGui](https://github.com/ocornut/imgui/releases/tag/v1.81) and extract into the `bspguy-master` folder. Rename to `imgui`.
-1. Download [GLFW](https://www.glfw.org/) and extract into the `bspguy-master` folder. Rename to `glfw`.
-1. Download [GLEW](http://glew.sourceforge.net/) (choose the  `Binaries 		Windows 32-bit and 64-bit` link) and extract into the `bspguy-master` folder. Rename to `glew`.
-1. Open a command prompt in the `bspguy-master` folder and run these commands:
-    ```
-    mkdir build && cd build
-    cmake ..
-    cmake --build . --config Release
-    ```
-    (you can open a command-prompt in the current folder by typing `cmd` into the address bar of the explorer window)
+2. Download and extract [the source](https://github.com/UnrealKaraulov/newbspguy/archive/master.zip) somewhere
+3. Open vs-project/bspguy.sln
 
 ### Linux users:
 1. Install Git, CMake, X11, GLFW, GLEW, and a compiler.
     * Debian: `sudo apt install build-essential git cmake libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libgl1-mesa-dev xorg-dev libglfw3-dev libglew-dev`
-1. Download the source: `git clone https://github.com/wootguy/bspguy.git`
-1. Download [Dear ImGui](https://github.com/ocornut/imgui/releases/tag/v1.81) and extract next to the `src` folder. Rename to `imgui`.
-1. Open a terminal in the `bspguy` folder and run these commands:
+2. Download the source: `git clone https://github.com/wootguy/bspguy.git`
+3. Download [Dear ImGui](https://github.com/ocornut/imgui/releases/tag/v1.81) and extract next to the `src` folder. Rename to `imgui`.
+4. Open a terminal in the `bspguy` folder and run these commands:
     ```
     mkdir build; cd build
     cmake .. -DCMAKE_BUILD_TYPE=RELEASE
