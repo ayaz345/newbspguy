@@ -1142,7 +1142,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	}
 	g_mutex_list[2].unlock();
 
-	if ((oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0) || nodeIdx < 0)
+	if (oldHullIdxStruct.modelIdx >= 0 && oldHullIdxStruct.hullIdx >= 0)
 	{
 		return;/* // Instead of cache.... Just do nothing.
 		RenderClipnodes* cachedRenderClip = &renderClipnodes[oldHullIdxStruct.modelIdx];
@@ -1191,6 +1191,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	std::vector<cVert> allVerts;
 	std::vector<cVert> wireframeVerts;
 	std::vector<FaceMath>& tfaceMaths = renderClip->faceMaths[hullIdx];
+	tfaceMaths.clear();
 
 	for (int m = 0; m < meshes.size(); m++)
 	{
@@ -2575,9 +2576,30 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 
 	if (clipnodesLoaded && (selectWorldClips || selectEntClips) && hullIdx != -1)
 	{
-		for (int i = 0; i < renderClipnodes[modelIdx].faceMaths[hullIdx].size(); i++)
+		int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
+		nodeBuffStr oldHullIdxStruct = nodeBuffStr();
+		oldHullIdxStruct.hullIdx = oldHullIdxStruct.modelIdx = -1;
+
+		g_mutex_list[2].lock();
+		if (hullIdx == 0 && clipnodesBufferCache.find(nodeIdx) != clipnodesBufferCache.end())
 		{
-			FaceMath& faceMath = renderClipnodes[modelIdx].faceMaths[hullIdx][i];
+			oldHullIdxStruct = clipnodesBufferCache[nodeIdx];
+		}
+		else if (hullIdx > 0 && nodesBufferCache.find(nodeIdx) != nodesBufferCache.end())
+		{
+			oldHullIdxStruct = nodesBufferCache[nodeIdx];
+		}
+		g_mutex_list[2].unlock();
+
+		if (oldHullIdxStruct.modelIdx < 0 || oldHullIdxStruct.hullIdx < 0)
+		{
+			oldHullIdxStruct.modelIdx = modelIdx;
+			oldHullIdxStruct.hullIdx = hullIdx;
+			generateClipnodeBufferForHull(modelIdx, hullIdx);
+		}
+		for (int i = 0; i < renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx].size(); i++)
+		{
+			FaceMath& faceMath = renderClipnodes[oldHullIdxStruct.modelIdx].faceMaths[oldHullIdxStruct.hullIdx][i];
 
 			float t = tempPickInfo.bestDist;
 			if (pickFaceMath(start, dir, faceMath, t))
