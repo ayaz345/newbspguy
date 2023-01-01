@@ -194,7 +194,7 @@ struct BSPPLANE
 		nType = 0;
 	}
 
-	BSPPLANE(vec3 normal, float dist, int type):vNormal(vec3())
+	BSPPLANE(vec3 normal, float dist, int type):vNormal(normal)
 	{
 		fDist = dist;
 		nType = type;
