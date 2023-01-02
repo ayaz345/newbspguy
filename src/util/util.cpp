@@ -268,7 +268,8 @@ int getTextureSizeInBytes(BSPMIPTEX* bspTexture)
 	int sz = sizeof(BSPMIPTEX);
 	if (bspTexture->nOffsets[0] > 0)
 	{
-		sz += 256 * 3 + 4; // pallette + padding
+		sz += sizeof(COLOR3) * 256; // pallette + padding
+		sz += sz % 4; // align by 4
 
 		for (int i = 0; i < MIPLEVELS; i++)
 		{

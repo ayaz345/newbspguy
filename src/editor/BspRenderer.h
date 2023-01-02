@@ -50,6 +50,20 @@ struct FaceMath
 	vec3 normal;
 	float fdist;
 	std::vector<vec2> localVerts;
+	FaceMath()
+	{
+		worldToLocal = mat4x4();
+		normal = vec3();
+		fdist = 0.0f;
+		localVerts = std::vector<vec2>();
+	}
+	~FaceMath()
+	{
+		worldToLocal = mat4x4();
+		normal = vec3();
+		fdist = 0.0f;
+		localVerts = std::vector<vec2>();
+	}
 };
 
 struct RenderEnt
@@ -73,10 +87,10 @@ struct RenderEnt
 	}
 	~RenderEnt()
 	{
-		/*if (mdl)
-			delete mdl;*/
-
+		modelIdx = 0;
+		pointEntCube = NULL;
 		mdl = NULL;
+		mdlFileName = "";
 	}
 };
 
@@ -92,6 +106,18 @@ struct RenderGroup
 	VertexBuffer* wireframeBuffer;
 	bool transparent;
 	bool special;
+	RenderGroup()
+	{
+		wireframeVerts = verts = NULL;
+		buffer = wireframeBuffer = NULL;
+		transparent = special = false;
+		vertCount = wireframeVertCount = 0;
+		texture = NULL;
+		for (int i = 0; i < MAXLIGHTMAPS; i++)
+		{
+			lightmapAtlas[i] = NULL;
+		}
+	}
 };
 
 struct RenderFace
@@ -99,6 +125,10 @@ struct RenderFace
 	int group;
 	int vertOffset;
 	int vertCount;
+	RenderFace()
+	{
+		group = vertOffset = vertCount = 0;
+	}
 };
 
 struct RenderModel
@@ -107,6 +137,12 @@ struct RenderModel
 	int renderFaceCount;
 	RenderFace* renderFaces;
 	RenderGroup* renderGroups;
+	RenderModel()
+	{
+		groupCount = renderFaceCount = 0;
+		renderFaces = NULL;
+		renderGroups = NULL;
+	}
 };
 
 struct RenderClipnodes
@@ -255,6 +291,7 @@ public:
 
 	void loadLightmaps();
 	void genRenderFaces(int& renderModelCount);
+	void addNewRenderFace();
 	void loadClipnodes();
 	void generateClipnodeBufferForHull(int modelIdx, int hullId);
 	void generateClipnodeBuffer(int modelIdx);

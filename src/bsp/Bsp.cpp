@@ -4704,8 +4704,14 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			}
 		}
 
-		texDataSize += width * height + sizeof(COLOR3) * 256;
-
+		if (is_bsp2 || is_bsp29)
+		{
+			texDataSize += width * height + sizeof(short);
+		}
+		else
+		{
+			texDataSize += width * height + sizeof(short) /* palette count */ + sizeof(COLOR3) * 256;
+		}
 		// generate mipmaps
 		for (int i = 1; i < MIPLEVELS; i++)
 		{
@@ -4752,6 +4758,8 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			texinfo.iMiptex = textureCount;
 	}
 
+	texDataSize += texDataSize % 4; // align by 4
+
 	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + texDataSize;
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];
 	memset(newTexData, 0, sizeof(newTexLumpSize));
@@ -4789,7 +4797,6 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		newMipTex->nOffsets[1] = newMipTex->nOffsets[0] + width * height;
 		newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
 		newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
-		size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
 
 		int w = newMipTex->nWidth;
 		int h = newMipTex->nHeight;
@@ -4797,16 +4804,20 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		int sz2 = sz / 4;  // miptex 1
 		int sz3 = sz2 / 4; // miptex 2
 		int sz4 = sz3 / 4; // miptex 3
+
 		// 256 palette
-		((unsigned char*)newTexData)[sz + sz2 + sz3 + sz4] = 0x00;
-		((unsigned char*)newTexData)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
+		((unsigned char*)newTexData + newTexOffset)[sz + sz2 + sz3 + sz4] = 0x00;
+		((unsigned char*)newTexData + newTexOffset)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
 
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[0], mip[0], width * height);
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
-		memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
-
+		if (!is_bsp2 && !is_bsp29)
+		{
+			size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
+			memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
+		}
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
 			delete[] mip[i];
@@ -6714,7 +6725,10 @@ int Bsp::getBspTextureSize(int textureid)
 	if (tex->nOffsets[0] > 0)
 	{
 		if (is_texture_with_pal(textureid))
-			sz += 256 * 3 + 4; // pallette + padding
+		{
+			sz += sizeof(short) /* pal size */ + sizeof(COLOR3) * 256; // pallette
+			sz += sz % 4; //  + padding align by 4
+		}
 
 		for (int i = 0; i < MIPLEVELS; i++)
 		{

@@ -66,7 +66,10 @@ struct WADTEX
 		int sz2 = sz / 4;  // miptex 1
 		int sz3 = sz2 / 4; // miptex 2
 		int sz4 = sz3 / 4; // miptex 3
-		int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+		int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) /* pal num */ + sizeof(COLOR3) * 256;
+
+		szAll += szAll % 4;
+
 		data = new unsigned char[szAll];
 
 		unsigned char* texdata = (unsigned char*)(((unsigned char*)tex) + tex->nOffsets[0]);

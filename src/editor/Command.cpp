@@ -379,7 +379,7 @@ void CreateBspModelCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
-
+	renderer->addNewRenderFace();
 	int aaatriggerIdx = getDefaultTextureIdx();
 
 	if (!initialized)
@@ -401,7 +401,7 @@ void CreateBspModelCommand::execute()
 	vec3 mins = vec3(-mdl_size, -mdl_size, -mdl_size);
 	vec3 maxs = vec3(mdl_size, mdl_size, mdl_size);
 	int modelIdx = map->create_solid(mins, maxs, aaatriggerIdx, empty);
-
+	BSPMODEL& model = map->models[modelIdx];
 	if (!initialized)
 	{
 		entData->addKeyvalue("model", "*" + std::to_string(modelIdx));
@@ -412,7 +412,19 @@ void CreateBspModelCommand::execute()
 	map->ents.push_back(newEnt);
 
 	g_app->deselectObject();
-	renderer->reload();
+
+	renderer->updateLightmapInfos();
+	renderer->calcFaceMaths();
+	renderer->preRenderFaces();
+	renderer->preRenderEnts();
+	renderer->reloadTextures();
+	renderer->reloadLightmaps();
+	renderer->addClipnodeModel(modelIdx);
+	renderer->refreshModel(modelIdx);
+	
+	//renderer->reload();
+
+
 	g_app->gui->refresh();
 
 	initialized = true;

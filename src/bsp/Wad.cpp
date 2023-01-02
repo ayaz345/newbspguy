@@ -209,7 +209,9 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	int sz2 = sz / 4;  // miptex 1
 	int sz3 = sz2 / 4; // miptex 2
 	int sz4 = sz3 / 4; // miptex 3
-	int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+	int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /*pal size*/ +sizeof(COLOR3) * 256;
+
+	szAll += szAll % 4;
 
 	unsigned char* data = new unsigned char[szAll];
 
@@ -260,7 +262,10 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 		int sz2 = sz / 4;  // miptex 1
 		int sz3 = sz2 / 4; // miptex 2
 		int sz4 = sz3 / 4; // miptex 3
-		int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+		int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /* pal num */ +sizeof(COLOR3) * 256;
+
+		szAll += szAll % 4; // align by 4
+
 		tSize += szAll;
 	}
 
@@ -280,7 +285,10 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			int sz2 = sz / 4;  // miptex 1
 			int sz3 = sz2 / 4; // miptex 2
 			int sz4 = sz3 / 4; // miptex 3
-			int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+			int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) /* pal num*/ + sizeof(COLOR3) * 256;
+
+			szAll += szAll % 4;  // align by 4
+
 			miptex.nWidth = w;
 			miptex.nHeight = h;
 			miptex.nOffsets[0] = sizeof(BSPMIPTEX);
@@ -308,7 +316,10 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			int sz2 = sz / 4;  // miptex 1
 			int sz3 = sz2 / 4; // miptex 2
 			int sz4 = sz3 / 4; // miptex 3
-			int szAll = sz + sz2 + sz3 + sz4 + 2 + 256 * 3 + 2;
+			int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /* pal num */ +sizeof(COLOR3) * 256;
+
+			szAll += szAll % 4; // align by 4
+
 			entry.nDiskSize = szAll + sizeof(BSPMIPTEX);
 			entry.nSize = szAll + sizeof(BSPMIPTEX);
 			entry.nType = 0x43; // Texture
@@ -418,7 +429,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 		std::swap(palette[0], palette[255]);
 	}
 
-	int texDataSize = width * height + 2 + sizeof(COLOR3) * 256 + 2;
+	int texDataSize = width * height + sizeof(short) /* pal num*/ + sizeof(COLOR3) * 256;
 
 	// generate mipmaps
 	for (int i = 1; i < MIPLEVELS; i++)
@@ -449,6 +460,8 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 			}
 		}
 	}
+
+	texDataSize += texDataSize % 4; //align by 4
 
 	size_t newTexLumpSize = sizeof(BSPMIPTEX) + texDataSize;
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];

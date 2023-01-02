@@ -29,6 +29,10 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	this->lightmaps = NULL;
 	this->glTexturesSwap = NULL;
 	this->glTextures = NULL;
+	this->faceMaths = NULL;
+	this->renderModels = NULL;
+	this->renderEnts = NULL;
+	this->renderClipnodes = NULL;
 
 	renderCameraOrigin = renderCameraAngles = vec3();
 
@@ -589,8 +593,6 @@ void BspRenderer::updateLightmapInfos()
 
 void BspRenderer::preRenderFaces()
 {
-	deleteRenderFaces();
-
 	genRenderFaces(numRenderModels);
 
 	for (int i = 0; i < numRenderModels; i++)
@@ -608,6 +610,8 @@ void BspRenderer::preRenderFaces()
 
 void BspRenderer::genRenderFaces(int& renderModelCount)
 {
+	deleteRenderFaces();
+
 	renderModels = new RenderModel[map->modelCount];
 	memset(renderModels, 0, sizeof(RenderModel) * map->modelCount);
 	renderModelCount = map->modelCount;
@@ -630,9 +634,20 @@ void BspRenderer::genRenderFaces(int& renderModelCount)
 		modelRenderGroups);
 }
 
+void BspRenderer::addNewRenderFace()
+{
+	RenderModel* tmpRenderModel = new RenderModel[map->modelCount + 1];
+	memcpy(tmpRenderModel, renderModels, map->modelCount + sizeof(RenderModel));
+	tmpRenderModel[numRenderModels] = RenderModel();
+	delete[] renderModels;
+	renderModels = tmpRenderModel;
+	numRenderModels = map->modelCount + 1;
+	logf("Added new solid render group.\n");
+}
+
 void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 {
-	if (!renderModel || !renderModel->renderGroups || !renderModel->renderFaces)
+	if (!renderModel)
 	{
 		return;
 	}
@@ -640,15 +655,25 @@ void BspRenderer::deleteRenderModel(RenderModel* renderModel)
 	{
 		RenderGroup& group = renderModel->renderGroups[k];
 
-		delete[] group.verts;
-		delete[] group.wireframeVerts;
+		if (group.verts)
+			delete[] group.verts;
+		if (group.wireframeVerts)
+			delete[] group.wireframeVerts;
+		if (group.buffer)
+			delete group.buffer;
+		if (group.wireframeBuffer)
+			delete group.wireframeBuffer;
 
-		delete group.buffer;
-		delete group.wireframeBuffer;
+		group.verts = NULL;
+		group.wireframeVerts = NULL;
+		group.buffer = NULL;
+		group.wireframeBuffer = NULL;
 	}
 
-	delete[] renderModel->renderGroups;
-	delete[] renderModel->renderFaces;
+	if (renderModel->renderGroups)
+		delete[] renderModel->renderGroups;
+	if (renderModel->renderFaces)
+		delete[] renderModel->renderFaces;
 
 	renderModel->renderGroups = NULL;
 	renderModel->renderFaces = NULL;
@@ -1001,11 +1026,11 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 
 	for (int i = 0; i < renderModel->groupCount; i++)
 	{
-		renderGroups[i].verts = new lightmapVert[renderGroupVerts[i].size()];
+		renderGroups[i].verts = new lightmapVert[renderGroupVerts[i].size() + 1];
 		renderGroups[i].vertCount = (int)renderGroupVerts[i].size();
 		memcpy(renderGroups[i].verts, &renderGroupVerts[i][0], renderGroups[i].vertCount * sizeof(lightmapVert));
 
-		renderGroups[i].wireframeVerts = new lightmapVert[renderGroupWireframeVerts[i].size()];
+		renderGroups[i].wireframeVerts = new lightmapVert[renderGroupWireframeVerts[i].size() + 1];
 		renderGroups[i].wireframeVertCount = (int)renderGroupWireframeVerts[i].size();
 		memcpy(renderGroups[i].wireframeVerts, &renderGroupWireframeVerts[i][0], renderGroups[i].wireframeVertCount * sizeof(lightmapVert));
 
@@ -1694,9 +1719,9 @@ void BspRenderer::calcFaceMaths()
 	numFaceMaths = map->faceCount;
 	faceMaths = new FaceMath[map->faceCount];
 
-	vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
-	vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
-	vec3 world_z = vec3(0.0f, 0.0f, 1.0f);
+	//vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
+	//vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
+	//vec3 world_z = vec3(0.0f, 0.0f, 1.0f);
 
 	for (int i = 0; i < map->faceCount; i++)
 	{
@@ -1706,6 +1731,16 @@ void BspRenderer::calcFaceMaths()
 
 void BspRenderer::refreshFace(int faceIdx)
 {
+	if (faceIdx >= numFaceMaths)
+	{
+		return;
+		/*FaceMath* tmpfaceMaths = new FaceMath[faceIdx + 1]{};
+		memcpy(tmpfaceMaths, faceMaths, faceIdx * sizeof(FaceMath));
+		delete[] faceMaths;
+		faceMaths = tmpfaceMaths;
+		numFaceMaths = faceIdx;*/
+	}
+
 	const vec3 world_x = vec3(1.0f, 0.0f, 0.0f);
 	const vec3 world_y = vec3(0.0f, 1.0f, 0.0f);
 	const vec3 world_z = vec3(0.0f, 0.0f, 1.0f);

@@ -528,7 +528,7 @@ void Gui::draw3dContextMenus()
 		return;
 
 	int entIdx = app->pickInfo.GetSelectedEnt();
-	
+
 	if (app->originHovered && entIdx >= 0)
 	{
 		Entity* ent = map->ents[entIdx];
@@ -5812,7 +5812,7 @@ void Gui::drawEntityReport()
 		else
 		{
 			ImGui::BeginGroup();
-			static int startFrom = 0;
+			static float startFrom = 0.0f;
 			static int MAX_FILTERS = 1;
 			static std::vector<std::string> keyFilter = std::vector<std::string>();
 			static std::vector<std::string> valueFilter = std::vector<std::string>();
@@ -5953,10 +5953,10 @@ void Gui::drawEntityReport()
 
 			ImGuiListClipper clipper;
 
-			if (startFrom >= 0)
+			if (startFrom >= 0.0f)
 			{
 				ImGui::SetScrollY(startFrom);
-				startFrom = -1;
+				startFrom = -1.0f;
 			}
 
 			clipper.Begin((int)visibleEnts.size());
@@ -6254,8 +6254,8 @@ void Gui::drawEntityReport()
 			if (ImGui::Button("SHOW ENT"))
 			{
 				startFrom = (app->pickInfo.GetSelectedEnt() - 8) * clipper.ItemsHeight;
-				if (startFrom < 0)
-					startFrom = 0;
+				if (startFrom < 0.0f)
+					startFrom = 0.0f;
 			}
 
 			ImGui::EndChild();
