@@ -379,7 +379,7 @@ void CreateBspModelCommand::execute()
 	BspRenderer* renderer = getBspRenderer();
 	if (!renderer)
 		return;
-	renderer->addNewRenderFace();
+	//renderer->addNewRenderFace();
 	int aaatriggerIdx = getDefaultTextureIdx();
 
 	if (!initialized)
@@ -413,6 +413,16 @@ void CreateBspModelCommand::execute()
 
 	g_app->deselectObject();
 
+	//renderer->updateLightmapInfos();
+	//renderer->calcFaceMaths();
+	//renderer->preRenderFaces();
+	//renderer->preRenderEnts();
+	//renderer->reloadTextures();
+	//renderer->reloadLightmaps();
+	//renderer->addClipnodeModel(modelIdx);
+	//renderer->refreshModel(modelIdx);
+	//
+
 	renderer->updateLightmapInfos();
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
@@ -420,8 +430,6 @@ void CreateBspModelCommand::execute()
 	renderer->reloadTextures();
 	renderer->reloadLightmaps();
 	renderer->addClipnodeModel(modelIdx);
-	renderer->refreshModel(modelIdx);
-	
 	//renderer->reload();
 
 
