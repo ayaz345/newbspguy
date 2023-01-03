@@ -1534,6 +1534,10 @@ void BspRenderer::refreshEnt(int entIdx)
 {
 	if (entIdx < 0 || !pointEntRenderer)
 		return;
+	int skin = -1;
+	int sequence = -1;
+	int body = -1;
+
 	Entity* ent = map->ents[entIdx];
 	BSPMODEL mdl = map->models[ent->getBspModelIdx() > 0 ? ent->getBspModelIdx() : 0];
 	renderEnts[entIdx].modelIdx = ent->getBspModelIdx();
@@ -1552,53 +1556,6 @@ void BspRenderer::refreshEnt(int entIdx)
 		renderEnts[entIdx].modelMatAngles.translate(origin.x, origin.z, -origin.y);
 		renderEnts[entIdx].modelMatOrigin = renderEnts[entIdx].modelMatAngles;
 		renderEnts[entIdx].offset = origin;
-	}
-
-	if (!ent->isBspModel())
-	{
-		if (ent->hasKey("model") || g_app->fgd)
-		{
-			std::string modelpath = std::string();
-
-			if (ent->hasKey("model") && ent->keyvalues["model"].size())
-			{
-				modelpath = ent->keyvalues["model"];
-			}
-
-			if (g_app->fgd && modelpath.empty())
-			{
-				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
-				if (fgdClass && !fgdClass->model.empty())
-				{
-					modelpath = fgdClass->model;
-				}
-			}
-
-			if (renderEnts[entIdx].mdlFileName.size() && !modelpath.size() || renderEnts[entIdx].mdlFileName != modelpath)
-			{
-				renderEnts[entIdx].mdlFileName = modelpath;
-				std::string lowerpath = toLowerCase(modelpath);
-				std::string newModelPath;
-				if (lowerpath.ends_with(".mdl"))
-				{
-					if (FindPathInAssets(map, modelpath, newModelPath))
-					{
-						renderEnts[entIdx].mdl = AddNewModelToRender(newModelPath.c_str());
-						renderEnts[entIdx].mdl->UpdateModelMeshList();
-					}
-					else
-					{
-						if (modelpath.size())
-							FindPathInAssets(map, modelpath, newModelPath, true);
-						renderEnts[entIdx].mdl = NULL;
-					}
-				}
-				else
-				{
-					renderEnts[entIdx].mdl = NULL;
-				}
-			}
-		}
 	}
 
 	for (unsigned int i = 0; i < ent->keyOrder.size(); i++)
@@ -1634,7 +1591,6 @@ void BspRenderer::refreshEnt(int entIdx)
 
 	if (ent->hasKey("sequence") || g_app->fgd)
 	{
-		int sequence = 0;
 		if (ent->hasKey("sequence") && isNumeric(ent->keyvalues["sequence"]))
 		{
 			sequence = atoi(ent->keyvalues["sequence"].c_str());
@@ -1647,16 +1603,10 @@ void BspRenderer::refreshEnt(int entIdx)
 				sequence = fgdClass->modelSequence;
 			}
 		}
-
-		if (renderEnts[entIdx].mdl)
-		{
-			renderEnts[entIdx].mdl->SetSequence(sequence);
-		}
 	}
 
 	if (ent->hasKey("skin") || g_app->fgd)
 	{
-		int skin = 0;
 		if (ent->hasKey("skin") && isNumeric(ent->keyvalues["skin"]))
 		{
 			skin = atoi(ent->keyvalues["skin"].c_str());
@@ -1669,16 +1619,10 @@ void BspRenderer::refreshEnt(int entIdx)
 				skin = fgdClass->modelSkin;
 			}
 		}
-
-		if (renderEnts[entIdx].mdl)
-		{
-			renderEnts[entIdx].mdl->SetSkin(skin);
-		}
 	}
 
 	if (ent->hasKey("body") || g_app->fgd)
 	{
-		int body = 0;
 		if (ent->hasKey("body") && isNumeric(ent->keyvalues["body"]))
 		{
 			body = atoi(ent->keyvalues["body"].c_str());
@@ -1691,7 +1635,66 @@ void BspRenderer::refreshEnt(int entIdx)
 				body = fgdClass->modelBody;
 			}
 		}
+	}
 
+
+
+	if (!ent->isBspModel())
+	{
+		if (ent->hasKey("model") || g_app->fgd)
+		{
+			std::string modelpath = std::string();
+
+			if (ent->hasKey("model") && ent->keyvalues["model"].size())
+			{
+				modelpath = ent->keyvalues["model"];
+			}
+
+			if (g_app->fgd && modelpath.empty())
+			{
+				FgdClass* fgdClass = g_app->fgd->getFgdClass(ent->keyvalues["classname"]);
+				if (fgdClass && !fgdClass->model.empty())
+				{
+					modelpath = fgdClass->model;
+				}
+			}
+
+			if (renderEnts[entIdx].mdlFileName.size() && !modelpath.size() || renderEnts[entIdx].mdlFileName != modelpath)
+			{
+				renderEnts[entIdx].mdlFileName = modelpath;
+				std::string lowerpath = toLowerCase(modelpath);
+				std::string newModelPath;
+				if (lowerpath.ends_with(".mdl"))
+				{
+					if (FindPathInAssets(map, modelpath, newModelPath))
+					{
+						renderEnts[entIdx].mdl = AddNewModelToRender(newModelPath.c_str(), body + sequence * 100 + skin * 1000);
+						renderEnts[entIdx].mdl->UpdateModelMeshList();
+					}
+					else
+					{
+						if (modelpath.size())
+							FindPathInAssets(map, modelpath, newModelPath, true);
+						renderEnts[entIdx].mdl = NULL;
+					}
+				}
+				else
+				{
+					renderEnts[entIdx].mdl = NULL;
+				}
+			}
+		}
+	}
+
+	if (skin != -1)
+	{
+		if (renderEnts[entIdx].mdl)
+		{
+			renderEnts[entIdx].mdl->SetSkin(skin);
+		}
+	}
+	if (body != -1)
+	{
 		if (renderEnts[entIdx].mdl && renderEnts[entIdx].mdl->m_pstudiohdr)
 		{
 			auto* pbodypart = (mstudiobodyparts_t*)((unsigned char*)renderEnts[entIdx].mdl->m_pstudiohdr + renderEnts[entIdx].mdl->m_pstudiohdr->bodypartindex);
@@ -1701,11 +1704,15 @@ void BspRenderer::refreshEnt(int entIdx)
 				body /= pbodypart->nummodels;
 				pbodypart++;
 			}
-
 		}
 	}
-
-
+	if (sequence != -1)
+	{
+		if (renderEnts[entIdx].mdl)
+		{
+			renderEnts[entIdx].mdl->SetSequence(sequence);
+		}
+	}
 	if (setAngles)
 	{
 		setRenderAngles(entIdx, renderEnts[entIdx].angles);

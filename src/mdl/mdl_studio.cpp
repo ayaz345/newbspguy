@@ -1252,9 +1252,9 @@ int StudioModel::SetSkin(int iValue)
 
 std::map<int, StudioModel *> mdl_models;
 
-StudioModel * AddNewModelToRender(const char * path)
+StudioModel * AddNewModelToRender(const char * path,unsigned int sum)
 {
-	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path, strlen(path), UINT32_C(0xFFFFFFFF));
+	unsigned int crc32 = GetCrc32InMemory((unsigned char*)path, strlen(path), sum);
 
 	if (mdl_models.find(crc32) != mdl_models.end())
 	{
