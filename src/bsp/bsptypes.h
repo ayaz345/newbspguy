@@ -188,13 +188,13 @@ struct BSPPLANE
 	// returns true if the plane was flipped
 	bool update(vec3 newNormal, float fdist);
 
-	BSPPLANE():vNormal(vec3())
+	BSPPLANE() :vNormal(vec3())
 	{
 		fDist = 0.0f;
 		nType = 0;
 	}
 
-	BSPPLANE(vec3 normal, float dist, int type):vNormal(normal)
+	BSPPLANE(vec3 normal, float dist, int type) :vNormal(normal)
 	{
 		fDist = dist;
 		nType = type;
@@ -218,6 +218,11 @@ struct BSPTEXTUREINFO
 	int iMiptex;
 	int nFlags;
 };
+
+bool operator < (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
+bool operator > (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
+bool operator ==(const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2);
+
 
 struct BSPMIPTEX
 {

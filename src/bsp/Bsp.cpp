@@ -1802,6 +1802,48 @@ unsigned int Bsp::remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, 
 
 	return (unsigned int)(oldVisLength - newVisLen);*/
 }
+bool operator < (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2)
+{
+	return memcmp(&struct1, &struct2, sizeof(BSPTEXTUREINFO)) < 0;
+}
+
+bool operator > (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2)
+{
+	return memcmp(&struct1, &struct2, sizeof(BSPTEXTUREINFO)) > 0;
+}
+
+bool operator == (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2)
+{
+	return memcmp(&struct1,&struct2,sizeof(BSPTEXTUREINFO)) == 0;
+}
+
+void Bsp::clean_unused_texinfos()
+{
+	int unusedtexinfos = 0;
+	for (int i = 0; i < faceCount; i++)
+	{
+		if (faces[i].iTextureInfo >= 0)
+		{
+			int texInfoIdx = faces[i].iTextureInfo;
+			BSPTEXTUREINFO& texInfo = texinfos[texInfoIdx];
+			for (int n = 0; n < texinfoCount; n++)
+			{
+				if (n != texInfoIdx && texInfo == texinfos[n])
+				{
+					for (int z = 0; z < faceCount; z++)
+					{
+						if (z == i)
+							continue;
+						if (faces[z].iTextureInfo == n)
+						{
+							faces[z].iTextureInfo = texInfoIdx;
+						}
+					}
+				}
+			}
+		}
+	}
+}
 
 STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 {
@@ -1809,6 +1851,9 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 		return STRUCTCOUNT();
 
 	update_lump_pointers();
+
+	if (g_settings.mark_unused_texinfos)
+		clean_unused_texinfos();
 
 	// marks which structures should not be moved
 	STRUCTUSAGE usedStructures(this);

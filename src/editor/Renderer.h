@@ -95,6 +95,7 @@ struct AppSettings
 	bool limits_open;
 	bool entreport_open;
 	bool vsync;
+	bool mark_unused_texinfos;
 	bool show_transform_axes;
 	bool start_at_entity;
 	bool backUpMap;

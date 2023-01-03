@@ -150,6 +150,7 @@ void AppSettings::loadDefault()
 		| RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED;
 
 	vsync = true;
+	mark_unused_texinfos = false;
 	start_at_entity = false;
 	backUpMap = true;
 	preserveCrc32 = false;
@@ -334,6 +335,10 @@ void AppSettings::load()
 		else if (key == "vsync")
 		{
 			g_settings.vsync = atoi(val.c_str()) != 0;
+		}
+		else if (key == "mark_unused_texinfos")
+		{
+			g_settings.mark_unused_texinfos = atoi(val.c_str()) != 0;
 		}
 		else if (key == "show_transform_axes")
 		{
@@ -742,6 +747,7 @@ void AppSettings::save(std::string path)
 	}
 
 	file << "vsync=" << g_settings.vsync << std::endl;
+	file << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << std::endl;
 	file << "show_transform_axes=" << g_settings.show_transform_axes << std::endl;
 	file << "start_at_entity=" << g_settings.start_at_entity << std::endl;
 #ifdef NDEBUG

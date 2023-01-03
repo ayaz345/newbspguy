@@ -4710,11 +4710,20 @@ void Gui::drawSettings()
 		}
 		else if (settingsTab == 3)
 		{
-			ImGui::SetNextItemWidth(pathWidth);
+			ImGui::SetNextItemWidth(pathWidth / 2);
 			ImGui::Checkbox("Strip wads after load", &g_settings.stripWad);
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Automatically strip wad filenames. (path/to/wadname.wad to wadname.wad)");
+				ImGui::EndTooltip();
+			}
+			ImGui::SameLine();
+
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::Checkbox("Mark texinfos for clean", &g_settings.mark_unused_texinfos);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Additional cleanup option, mark more texinfos for delete.");
 				ImGui::EndTooltip();
 			}
 			ImGui::Separator();
