@@ -7404,12 +7404,11 @@ void Gui::drawTextureTool()
 							validTexture = true;
 							newMiptex = map->add_texture(textureName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
 
-							mapRenderer->reloadTextures();
+							mapRenderer->loadTextures();
+							mapRenderer->reuploadTextures();
 
 							delete[] imageData;
 							delete wadTex;
-							ImGui::End();
-							return;
 						}
 					}
 				}
