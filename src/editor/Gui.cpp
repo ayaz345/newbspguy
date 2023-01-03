@@ -634,27 +634,27 @@ void Gui::draw3dContextMenus()
 			if (modelIdx < 0 && ent->isWorldSpawn())
 				modelIdx = 0;
 
-			if (modelIdx != 0 || app->copiedEnt)
+			if (modelIdx != 0 || !app->copiedEnts.empty())
 			{
 				if (modelIdx != 0)
 				{
-					if (ImGui::MenuItem("Cut", "Ctrl+X", false, app->pickInfo.selectedEnts.size() == 1))
+					if (ImGui::MenuItem("Cut", "Ctrl+X", false, app->pickInfo.selectedEnts.size()))
 					{
 						app->cutEnt();
 					}
-					if (ImGui::MenuItem("Copy", "Ctrl+C", false, app->pickInfo.selectedEnts.size() == 1))
+					if (ImGui::MenuItem("Copy", "Ctrl+C", false, app->pickInfo.selectedEnts.size()))
 					{
 						app->copyEnt();
 					}
 				}
 
-				if (app->copiedEnt)
+				if (!app->copiedEnts.empty())
 				{
-					if (ImGui::MenuItem("Paste", "Ctrl+V", false, app->copiedEnt))
+					if (ImGui::MenuItem("Paste", "Ctrl+V", false))
 					{
 						app->pasteEnt(false);
 					}
-					if (ImGui::MenuItem("Paste at original origin", 0, false, app->copiedEnt))
+					if (ImGui::MenuItem("Paste at original origin", 0, false))
 					{
 						app->pasteEnt(true);
 					}
@@ -922,11 +922,11 @@ void Gui::draw3dContextMenus()
 
 		if (ImGui::BeginPopup("empty_context"))
 		{
-			if (ImGui::MenuItem("Paste", "Ctrl+V", false, app->copiedEnt))
+			if (ImGui::MenuItem("Paste", "Ctrl+V", false, app->copiedEnts.size()))
 			{
 				app->pasteEnt(false);
 			}
-			if (ImGui::MenuItem("Paste at original origin", 0, false, app->copiedEnt))
+			if (ImGui::MenuItem("Paste at original origin", 0, false, app->copiedEnts.size()))
 			{
 				app->pasteEnt(true);
 			}
@@ -1731,19 +1731,19 @@ void Gui::drawMenuBar()
 
 		ImGui::Separator();
 
-		if (ImGui::MenuItem("Cut", "Ctrl+X", false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size() == 1))
+		if (ImGui::MenuItem("Cut", "Ctrl+X", false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size()))
 		{
 			app->cutEnt();
 		}
-		if (ImGui::MenuItem("Copy", "Ctrl+C", false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size() == 1))
+		if (ImGui::MenuItem("Copy", "Ctrl+C", false, nonWorldspawnEntSelected && app->pickInfo.selectedEnts.size()))
 		{
 			app->copyEnt();
 		}
-		if (ImGui::MenuItem("Paste", "Ctrl+V", false, mapSelected && app->copiedEnt))
+		if (ImGui::MenuItem("Paste", "Ctrl+V", false, mapSelected && app->copiedEnts.size()))
 		{
 			app->pasteEnt(false);
 		}
-		if (ImGui::MenuItem("Paste at original origin", 0, false, entSelected && app->copiedEnt))
+		if (ImGui::MenuItem("Paste at original origin", 0, false, entSelected && app->copiedEnts.size()))
 		{
 			app->pasteEnt(true);
 		}

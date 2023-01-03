@@ -2499,8 +2499,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 	{
 		if (*tmpMap || *tmpMap == map)
 		{
-			tempPickInfo.selectedEnts.clear();
-			tempPickInfo.selectedEnts.push_back(0);
+			tempPickInfo.SetSelectedEnt(0);
 			*tmpMap = map;
 			foundBetterPick = true;
 		}
@@ -2535,8 +2534,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			{
 				if (!*tmpMap || *tmpMap == map)
 				{
-					tempPickInfo.selectedEnts.clear();
-					tempPickInfo.selectedEnts.push_back(i);
+					tempPickInfo.SetSelectedEnt(i);
 					*tmpMap = map;
 					foundBetterPick = true;
 				}
@@ -2550,8 +2548,7 @@ bool BspRenderer::pickPoly(vec3 start, const vec3& dir, int hullIdx, PickInfo& t
 			{
 				if (!*tmpMap || *tmpMap == map)
 				{
-					tempPickInfo.selectedEnts.clear();
-					tempPickInfo.selectedEnts.push_back(i);
+					tempPickInfo.SetSelectedEnt(i);
 					*tmpMap = map;
 					foundBetterPick = true;
 				}
@@ -2962,7 +2959,10 @@ int PickInfo::GetSelectedEnt()
 
 void PickInfo::AddSelectedEnt(int entIdx)
 {
-	selectedEnts.push_back(entIdx);
+	if (!IsSelectedEnt(entIdx))
+	{
+		selectedEnts.push_back(entIdx);
+	}
 	pickCount++;
 }
 

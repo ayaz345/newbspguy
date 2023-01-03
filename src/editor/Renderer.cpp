@@ -4083,40 +4083,70 @@ void Renderer::grabEnt()
 
 void Renderer::cutEnt()
 {
-	int entIdx = pickInfo.GetSelectedEnt();
-	if (entIdx <= 0)
+	auto ents = pickInfo.selectedEnts;
+	if (ents.empty())
 		return;
+
+	std::sort(ents.begin(), ents.end());
+	std::reverse(ents.begin(), ents.end());
+
 	Bsp* map = SelectedMap;
 	if (!map)
 		return;
 
-	if (copiedEnt)
-		delete copiedEnt;
-	copiedEnt = new Entity();
-	*copiedEnt = *map->ents[entIdx];
+	if (!copiedEnts.empty())
+	{
+		for (auto& ent : copiedEnts)
+		{
+			delete ent;
+		}
+	}
+	copiedEnts.clear();
 
-	DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", entIdx);
-	deleteCommand->execute();
-	map->getBspRender()->pushUndoCommand(deleteCommand);
+	for (int i = 0; i < ents.size(); i++)
+	{
+		if (ents[i] <= 0)
+			continue;
+		copiedEnts.push_back(new Entity(*map->ents[ents[i]]));
+		DeleteEntityCommand* deleteCommand = new DeleteEntityCommand("Cut Entity", ents[i]);
+		deleteCommand->execute();
+		map->getBspRender()->pushUndoCommand(deleteCommand);
+	}
 }
 
 void Renderer::copyEnt()
 {
-	int entIdx = pickInfo.GetSelectedEnt();
-	if (entIdx <= 0)
+	auto ents = pickInfo.selectedEnts;
+	if (ents.empty())
 		return;
 
-	if (copiedEnt)
-		delete copiedEnt;
+	std::sort(ents.begin(), ents.end());
+	std::reverse(ents.begin(), ents.end());
 
 	Bsp* map = SelectedMap;
-	copiedEnt = new Entity();
-	*copiedEnt = *map->ents[entIdx];
+	if (!map)
+		return;
+
+	if (!copiedEnts.empty())
+	{
+		for (auto& ent : copiedEnts)
+		{
+			delete ent;
+		}
+	}
+	copiedEnts.clear();
+
+	for (int i = 0; i < ents.size(); i++)
+	{
+		if (ents[i] <= 0)
+			continue;
+		copiedEnts.push_back(new Entity(*map->ents[ents[i]]));
+	}
 }
 
 void Renderer::pasteEnt(bool noModifyOrigin)
 {
-	if (!copiedEnt)
+	if (copiedEnts.empty())
 		return;
 
 	Bsp* map = SelectedMap;
@@ -4126,25 +4156,33 @@ void Renderer::pasteEnt(bool noModifyOrigin)
 		return;
 	}
 
-	Entity insertEnt;
-	insertEnt = *copiedEnt;
+	vec3 baseOrigin = getEntOrigin(map, copiedEnts[0]);
 
-	if (!noModifyOrigin)
+	for (int i = 0; i < copiedEnts.size(); i++)
 	{
-		// can't just set camera origin directly because solid ents can have (0,0,0) origins
-		vec3 tmpOrigin = getEntOrigin(map, &insertEnt);
-		vec3 modelOffset = getEntOffset(map, &insertEnt);
-		vec3 mapOffset = map->getBspRender()->mapOffset;
+		if (!noModifyOrigin)
+		{
+			// can't just set camera origin directly because solid ents can have (0,0,0) origins
+			vec3 tmpOrigin = getEntOrigin(map, copiedEnts[i]);
 
-		vec3 moveDist = (cameraOrigin + cameraForward * 100) - tmpOrigin;
-		vec3 newOri = (tmpOrigin + moveDist) - (modelOffset + mapOffset);
-		vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
-		insertEnt.setOrAddKeyvalue("origin", rounded.toKeyvalueString());
+			vec3 offset = getEntOrigin(map, copiedEnts[i]) - baseOrigin;
+
+			vec3 modelOffset = getEntOffset(map, copiedEnts[i]);
+			vec3 mapOffset = map->getBspRender()->mapOffset;
+
+			vec3 moveDist = (cameraOrigin + cameraForward * 100) - tmpOrigin;
+			vec3 newOri = (tmpOrigin + moveDist) - (modelOffset + mapOffset);
+
+			newOri += offset;
+
+			vec3 rounded = gridSnappingEnabled ? snapToGrid(newOri) : newOri;
+			copiedEnts[i]->setOrAddKeyvalue("origin", rounded.toKeyvalueString());
+		}
+
+		CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), copiedEnts[i]);
+		createCommand->execute();
+		map->getBspRender()->pushUndoCommand(createCommand);
 	}
-
-	CreateEntityCommand* createCommand = new CreateEntityCommand("Paste Entity", getSelectedMapId(), &insertEnt);
-	createCommand->execute();
-	map->getBspRender()->pushUndoCommand(createCommand);
 
 	clearSelection();
 	selectMap(map);
@@ -4170,13 +4208,11 @@ void Renderer::deleteEnts()
 	if (map && pickInfo.selectedEnts.size() > 0)
 	{
 		bool reloadbspmdls = false;
-		std::set<int> entList;
+		std::sort(pickInfo.selectedEnts.begin(), pickInfo.selectedEnts.end());
+		std::reverse(pickInfo.selectedEnts.begin(), pickInfo.selectedEnts.end());
 
-		//entList.insert_range(app->pickInfo.selectedEnts);
 
-		entList.insert(pickInfo.selectedEnts.begin(), pickInfo.selectedEnts.end());
-
-		for (auto entIdx : entList)
+		for (auto entIdx : pickInfo.selectedEnts)
 		{
 			if (entIdx < 0)
 				continue;

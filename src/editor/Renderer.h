@@ -280,7 +280,7 @@ public:
 	VertexBuffer* entConnections = NULL;
 	VertexBuffer* entConnectionPoints = NULL;
 
-	Entity* copiedEnt = NULL;
+	std::vector<Entity*> copiedEnts;
 
 	int oldLeftMouse;
 	int curLeftMouse;
