@@ -75,12 +75,13 @@ private:
 	bool showImportMapWidget = false;
 	bool showMergeMapWidget = false;
 	bool showLimitsWidget = true;
-	bool showTextureWidget = false;
+	bool showFaceEditWidget = false;
 	bool showLightmapEditorWidget = false;
 	bool showLightmapEditorUpdate = true;
 	bool showEntityReport = false;
-	bool showGOTOWidget = false;
 	bool showGOTOWidget_update = true;
+	bool showGOTOWidget = false;
+	bool showTextureBrowser = false;
 	bool reloadSettings = true;
 	int settingsTab = 0;
 	bool openSavedTabs = false;
@@ -127,6 +128,7 @@ private:
 	void drawFpsOverlay();
 	void drawStatusMessage();
 	void drawDebugWidget();
+	void drawTextureBrowser();
 	void drawKeyvalueEditor();
 	void drawKeyvalueEditor_SmartEditTab(int entIdx);
 	void drawKeyvalueEditor_FlagsTab(int entIdx);
@@ -141,7 +143,7 @@ private:
 	void drawMergeWindow();
 	void drawLimits();
 	void drawLightMapTool();
-	void drawTextureTool();
+	void drawFaceEditorWidget();
 	void drawLimitTab(Bsp* map, int sortMode);
 	void drawEntityReport();
 	StatInfo calcStat(std::string name, unsigned int val, unsigned int max, bool isMem);

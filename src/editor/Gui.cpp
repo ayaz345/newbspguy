@@ -115,6 +115,10 @@ void Gui::draw()
 	{
 		drawKeyvalueEditor();
 	}
+	if (showTextureBrowser)
+	{
+		drawTextureBrowser();
+	}
 	if (showTransformWidget)
 	{
 		drawTransformWidget();
@@ -147,9 +151,9 @@ void Gui::draw()
 	{
 		drawLimits();
 	}
-	if (showTextureWidget)
+	if (showFaceEditWidget)
 	{
-		drawTextureTool();
+		drawFaceEditorWidget();
 	}
 	if (showLightmapEditorWidget)
 	{
@@ -2196,10 +2200,13 @@ void Gui::drawMenuBar()
 				showGOTOWidget = !showGOTOWidget;
 				showGOTOWidget_update = true;
 			}
-
-			if (ImGui::MenuItem("Face Properties", "", showTextureWidget))
+			if (ImGui::MenuItem("Face Properties", "", showFaceEditWidget))
 			{
-				showTextureWidget = !showTextureWidget;
+				showFaceEditWidget = !showFaceEditWidget;
+			}
+			if (ImGui::MenuItem("Texture Browser", "", showTextureBrowser))
+			{
+				showTextureBrowser = !showTextureBrowser;
 			}
 			if (ImGui::MenuItem("LightMap Editor (WIP)", "", showLightmapEditorWidget))
 			{
@@ -2297,7 +2304,7 @@ void Gui::drawToolbar()
 			app->deselectFaces();
 			app->deselectObject();
 			app->pickMode = PICK_OBJECT;
-			showTextureWidget = false;
+			showFaceEditWidget = false;
 		}
 		ImGui::PopStyleColor();
 		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2312,7 +2319,7 @@ void Gui::drawToolbar()
 		if (ImGui::ImageButton((void*)(uint64_t)faceIconTexture->id, iconSize, ImVec2(0, 0), ImVec2(1, 1), 4))
 		{
 			FaceSelectePressed();
-			showTextureWidget = true;
+			showFaceEditWidget = true;
 		}
 		ImGui::PopStyleColor();
 		if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
@@ -2767,7 +2774,7 @@ void Gui::drawDebugWidget()
 			ImGui::Text(fmt::format("showDragAxes {}\nmovingEnt {}\nanyAltPressed {}",
 				app->showDragAxes, app->movingEnt, app->anyAltPressed).c_str());
 
-
+			ImGui::Checkbox("Show DragAxes", &app->showDragAxes);
 		}
 
 		if (map)
@@ -2935,6 +2942,34 @@ void Gui::drawDebugWidget()
 		}
 		delete[] visData;
 	}
+}
+
+void Gui::drawTextureBrowser()
+{
+	ImGui::SetNextWindowSize(ImVec2(610.f, 610.f), ImGuiCond_FirstUseEver);
+	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
+	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
+	if (ImGui::Begin("Texture browser", &showTextureBrowser, 0))
+	{
+		if (ImGui::BeginTabBar("##tabs"))
+		{
+			ImGui::Dummy(ImVec2(0, 10));
+			if (ImGui::BeginTabItem("Internal"))
+			{
+				ImGui::Dummy(ImVec2(0, 10));
+				ImGui::EndTabItem();
+			}
+			if (ImGui::BeginTabItem("External"))
+			{
+				ImGui::Dummy(ImVec2(0, 10));
+				ImGui::EndTabItem();
+			}
+
+		}
+		ImGui::EndTabBar();
+
+	}
+	ImGui::End();
 }
 
 void Gui::drawKeyvalueEditor()
@@ -7020,11 +7055,11 @@ void Gui::drawLightMapTool()
 	}
 	ImGui::End();
 }
-void Gui::drawTextureTool()
+void Gui::drawFaceEditorWidget()
 {
 	ImGui::SetNextWindowSize(ImVec2(300.f, 570.f), ImGuiCond_FirstUseEver);
 	//ImGui::SetNextWindowSize(ImVec2(400, 600));
-	if (ImGui::Begin("Face Editor", &showTextureWidget))
+	if (ImGui::Begin("Face Editor", &showFaceEditWidget))
 	{
 		static float scaleX, scaleY, shiftX, shiftY;
 		static int lmSize[2];
@@ -7519,22 +7554,7 @@ void Gui::drawTextureTool()
 		ImVec2 imgSize = ImVec2(inputWidth * 2 - 2, inputWidth * 2 - 2);
 		if (ImGui::ImageButton(textureId, imgSize, ImVec2(0, 0), ImVec2(1, 1), 1))
 		{
-			logf("Open browser!\n");
-
-			ImGui::OpenPopup("Not Implemented");
-		}
-
-		if (ImGui::BeginPopupModal("Not Implemented", NULL, ImGuiWindowFlags_AlwaysAutoResize))
-		{
-			ImGui::Text("TODO: Texture browser\n\n");
-			ImGui::Separator();
-
-			if (ImGui::Button("OK", ImVec2(120, 0)))
-			{
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::SetItemDefaultFocus();
-			ImGui::EndPopup();
+			showTextureBrowser = true;
 		}
 	}
 

@@ -142,7 +142,6 @@ void AppSettings::loadDefault()
 	log_open = false;
 	limits_open = false;
 	entreport_open = false;
-	show_transform_axes = false;
 	settings_tab = 0;
 
 	render_flags = g_render_flags = RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL
@@ -327,6 +326,10 @@ void AppSettings::load()
 		{
 			g_settings.entreport_open = atoi(val.c_str()) != 0 && save_windows;
 		}
+		else if (key == "texbrowser_open")
+		{
+			g_settings.texbrowser_open = atoi(val.c_str()) != 0 && save_windows;
+		}
 		else if (key == "settings_tab")
 		{
 			if (save_windows)
@@ -339,10 +342,6 @@ void AppSettings::load()
 		else if (key == "mark_unused_texinfos")
 		{
 			g_settings.mark_unused_texinfos = atoi(val.c_str()) != 0;
-		}
-		else if (key == "show_transform_axes")
-		{
-			g_settings.show_transform_axes = atoi(val.c_str()) != 0;
 		}
 		else if (key == "start_at_entity")
 		{
@@ -684,6 +683,7 @@ void AppSettings::save(std::string path)
 	file << "log_open=" << g_settings.log_open << std::endl;
 	file << "limits_open=" << g_settings.limits_open << std::endl;
 	file << "entreport_open=" << g_settings.entreport_open << std::endl;
+	file << "texbrowser_open=" << g_settings.texbrowser_open << std::endl;
 
 	file << "settings_tab=" << g_settings.settings_tab << std::endl;
 
@@ -748,7 +748,6 @@ void AppSettings::save(std::string path)
 
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << std::endl;
-	file << "show_transform_axes=" << g_settings.show_transform_axes << std::endl;
 	file << "start_at_entity=" << g_settings.start_at_entity << std::endl;
 #ifdef NDEBUG
 	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;
@@ -811,6 +810,7 @@ Renderer::Renderer()
 		logf("GLFW initialization failed\n");
 		return;
 	}
+	showDragAxes = true;
 
 	g_settings.loadDefault();
 	g_settings.load();
@@ -1252,14 +1252,6 @@ void Renderer::renderLoop()
 			glEnable(GL_DEPTH_TEST);
 		}
 
-		if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
-		{
-			if (!movingEnt && !isTransformingWorld && entIdx >= 0 && (isTransformingValid || isMovingOrigin))
-			{
-				drawTransformAxes();
-			}
-		}
-
 		if (entIdx <= 0)
 		{
 			if (SelectedMap && SelectedMap->is_bsp_model)
@@ -1276,6 +1268,14 @@ void Renderer::renderLoop()
 			if (transformTarget == TRANSFORM_ORIGIN)
 			{
 				drawModelOrigin();
+			}
+		}
+
+		if (showDragAxes && pickMode == pick_modes::PICK_OBJECT)
+		{
+			if (!movingEnt && !isTransformingWorld && entIdx >= 0 && (isTransformingValid || isMovingOrigin))
+			{
+				drawTransformAxes();
 			}
 		}
 
@@ -1391,12 +1391,12 @@ void Renderer::saveSettings()
 {
 	g_settings.debug_open = gui->showDebugWidget;
 	g_settings.keyvalue_open = gui->showKeyvalueWidget;
+	g_settings.texbrowser_open = gui->showTextureBrowser;
 	g_settings.transform_open = gui->showTransformWidget;
 	g_settings.log_open = gui->showLogWidget;
 	g_settings.limits_open = gui->showLimitsWidget;
 	g_settings.entreport_open = gui->showEntityReport;
 	g_settings.settings_tab = gui->settingsTab;
-	g_settings.show_transform_axes = showDragAxes;
 	g_settings.verboseLogs = g_verbose;
 	g_settings.zfar = zFar;
 	g_settings.fov = fov;
@@ -1409,7 +1409,7 @@ void Renderer::saveSettings()
 void Renderer::loadSettings()
 {
 	gui->showDebugWidget = g_settings.debug_open;
-	gui->showKeyvalueWidget = g_settings.keyvalue_open;
+	gui->showTextureBrowser = g_settings.texbrowser_open;
 	gui->showTransformWidget = g_settings.transform_open;
 	gui->showLogWidget = g_settings.log_open;
 	gui->showLimitsWidget = g_settings.limits_open;
@@ -1418,7 +1418,6 @@ void Renderer::loadSettings()
 	gui->settingsTab = g_settings.settings_tab;
 	gui->openSavedTabs = true;
 
-	showDragAxes = g_settings.show_transform_axes;
 	g_verbose = g_settings.verboseLogs;
 	zFar = g_settings.zfar;
 	fov = g_settings.fov;
@@ -1610,7 +1609,7 @@ void Renderer::drawTransformAxes()
 	{
 		if (SelectedMap->ents[pickInfo.selectedEnts[0]]->getBspModelIdx() > 0)
 		{
-			glClear(GL_DEPTH_BUFFER_BIT);
+			glDisable(GL_DEPTH_TEST);
 			updateDragAxes();
 			vec3 ori = scaleAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
@@ -1618,13 +1617,14 @@ void Renderer::drawTransformAxes()
 			glDisable(GL_CULL_FACE);
 			scaleAxes.buffer->drawFull();
 			glEnable(GL_CULL_FACE);
+			glEnable(GL_DEPTH_TEST);
 		}
 	}
 	if (SelectedMap && pickInfo.selectedEnts.size() > 0 && transformMode == TRANSFORM_MODE_MOVE)
 	{
 		if ((transformTarget == TRANSFORM_VERTEX && (anyVertSelected || anyEdgeSelected)) || transformTarget != TRANSFORM_VERTEX)
 		{
-			glClear(GL_DEPTH_BUFFER_BIT);
+			glDisable(GL_DEPTH_TEST);
 			updateDragAxes();
 			vec3 ori = moveAxes.origin;
 			matmodel.translate(ori.x, ori.z, -ori.y);
@@ -1632,6 +1632,7 @@ void Renderer::drawTransformAxes()
 			glDisable(GL_CULL_FACE);
 			moveAxes.buffer->drawFull();
 			glEnable(GL_CULL_FACE);
+			glEnable(GL_DEPTH_TEST);
 		}
 	}
 	dragDelta = vec3();

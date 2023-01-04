@@ -94,9 +94,9 @@ struct AppSettings
 	bool log_open;
 	bool limits_open;
 	bool entreport_open;
+	bool texbrowser_open;
 	bool vsync;
 	bool mark_unused_texinfos;
-	bool show_transform_axes;
 	bool start_at_entity;
 	bool backUpMap;
 	bool preserveCrc32;
@@ -241,7 +241,7 @@ public:
 	int transformMode = TRANSFORM_MODE_MOVE;
 	int transformTarget = TRANSFORM_OBJECT;
 	int pickMode = PICK_OBJECT;
-	bool showDragAxes = false;
+	bool showDragAxes = true;
 	bool pickClickHeld = true; // true if the mouse button is still held after picking an object
 	vec3 axisDragStart;
 	vec3 dragDelta;
