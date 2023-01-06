@@ -337,3 +337,5 @@ private:
 	BspRenderer* renderer;
 	unsigned int originCrc32 = 0;
 };
+
+void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap);

@@ -2038,7 +2038,66 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	}
 
 	delete[] usedModels;
+	if (target & CLEAN_TEXTURES)
+		remove_unused_wad_files(this, this);
+
 	return removeCount;
+}
+
+void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap)
+{
+	if (!baseMap || !targetMap || !baseMap->getBspRender() || baseMap->getBspRender()->wads.empty())
+		return;
+	// Save ent state
+	targetMap->update_ent_lump();
+	// Update texture count
+	targetMap->update_lump_pointers();
+
+	std::string wadNames{};
+	int wads = 0;
+	for (auto& wad : baseMap->getBspRender()->wads)
+	{
+		bool used = false;
+		for (int i = 0; i < targetMap->textureCount; i++)
+		{
+			int offset = ((int*)targetMap->textures)[i + 1];
+			if (offset >= 0)
+			{
+				BSPMIPTEX* tex = (BSPMIPTEX*)(targetMap->textures + offset);
+				if (wad->hasTexture(tex->szName))
+				{
+					used = true;
+					break;
+				}
+			}
+		}
+
+		if (used && wadNames.find(basename(wad->filename)) == std::string::npos)
+		{
+			wads++;
+			wadNames += basename(wad->filename) + ";";
+		}
+	}
+
+	bool updatewads = false;
+	for (int i = 0; i < targetMap->ents.size(); i++)
+	{
+		if (targetMap->ents[i]->isWorldSpawn())
+		{
+			updatewads = true;
+			targetMap->ents[i]->setOrAddKeyvalue("wad", wadNames);
+			break;
+		}
+	}
+
+	if (!updatewads && !targetMap->ents.empty())
+	{
+		targetMap->ents[0]->setOrAddKeyvalue("wad", wadNames);
+	}
+
+	targetMap->update_ent_lump();
+	targetMap->update_lump_pointers();
+	logf("Added {} used wad names.\n", wads);
 }
 
 bool Bsp::has_hull2_ents()

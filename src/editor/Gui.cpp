@@ -420,6 +420,10 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
+	logf("Remove unused wad files.\n");
+	
+	remove_unused_wad_files(map, tmpMap);
+
 	if (tmpMap->validate())
 	{
 		tmpMap->update_ent_lump();
