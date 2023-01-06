@@ -318,7 +318,10 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	map->write(map->bsp_path + ".tmp.bsp");
 
 	logf("Load map for model export.\n");
+
 	Bsp* tmpMap = new Bsp(map->bsp_path + ".tmp.bsp");
+
+	tmpMap->force_skip_crc = true;
 
 	logf("Remove temporary file.\n");
 	removeFile(map->bsp_path + ".tmp.bsp");
@@ -345,23 +348,25 @@ void ExportModel(Bsp* map, int id, int ExportType)
 		delete tmpMap->ents[i];
 	}
 	logf("Add two ents, worldspawn and temporary func_wall.\n");
-	tmpMap->ents.clear();
 
-	Entity* tmpEnt = new Entity(*map->ents[0]);
+	Entity* tmpEnt = new Entity("worldspawn");
 	Entity* tmpEnt2 = new Entity("func_wall");
 
-	tmpEnt->setOrAddKeyvalue("origin", vec3().toKeyvalueString());
 	tmpEnt->setOrAddKeyvalue("compiler", g_version_string);
 	tmpEnt->setOrAddKeyvalue("message", "bsp model");
-	tmpMap->ents.push_back(tmpEnt);
+
 	tmpEnt2->setOrAddKeyvalue("model", "*1");
-	tmpMap->ents.push_back(tmpEnt2);
-	tmpMap->update_ent_lump();
 
 	logf("Save two models, empty worldspawn and target model.\n");
 	tmpMap->modelCount = 2;
 	tmpMap->lumps[LUMP_MODELS] = (unsigned char*)tmpMap->models;
 	tmpMap->bsp_header.lump[LUMP_MODELS].nLength = sizeof(BSPMODEL) * 2;
+	tmpMap->ents.clear();
+
+	tmpMap->ents.push_back(tmpEnt);
+	tmpMap->ents.push_back(tmpEnt2);
+
+	tmpMap->update_ent_lump();
 	tmpMap->update_lump_pointers();
 
 	logf("Remove all unused map data #1.\n");
@@ -380,7 +385,6 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	tmpMap->ents.clear();
 	tmpMap->ents.push_back(tmpEnt);
 	tmpMap->update_ent_lump();
-
 	tmpMap->update_lump_pointers();
 
 	logf("Validate model...\n");
@@ -409,7 +413,12 @@ void ExportModel(Bsp* map, int id, int ExportType)
 
 	tmpMap->move(-modelOrigin, 0, true, true);
 
+
 	tmpMap->update_lump_pointers();
+
+	logf("Remove unused wad files.\n");
+	remove_unused_wad_files(map, tmpMap, ExportType);
+
 	logf("Remove all unused map data #2.\n");
 	removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
 		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MARKSURFACES);
@@ -417,16 +426,16 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
-	logf("Remove unused wad files.\n");
-	
-	remove_unused_wad_files(map, tmpMap);
-
 	if (tmpMap->validate())
 	{
 		tmpMap->update_ent_lump();
 		tmpMap->update_lump_pointers();
+		removeFile(GetWorkDir() + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
 		tmpMap->write(GetWorkDir() + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
 	}
+
+	delete tmpMap;
+	delete tmpEnt2;
 }
 
 
@@ -792,9 +801,21 @@ void Gui::draw3dContextMenus()
 							ImGui::EndTooltip();
 						}
 					}
-					if (ImGui::MenuItem("Export .bsp MODEL(true collision)", 0, false, !app->isLoading && modelIdx >= 0))
+					if (ImGui::BeginMenu("Export BSP model", !app->isLoading && modelIdx >= 0))
 					{
-						ExportModel(map, modelIdx, 0);
+						if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && modelIdx >= 0))
+						{
+							ExportModel(map, modelIdx, 0);
+						}
+						if (ImGui::MenuItem("With intenal textures[QUAKE/HL1]", 0, false, !app->isLoading && modelIdx >= 0))
+						{
+							ExportModel(map, modelIdx, 1);
+						}
+						if (ImGui::MenuItem("With intenal textures[CS1.6]", 0, false, !app->isLoading && modelIdx >= 0))
+						{
+							ExportModel(map, modelIdx, 2);
+						}
+						ImGui::EndMenu();
 					}
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
@@ -1340,7 +1361,7 @@ void Gui::drawMenuBar()
 
 										/*	int lastMipSize = (texture->nWidth / 8) * (texture->nHeight / 8);
 
-											COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + 2 - 40);
+											COLOR3* palette = (COLOR3*)(texture->data + texture->nOffsets[3] + lastMipSize + sizeof(short) - 40);
 
 											lodepng_encode24_file((GetWorkDir() + "wads/" + basename(wad->filename) + "/" + std::string(texture->szName) + ".pal.png").c_str()
 																  , (unsigned char*)palette, 8, 32);*/
@@ -4351,6 +4372,7 @@ void Gui::drawSettings()
 	ImGui::SetNextWindowSize(ImVec2(790.f, 340.f), ImGuiCond_FirstUseEver);
 
 	bool oldShowSettings = showSettingsWidget;
+	bool apply_settings_pressed = false;
 
 	if (ImGui::Begin("Settings", &showSettingsWidget))
 	{
@@ -4385,8 +4407,7 @@ void Gui::drawSettings()
 		ImGui::Dummy(ImVec2(0, 60));
 		if (ImGui::Button("Apply settings"))
 		{
-			oldShowSettings = true;
-			showSettingsWidget = false;
+			apply_settings_pressed = true;
 		}
 
 		ImGui::EndChild();
@@ -5047,7 +5068,7 @@ void Gui::drawSettings()
 	ImGui::End();
 
 
-	if (oldShowSettings && !showSettingsWidget)
+	if (oldShowSettings && !showSettingsWidget || apply_settings_pressed)
 	{
 		FixupAllSystemPaths();
 		g_settings.save();
@@ -5063,7 +5084,7 @@ void Gui::drawSettings()
 			}
 			app->reloading = false;
 		}
-		oldShowSettings = showSettingsWidget = false;
+		oldShowSettings = showSettingsWidget = apply_settings_pressed;
 	}
 }
 

@@ -501,7 +501,7 @@ COLOR3* ConvertWadTexToRGB(WADTEX* wadTex, COLOR3* palette)
 		logf("Convert WADTEX to RGB name {} size {}/{}\n", wadTex->szName, wadTex->nWidth, wadTex->nHeight);
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 	if (palette == NULL)
-		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
+		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - 40);
 	unsigned char* src = wadTex->data;
 
 	int sz = wadTex->nWidth * wadTex->nHeight;
@@ -549,7 +549,7 @@ COLOR4* ConvertWadTexToRGBA(WADTEX* wadTex, COLOR3* palette)
 	int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
 
 	if (palette == NULL)
-		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
+		palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - 40);
 	unsigned char* src = wadTex->data;
 
 	int sz = wadTex->nWidth * wadTex->nHeight;

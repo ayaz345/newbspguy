@@ -12,7 +12,7 @@ Entity::Entity(const std::string& classname)
 	renderamt = 0;
 	renderfx = kRenderFxNone;
 	rendercolor = vec3(1.0f, 1.0f, 1.0f);
-	addKeyvalue("classname", classname);
+	setOrAddKeyvalue("classname", classname);
 }
 
 void Entity::addKeyvalue(const std::string key, const std::string value, bool multisupport)

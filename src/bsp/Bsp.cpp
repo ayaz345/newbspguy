@@ -127,6 +127,7 @@ Bsp::Bsp()
 	is_bsp29 = false;
 	is_broken_clipnodes = false;
 
+	force_skip_crc = false;
 
 	bsp_header = BSPHEADER();
 	bsp_header_ex = BSPHEADER_EX();
@@ -148,6 +149,8 @@ Bsp::Bsp(std::string fpath)
 	is_32bit_clipnodes = false;
 	is_bsp29 = false;
 	is_broken_clipnodes = false;
+
+	force_skip_crc = false;
 
 	bsp_header = BSPHEADER();
 	bsp_header_ex = BSPHEADER_EX();
@@ -270,7 +273,7 @@ Bsp::Bsp(std::string fpath)
 	bsp_valid = true;
 
 
-	if (ents.size() && !ents[0]->hasKey("CRC"))
+	if (ents.size() && !ents[0]->hasKey("CRC") && !force_skip_crc)
 	{
 		logf("Saving CRC key to Worldspawn\n");
 		ents[0]->addKeyvalue("CRC", std::to_string(reverse_bits(originCrc32)));
@@ -2045,7 +2048,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	return removeCount;
 }
 
-void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap)
+void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 {
 	if (!baseMap || !targetMap || !baseMap->getBspRender() || baseMap->getBspRender()->wads.empty())
 		return;
@@ -2055,6 +2058,7 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap)
 	targetMap->update_lump_pointers();
 
 	std::string wadNames{};
+	std::set<std::string> texNames{};
 	int wads = 0;
 	for (auto& wad : baseMap->getBspRender()->wads)
 	{
@@ -2065,10 +2069,37 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap)
 			if (offset >= 0)
 			{
 				BSPMIPTEX* tex = (BSPMIPTEX*)(targetMap->textures + offset);
-				if (wad->hasTexture(tex->szName))
+
+				if (tex_type == 0)
 				{
-					used = true;
-					break;
+					if (wad->hasTexture(tex->szName))
+					{
+						used = true;
+						break;
+					}
+				}
+				else
+				{
+					if (tex->nOffsets[0] <= 0)
+					{
+						if (wad->hasTexture(tex->szName) && texNames.count(tex->szName) == 0)
+						{
+							WADTEX* wadTex = wad->readTexture(tex->szName);
+							int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
+							COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - 40);
+							unsigned char* src = wadTex->data;
+							COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
+
+							int sz = wadTex->nWidth * wadTex->nHeight;
+							for (int n = 0; n < sz; n++)
+							{
+								imageData[n] = palette[src[n]];
+							}
+
+							targetMap->add_texture(tex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight, tex_type == 1 ? halflifeDefaultPalette : (unsigned char *)palette, tex_type == 1);
+							texNames.insert(tex->szName);
+						}
+					}
 				}
 			}
 		}
@@ -2080,20 +2111,30 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap)
 		}
 	}
 
-	bool updatewads = false;
-	for (int i = 0; i < targetMap->ents.size(); i++)
+	if (tex_type == 0)
 	{
-		if (targetMap->ents[i]->isWorldSpawn())
+		bool updatewads = false;
+		for (int i = 0; i < targetMap->ents.size(); i++)
 		{
-			updatewads = true;
-			targetMap->ents[i]->setOrAddKeyvalue("wad", wadNames);
-			break;
+			if (targetMap->ents[i]->isWorldSpawn())
+			{
+				updatewads = true;
+				targetMap->ents[i]->setOrAddKeyvalue("wad", wadNames);
+				break;
+			}
+		}
+
+		if (!updatewads && !targetMap->ents.empty())
+		{
+			targetMap->ents[0]->setOrAddKeyvalue("wad", wadNames);
 		}
 	}
-
-	if (!updatewads && !targetMap->ents.empty())
+	else
 	{
-		targetMap->ents[0]->setOrAddKeyvalue("wad", wadNames);
+		for (int i = 0; i < targetMap->ents.size(); i++)
+		{
+			targetMap->ents[i]->removeKeyvalue("wad");
+		}
 	}
 
 	targetMap->update_ent_lump();
@@ -2838,7 +2879,7 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_EDGES] = (unsigned char*)freeedges16;
 	}
 
-	if (g_settings.preserveCrc32)
+	if (g_settings.preserveCrc32 && !force_skip_crc)
 	{
 		if (ents.size() && ents[0]->hasKey("CRC"))
 		{
@@ -3967,14 +4008,14 @@ bool Bsp::validate()
 	unsigned int worldspawn_count = 0;
 	for (unsigned int i = 0; i < ents.size(); i++)
 	{
-		if (ents[i]->keyvalues["classname"] == "worldspawn")
+		if (ents[i]->isWorldSpawn())
 		{
 			worldspawn_count++;
 		}
 	}
 	if (worldspawn_count != 1)
 	{
-		logf("Found {} worldspawn entities (expected 1). This can cause crashes and svc_bad errors.\n", worldspawn_count);
+		logf("Found {} worldspawn entities (expected 1).All ents:{}\nThis can cause crashes and svc_bad errors.\n", worldspawn_count, ents.size());
 		isValid = false;
 	}
 
@@ -4689,7 +4730,7 @@ BSPMIPTEX* Bsp::find_embedded_wad_texture(const char* name, int& texid)
 	return NULL;
 }
 
-int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int height)
+int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int height, const unsigned char * custompal, bool force_quake_pal)
 {
 	if (!oldname || oldname[0] == '\0' || strlen(oldname) >= MAXTEXTURENAME)
 	{
@@ -4745,7 +4786,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		}
 	}
 
-	oldtexid = 0;
+	oldtexid = -1;
 	oldtex = find_embedded_wad_texture(name, oldtexid);
 
 	if (oldtex)
@@ -4790,9 +4831,12 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		COLOR3* src = (COLOR3*)data;
 		int colorCount = 0;
 
-		if (is_bsp2 || is_bsp29)
+		if (is_bsp2 || is_bsp29 || force_quake_pal || custompal)
 		{
-			memcpy(&palette, quakeDefaultPalette, 256);
+			if (custompal)
+				memcpy(&palette, custompal, 256);
+			else
+				memcpy(&palette, quakeDefaultPalette, 256);
 			colorCount = 256;
 			Quantizer* tmpCQuantizer = new Quantizer(256, 8);
 			tmpCQuantizer->SetColorTable(palette, 256);
@@ -4834,7 +4878,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			}
 		}
 
-		if (is_bsp2 || is_bsp29)
+		if (is_bsp2 || is_bsp29 || force_quake_pal)
 		{
 			texDataSize += width * height + sizeof(short);
 		}
@@ -4875,17 +4919,13 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	}
 
 
-	for (int i = 0; i < faceCount; i++)
+	for (int i = 0; i < texinfoCount; i++)
 	{
-		BSPFACE32& face = faces[i];
-		BSPTEXTUREINFO& texinfo = texinfos[face.iTextureInfo];
-
-		int texOffset = ((int*)textures)[texinfo.iMiptex + 1];
-		if (texOffset < 0)
-			continue;
-		BSPMIPTEX* tex = ((BSPMIPTEX*)(textures + texOffset));
-		if (tex == oldtex)
+		BSPTEXTUREINFO& texinfo = texinfos[i];
+		if (texinfo.iMiptex == oldtexid)
+		{
 			texinfo.iMiptex = textureCount;
+		}
 	}
 
 	texDataSize += texDataSize % 4; // align by 4
@@ -4943,7 +4983,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
-		if (!is_bsp2 && !is_bsp29)
+		if (!is_bsp2 && !is_bsp29 && !force_quake_pal)
 		{
 			size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
 			memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
@@ -4955,7 +4995,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	}
 
 	replace_lump(LUMP_TEXTURES, newTexData, newTexLumpSize);
-
+	update_lump_pointers();
 	return textureCount - 1;
 }
 
@@ -6361,7 +6401,7 @@ void Bsp::ExportToObjWIP(const std::string& path, ExportObjOrder order, int isca
 
 								WADTEX* wadTex = rend->mapRenderers[r]->wads[k]->readTexture(tex.szName);
 								int lastMipSize = (wadTex->nWidth / 8) * (wadTex->nHeight / 8);
-								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + 2 - 40);
+								COLOR3* palette = (COLOR3*)(wadTex->data + wadTex->nOffsets[3] + lastMipSize + sizeof(short) - 40);
 								unsigned char* src = wadTex->data;
 								COLOR3* imageData = new COLOR3[wadTex->nWidth * wadTex->nHeight];
 

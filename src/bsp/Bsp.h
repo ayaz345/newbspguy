@@ -55,6 +55,8 @@ public:
 	bool is_32bit_clipnodes;
 	bool is_broken_clipnodes;
 
+	bool force_skip_crc;
+
 	std::vector<Entity*> ents;
 	int planeCount;
 	int textureCount;
@@ -211,7 +213,7 @@ public:
 
 	// create a new texture from raw RGB data, and embeds into the bsp. 
 	// Returns -1 on failure, else the new texture index
-	int add_texture(const char* name, unsigned char* data, int width, int height);
+	int add_texture(const char* name, unsigned char* data, int width, int height, const unsigned char* custompal = NULL, bool force_quake_pal = false);
 
 	void replace_lump(int lumpIdx, void* newData, size_t newLength);
 	void append_lump(int lumpIdx, void* newData, size_t appendLength);
@@ -338,4 +340,4 @@ private:
 	unsigned int originCrc32 = 0;
 };
 
-void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap);
+void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type = 0);
