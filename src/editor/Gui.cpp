@@ -3,6 +3,7 @@
 #include "primitives.h"
 #include "VertexBuffer.h"
 #include "shaders.h"
+#include "Settings.h"
 #include "Renderer.h"
 #include <lodepng.h>
 #include <algorithm>
@@ -16,13 +17,9 @@
 #include "fonts/robotomedium.h"
 #include "icons/object.h"
 #include "icons/face.h"
-
 #include "imgui_stdlib.h"
-
 #include "quantizer.h"
-
 #include <execution>
-
 #include "vis.h"
 
 float g_tooltip_delay = 0.6f; // time in seconds before showing a tooltip

@@ -3,6 +3,7 @@
 #include "Gui.h"
 #include <lodepng.h>
 #include "icons/aaatrigger.h"
+#include "Settings.h"
 
 
 Command::Command(std::string _desc, int _mapIdx)

@@ -64,6 +64,9 @@
     <ClCompile Include=".\..\src\editor\LightmapNode.cpp">
       <Filter>Source Files\editor</Filter>
     </ClCompile>
+    <ClCompile Include=".\..\src\editor\Settings.cpp">
+      <Filter>Source Files\editor</Filter>
+    </ClCompile>
     <ClCompile Include=".\..\src\editor\Renderer.cpp">
       <Filter>Source Files\editor</Filter>
     </ClCompile>
@@ -130,6 +133,12 @@
     <ClCompile Include=".\..\src\util\quantizer.cpp">
       <Filter>Source Files\util</Filter>
     </ClCompile>
+    <ClCompile Include=".\..\src\util\ini.c">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
+    <ClCompile Include=".\..\src\util\INIReader.cpp">
+      <Filter>Source Files\util</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include=".\..\src\cli\CommandLine.h">
@@ -192,6 +201,9 @@
     <ClInclude Include=".\..\src\editor\LightmapNode.h">
       <Filter>Header Files\editor</Filter>
     </ClInclude>
+    <ClInclude Include=".\..\src\editor\Settings.h">
+      <Filter>Header Files\editor</Filter>
+    </ClInclude>
     <ClInclude Include=".\..\src\editor\Renderer.h">
       <Filter>Header Files\editor</Filter>
     </ClInclude>
@@ -238,6 +250,12 @@
       <Filter>Header Files\util</Filter>
     </ClInclude>
     <ClInclude Include=".\..\src\util\quantizer.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\util\ini.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include=".\..\src\util\INIReader.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
   </ItemGroup>

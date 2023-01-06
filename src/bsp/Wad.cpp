@@ -3,6 +3,7 @@
 #include <string.h>
 #include "Wad.h"
 #include "util.h"
+#include "Settings.h"
 #include "Renderer.h"
 
 Wad::Wad(void)

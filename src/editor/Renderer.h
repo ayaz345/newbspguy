@@ -13,6 +13,7 @@
 #include <GLFW/glfw3.h>
 #include <GL/glew.h>
 #include "mdl_studio.h"
+
 #define EDIT_MODEL_LUMPS (PLANES | TEXTURES | VERTICES | NODES | TEXINFO | FACES | LIGHTING | CLIPNODES | LEAVES | EDGES | SURFEDGES | MODELS)
 
 extern std::string g_settings_path;
@@ -51,85 +52,6 @@ struct TransformAxes
 	COLOR4 hoverColor[6];
 	int numAxes;
 };
-
-struct PathToggleStruct
-{
-	std::string path;
-	bool enabled;
-
-	PathToggleStruct(std::string filePath, bool isEnable)
-	{
-		path = filePath;
-		enabled = isEnable;
-	}
-};
-
-struct AppSettings
-{
-	int windowWidth;
-	int windowHeight;
-	int windowX;
-	int windowY;
-	int maximized;
-	int undoLevels;
-	int settings_tab;
-	int render_flags;
-
-	float fov;
-	float zfar;
-	float moveSpeed;
-	float rotSpeed;
-	float fontSize;
-
-	std::string gamedir;
-	std::string workingdir;
-	std::string lastdir;
-
-	bool settingLoaded; // Settings loaded
-	bool verboseLogs;
-	bool save_windows;
-	bool debug_open;
-	bool keyvalue_open;
-	bool transform_open;
-	bool log_open;
-	bool limits_open;
-	bool entreport_open;
-	bool texbrowser_open;
-	bool vsync;
-	bool mark_unused_texinfos;
-	bool start_at_entity;
-	bool backUpMap;
-	bool preserveCrc32;
-	bool autoImportEnt;
-	bool sameDirForEnt;
-	bool entListReload;
-	bool stripWad;
-	bool defaultIsEmpty;
-
-	std::vector<PathToggleStruct> fgdPaths;
-	std::vector<PathToggleStruct> resPaths;
-
-	std::vector<std::string> conditionalPointEntTriggers;
-	std::vector<std::string> entsThatNeverNeedAnyHulls;
-	std::vector<std::string> entsThatNeverNeedCollision;
-	std::vector<std::string> passableEnts;
-	std::vector<std::string> playerOnlyTriggers;
-	std::vector<std::string> monsterOnlyTriggers;
-	std::vector<std::string> entsNegativePitchPrefix;
-	std::vector<std::string> transparentTextures;
-	std::vector<std::string> transparentEntities;
-
-	void loadDefault();
-	void load();
-	void reset();
-	void save();
-	void save(std::string path);
-};
-
-class Renderer;
-
-extern AppSettings g_settings;
-extern Renderer* g_app;
 
 extern vec2 mousePos;
 extern vec3 cameraOrigin;

@@ -6,6 +6,7 @@
 #include "rad.h"
 #include "vis.h"
 #include "lodepng.h"
+#include "Settings.h"
 #include "Renderer.h"
 #include "Clipper.h"
 #include "Command.h"

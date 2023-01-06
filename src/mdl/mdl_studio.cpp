@@ -21,6 +21,7 @@
 
 #include "util.h"
 #include "mdl_studio.h"
+#include "Settings.h"
 #include "Renderer.h"
 
 #include "forcecrc32.h"

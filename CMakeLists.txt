@@ -39,6 +39,7 @@ set(SOURCE_FILES
 	src/editor/LightmapNode.h		src/editor/LightmapNode.cpp
 
 	# 3D editor
+	src/editor/Settings.h			src/editor/Settings.cpp
 	src/editor/Renderer.h			src/editor/Renderer.cpp
 	src/editor/Gui.h				src/editor/Gui.cpp
 	src/editor/BspRenderer.h		src/editor/BspRenderer.cpp
@@ -62,18 +63,18 @@ set(SOURCE_FILES
 	imgui/misc/cpp/imgui_stdlib.cpp
 	
 	# utils
-	src/util/lodepng.h
-	src/util/lodepng.cpp
-	src/util/quantizer.h
-	src/util/quantizer.cpp
+	src/util/lodepng.h				src/util/lodepng.cpp
+	src/util/quantizer.h			src/util/quantizer.cpp
+	src/util/ini.h					src/util/ini.c
+	src/util/INIReader.h			src/util/INIReader.cpp
+	src/util/quantizer.h			src/util/quantizer.cpp
 	
 	# 3D model viewer
-	src/mdl/mdl_studio.h	src/mdl/mdl_studio.cpp
+	src/mdl/mdl_studio.h			src/mdl/mdl_studio.cpp
 
 	# OPENFILEDIALOG
 	src/filedialog/stb_image.h
 	src/filedialog/ImFileDialog.h	src/filedialog/ImFileDialog.cpp
-
 )
 
 include_directories(src)
@@ -160,7 +161,8 @@ if(MSVC)
 											src/gl/primitives.cpp
 											src/gl/shaders.cpp)
 
-	source_group("Header Files\\editor" FILES	src/editor/BspRenderer.h
+	source_group("Header Files\\editor" FILES	src/editor/Settings.h
+												src/editor/BspRenderer.h
 												src/editor/LightmapNode.h
 												src/editor/Renderer.h
 												src/editor/Fgd.h
@@ -169,7 +171,8 @@ if(MSVC)
 												src/editor/Command.h
 												src/editor/Clipper.h)
 
-	source_group("Source Files\\editor" FILES	src/editor/BspRenderer.cpp
+	source_group("Source Files\\editor" FILES	src/editor/Settings.cpp
+												src/editor/BspRenderer.cpp
 												src/editor/LightmapNode.cpp
 												src/editor/Renderer.cpp
 												src/editor/Fgd.cpp
@@ -194,8 +197,10 @@ if(MSVC)
 												src/util/vectors.cpp
 												src/util/mat4x4.cpp)
 
-	source_group("Header Files\\util\\lib" FILES	src/util/quantizer.h)
-	source_group("Header Files\\util\\lib" FILES	src/util/lodepng.h)
+	source_group("Header Files\\util\\lib" FILES	src/util/quantizer.h
+													src/util/ini.h
+													src/util/INIReader.h
+													src/util/lodepng.h)
 
 	source_group("Source Files\\util\\lib" FILES	imgui/imgui.cpp
 													imgui/imgui_tables.cpp
@@ -205,7 +210,9 @@ if(MSVC)
 													imgui/backends/imgui_impl_opengl3.cpp
 													imgui/misc/cpp/imgui_stdlib.cpp
 													src/util/lodepng.cpp
-													src/util/quantizer.cpp)
+													src/util/quantizer.cpp
+													src/util/ini.c
+													src/util/INIReader.cpp)
 													
 	source_group("Header Files\\mdl" FILES	
 													src/mdl/mdl_studio.h)

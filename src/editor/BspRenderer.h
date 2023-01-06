@@ -13,24 +13,6 @@
 
 class Command;
 
-enum RenderFlags
-{
-	RENDER_TEXTURES = 1,
-	RENDER_LIGHTMAPS = 2,
-	RENDER_WIREFRAME = 4,
-	RENDER_ENTS = 8,
-	RENDER_SPECIAL = 16,
-	RENDER_SPECIAL_ENTS = 32,
-	RENDER_POINT_ENTS = 64,
-	RENDER_ORIGIN = 128,
-	RENDER_WORLD_CLIPNODES = 256,
-	RENDER_ENT_CLIPNODES = 512,
-	RENDER_ENT_CONNECTIONS = 1024,
-	RENDER_TRANSPARENT = 2048,
-	RENDER_MODELS = 4096,
-	RENDER_MODELS_ANIMATED = 8192
-};
-
 struct LightmapInfo
 {
 	// each face can have 4 lightmaps, and those may be split across multiple atlases

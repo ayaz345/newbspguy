@@ -47,7 +47,6 @@ extern ProgressMeter g_progress;
 extern std::vector<std::string> g_log_buffer;
 extern std::mutex g_mutex_list[10];
 
-extern int g_render_flags;
 template<class ...Args>
 inline void logf(const std::string & format, Args ...args) noexcept
 {

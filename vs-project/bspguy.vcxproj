@@ -285,9 +285,13 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include=".\..\src\util\quantizer.cpp" />
     <ClCompile Include=".\..\src\main.cpp" />
+    <ClInclude Include=".\..\src\util\ini.h" />
+    <ClCompile Include=".\..\src\util\ini.c" />
+    <ClInclude Include=".\..\src\util\INIReader.h" />
+    <ClCompile Include=".\..\src\util\INIReader.cpp" />
     <ClInclude Include=".\..\src\util\quantizer.h" />
+    <ClCompile Include=".\..\src\util\quantizer.cpp" />
     <ClInclude Include=".\..\src\cli\CommandLine.h" />
     <ClCompile Include=".\..\src\cli\CommandLine.cpp" />
     <ClInclude Include=".\..\src\cli\ProgressMeter.h" />
@@ -330,6 +334,8 @@
     <ClCompile Include=".\..\src\gl\Texture.cpp" />
     <ClInclude Include=".\..\src\editor\LightmapNode.h" />
     <ClCompile Include=".\..\src\editor\LightmapNode.cpp" />
+    <ClInclude Include=".\..\src\editor\Settings.h" />
+    <ClCompile Include=".\..\src\editor\Settings.cpp" />
     <ClInclude Include=".\..\src\editor\Renderer.h" />
     <ClCompile Include=".\..\src\editor\Renderer.cpp" />
     <ClInclude Include=".\..\src\editor\Gui.h" />

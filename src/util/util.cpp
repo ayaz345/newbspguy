@@ -18,6 +18,7 @@
 #endif
 #include <stdio.h>
 #include <set>
+#include "Settings.h"
 #include "Renderer.h"
 
 #include "Bsp.h"

@@ -6,6 +6,7 @@
 #include "rad.h"
 #include "vis.h"
 #include "remap.h"
+#include "Settings.h"
 #include "Renderer.h"
 #include "BspRenderer.h"
 #include <set>
