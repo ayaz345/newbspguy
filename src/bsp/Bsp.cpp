@@ -1597,15 +1597,15 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 					// TODO: delete all frames if none are used. Success ?!
 
 					char* newname = &tex->szName[2]; // +0BTN1 +1BTN1 +ABTN1 +BBTN1
-					for (int n = i + 1; n < oldTexCount; n++)
+					for (int n = 0; n < oldTexCount; n++)
 					{
-						if (usedTextures[n])
+						if (usedTextures[n] && n != i)
 						{
 							int offset2 = ((int*)textures)[n + 1];
 							if (offset2 >= 0)
 							{
 								BSPMIPTEX* tex2 = (BSPMIPTEX*)(textures + offset2);
-								if (strcasecmp(newname, &tex2->szName[2]) == 0)
+								if (strlen(tex2->szName) > 2 && strcasecmp(newname, &tex2->szName[2]) == 0)
 								{
 									usedTextures[i] = true;
 									break;
