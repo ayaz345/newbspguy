@@ -313,102 +313,6 @@ void Gui::pasteLightmap()
 	map->getBspRender()->reloadLightmaps();
 }
 
-void ExportModelOrigin(Bsp* map, int id, int ExportType)
-{
-	map->update_ent_lump();
-
-	Bsp tmpMap = Bsp(map->bsp_path);
-	tmpMap.is_bsp_model = true;
-
-	BSPMODEL tmpModel = map->models[id];
-
-	Entity* tmpEnt = new Entity(*map->ents[0]);
-
-	vec3 EntOffset = vec3();
-
-	for (int i = 0; i < map->ents.size(); i++)
-	{
-		if (map->ents[i]->getBspModelIdx() == id)
-		{
-			EntOffset = map->ents[i]->getOrigin();
-			break;
-		}
-	}
-
-	vec3 modelOrigin = map->get_model_center(id);
-
-	tmpMap.modelCount = 1;
-	tmpMap.models[0] = tmpModel;
-
-	// Move model to 0 0 0
-	tmpMap.move(-modelOrigin, 0, true);
-
-	for (int i = 1; i < tmpMap.ents.size(); i++)
-	{
-		delete tmpMap.ents[i];
-	}
-
-	tmpMap.ents.clear();
-
-	tmpEnt->setOrAddKeyvalue("origin", vec3(0, 0, 0).toKeyvalueString());
-	tmpEnt->setOrAddKeyvalue("compiler", g_version_string);
-	tmpEnt->setOrAddKeyvalue("message", "bsp model");
-	tmpMap.ents.push_back(tmpEnt);
-
-	tmpMap.update_ent_lump();
-
-	tmpMap.lumps[LUMP_MODELS] = (unsigned char*)tmpMap.models;
-	tmpMap.bsp_header.lump[LUMP_MODELS].nLength = sizeof(tmpModel);
-	tmpMap.update_lump_pointers();
-
-
-
-	for (int i = 0; i < 4; i++)
-	{
-		logf("tmpMap.models[0].iHeadnodes[{}] = {}\n", i, tmpMap.models[0].iHeadnodes[i]);
-	}
-
-	STRUCTCOUNT removed = tmpMap.remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_LEAVES | CLEAN_MARKSURFACES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
-		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
-	if (!removed.allZero())
-		removed.print_delete_stats(1);
-
-	if (!tmpMap.validate())
-	{
-		logf("Tried to fix model by adding emply missing data {}\n", id);
-		int markid = 0;
-		for (int i = 0; i < tmpMap.leafCount; i++)
-		{
-			BSPLEAF32& tmpLeaf = tmpMap.leaves[i];
-			tmpLeaf.iFirstMarkSurface = markid;
-			markid += tmpLeaf.nMarkSurfaces;
-		}
-
-		while (tmpMap.models[0].nVisLeafs >= tmpMap.leafCount)
-			tmpMap.create_leaf(-2);
-
-		tmpMap.lumps[LUMP_LEAVES] = (unsigned char*)tmpMap.leaves;
-		tmpMap.update_lump_pointers();
-	}
-
-	if (!tmpMap.validate())
-	{
-		logf("Failed to export model {}\n", id);
-		return;
-	}
-
-
-	for (int i = 0; i < 4; i++)
-	{
-		logf("tmpMap.models[0].iHeadnodes[{}] = {}\n", i, tmpMap.models[0].iHeadnodes[i]);
-	}
-
-	if (!dirExists(g_settings.gamedir + g_settings.workingdir))
-		createDir(g_settings.gamedir + g_settings.workingdir);
-	logf("Export model {} to {}\n", id, g_settings.gamedir + g_settings.workingdir + "model" + std::to_string(id) + ".bsp");
-	tmpMap.write(g_settings.gamedir + g_settings.workingdir + "model" + std::to_string(id) + ".bsp");
-}
-
 void ExportModel(Bsp* map, int id, int ExportType)
 {
 	logf("Save current map to temporary file.\n");
@@ -510,7 +414,9 @@ void ExportModel(Bsp* map, int id, int ExportType)
 
 	tmpMap->update_lump_pointers();
 	logf("Remove all unused map data #2.\n");
-	removed = tmpMap->remove_unused_model_structures(CLEAN_MARKSURFACES);
+	removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
+		CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA | CLEAN_MARKSURFACES);
+
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
 
@@ -521,6 +427,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 		tmpMap->write(GetWorkDir() + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
 	}
 }
+
 
 void Gui::draw3dContextMenus()
 {

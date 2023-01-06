@@ -1592,11 +1592,32 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 			{
 				BSPMIPTEX* tex = (BSPMIPTEX*)(textures + offset);
 				// don't delete single frames from animated textures or else game crashes
-				if (tex->szName[0] == '-' || tex->szName[0] == '+')
+				if ((tex->szName[0] == '-' || tex->szName[0] == '+') && strlen(tex->szName) > 2)
 				{
-					usedTextures[i] = true;
-					// TODO: delete all frames if none are used
-					continue;
+					// TODO: delete all frames if none are used. Success ?!
+
+					char* newname = &tex->szName[2]; // +0BTN1 +1BTN1 +ABTN1 +BBTN1
+					for (int n = i + 1; n < oldTexCount; n++)
+					{
+						if (usedTextures[n])
+						{
+							int offset2 = ((int*)textures)[n + 1];
+							if (offset2 >= 0)
+							{
+								BSPMIPTEX* tex2 = (BSPMIPTEX*)(textures + offset2);
+								if (strcasecmp(newname, &tex2->szName[2]) == 0)
+								{
+									usedTextures[i] = true;
+									break;
+								}
+							}
+						}
+					}
+
+					if (usedTextures[i])
+					{
+						continue;
+					}
 				}
 				removeSize += getBspTextureSize(i) + sizeof(int);
 			}
@@ -1609,10 +1630,11 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 	memset(newTexData, 0, bsp_header.lump[LUMP_TEXTURES].nLength - removeSize);
 
 	int* texHeader = (int*)newTexData;
-	texHeader[0] = newTexCount;
+
 
 	int newOffset = (newTexCount + 1) * sizeof(int);
-	for (int i = 0, k = 0; i < oldTexCount; i++)
+	int k = 0;
+	for (int i = 0; i < oldTexCount; i++)
 	{
 		if (!usedTextures[i])
 		{
@@ -1621,7 +1643,7 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 		int oldOffset = ((int*)textures)[i + 1];
 		if (oldOffset < 0)
 		{
-			texHeader[k + 1] = oldOffset;
+
 		}
 		else
 		{
@@ -1631,11 +1653,13 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 			memcpy(newTexData + newOffset, textures + oldOffset, sz);
 			texHeader[k + 1] = newOffset;
 			newOffset += sz;
-		}
 
-		remappedIndexes[i] = k;
-		k++;
+			remappedIndexes[i] = k;
+			k++;
+		}
 	}
+
+	texHeader[0] = k;
 
 	replace_lump(LUMP_TEXTURES, newTexData, bsp_header.lump[LUMP_TEXTURES].nLength - removeSize);
 
@@ -1814,7 +1838,7 @@ bool operator > (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2)
 
 bool operator == (const BSPTEXTUREINFO& struct1, const BSPTEXTUREINFO& struct2)
 {
-	return memcmp(&struct1,&struct2,sizeof(BSPTEXTUREINFO)) == 0;
+	return memcmp(&struct1, &struct2, sizeof(BSPTEXTUREINFO)) == 0;
 }
 
 void Bsp::clean_unused_texinfos()
@@ -1845,6 +1869,7 @@ void Bsp::clean_unused_texinfos()
 	}
 }
 
+
 STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 {
 	if (!modelCount)
@@ -1852,7 +1877,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 
 	update_lump_pointers();
 
-	if (g_settings.mark_unused_texinfos)
+	if (g_settings.mark_unused_texinfos && target & CLEAN_TEXINFOS)
 		clean_unused_texinfos();
 
 	// marks which structures should not be moved
