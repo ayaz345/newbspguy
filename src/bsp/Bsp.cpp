@@ -7087,7 +7087,7 @@ int Bsp::getBspTextureSize(int textureid)
 bool Bsp::is_texture_with_pal(int textureid)
 {
 	if (textureid < 0 || textureid >= textureCount)
-		return true;
+		return false;
 	/*
 	if (bsp_header.nVersion == 30)
 		return true;
@@ -7124,11 +7124,11 @@ bool Bsp::is_texture_with_pal(int textureid)
 		unsigned char* palOffset = pStartOffset + tex->nOffsets[3] + lastMipSize;
 
 		//logf("{}-{}={}\n", (void*)(pStartOffset + palOffset), (void*)(pEndOffset), (int)((pStartOffset + palOffset) - pEndOffset));
-		if (abs(pStartOffset - pEndOffset) < sizeof(COLOR3) * 256 + 2) // No align check
+		if (abs(palOffset - pEndOffset) >= sizeof(COLOR3) * 256) // No align check
 		{
-			return false;
+			return true;
 		}
 	}
 
-	return true;
+	return false;
 }
