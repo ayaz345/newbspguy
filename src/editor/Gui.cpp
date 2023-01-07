@@ -322,6 +322,11 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	Bsp* tmpMap = new Bsp(map->bsp_path + ".tmp.bsp");
 
 	tmpMap->force_skip_crc = true;
+	if (ExportType == 1)
+	{
+		tmpMap->is_bsp29 = true;
+		tmpMap->bsp_header.nVersion = 29;
+	}
 
 	logf("Remove temporary file.\n");
 	removeFile(map->bsp_path + ".tmp.bsp");
@@ -807,13 +812,13 @@ void Gui::draw3dContextMenus()
 						{
 							ExportModel(map, modelIdx, 0);
 						}
-						if (ImGui::MenuItem("With intenal textures[QUAKE/HL1]", 0, false, !app->isLoading && modelIdx >= 0))
-						{
-							ExportModel(map, modelIdx, 1);
-						}
-						if (ImGui::MenuItem("With intenal textures[CS1.6]", 0, false, !app->isLoading && modelIdx >= 0))
+						if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && modelIdx >= 0))
 						{
 							ExportModel(map, modelIdx, 2);
+						}
+						if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && modelIdx >= 0))
+						{
+							ExportModel(map, modelIdx, 1);
 						}
 						ImGui::EndMenu();
 					}
@@ -880,7 +885,7 @@ bool ExportWad(Bsp* map)
 		for (int i = 0; i < map->textureCount; i++)
 		{
 			int oldOffset = ((int*)map->textures)[i + 1];
-			if (oldOffset != -1)
+			if (oldOffset >= 0)
 			{
 				BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
 				if (bspTex->nOffsets[0] <= 0)
@@ -926,9 +931,14 @@ void ImportWad(Bsp* map, Renderer* app, std::string path)
 		{
 			WADTEX* wadTex = tmpWad->readTexture(i);
 			COLOR3* imageData = ConvertWadTexToRGB(wadTex);
-
-			map->add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
-
+			if (map->is_bsp2 || map->is_bsp29)
+			{
+				map->add_texture(wadTex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight);
+			}
+			else
+			{
+				map->add_texture(wadTex);
+			}
 			delete[] imageData;
 			delete wadTex;
 		}
@@ -5421,7 +5431,7 @@ void Gui::drawImportMapWidget()
 							for (int i = 0; i < map->textureCount; i++)
 							{
 								int tex2Offset = ((int*)map->textures)[i + 1];
-								if (tex2Offset != -1)
+								if (tex2Offset >= 0)
 								{
 									BSPMIPTEX& tex2 = *((BSPMIPTEX*)(map->textures + tex2Offset));
 									if (strcasecmp(tex.szName, tex2.szName) == 0)

@@ -479,7 +479,7 @@ int CreateBspModelCommand::getDefaultTextureIdx()
 	for (unsigned int i = 0; i < totalTextures; i++)
 	{
 		int texOffset = ((int*)map->textures)[i + 1];
-		if (texOffset != -1)
+		if (texOffset >= 0)
 		{
 			BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
 			if (tex.szName[0] != '\0' && strcasecmp(tex.szName, "aaatrigger") == 0)

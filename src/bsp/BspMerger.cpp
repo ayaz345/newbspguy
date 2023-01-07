@@ -1265,7 +1265,7 @@ void BspMerger::merge_textures(Bsp& mapA, Bsp& mapB)
 	for (int i = 0; i < mapB.textureCount; i++)
 	{
 		int offset = ((int*)mapB.textures)[i + 1];
-		if (offset != -1)
+		if (offset >= 0)
 		{
 			bool isUnique = true;
 			BSPMIPTEX* tex = (BSPMIPTEX*)(mapB.textures + offset);

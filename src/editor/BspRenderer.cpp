@@ -326,7 +326,13 @@ void BspRenderer::loadTextures()
 			glTexturesSwap[i] = missingTex;
 			continue;
 		}
+
 		BSPMIPTEX* tex = ((BSPMIPTEX*)(map->textures + texOffset));
+		if (tex->szName[0] == '\0' || tex->nWidth == 0 || tex->nHeight == 0)
+		{
+			glTexturesSwap[i] = missingTex;
+			continue;
+		}
 
 		COLOR3* imageData = NULL;
 		WADTEX* wadTex = NULL;
@@ -1000,7 +1006,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			newGroup.verts = NULL;
 			newGroup.transparent = isTransparent;
 			newGroup.special = isSpecial;
-			newGroup.texture = texturesLoaded && texinfo.iMiptex != -1 ? glTextures[texinfo.iMiptex] : greyTex;
+			newGroup.texture = texturesLoaded && texinfo.iMiptex >= 0 ? glTextures[texinfo.iMiptex] : greyTex;
 			for (int s = 0; s < MAXLIGHTMAPS; s++)
 			{
 				newGroup.lightmapAtlas[s] = lightmapAtlas[s];
