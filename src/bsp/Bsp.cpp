@@ -2689,11 +2689,13 @@ void Bsp::write(const std::string& path)
 	//	bsp_header.nVersion = 30;
 	//}
 
+	update_lump_pointers();
+
 	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
 
 	file.write((const char*)nulls, is_bsp30ext ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
 
-	delete [] nulls;
+	delete[] nulls;
 
 	unsigned char* oldLighting = (unsigned char*)lightdata;
 	unsigned char* freelighting = NULL;
@@ -2893,6 +2895,7 @@ void Bsp::write(const std::string& path)
 		lumps[LUMP_EDGES] = (unsigned char*)freeedges16;
 	}
 
+
 	if (g_settings.preserveCrc32 && !force_skip_crc)
 	{
 		if (ents.size() && ents[0]->hasKey("CRC"))
@@ -2923,12 +2926,19 @@ void Bsp::write(const std::string& path)
 			int originsize = bsp_header.lump[LUMP_MODELS].nLength;
 
 			unsigned char* tmpNewModelds = new unsigned char[originsize + sizeof(BSPMODEL)];
+
 			memset(tmpNewModelds, 0, originsize + sizeof(BSPMODEL));
-			memcpy(tmpNewModelds, &lumps[LUMP_MODELS][0], bsp_header.lump[LUMP_MODELS].nLength);
-			BSPMODEL* lastmodel = (BSPMODEL*)&tmpNewModelds[originsize];
+
+			memcpy(tmpNewModelds, lumps[LUMP_MODELS], originsize);
+
+			BSPMODEL* lastmodel = (BSPMODEL*)(tmpNewModelds + (modelCount * sizeof(BSPMODEL)));
+
 			lastmodel->vOrigin.z = 9999.0f;
+
+			delete [] lumps[LUMP_MODELS];
 			lumps[LUMP_MODELS] = tmpNewModelds;
-			bsp_header.lump[LUMP_MODELS].nLength += sizeof(BSPMODEL);
+
+			bsp_header.lump[LUMP_MODELS].nLength = originsize + sizeof(BSPMODEL);
 
 			crc32 = UINT32_C(0xFFFFFFFF);
 
@@ -2939,7 +2949,7 @@ void Bsp::write(const std::string& path)
 					crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
 			}
 
-			PathCrc32InMemory(lumps[LUMP_MODELS], bsp_header.lump[LUMP_MODELS].nLength, bsp_header.lump[LUMP_MODELS].nLength - sizeof(BSPMODEL), crc32, originCrc32);
+			PathCrc32InMemory(lumps[LUMP_MODELS], bsp_header.lump[LUMP_MODELS].nLength, originsize, crc32, originCrc32);
 
 			crc32 = UINT32_C(0xFFFFFFFF);
 			for (int i = 0; i < HEADER_LUMPS; i++)
@@ -2966,8 +2976,19 @@ void Bsp::write(const std::string& path)
 			bsp_header_ex.lump[i].nOffset = offset;
 			offset += bsp_header_ex.lump[i].nLength;
 			file.write((char*)extralumps[i], bsp_header_ex.lump[i].nLength);
+
+			/*int padding = ((bsp_header_ex.lump[i].nLength + 3) & ~3) - bsp_header_ex.lump[i].nLength;
+			if (padding > 0)
+			{
+				offset += padding;
+				unsigned char* zeropad = new unsigned char[padding];
+				memset(zeropad, 0, padding);
+				file.write((const char*)zeropad, padding);
+				delete[] zeropad;
+			}*/
 			if (g_settings.verboseLogs)
-				logf("Write extra lump {} size {} offset {}\n", i, bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset);
+				logf("Write extra lump {} size {} offset {}\n", i, bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset/*, padding*/);
+
 		}
 	}
 
@@ -2977,8 +2998,19 @@ void Bsp::write(const std::string& path)
 		bsp_header.lump[i].nOffset = offset;
 		offset += bsp_header.lump[i].nLength;
 		file.write((char*)lumps[i], bsp_header.lump[i].nLength);
+
+		/*int padding = ((bsp_header.lump[i].nLength + 3) & ~3) - bsp_header.lump[i].nLength;
+		if (padding > 0)
+		{
+			offset += padding;
+			unsigned char* zeropad = new unsigned char[padding];
+			memset(zeropad, 0, padding);
+			file.write((const char*)zeropad, padding);
+			delete[] zeropad;
+		}*/
+
 		if (g_settings.verboseLogs)
-			logf("Write lump {} size {} offset {}\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset);
+			logf("Write lump {} size {} offset {}\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset/*, padding*/);
 	}
 
 	file.seekp(0);
@@ -4806,7 +4838,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				remove_unused_model_structures(CLEAN_TEXTURES);
 				return oldtexid;
 			}
-			else 
+			else
 			{
 				oldtex->szName[0] = '\0';
 				logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
@@ -7168,10 +7200,10 @@ bool Bsp::is_texture_with_pal(int textureid)
 {
 	if (textureid < 0 || textureid >= textureCount)
 		return false;
-	
+
 	if (bsp_header.nVersion == 30)
 		return true;
-	
+
 
 	int iStartOffset = ((int*)textures)[textureid + 1];
 	unsigned char* pStartOffset = (unsigned char*)textures + iStartOffset;
