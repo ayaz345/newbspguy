@@ -2693,6 +2693,7 @@ void Bsp::write(const std::string& path)
 
 	file.write((const char*)nulls, is_bsp30ext ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
 
+	delete [] nulls;
 
 	unsigned char* oldLighting = (unsigned char*)lightdata;
 	unsigned char* freelighting = NULL;
@@ -2905,13 +2906,11 @@ void Bsp::write(const std::string& path)
 
 		unsigned int crc32 = UINT32_C(0xFFFFFFFF);
 
-
 		for (int i = 0; i < HEADER_LUMPS; i++)
 		{
 			if (i != LUMP_ENTITIES)
 				crc32 = GetCrc32InMemory(lumps[i], bsp_header.lump[i].nLength, crc32);
 		}
-
 
 		logf("Current value: {}. ", reverse_bits(crc32));
 
@@ -5120,23 +5119,23 @@ int Bsp::add_texture(WADTEX* tex)
 	int oldtexid = -1;
 	BSPMIPTEX* oldtex = find_embedded_texture(tex->szName, oldtexid);
 
+	bool only_copy_data = false;
+
 	if (oldtex)
 	{
-		logf("Texture with name {} found in map.\n", tex->szName);
+		logf("Embedded texture with name {} found in map.\n", tex->szName);
 		if (oldtex->nWidth != tex->nWidth || oldtex->nHeight != tex->nHeight)
 		{
 			oldtex->szName[0] = '\0';
-			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
-				oldtex->nOffsets[3] = 0;
-			logf("Warning! Texture size different {}x{} > {}x{}.\nDisable old texture and create new one.\n",
+			logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 				oldtex->nWidth, oldtex->nHeight, tex->nWidth, tex->nHeight);
-		}
-		else if (oldtex->nOffsets[0] <= 0)
-		{
-			oldtex->szName[0] = '\0';
 			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 				oldtex->nOffsets[3] = 0;
-			logf("Warning! Texture pointer found. Need replace by new texture.\n");
+		}
+		else
+		{
+			only_copy_data = true;
+			logf("Internal texture found with same size. Just update data.\n");
 		}
 	}
 	else
@@ -5144,25 +5143,41 @@ int Bsp::add_texture(WADTEX* tex)
 		oldtexid = -1;
 		oldtex = find_embedded_wad_texture(tex->szName, oldtexid);
 
+		// external without data
 		if (oldtex)
 		{
-			logf("Texture with name {} found in map.\n", oldtex->szName);
+			logf("Wad texture with name {} found in map.\n", tex->szName);
 			if (oldtex->nWidth != tex->nWidth || oldtex->nHeight != tex->nHeight)
 			{
 				oldtex->szName[0] = '\0';
-				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
-					oldtex->nOffsets[3] = 0;
 				logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
 					oldtex->nWidth, oldtex->nHeight, tex->nWidth, tex->nHeight);
+				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
+					oldtex->nOffsets[3] = 0;
 			}
 			else
 			{
-				oldtex->szName[0] = '\0';
 				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
 					oldtex->nOffsets[3] = 0;
+				oldtex->szName[0] = '\0';
 				logf("Warning! Wad texture with same name found in map.\nNeed replace by new texture.\n");
 			}
 		}
+	}
+
+	if (only_copy_data)
+	{
+		int newTexOffset = ((int*)textures)[oldtexid + 1];
+		int w = tex->nWidth;
+		int h = tex->nHeight;
+		int sz = w * h;	   // miptex 0
+		int sz2 = sz / 4;  // miptex 1
+		int sz3 = sz2 / 4; // miptex 2
+		int sz4 = sz3 / 4; // miptex 3
+		int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /*pal size*/ sizeof(COLOR3) * 256;
+		memcpy(textures + newTexOffset + sizeof(BSPMIPTEX), tex->data, szAll);
+
+		return oldtexid;
 	}
 
 	if (oldtex && oldtexid >= 0)
