@@ -469,22 +469,22 @@ public:
 		}
 		Init(filename);
 		SetSequence(0);
-		SetController(0, 0.0);
-		SetController(1, 0.0);
-		SetController(2, 0.0);
-		SetController(3, 0.0);
-		SetMouth(0);
+		SetController(0, 0.0f);
+		SetController(1, 0.0f);
+		SetController(2, 0.0f);
+		SetController(3, 0.0f);
+		SetMouth(0.0f);
 
 		g_ambientlight = 32;
-		g_shadelight = 192;
+		g_shadelight = 192.0f;
 
-		g_lightvec[0] = 0;
-		g_lightvec[1] = 0;
-		g_lightvec[2] = -1.0;
+		g_lightvec[0] = 0.0f;
+		g_lightvec[1] = 0.0f;
+		g_lightvec[2] = -1.0f;
 
-		g_lightcolor[0] = 1.0;
-		g_lightcolor[1] = 1.0;
-		g_lightcolor[2] = 1.0;
+		g_lightcolor[0] = 1.0f;
+		g_lightcolor[1] = 1.0f;
+		g_lightcolor[2] = 1.0f;
 
 		for (int i = 0; i < 2048; i++)
 		{

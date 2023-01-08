@@ -212,10 +212,9 @@ WADTEX* Wad::readTexture(const std::string& texname, int* texturetype)
 	int sz4 = sz3 / 4; // miptex 3
 	int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /*pal size*/ sizeof(COLOR3) * 256;
 
-	szAll += szAll % 4;
+	unsigned char* data = new unsigned char[szAll + ((szAll + 3) & ~3) /* 4 bytes padding */];
+	memset(data, 0, szAll + ((szAll + 3) & ~3));
 
-	unsigned char* data = new unsigned char[szAll];
-	memset(data, 0, szAll);
 	memcpy(data, &filedata[offset], szAll);
 
 	WADTEX* tex = new WADTEX();
@@ -265,12 +264,12 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 		int sz4 = sz3 / 4; // miptex 3
 		int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /* pal num */ sizeof(COLOR3) * 256;
 
-		szAll += szAll % 4; // align by 4
+		szAll = (szAll + 3) & ~3; // 4 bytes padding
 
 		tSize += szAll;
 	}
 
-	if (tSize)
+	if (tSize > 0)
 	{
 		header.nDirOffset = (int)(sizeof(WADHEADER) + tSize);
 		myFile.write((char*)&header, sizeof(WADHEADER));
@@ -288,8 +287,8 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			int sz4 = sz3 / 4; // miptex 3
 			int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) /* pal num*/ + sizeof(COLOR3) * 256;
 
-			szAll += szAll % 4;  // align by 4
-
+			int padding = ((szAll + 3) & ~3) - szAll; // 4 bytes padding
+			
 			miptex.nWidth = w;
 			miptex.nHeight = h;
 			miptex.nOffsets[0] = sizeof(BSPMIPTEX);
@@ -304,6 +303,13 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			((unsigned char*)textures[i]->data)[sz + sz2 + sz3 + sz4 + 1] = 0x01;
 
 			myFile.write((char*)textures[i]->data, szAll);
+			if (padding > 0)
+			{
+				unsigned char* zeropad = new unsigned char[padding];
+				memset(zeropad, 0, padding);
+				myFile.write((const char *)zeropad, padding);
+				delete[] zeropad;
+			}
 		}
 
 		int offset = sizeof(WADHEADER);
@@ -319,7 +325,7 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 			int sz4 = sz3 / 4; // miptex 3
 			int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /* pal num */ sizeof(COLOR3) * 256;
 
-			szAll += szAll % 4; // align by 4
+			szAll = (szAll + 3) & ~3; // 4 bytes padding
 
 			entry.nDiskSize = szAll + sizeof(BSPMIPTEX);
 			entry.nSize = szAll + sizeof(BSPMIPTEX);
@@ -347,6 +353,8 @@ bool Wad::write(const std::string& _filename, std::vector<WADTEX*> textures)
 
 WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 {
+	if (!name)
+		return NULL;
 	COLOR3 palette[256];
 	memset(&palette, 0, sizeof(COLOR3) * 256);
 	unsigned char* mip[MIPLEVELS] = { NULL };
@@ -358,7 +366,7 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 	mip[0] = new unsigned char[width * height];
 
 	bool do_magic = false;
-	if (name && name[0] == '{')
+	if ( name[0] == '{')
 	{
 		int sz = width * height;
 		for (int i = 0; i < sz; i++)
@@ -462,11 +470,9 @@ WADTEX* create_wadtex(const char* name, COLOR3* rgbdata, int width, int height)
 		}
 	}
 
-	texDataSize += texDataSize % 4; //align by 4
-
-	size_t newTexLumpSize = sizeof(BSPMIPTEX) + texDataSize;
+	size_t newTexLumpSize = sizeof(BSPMIPTEX) + ((texDataSize + 3) & ~3) /* 4 bytes padding */;
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];
-	memset(newTexData, 0, sizeof(newTexLumpSize));
+	memset(newTexData, 0, newTexLumpSize);
 
 	WADTEX* newMipTex = new WADTEX();
 	newMipTex->nWidth = width;

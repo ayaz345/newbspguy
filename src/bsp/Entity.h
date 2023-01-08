@@ -21,7 +21,7 @@ public:
 		rendermode = kRenderNormal;
 		renderamt = 0;
 		renderfx = kRenderFxNone;
-		rendercolor = vec3(255.0f, 255.0f, 255.0f);
+		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 	}
 	Entity(const std::string& classname);
 	~Entity(void)
@@ -34,7 +34,7 @@ public:
 		rendermode = kRenderNormal;
 		renderamt = 0;
 		renderfx = kRenderFxNone;
-		rendercolor = vec3(255, 255, 255);
+		rendercolor = vec3(1.0f, 1.0f, 1.0f);
 	}
 
 	void addKeyvalue(const std::string key, const std::string value, bool multisupport = false);
@@ -70,6 +70,6 @@ public:
 	int rendermode = kRenderNormal;
 	int renderamt = 0;
 	int renderfx = kRenderFxNone;
-	vec3 rendercolor = vec3(255.0f, 255.0f, 255.0f);
+	vec3 rendercolor = vec3(1.0f, 1.0f, 1.0f);
 };
 

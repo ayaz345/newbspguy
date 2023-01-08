@@ -88,7 +88,7 @@ void Bsp::init_empty_bsp()
 
 void Bsp::selectModelEnt()
 {
-	if (!is_bsp_model || !ents.size())
+	if (!is_bsp_model || ents.empty())
 		return;
 	for (int i = 0; i < g_app->mapRenderers.size(); i++)
 	{
@@ -273,7 +273,7 @@ Bsp::Bsp(std::string fpath)
 	bsp_valid = true;
 
 
-	if (ents.size() && !ents[0]->hasKey("CRC") && !force_skip_crc)
+	if (!ents.empty() && !ents[0]->hasKey("CRC") && !force_skip_crc)
 	{
 		logf("Saving CRC key to Worldspawn\n");
 		ents[0]->addKeyvalue("CRC", std::to_string(reverse_bits(originCrc32)));
@@ -2101,7 +2101,7 @@ void remove_unused_wad_files(Bsp* baseMap, Bsp* targetMap, int tex_type)
 									imageData[n] = palette[src[n]];
 								}
 
-								targetMap->add_texture(tex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight, tex_type == 1 ? quakeDefaultPalette : NULL, tex_type == 1);
+								targetMap->add_texture(tex->szName, (unsigned char*)imageData, wadTex->nWidth, wadTex->nHeight, NULL, true);
 
 								delete[] imageData;
 							}
@@ -3564,7 +3564,6 @@ bool Bsp::load_lumps(std::string fpath)
 			{
 				fLightSamples = memsize / face2light;
 			}
-
 			//logf("mem size : {} - {} - {} or {}\n", fLightSamples, memsize, face1light, face2light);
 		}
 	}
@@ -4789,27 +4788,46 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	int oldtexid = 0;
 	BSPMIPTEX* oldtex = find_embedded_texture(name, oldtexid);
 
+	bool only_copy_data = false;
+
+	// internal, with data
 	if (oldtex)
 	{
-		logf("Texture with name {} found in map.\n", name);
+		logf("Embedded texture with name {} found in map.\n", name);
 		if (oldtex->nWidth != width || oldtex->nHeight != height)
 		{
-			oldtex->szName[0] = '\0';
-			logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
-				oldtex->nWidth, oldtex->nHeight, width, height);
-			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
-				oldtex->nOffsets[3] = 0;
+			if (!data)
+			{
+				logf("Same embedded texture with another size found in map.\nJust clear offsets, update size and return index.\n");
+				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
+					oldtex->nOffsets[3] = 0;
+				oldtex->nWidth = width;
+				oldtex->nHeight = height;
+
+				remove_unused_model_structures(CLEAN_TEXTURES);
+				return oldtexid;
+			}
+			else 
+			{
+				oldtex->szName[0] = '\0';
+				logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
+					oldtex->nWidth, oldtex->nHeight, width, height);
+				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
+					oldtex->nOffsets[3] = 0;
+			}
 		}
 		else if (data)
 		{
-			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
-				oldtex->nOffsets[3] = 0;
-			oldtex->szName[0] = '\0';
-			logf("Warning! Texture pointer found. Need replace by new texture.\n");
+			only_copy_data = true;
+			logf("Internal texture found with same size. Just update data.\n");
 		}
 		else
 		{
-			logf("Same embedded texture found in map. Just return index.\n");
+			logf("Same embedded texture with same size found in map.\nJust clear offsets and return index.\n");
+			oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
+				oldtex->nOffsets[3] = 0;
+
+			remove_unused_model_structures(CLEAN_TEXTURES);
 			return oldtexid;
 		}
 	}
@@ -4818,23 +4836,34 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		oldtexid = -1;
 		oldtex = find_embedded_wad_texture(name, oldtexid);
 
+		// external without data
 		if (oldtex)
 		{
-			logf("Texture with name {} found in map.\n", name);
+			logf("Wad texture with name {} found in map.\n", name);
 			if (oldtex->nWidth != width || oldtex->nHeight != height)
 			{
-				oldtex->szName[0] = '\0';
-				logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
-					oldtex->nWidth, oldtex->nHeight, width, height);
-				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
-					oldtex->nOffsets[3] = 0;
+				if (!data)
+				{
+					logf("Same wad texture with size different {}x{} > {}x{} found in map.\nJust update size and return index.\n",
+						oldtex->nWidth, oldtex->nHeight, width, height);
+
+					oldtex->nWidth = width;
+					oldtex->nHeight = height;
+					return oldtexid;
+				}
+				else
+				{
+					oldtex->szName[0] = '\0';
+					logf("Warning! Texture size different {}x{} > {}x{}.\nRenaming old texture and create new one.\n",
+						oldtex->nWidth, oldtex->nHeight, width, height);
+					oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
+						oldtex->nOffsets[3] = 0;
+				}
 			}
 			else if (!data)
 			{
-				oldtex->nOffsets[0] = oldtex->nOffsets[1] = oldtex->nOffsets[2] =
-					oldtex->nOffsets[3] = 0;
-				oldtex->szName[0] = '\0';
-				logf("Warning! Wad texture found. Need replace by new texture.\n");
+				logf("Same wad texture with same size found in map, return index.\n");
+				return oldtexid;
 			}
 			else
 			{
@@ -4850,6 +4879,17 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	int texDataSize = 0;
 	COLOR3 palette[256];
 	memset(&palette, 0, sizeof(COLOR3) * 256);
+	int colorCount = 0;
+
+
+	if (!is_bsp2 && !is_bsp29 && !force_quake_pal)
+	{
+		texDataSize += width * height + sizeof(short) /* palette count */ + sizeof(COLOR3) * 256;
+	}
+	else
+	{
+		texDataSize += width * height + sizeof(short);
+	}
 
 
 	unsigned char* mip[MIPLEVELS] = { NULL };
@@ -4857,8 +4897,8 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 	if (data)
 	{
 		COLOR3* src = (COLOR3*)data;
-		int colorCount = 0;
 
+		// If custom pal || quake || force quake
 		if (is_bsp2 || is_bsp29 || force_quake_pal || custompal)
 		{
 			if (custompal)
@@ -4911,15 +4951,6 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 				src++;
 			}
 		}
-
-		if (is_bsp2 || is_bsp29 || force_quake_pal)
-		{
-			texDataSize += width * height + sizeof(short);
-		}
-		else
-		{
-			texDataSize += width * height + sizeof(short) /* palette count */ + sizeof(COLOR3) * 256;
-		}
 		// generate mipmaps
 		for (int i = 1; i < MIPLEVELS; i++)
 		{
@@ -4950,6 +4981,43 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 			}
 		}
 	}
+	else
+	{
+		for (int i = 1; i < MIPLEVELS; i++)
+		{
+			int div = 1 << i;
+			int mipWidth = width / div;
+			int mipHeight = height / div;
+			texDataSize += mipWidth * mipHeight;
+		}
+	}
+
+	if (only_copy_data)
+	{
+		int newTexOffset = ((int*)textures)[oldtexid + 1];
+
+		memcpy(textures + newTexOffset + oldtex->nOffsets[0], mip[0], width * height);
+		memcpy(textures + newTexOffset + oldtex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
+		memcpy(textures + newTexOffset + oldtex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
+		memcpy(textures + newTexOffset + oldtex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
+
+		size_t palleteOffset = oldtex->nOffsets[3] + (width >> 3) * (height >> 3);
+
+		if (!is_bsp2 && !is_bsp29 && !force_quake_pal)
+		{
+			palleteOffset += sizeof(short) /* pal count */;
+			memcpy(textures + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
+		}
+		// 256 palette
+		(textures + newTexOffset + palleteOffset)[0] = 0x00;
+		(textures + newTexOffset + palleteOffset)[1] = 0x01;
+
+		for (int i = 0; i < MIPLEVELS; i++)
+		{
+			delete[] mip[i];
+		}
+		return oldtexid;
+	}
 
 	if (oldtex && oldtexid >= 0)
 	{
@@ -4963,9 +5031,7 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		}
 	}
 
-	texDataSize += texDataSize % 4; // align by 4
-
-	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + texDataSize;
+	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + (texDataSize + 3) & ~3 /* 4 bytes padding */;
 
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];
 
@@ -5007,26 +5073,21 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		newMipTex->nOffsets[2] = newMipTex->nOffsets[1] + (width >> 1) * (height >> 1);
 		newMipTex->nOffsets[3] = newMipTex->nOffsets[2] + (width >> 2) * (height >> 2);
 
-		int w = newMipTex->nWidth;
-		int h = newMipTex->nHeight;
-		int sz = w * h;	   // miptex 0
-		int sz2 = sz / 4;  // miptex 1
-		int sz3 = sz2 / 4; // miptex 2
-		int sz4 = sz3 / 4; // miptex 3
-
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[0], mip[0], width * height);
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[1], mip[1], (width >> 1) * (height >> 1));
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[2], mip[2], (width >> 2) * (height >> 2));
 		memcpy(newTexData + newTexOffset + newMipTex->nOffsets[3], mip[3], (width >> 3) * (height >> 3));
 
+		size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + sizeof(short);
+		unsigned char* paletteCount = newTexData + newTexOffset + (palleteOffset - sizeof(short));
+
 		if (!is_bsp2 && !is_bsp29 && !force_quake_pal)
 		{
-			size_t palleteOffset = newMipTex->nOffsets[3] + (width >> 3) * (height >> 3) + 2;
 			memcpy(newTexData + newTexOffset + palleteOffset, palette, sizeof(COLOR3) * 256);
 		}
 		// 256 palette
-		((unsigned char*)newTexData + newTexOffset)[sizeof(BSPMIPTEX) + sz + sz2 + sz3 + sz4] = 0x00;
-		((unsigned char*)newTexData + newTexOffset)[sizeof(BSPMIPTEX) + sz + sz2 + sz3 + sz4 + 1] = 0x01;
+		paletteCount[0] = 0x00;
+		paletteCount[1] = 0x01;
 
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
@@ -5124,7 +5185,7 @@ int Bsp::add_texture(WADTEX* tex)
 	int sz4 = sz3 / 4; // miptex 3
 	int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /*pal size*/ sizeof(COLOR3) * 256;
 
-	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + szAll + szAll % 4;
+	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + ((szAll + 3) & ~3) /* 4 bytes padding */;
 
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];
 	memset(newTexData, 0, newTexLumpSize);
@@ -6852,6 +6913,7 @@ void Bsp::ExportExtFile()
 		delete tex;
 	}
 
+	delete tmpWad;
 	delete tmpBsp;
 }
 
@@ -7070,16 +7132,19 @@ int Bsp::getBspTextureSize(int textureid)
 	int sz = sizeof(BSPMIPTEX);
 	if (tex->nOffsets[0] > 0)
 	{
+		sz += sizeof(short); /* pal size */
+
 		if (is_texture_with_pal(textureid))
 		{
-			sz += sizeof(short) /* pal size */ + sizeof(COLOR3) * 256; // pallette
-			sz += sz % 4; //  + padding align by 4
+			sz += sizeof(COLOR3) * 256; // pallette
 		}
 
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
 			sz += (tex->nWidth >> i) * (tex->nHeight >> i);
 		}
+
+		sz = (sz + 3) & ~3; //  + padding align by 4
 	}
 	return sz;
 }
@@ -7088,10 +7153,10 @@ bool Bsp::is_texture_with_pal(int textureid)
 {
 	if (textureid < 0 || textureid >= textureCount)
 		return false;
-	/*
+	
 	if (bsp_header.nVersion == 30)
 		return true;
-	*/
+	
 
 	int iStartOffset = ((int*)textures)[textureid + 1];
 	unsigned char* pStartOffset = (unsigned char*)textures + iStartOffset;

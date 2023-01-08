@@ -264,18 +264,22 @@ std::string trimSpaces(std::string s)
 	return s;
 }
 
-int getTextureSizeInBytes(BSPMIPTEX* bspTexture)
+int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette)
 {
 	int sz = sizeof(BSPMIPTEX);
 	if (bspTexture->nOffsets[0] > 0)
 	{
-		sz += sizeof(COLOR3) * 256; // pallette + padding
-		sz += sz % 4; // align by 4
+		sz += sizeof(short) /* pal count */;
 
+		if (palette)
+			sz += sizeof(COLOR3) * 256; // pallette + padding
+		
 		for (int i = 0; i < MIPLEVELS; i++)
 		{
 			sz += (bspTexture->nWidth >> i) * (bspTexture->nHeight >> i);
 		}
+
+		sz = (sz + 3) & ~3; // 4 bytes padding
 	}
 	return sz;
 }

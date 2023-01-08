@@ -68,7 +68,7 @@ struct WADTEX
 		int sz4 = sz3 / 4; // miptex 3
 		int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) /* pal num */ + sizeof(COLOR3) * 256;
 
-		szAll += szAll % 4;
+		szAll = (szAll + 3) & ~3; // 4 bytes padding
 
 		data = new unsigned char[szAll];
 

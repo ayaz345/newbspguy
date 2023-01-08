@@ -542,14 +542,14 @@ void Renderer::renderLoop()
 				vec3 offset = SelectedMap->getBspRender()->mapOffset.flip();
 				matmodel.translate(offset.x, offset.y, offset.z);
 				colorShader->updateMatrixes();
-				vec3 p1 = debugPoint - vec3(32, 0, 0);
-				vec3 p2 = debugPoint + vec3(32, 0, 0);
+				vec3 p1 = debugPoint - vec3(32.0f, 0.0f, 0.0f);
+				vec3 p2 = debugPoint + vec3(32.0f, 0.0f, 0.0f);
 				drawLine(p1, p2, { 128, 128, 255, 255 });
-				p1 = debugPoint - vec3(0, 32, 0);
-				p2 = debugPoint + vec3(0, 32, 0);
+				p1 = debugPoint - vec3(0.0f, 32.0f, 0.0f);
+				p2 = debugPoint + vec3(0.0f, 32.0f, 0.0f);
 				drawLine(p1, p2, { 0, 255, 0, 255 });
-				p1 = debugPoint - vec3(0, 0, 32);
-				p2 = debugPoint + vec3(0, 0, 32);
+				p1 = debugPoint - vec3(0.0f, 0.0f, 32.0f);
+				p2 = debugPoint + vec3(0.0f, 0.0f, 32.0f);
 				drawLine(p1, p2, { 0, 0, 255, 255 });
 				colorShader->popMatrix(MAT_MODEL);
 			}
@@ -825,7 +825,7 @@ void Renderer::drawModelVerts()
 
 		if (anyEdgeSelected)
 		{
-			s = 0; // can't select certs when edges are selected
+			s = 0.0f; // can't select certs when edges are selected
 		}
 
 		vec3 min = vec3(-s, -s, -s) + ori;
@@ -850,7 +850,7 @@ void Renderer::drawModelVerts()
 
 		if (anyVertSelected && !anyEdgeSelected)
 		{
-			s = 0; // can't select edges when verts are selected
+			s = 0.0f; // can't select edges when verts are selected
 		}
 
 		vec3 min = vec3(-s, -s, -s) + ori;
@@ -1381,7 +1381,7 @@ void Renderer::cameraObjectHovering()
 void Renderer::cameraContextMenus()
 {
 	// context menus
-	bool wasTurning = cameraIsRotating && totalMouseDrag.length() >= 1;
+	bool wasTurning = cameraIsRotating && totalMouseDrag.length() >= 1.0f;
 	if (draggingAxis == -1 && curRightMouse == GLFW_RELEASE && oldRightMouse != GLFW_RELEASE && !wasTurning)
 	{
 		vec3 pickStart, pickDir;
@@ -1439,9 +1439,9 @@ void Renderer::moveGrabbedEnt()
 			if (pressed[GLFW_KEY_LEFT_CONTROL])
 				moveScale = 1.0f;
 			if (g_scroll < oldScroll)
-				moveScale *= -1;
+				moveScale *= -1.0f;
 
-			grabDist += 16 * moveScale;
+			grabDist += 16.0f * moveScale;
 		}
 
 		Bsp* map = SelectedMap;
@@ -1706,7 +1706,7 @@ bool Renderer::transformAxisControls()
 		for (int i = 0; i < 3; i++)
 		{
 			if (i != draggingAxis % 3)
-				((float*)&delta)[i] = 0;
+				((float*)&delta)[i] = 0.0f;
 			else
 				((float*)&delta)[i] = clamp(((float*)&delta)[i] * moveScale, -maxDragDist, maxDragDist);
 		}
@@ -1843,12 +1843,12 @@ bool Renderer::transformAxisControls()
 			if (ent->isBspModel() && abs(delta.length()) >= EPSILON)
 			{
 				vec3 scaleDirs[6]{
-					vec3(1, 0, 0),
-					vec3(0, 1, 0),
-					vec3(0, 0, 1),
-					vec3(-1, 0, 0),
-					vec3(0, -1, 0),
-					vec3(0, 0, -1),
+					vec3(1.0f, 0.0f, 0.0f),
+					vec3(0.0f, 1.0f, 0.0f),
+					vec3(0.0f, 0.0f, 1.0f),
+					vec3(-1.0f, 0.0f, 0.0f),
+					vec3(0.0f, -1.0f, 0.0f),
+					vec3(0.0f, 0.0f, -1.0f),
 				};
 				vertPickCount++;
 				if (curLeftMouse != GLFW_PRESS && oldLeftMouse == GLFW_PRESS)
@@ -2164,7 +2164,7 @@ void Renderer::drawLine(vec3& start, vec3& end, COLOR4 color)
 void Renderer::drawPlane(BSPPLANE& plane, COLOR4 color, vec3 offset)
 {
 	vec3 ori = plane.vNormal * plane.fDist;
-	vec3 crossDir = abs(plane.vNormal.z) > 0.9f ? vec3(1, 0, 0) : vec3(0, 0, 1);
+	vec3 crossDir = abs(plane.vNormal.z) > 0.9f ? vec3(1.0f, 0.0f, 0.0f) : vec3(0.0f, 0.0f, 1.0f);
 	vec3 right = crossProduct(plane.vNormal, crossDir);
 	vec3 up = crossProduct(right, plane.vNormal);
 

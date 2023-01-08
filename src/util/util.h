@@ -104,7 +104,7 @@ std::string toLowerCase(const std::string& s);
 
 std::string trimSpaces(std::string s);
 
-int getTextureSizeInBytes(BSPMIPTEX* bspTexture);
+int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette = false);
 
 float clamp(float val, float min, float max);
 

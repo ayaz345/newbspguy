@@ -193,14 +193,14 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	float maxMapsPerCol = (FLT_MAX_COORD * 2.0f) / maxDims.y;
 	float maxMapsPerLayer = (FLT_MAX_COORD * 2.0f) / maxDims.z;
 
-	float idealMapsPerAxis = (float)floor(pow(maps.size(), 1 / 3.0f));
+	float idealMapsPerAxis = (float)floor(pow(maps.size(), 1.0f / 3.0f));
 
-	if (idealMapsPerAxis * idealMapsPerAxis * idealMapsPerAxis < maps.size())
+	if (idealMapsPerAxis * idealMapsPerAxis * idealMapsPerAxis < (float)maps.size())
 	{
 		idealMapsPerAxis += 1.0f;
 	}
 
-	if (maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer < maps.size())
+	if (maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer < (float)maps.size())
 	{
 		logf("Not enough space to merge all maps! Try moving them individually before merging.");
 		return orderedBlocks;
@@ -214,8 +214,8 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 	logf("Max maps per axis: x={:.0f} y={:.0f} z={:.0f}  (total={:.0f})\n", maxMapsPerRow, maxMapsPerCol, maxMapsPerLayer, maxMapsPerRow * maxMapsPerCol * maxMapsPerLayer);
 
 	float actualWidth = std::min(idealMapsPerAxis, (float)maps.size());
-	float actualLength = std::min(idealMapsPerAxis, (float)ceil(maps.size() / (float)(idealMapsPerAxis)));
-	float actualHeight = std::min(idealMapsPerAxis, (float)ceil(maps.size() / (float)(idealMapsPerAxis * idealMapsPerAxis)));
+	float actualLength = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / idealMapsPerAxis));
+	float actualHeight = std::min(idealMapsPerAxis, (float)ceil((float)maps.size() / (idealMapsPerAxis * idealMapsPerAxis)));
 	logf("Merged map size:   {:.0f}x{:.0f}x{:.0f} maps\n", actualWidth, actualLength, actualHeight);
 
 	logf("Merged map bounds: min=({:.0f},{:.0f}, {:.0f})\n"
@@ -225,15 +225,15 @@ std::vector<std::vector<std::vector<MAPBLOCK>>> BspMerger::separate(std::vector<
 
 	vec3 targetMins = mergedMapMin;
 	int blockIdx = 0;
-	for (int z = 0; z < idealMapsPerAxis && blockIdx < blocks.size(); z++)
+	for (int z = 0; (float)z < idealMapsPerAxis && blockIdx < blocks.size(); z++)
 	{
 		targetMins.y = mergedMapMin.y;
 		std::vector<std::vector<MAPBLOCK>> col;
-		for (int y = 0; y < idealMapsPerAxis && blockIdx < blocks.size(); y++)
+		for (int y = 0; (float)y < idealMapsPerAxis && blockIdx < blocks.size(); y++)
 		{
 			targetMins.x = mergedMapMin.x;
 			std::vector<MAPBLOCK> row;
-			for (int x = 0; x < idealMapsPerAxis && blockIdx < blocks.size(); x++)
+			for (int x = 0; (float)x < idealMapsPerAxis && blockIdx < blocks.size(); x++)
 			{
 				MAPBLOCK& block = blocks[blockIdx];
 
@@ -273,9 +273,9 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 	mapStringToSet load_map_triggers;
 	mapStringToMapBlock mapsByName;
 
-	vec3 map_info_origin = vec3(-64, 64, 0);
-	vec3 changesky_origin = vec3(64, 64, 0);
-	vec3 equip_origin = vec3(64, -64, 0);
+	vec3 map_info_origin = vec3(-64.0f, 64.0f, 0.0f);
+	vec3 changesky_origin = vec3(64.0f, 64.0f, 0.0f);
+	vec3 equip_origin = vec3(64.0f, -64.0f, 0.0f);
 
 	{
 		Entity* map_info = new Entity();
@@ -291,7 +291,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 		}
 
 		mergedMap->ents.push_back(map_info);
-		map_info_origin.z += 10;
+		map_info_origin.z += 10.0f;
 	}
 
 	for (int i = 0; i < sourceMaps.size(); i++)
@@ -313,7 +313,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 			map_info->addKeyvalue("$v_offset", sourceMap.offset.toKeyvalueString());
 			map_info->addKeyvalue("classname", "info_target");
 			mergedMap->ents.push_back(map_info);
-			map_info_origin.z += 10;
+			map_info_origin.z += 10.0f;
 		}
 	}
 
@@ -381,7 +381,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 			changesky->addKeyvalue("spawnflags", "5"); // all players + update server
 			changesky->addKeyvalue("classname", "trigger_changesky");
 			mergedMap->ents.push_back(changesky);
-			changesky_origin.z += 18;
+			changesky_origin.z += 18.0f;
 			lastSky = std::move(skyname);
 			lastSkyColor = std::move(skyColor);
 		}
@@ -410,7 +410,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 		equip->addKeyvalue("classname", "bspguy_equip");
 
-		relay->addKeyvalue("origin", (equip_origin + vec3(0, 18, 0)).toKeyvalueString());
+		relay->addKeyvalue("origin", (equip_origin + vec3(0.0f, 18.0f, 0.0f)).toKeyvalueString());
 		relay->addKeyvalue("targetname", "bspguy_start_" + mapname);
 		relay->addKeyvalue("target", "equip_" + mapname); // add new weapons when the map starts
 		relay->addKeyvalue("triggerstate", "1");
@@ -419,7 +419,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 		mergedMap->ents.push_back(equip);
 		mergedMap->ents.push_back(relay);
 
-		equip_origin.z += 18;
+		equip_origin.z += 18.0f;
 	}
 
 	int replaced_changelevels = 0;
@@ -658,7 +658,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						cleanup_ent->addKeyvalue("trigger_after_run", "bspguy_finish_clean");
 						cleanup_ent->addKeyvalue("classname", "trigger_entity_iterator");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 28;
+						entOrigin.z += 28.0f;
 					}
 					{	// kill monster entities in the map slower to reduce lag
 						Entity* cleanup_ent = new Entity();
@@ -671,7 +671,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						cleanup_ent->addKeyvalue("trigger_after_run", "bspguy_finish_clean");
 						cleanup_ent->addKeyvalue("classname", "trigger_entity_iterator");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 24;
+						entOrigin.z += 24.0f;
 					}
 					{	// check if entity is within bounds (min x)
 						Entity* cleanup_ent = new Entity();
@@ -685,7 +685,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						cleanup_ent->addKeyvalue("spawnflags", cond_use_x); // cyclic + keep !activator
 						cleanup_ent->addKeyvalue("classname", "trigger_condition");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 18;
+						entOrigin.z += 18.0f;
 					}
 					{	// check if entity is within bounds (min y)
 						Entity* cleanup_ent = new Entity();
@@ -699,7 +699,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						cleanup_ent->addKeyvalue("spawnflags", cond_use_y); // cyclic + keep !activator
 						cleanup_ent->addKeyvalue("classname", "trigger_condition");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 18;
+						entOrigin.z += 18.0f;
 					}
 					{	// check if entity is within bounds (min z)
 						Entity* cleanup_ent = new Entity();
@@ -713,7 +713,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						cleanup_ent->addKeyvalue("spawnflags", cond_use_z); // cyclic + keep !activator
 						cleanup_ent->addKeyvalue("classname", "trigger_condition");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 18;
+						entOrigin.z += 18.0f;
 					}
 					{	// check if entity is within bounds (max x)
 						Entity* cleanup_ent = new Entity();
@@ -727,7 +727,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						cleanup_ent->addKeyvalue("spawnflags", cond_use_x); // cyclic + keep !activator
 						cleanup_ent->addKeyvalue("classname", "trigger_condition");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 18;
+						entOrigin.z += 18.0f;
 					}
 					{	// check if entity is within bounds (max y)
 						Entity* cleanup_ent = new Entity();
@@ -741,7 +741,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						cleanup_ent->addKeyvalue("spawnflags", cond_use_y); // cyclic + keep !activator
 						cleanup_ent->addKeyvalue("classname", "trigger_condition");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 18;
+						entOrigin.z += 18.0f;
 					}
 					{	// check if entity is within bounds (max z)
 						Entity* cleanup_ent = new Entity();
@@ -767,7 +767,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 						//cleanup_ent->addKeyvalue("message", "bspguy_test");
 						cleanup_ent->addKeyvalue("classname", "trigger_changevalue");
 						mergedMap->ents.push_back(cleanup_ent);
-						entOrigin.z += 18;
+						entOrigin.z += 18.0f;
 					}
 				}
 			}
@@ -801,7 +801,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 		}
 		*/
 
-		vec3 map_setup_origin = vec3(64, -64, 0);
+		vec3 map_setup_origin = vec3(64.0f, -64.0f, 0.0f);
 		for (auto it = load_map_triggers.begin(); it != load_map_triggers.end(); ++it)
 		{
 			Entity* map_setup = new Entity();
@@ -823,7 +823,7 @@ void BspMerger::update_map_series_entity_logic(Bsp* mergedMap, std::vector<MAPBL
 
 			mergedMap->ents.push_back(map_setup);
 
-			map_setup_origin.z += 18;
+			map_setup_origin.z += 18.0f;
 		}
 	}
 

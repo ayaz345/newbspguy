@@ -20,9 +20,6 @@ LightmapNode::~LightmapNode(void)
 
 bool LightmapNode::insert(int iw, int ih, int& outX, int& outY)
 {
-	if (this == NULL)
-		return false;
-
 	if (child[0] != NULL) // not a leaf, try putting into child nodes
 	{
 		if (child[0]->insert(iw, ih, outX, outY))

@@ -785,7 +785,7 @@ void make_minidump(EXCEPTION_POINTERS* e)
 	SYSTEMTIME t;
 	GetSystemTime(&t);
 	wsprintfA(nameEnd - strlen(".exe"),
-				"_%4d%02d%02d_%02d%02d%02d({}).dmp",
+				"_%4d%02d%02d_%02d%02d%02d(%d).dmp",
 				t.wYear, t.wMonth, t.wDay, t.wHour, t.wMinute, t.wSecond, crashdumps);
 
 	logf("Generating minidump at path {}\n", name);
