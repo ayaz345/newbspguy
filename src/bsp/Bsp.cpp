@@ -1980,7 +1980,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 
 		removeCount.textures = remove_unused_textures(usedStructures.textures, remap.textures, &removeTexData);
 
-		removeCount.texturedata = removeCount.texturedata - removeTexData;
+		removeCount.texturedata = removeTexData;
 	}
 	if (target & CLEAN_VISDATA && visDataLength && usedStructures.count.leaves)
 		removeCount.visdata = remove_unused_visdata(usedStructures.leaves, (BSPLEAF32*)oldLeaves, usedStructures.count.leaves, oldLeavesLumpLen);
