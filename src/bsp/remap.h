@@ -17,6 +17,7 @@ public:
 	unsigned int surfEdges;
 	unsigned int edges;
 	unsigned int models;
+	unsigned int texturedata;
 	unsigned int lightdata;
 	unsigned int visdata;
 

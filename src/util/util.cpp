@@ -279,7 +279,7 @@ int getTextureSizeInBytes(BSPMIPTEX* bspTexture, bool palette)
 			sz += (bspTexture->nWidth >> i) * (bspTexture->nHeight >> i);
 		}
 
-		sz = (sz + 3) & ~3; // 4 bytes padding
+		//sz = (sz + 3) & ~3; // 4 bytes padding
 	}
 	return sz;
 }

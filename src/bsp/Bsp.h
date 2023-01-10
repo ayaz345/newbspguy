@@ -299,7 +299,7 @@ public:
 private:
 	unsigned int remove_unused_lightmaps(bool* usedFaces);
 	unsigned int remove_unused_visdata(bool* usedLeaves, BSPLEAF32* oldLeaves, int oldWorldLeaves, int oldLeavesMemSize); // called after removing unused leaves
-	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes);
+	unsigned int remove_unused_textures(bool* usedTextures, int* remappedIndexes, int * removeddata = NULL);
 	unsigned int remove_unused_structs(int lumpIdx, bool* usedStructs, int* remappedIndexes);
 
 	void get_lightmaps(LIGHTMAP* outLightmaps, BSPMODEL* target, bool logged = false);

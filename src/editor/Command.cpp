@@ -393,9 +393,11 @@ void CreateBspModelCommand::execute()
 		oldLumps = map->duplicate_lumps(dupLumps);
 	}
 
+	bool NeedreloadTextures = false;
 	// add the aaatrigger texture if it doesn't already exist
 	if (aaatriggerIdx == -1)
 	{
+		NeedreloadTextures = true;
 		aaatriggerIdx = addDefaultTexture();
 	}
 
@@ -428,7 +430,8 @@ void CreateBspModelCommand::execute()
 	renderer->calcFaceMaths();
 	renderer->preRenderFaces();
 	renderer->preRenderEnts();
-	renderer->reloadTextures();
+	if (NeedreloadTextures)
+		renderer->reloadTextures();
 	renderer->reloadLightmaps();
 	renderer->addClipnodeModel(modelIdx);
 	//renderer->reload();
@@ -515,7 +518,7 @@ int CreateBspModelCommand::addDefaultTexture()
 // Edit BSP model
 //
 EditBspModelCommand::EditBspModelCommand(std::string desc, int entIdx, LumpState oldLumps, LumpState newLumps,
-										 vec3 oldOrigin) : Command(desc, g_app->getSelectedMapId())
+	vec3 oldOrigin) : Command(desc, g_app->getSelectedMapId())
 {
 
 	this->oldLumps = oldLumps;

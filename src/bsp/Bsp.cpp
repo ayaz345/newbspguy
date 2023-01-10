@@ -1556,6 +1556,21 @@ unsigned int Bsp::remove_unused_structs(int lumpIdx, bool* usedStructs, int* rem
 		removeCount += !usedStructs[i];
 	}
 
+	if (lumpIdx == LUMP_FACES && renderer)
+	{
+		for (int i = 0; i < oldStructCount; i++)
+		{
+			if (!usedStructs[i])
+			{
+				renderer->numRenderLightmapInfos--;
+				for (int n = i; n < renderer->numRenderLightmapInfos; n++)
+				{
+					renderer->lightmaps[n] = renderer->lightmaps[n + 1];
+				}
+			}
+		}
+	}
+
 	int newStructCount = oldStructCount - removeCount;
 
 	unsigned char* oldStructs = lumps[lumpIdx];
@@ -1577,7 +1592,7 @@ unsigned int Bsp::remove_unused_structs(int lumpIdx, bool* usedStructs, int* rem
 	return removeCount;
 }
 
-unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexes)
+unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexes, int * removeddata)
 {
 	int oldTexCount = textureCount;
 
@@ -1591,6 +1606,7 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 			if (offset < 0)
 			{
 				removeSize += sizeof(int);
+				removeCount++;
 			}
 			else
 			{
@@ -1624,14 +1640,20 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 					}
 				}
 				removeSize += getBspTextureSize(i) + sizeof(int);
+				removeCount++;
 			}
-			removeCount++;
+
 		}
 	}
 
 	int newTexCount = oldTexCount - removeCount;
-	unsigned char* newTexData = new unsigned char[bsp_header.lump[LUMP_TEXTURES].nLength - removeSize];
-	memset(newTexData, 0, bsp_header.lump[LUMP_TEXTURES].nLength - removeSize);
+
+	int totalSize = bsp_header.lump[LUMP_TEXTURES].nLength - removeSize;
+
+	totalSize = (totalSize + 3) & ~3; // 4 bytes align lump
+
+	unsigned char* newTexData = new unsigned char[totalSize];
+	memset(newTexData, 0, totalSize);
 
 	int* texHeader = (int*)newTexData;
 
@@ -1665,7 +1687,10 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 
 	texHeader[0] = k;
 
-	replace_lump(LUMP_TEXTURES, newTexData, bsp_header.lump[LUMP_TEXTURES].nLength - removeSize);
+	if (removeddata)
+		*removeddata = removeSize;
+
+	replace_lump(LUMP_TEXTURES, newTexData, totalSize);
 
 	return removeCount;
 }
@@ -1948,8 +1973,15 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 		removeCount.edges = remove_unused_structs(LUMP_EDGES, usedStructures.edges, remap.edges);
 	if (target & CLEAN_VERTICES)
 		removeCount.verts = remove_unused_structs(LUMP_VERTICES, usedStructures.verts, remap.verts);
+
 	if (target & CLEAN_TEXTURES)
-		removeCount.textures = remove_unused_textures(usedStructures.textures, remap.textures);
+	{
+		int removeTexData = 0;
+
+		removeCount.textures = remove_unused_textures(usedStructures.textures, remap.textures, &removeTexData);
+
+		removeCount.texturedata = removeCount.texturedata - removeTexData;
+	}
 	if (target & CLEAN_VISDATA && visDataLength && usedStructures.count.leaves)
 		removeCount.visdata = remove_unused_visdata(usedStructures.leaves, (BSPLEAF32*)oldLeaves, usedStructures.count.leaves, oldLeavesLumpLen);
 
@@ -2977,7 +3009,7 @@ void Bsp::write(const std::string& path)
 			offset += bsp_header_ex.lump[i].nLength;
 			file.write((char*)extralumps[i], bsp_header_ex.lump[i].nLength);
 
-			/*int padding = ((bsp_header_ex.lump[i].nLength + 3) & ~3) - bsp_header_ex.lump[i].nLength;
+			int padding = ((bsp_header_ex.lump[i].nLength + 3) & ~3) - bsp_header_ex.lump[i].nLength;
 			if (padding > 0)
 			{
 				offset += padding;
@@ -2985,9 +3017,9 @@ void Bsp::write(const std::string& path)
 				memset(zeropad, 0, padding);
 				file.write((const char*)zeropad, padding);
 				delete[] zeropad;
-			}*/
+			}
 			if (g_settings.verboseLogs)
-				logf("Write extra lump {} size {} offset {}\n", i, bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset/*, padding*/);
+				logf("Write extra lump {} size {} offset {} + {} align bytes\n", i, bsp_header_ex.lump[i].nLength, bsp_header_ex.lump[i].nOffset, padding);
 
 		}
 	}
@@ -2999,7 +3031,7 @@ void Bsp::write(const std::string& path)
 		offset += bsp_header.lump[i].nLength;
 		file.write((char*)lumps[i], bsp_header.lump[i].nLength);
 
-		/*int padding = ((bsp_header.lump[i].nLength + 3) & ~3) - bsp_header.lump[i].nLength;
+		int padding = ((bsp_header.lump[i].nLength + 3) & ~3) - bsp_header.lump[i].nLength;
 		if (padding > 0)
 		{
 			offset += padding;
@@ -3007,10 +3039,10 @@ void Bsp::write(const std::string& path)
 			memset(zeropad, 0, padding);
 			file.write((const char*)zeropad, padding);
 			delete[] zeropad;
-		}*/
+		}
 
 		if (g_settings.verboseLogs)
-			logf("Write lump {} size {} offset {}\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset/*, padding*/);
+			logf("Write lump {} size {} offset {} + {} align bytes\n", i, bsp_header.lump[i].nLength, bsp_header.lump[i].nOffset, padding);
 	}
 
 	file.seekp(0);
@@ -5062,7 +5094,9 @@ int Bsp::add_texture(const char* oldname, unsigned char* data, int width, int he
 		}
 	}
 
-	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + (texDataSize + 3) & ~3 /* 4 bytes padding */;
+	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + texDataSize;
+
+	newTexLumpSize = (newTexLumpSize + 3) & ~3; /* 4 bytes lump padding for add new texture aligned to 4? */
 
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];
 
@@ -5232,7 +5266,9 @@ int Bsp::add_texture(WADTEX* tex)
 	int sz4 = sz3 / 4; // miptex 3
 	int szAll = sz + sz2 + sz3 + sz4 + sizeof(short) + /*pal size*/ sizeof(COLOR3) * 256;
 
-	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + ((szAll + 3) & ~3) /* 4 bytes padding */;
+	size_t newTexLumpSize = bsp_header.lump[LUMP_TEXTURES].nLength + sizeof(int) + sizeof(BSPMIPTEX) + szAll;
+
+	newTexLumpSize = (newTexLumpSize + 3) & ~3; /* 4 bytes lump padding for add new texture aligned to 4? */
 
 	unsigned char* newTexData = new unsigned char[newTexLumpSize];
 	memset(newTexData, 0, newTexLumpSize);
@@ -7191,7 +7227,7 @@ int Bsp::getBspTextureSize(int textureid)
 			sz += (tex->nWidth >> i) * (tex->nHeight >> i);
 		}
 
-		sz = (sz + 3) & ~3; //  + padding align by 4
+	//	sz = (sz + 3) & ~3; //  + padding align by 4
 	}
 	return sz;
 }

@@ -8,7 +8,7 @@ STRUCTCOUNT::STRUCTCOUNT()
 		= nodes = clipnodes = verts
 		= faces = textures = markSurfs
 		= surfEdges = edges = models
-		= lightdata = visdata = 0;
+		= texturedata = lightdata = visdata = 0;
 }
 
 STRUCTCOUNT::~STRUCTCOUNT()
@@ -17,7 +17,7 @@ STRUCTCOUNT::~STRUCTCOUNT()
 		= nodes = clipnodes = verts
 		= faces = textures = markSurfs
 		= surfEdges = edges = models
-		= lightdata = visdata = 0;
+		= texturedata = lightdata = visdata = 0;
 }
 
 STRUCTCOUNT::STRUCTCOUNT(Bsp* map)
@@ -34,6 +34,7 @@ STRUCTCOUNT::STRUCTCOUNT(Bsp* map)
 	surfEdges = map->bsp_header.lump[LUMP_SURFEDGES].nLength / sizeof(int);
 	edges = map->bsp_header.lump[LUMP_EDGES].nLength / sizeof(BSPEDGE32);
 	models = map->bsp_header.lump[LUMP_MODELS].nLength / sizeof(BSPMODEL);
+	texturedata = map->bsp_header.lump[LUMP_TEXTURES].nLength;
 	lightdata = map->bsp_header.lump[LUMP_LIGHTING].nLength;
 	visdata = map->bsp_header.lump[LUMP_VISIBILITY].nLength;
 }
@@ -52,6 +53,7 @@ void STRUCTCOUNT::add(const STRUCTCOUNT& other)
 	surfEdges += other.surfEdges;
 	edges += other.edges;
 	models += other.models;
+	texturedata += other.texturedata;
 	lightdata += other.lightdata;
 	visdata += other.visdata;
 }
@@ -70,6 +72,7 @@ void STRUCTCOUNT::sub(const STRUCTCOUNT& other)
 	surfEdges -= other.surfEdges;
 	edges -= other.edges;
 	models -= other.models;
+	texturedata -= other.texturedata;
 	lightdata -= other.lightdata;
 	visdata -= other.visdata;
 }
@@ -121,6 +124,7 @@ void STRUCTCOUNT::print_delete_stats(int indent)
 	print_stat(indent, surfEdges, "surfedge");
 	print_stat(indent, edges, "edge");
 	print_stat(indent, textures, "texture");
+	print_stat_mem(indent, texturedata, "texture data");
 	print_stat_mem(indent, lightdata, "lightmap data");
 	print_stat_mem(indent, visdata, "VIS data");
 }

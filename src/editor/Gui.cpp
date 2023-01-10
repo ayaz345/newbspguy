@@ -310,16 +310,16 @@ void Gui::pasteLightmap()
 	map->getBspRender()->reloadLightmaps();
 }
 
-void ExportModel(Bsp* map, int id, int ExportType)
+void ExportModel(Bsp* src_map, int id, int ExportType)
 {
 	logf("Save current map to temporary file.\n");
-	map->update_ent_lump();
-	map->update_lump_pointers();
-	map->write(map->bsp_path + ".tmp.bsp");
+	src_map->update_ent_lump();
+	src_map->update_lump_pointers();
+	src_map->write(src_map->bsp_path + ".tmp.bsp");
 
 	logf("Load map for model export.\n");
 
-	Bsp* tmpMap = new Bsp(map->bsp_path + ".tmp.bsp");
+	Bsp* tmpMap = new Bsp(src_map->bsp_path + ".tmp.bsp");
 
 	tmpMap->force_skip_crc = true;
 	if (ExportType == 1)
@@ -329,11 +329,11 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	}
 
 	logf("Remove temporary file.\n");
-	removeFile(map->bsp_path + ".tmp.bsp");
+	removeFile(src_map->bsp_path + ".tmp.bsp");
 
 	vec3 modelOrigin = tmpMap->get_model_center(id);
 
-	BSPMODEL tmpModel = map->models[id];
+	BSPMODEL tmpModel = src_map->models[id];
 
 	while (tmpMap->modelCount < 2)
 	{
@@ -422,7 +422,7 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	tmpMap->update_lump_pointers();
 
 	logf("Remove unused wad files.\n");
-	remove_unused_wad_files(map, tmpMap, ExportType);
+	remove_unused_wad_files(src_map, tmpMap, ExportType);
 
 	logf("Remove all unused map data #2.\n");
 	removed = tmpMap->remove_unused_model_structures(CLEAN_LIGHTMAP | CLEAN_PLANES | CLEAN_NODES | CLEAN_CLIPNODES | CLEAN_CLIPNODES_SOMETHING | CLEAN_LEAVES | CLEAN_FACES | CLEAN_SURFEDGES | CLEAN_TEXINFOS |
@@ -435,8 +435,8 @@ void ExportModel(Bsp* map, int id, int ExportType)
 	{
 		tmpMap->update_ent_lump();
 		tmpMap->update_lump_pointers();
-		removeFile(GetWorkDir() + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
-		tmpMap->write(GetWorkDir() + map->bsp_name + "_model" + std::to_string(id) + ".bsp");
+		removeFile(GetWorkDir() + src_map->bsp_name + "_model" + std::to_string(id) + ".bsp");
+		tmpMap->write(GetWorkDir() + src_map->bsp_name + "_model" + std::to_string(id) + ".bsp");
 	}
 
 	delete tmpMap;
@@ -1549,7 +1549,7 @@ void Gui::drawMenuBar()
 
 							tmpWad->write(textureList);
 							delete tmpWad;
-							map->getBspRender()->reuploadTextures();
+							map->getBspRender()->reloadTextures();
 						}
 					}
 				}
@@ -2650,7 +2650,7 @@ void Gui::drawDebugWidget()
 				if (oldOffset > 0)
 				{
 					BSPMIPTEX* bspTex = (BSPMIPTEX*)(map->textures + oldOffset);
-					if (bspTex->nOffsets[0] >= 0)
+					if (bspTex->nOffsets[0] > 0)
 					{
 						TotalInternalTextures++;
 					}
@@ -5578,6 +5578,7 @@ void Gui::drawLimits()
 						stats.push_back(calcStat("surfedges", map->surfedgeCount, MAX_MAP_SURFEDGES, false));
 						stats.push_back(calcStat("edges", map->edgeCount, MAX_MAP_EDGES, false));
 						stats.push_back(calcStat("textures", map->textureCount, MAX_MAP_TEXTURES, false));
+						stats.push_back(calcStat("texturedata", map->textureDataLength, INT_MAX, true));
 						stats.push_back(calcStat("lightdata", map->lightDataLength, MAX_MAP_LIGHTDATA, true));
 						stats.push_back(calcStat("visdata", map->visDataLength, MAX_MAP_VISDATA, true));
 						stats.push_back(calcStat("entities", (unsigned int)map->ents.size(), MAX_MAP_ENTS, false));

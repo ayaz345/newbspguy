@@ -202,7 +202,7 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 	if (colorShader)
 	{
 		colorShaderMultId = glGetUniformLocation(colorShader->ID, "colorMult");
-		numRenderClipnodes = map->modelCount;
+		//numRenderClipnodes = map->modelCount;
 		lightmapFuture = std::async(std::launch::async, &BspRenderer::loadLightmaps, this);
 		texturesFuture = std::async(std::launch::async, &BspRenderer::loadTextures, this);
 		clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
@@ -423,20 +423,33 @@ void BspRenderer::reloadClipnodes()
 	clipnodesFuture = std::async(std::launch::async, &BspRenderer::loadClipnodes, this);
 }
 
-void BspRenderer::addClipnodeModel(int modelIdx)
+RenderClipnodes* BspRenderer::addClipnodeModel(int modelIdx)
 {
 	if (modelIdx < 0)
-		return;
-	RenderClipnodes* newRenderClipnodes = new RenderClipnodes[numRenderClipnodes + 1];
+	{
+		return NULL;
+	}
+
+	if (numRenderClipnodes <= 0)
+	{
+		reloadClipnodes();
+		return NULL;
+	}
+
+	RenderClipnodes* newRenderClipnodes = new RenderClipnodes[std::max(modelIdx, numRenderClipnodes) + 1];
 	for (int i = 0; i < numRenderClipnodes; i++)
 	{
 		newRenderClipnodes[i] = renderClipnodes[i];
 	}
-	newRenderClipnodes[numRenderClipnodes] = RenderClipnodes();
-	numRenderClipnodes++;
+	newRenderClipnodes[modelIdx] = RenderClipnodes();
+
+	numRenderClipnodes = std::max(modelIdx, numRenderClipnodes) + 1;
+
 	renderClipnodes = newRenderClipnodes;
 
 	generateClipnodeBuffer(modelIdx);
+
+	return &renderClipnodes[modelIdx];
 }
 
 void BspRenderer::updateModelShaders()
@@ -575,13 +588,14 @@ void BspRenderer::loadLightmaps()
 
 void BspRenderer::updateLightmapInfos()
 {
-
 	if (numRenderLightmapInfos == map->faceCount)
 	{
 		return;
 	}
+
 	if (map->faceCount < numRenderLightmapInfos)
 	{
+		// Already done in remove_unused_structs!!!
 		logf("TODO: Recalculate lightmaps when faces deleted\n");
 		return;
 	}
@@ -590,12 +604,17 @@ void BspRenderer::updateLightmapInfos()
 	int addedFaces = map->faceCount - numRenderLightmapInfos;
 
 	LightmapInfo* newLightmaps = new LightmapInfo[map->faceCount];
-	memcpy(newLightmaps, lightmaps, numRenderLightmapInfos * sizeof(LightmapInfo));
-	memset(newLightmaps + numRenderLightmapInfos, 0, addedFaces * sizeof(LightmapInfo));
+
+	memcpy(newLightmaps, lightmaps, std::min(numRenderLightmapInfos, map->faceCount) * sizeof(LightmapInfo));
+
+	if (addedFaces > 0)
+		memset(newLightmaps + numRenderLightmapInfos, 0x00, addedFaces * sizeof(LightmapInfo));
 
 	delete[] lightmaps;
 	lightmaps = newLightmaps;
 	numRenderLightmapInfos = map->faceCount;
+
+	logf("Added {} empty lightmaps after face added\n", addedFaces);
 }
 
 void BspRenderer::preRenderFaces()
@@ -1141,22 +1160,30 @@ void BspRenderer::loadClipnodes()
 void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 {
 	BSPMODEL& model = map->models[modelIdx];
-	RenderClipnodes* renderClip = &renderClipnodes[modelIdx];
-
 	Clipper clipper;
 
 	vec3 min = vec3(model.nMins.x, model.nMins.y, model.nMins.z);
 	vec3 max = vec3(model.nMaxs.x, model.nMaxs.y, model.nMaxs.z);
 
-	if (renderClip->clipnodeBuffer[hullIdx])
-		delete renderClip->clipnodeBuffer[hullIdx];
-	if (renderClip->wireframeClipnodeBuffer[hullIdx])
-		delete renderClip->wireframeClipnodeBuffer[hullIdx];
+	if (modelIdx >= numRenderClipnodes)
+	{
+		addClipnodeModel(modelIdx);
+	}
 
-	renderClip->faceMaths[hullIdx].clear();
+	RenderClipnodes& renderClip = renderClipnodes[modelIdx];
 
-	renderClip->clipnodeBuffer[hullIdx] = NULL;
-	renderClip->wireframeClipnodeBuffer[hullIdx] = NULL;
+	if (renderClip.clipnodeBuffer[hullIdx])
+	{
+		delete renderClip.clipnodeBuffer[hullIdx];
+		renderClip.clipnodeBuffer[hullIdx] = NULL;
+	}
+	if (renderClip.wireframeClipnodeBuffer[hullIdx])
+	{
+		delete renderClip.wireframeClipnodeBuffer[hullIdx];
+		renderClip.wireframeClipnodeBuffer[hullIdx] = NULL;
+	}
+
+	renderClip.faceMaths[hullIdx].clear();
 
 	int nodeIdx = map->models[modelIdx].iHeadnodes[hullIdx];
 
@@ -1222,7 +1249,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 	std::vector<cVert> allVerts;
 	std::vector<cVert> wireframeVerts;
-	std::vector<FaceMath>& tfaceMaths = renderClip->faceMaths[hullIdx];
+	std::vector<FaceMath>& tfaceMaths = renderClip.faceMaths[hullIdx];
 	tfaceMaths.clear();
 
 	for (int m = 0; m < meshes.size(); m++)
@@ -1254,6 +1281,12 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 			for (auto vertIdx : uniqueFaceVerts)
 			{
 				faceVerts.push_back(mesh.verts[vertIdx].pos);
+			}
+
+			if (faceVerts.size() < 1)
+			{
+				// logf("Degenerate clipnode face discarded\n");
+				continue;
 			}
 
 			faceVerts = getSortedPlanarVerts(faceVerts);
@@ -1352,11 +1385,11 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 	cVert* wireOutput = new cVert[wireframeVerts.size()];
 	memcpy(wireOutput, &wireframeVerts[0], wireframeVerts.size() * sizeof(cVert));
 
-	renderClip->clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
-	renderClip->clipnodeBuffer[hullIdx]->ownData = true;
+	renderClip.clipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, output, (GLsizei)allVerts.size(), GL_TRIANGLES);
+	renderClip.clipnodeBuffer[hullIdx]->ownData = true;
 
-	renderClip->wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
-	renderClip->wireframeClipnodeBuffer[hullIdx]->ownData = true;
+	renderClip.wireframeClipnodeBuffer[hullIdx] = new VertexBuffer(colorShader, COLOR_4B | POS_3F, wireOutput, (GLsizei)wireframeVerts.size(), GL_LINES);
+	renderClip.wireframeClipnodeBuffer[hullIdx]->ownData = true;
 
 
 	nodeBuffStr curHullIdxStruct = nodeBuffStr();
@@ -1375,7 +1408,7 @@ void BspRenderer::generateClipnodeBufferForHull(int modelIdx, int hullIdx)
 
 void BspRenderer::generateClipnodeBuffer(int modelIdx)
 {
-	if (!map)
+	if (!map || modelIdx < 0)
 		return;
 
 	for (int hullIdx = 0; hullIdx < MAX_MAP_HULLS; hullIdx++)

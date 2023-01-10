@@ -206,7 +206,7 @@ public:
 	void reload(); // reloads all geometry, textures, and lightmaps
 	void reloadLightmaps();
 	void reloadClipnodes();
-	void addClipnodeModel(int modelIdx);
+	RenderClipnodes* addClipnodeModel(int modelIdx);
 	void updateModelShaders();
 
 	// calculate vertex positions and uv coordinates once for faster rendering
