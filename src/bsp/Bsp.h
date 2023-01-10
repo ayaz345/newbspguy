@@ -54,6 +54,7 @@ public:
 	bool is_bsp29;
 	bool is_32bit_clipnodes;
 	bool is_broken_clipnodes;
+	bool is_blue_shift;
 
 	bool force_skip_crc;
 
