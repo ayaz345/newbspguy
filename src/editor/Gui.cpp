@@ -322,10 +322,16 @@ void ExportModel(Bsp* src_map, int id, int ExportType)
 	Bsp* tmpMap = new Bsp(src_map->bsp_path + ".tmp.bsp");
 
 	tmpMap->force_skip_crc = true;
+
 	if (ExportType == 1)
 	{
 		tmpMap->is_bsp29 = true;
 		tmpMap->bsp_header.nVersion = 29;
+	}
+	else
+	{
+		tmpMap->is_bsp29 = false;
+		tmpMap->bsp_header.nVersion = 30;
 	}
 
 	logf("Remove temporary file.\n");
