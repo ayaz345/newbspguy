@@ -704,6 +704,7 @@ void Renderer::saveSettings()
 	g_settings.debug_open = gui->showDebugWidget;
 	g_settings.keyvalue_open = gui->showKeyvalueWidget;
 	g_settings.texbrowser_open = gui->showTextureBrowser;
+	g_settings.goto_open = gui->showGOTOWidget;
 	g_settings.transform_open = gui->showTransformWidget;
 	g_settings.log_open = gui->showLogWidget;
 	g_settings.limits_open = gui->showLimitsWidget;
@@ -722,10 +723,12 @@ void Renderer::loadSettings()
 {
 	gui->showDebugWidget = g_settings.debug_open;
 	gui->showTextureBrowser = g_settings.texbrowser_open;
+	gui->showGOTOWidget = g_settings.goto_open;
 	gui->showTransformWidget = g_settings.transform_open;
 	gui->showLogWidget = g_settings.log_open;
 	gui->showLimitsWidget = g_settings.limits_open;
 	gui->showEntityReport = g_settings.entreport_open;
+	gui->showKeyvalueWidget = g_settings.keyvalue_open;
 
 	gui->settingsTab = g_settings.settings_tab;
 	gui->openSavedTabs = true;

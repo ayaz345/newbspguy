@@ -72,6 +72,7 @@ struct AppSettings
 	bool limits_open;
 	bool entreport_open;
 	bool texbrowser_open;
+	bool goto_open;
 	bool vsync;
 	bool mark_unused_texinfos;
 	bool start_at_entity;

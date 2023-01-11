@@ -40,6 +40,8 @@ void AppSettings::loadDefault()
 	log_open = false;
 	limits_open = false;
 	entreport_open = false;
+	goto_open = false;
+
 	settings_tab = 0;
 
 	render_flags = g_render_flags = RENDER_TEXTURES | RENDER_LIGHTMAPS | RENDER_SPECIAL
@@ -227,6 +229,10 @@ void AppSettings::load()
 		else if (key == "texbrowser_open")
 		{
 			g_settings.texbrowser_open = atoi(val.c_str()) != 0 && save_windows;
+		}
+		else if (key == "goto_open")
+		{
+			g_settings.goto_open = atoi(val.c_str()) != 0 && save_windows;
 		}
 		else if (key == "settings_tab")
 		{
@@ -582,6 +588,7 @@ void AppSettings::save(std::string path)
 	file << "limits_open=" << g_settings.limits_open << std::endl;
 	file << "entreport_open=" << g_settings.entreport_open << std::endl;
 	file << "texbrowser_open=" << g_settings.texbrowser_open << std::endl;
+	file << "goto_open=" << g_settings.goto_open << std::endl;
 
 	file << "settings_tab=" << g_settings.settings_tab << std::endl;
 
