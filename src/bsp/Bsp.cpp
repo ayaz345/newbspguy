@@ -2728,7 +2728,7 @@ void Bsp::write(const std::string& path)
 
 	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
 
-	file.write((const char*)nulls, is_bsp30ext ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
+	file.write((const char*)nulls, is_bsp30ext && extralumps ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
 
 	delete[] nulls;
 
