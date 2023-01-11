@@ -2745,15 +2745,18 @@ void Bsp::write(const std::string& path)
 
 		for (int m = 0; m < lightPixels; m++)
 		{
-			freelighting[m] = (unsigned char)(oldLight[m].r + oldLight[m].g + oldLight[m].b) / 3;
+			freelighting[m] = (unsigned char)((int)(oldLight[m].r + oldLight[m].g + oldLight[m].b) / 3);
 		}
 
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightPixels;
 		lumps[LUMP_LIGHTING] = (unsigned char*)freelighting;
 
+
+		int offset = 0;
+
 		for (int n = 0; n < faceCount; n++)
 		{
-			faces[n].nLightmapOffset = faces[n].nLightmapOffset / sizeof(COLOR3);
+			faces[n].nLightmapOffset /= sizeof(COLOR3);
 		}
 	}
 
