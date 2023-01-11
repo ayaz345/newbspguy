@@ -2051,7 +2051,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 {
 	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-	if (texinfo.iMiptex == -1)
+	if (texinfo.iMiptex < 0)
 		return 0;
 	return glTextures[texinfo.iMiptex]->id;
 }
@@ -2069,14 +2069,6 @@ void BspRenderer::render(std::vector<int> highlightEnts, bool highlightAlwaysOnT
 	activeShader->modelMat->loadIdentity();
 	activeShader->modelMat->translate(renderOffset.x, renderOffset.y, renderOffset.z);
 	activeShader->updateMatrixes();
-
-	//for (size_t i = 0; i < map->ents.size(); i++)
-	//{
-	//	if (renderEnts[i].mdl && renderEnts[i].mdl->mdl_mesh_groups.size())
-	//	{
-	//		renderEnts[i].mdl->AdvanceFrame(g_app->curTime - g_app->oldTime);
-	//	}
-	//}
 
 	// draw highlighted ent first so other ent edges don't overlap the highlighted edges
 	if (highlightEnts.size() && !highlightAlwaysOnTop)

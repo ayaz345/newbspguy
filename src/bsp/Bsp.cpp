@@ -2725,6 +2725,7 @@ void Bsp::write(const std::string& path)
 
 	update_lump_pointers();
 
+
 	unsigned char* nulls = new unsigned char[sizeof(BSPHEADER) + sizeof(BSPHEADER_EX)];
 
 	file.write((const char*)nulls, is_bsp30ext ? sizeof(BSPHEADER) + sizeof(BSPHEADER_EX) : sizeof(BSPHEADER));
@@ -2930,6 +2931,12 @@ void Bsp::write(const std::string& path)
 	}
 
 
+	if (is_blue_shift)
+	{
+		std::swap(bsp_header.lump[LUMP_PLANES], bsp_header.lump[LUMP_ENTITIES]);
+		std::swap(lumps[LUMP_PLANES], lumps[LUMP_ENTITIES]);
+	}
+
 	if (g_settings.preserveCrc32 && !force_skip_crc)
 	{
 		if (ents.size() && ents[0]->hasKey("CRC"))
@@ -3052,6 +3059,12 @@ void Bsp::write(const std::string& path)
 	if (is_bsp30ext)
 	{
 		file.write((char*)&bsp_header_ex, sizeof(BSPHEADER_EX));
+	}
+
+	if (is_blue_shift)
+	{
+		std::swap(bsp_header.lump[LUMP_PLANES], bsp_header.lump[LUMP_ENTITIES]);
+		std::swap(lumps[LUMP_PLANES], lumps[LUMP_ENTITIES]);
 	}
 
 	if (freeClipnodes16)
@@ -3245,6 +3258,7 @@ bool Bsp::load_lumps(std::string fpath)
 	if (bsp_header.lump[LUMP_PLANES].nLength < sizeof(BSPPLANE) || 
 		&lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1] != std::search(&lumps[LUMP_PLANES][0],&lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength-1], &classnametmp[0], &classnametmp[strlen(classnametmp)]))
 	{
+		logf("Found 'BlueShift' v30 map format.\n");
 		is_blue_shift = true;
 		std::swap(bsp_header.lump[LUMP_PLANES], bsp_header.lump[LUMP_ENTITIES]);
 		std::swap(lumps[LUMP_PLANES], lumps[LUMP_ENTITIES]);

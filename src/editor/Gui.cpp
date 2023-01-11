@@ -2885,25 +2885,64 @@ void Gui::drawDebugWidget()
 
 void Gui::drawTextureBrowser()
 {
+	Bsp* map = app->getSelectedMap();
+	BspRenderer * mapRender = map ? map->getBspRender() : NULL;
 	ImGui::SetNextWindowSize(ImVec2(610.f, 610.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
 	if (ImGui::Begin("Texture browser", &showTextureBrowser, 0))
 	{
-		if (ImGui::BeginTabBar("##tabs"))
+		// Список встроенных в карту текстур, с возможностью Удалить/Экспортировать/Импортировать/Переименовать
+		// Список встроенных в карту WAD текстур, с возможностью Удалить/
+		// Список всех WAD файлов и доступных текстур, с возможностью добавления в карту ссылки или копии текстуры.
+		if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyScroll |
+			ImGuiTabBarFlags_::ImGuiTabBarFlags_NoCloseWithMiddleMouseButton |
+			ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable ))
 		{
 			ImGui::Dummy(ImVec2(0, 10));
 			if (ImGui::BeginTabItem("Internal"))
 			{
 				ImGui::Dummy(ImVec2(0, 10));
+				ImGuiListClipper clipper;
+				clipper.Begin(LineOffsets.Size, 30.0f);
+				while (clipper.Step())
+				{
+					
+				}
+				clipper.End();
 				ImGui::EndTabItem();
 			}
-			if (ImGui::BeginTabItem("External"))
+			if (ImGui::BeginTabItem("Internal Names"))
 			{
 				ImGui::Dummy(ImVec2(0, 10));
+				ImGuiListClipper clipper;
+				clipper.Begin(LineOffsets.Size,30.0f);
+				while (clipper.Step())
+				{
+
+				}
+				clipper.End();
 				ImGui::EndTabItem();
 			}
 
+			if (mapRender)
+			{
+				for (auto& wad : mapRender->wads)
+				{
+					if (ImGui::BeginTabItem(basename(wad->filename).c_str()))
+					{
+						ImGui::Dummy(ImVec2(0, 10));
+						ImGuiListClipper clipper;
+						clipper.Begin(LineOffsets.Size, 30.0f);
+						while (clipper.Step())
+						{
+
+						}
+						clipper.End();
+						ImGui::EndTabItem();
+					}
+				}
+			}
 		}
 		ImGui::EndTabBar();
 
