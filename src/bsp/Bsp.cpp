@@ -127,12 +127,12 @@ Bsp::Bsp()
 	is_bsp29 = false;
 	is_broken_clipnodes = false;
 	is_blue_shift = false;
+	is_colored_lightmap = true;
 
 	force_skip_crc = false;
 
 	bsp_header = BSPHEADER();
 	bsp_header_ex = BSPHEADER_EX();
-	lightmap_samples = 3;
 	parentMap = NULL;
 
 	init_empty_bsp();
@@ -151,12 +151,12 @@ Bsp::Bsp(std::string fpath)
 	is_bsp29 = false;
 	is_broken_clipnodes = false;
 	is_blue_shift = false;
+	is_colored_lightmap = true;
 
 	force_skip_crc = false;
 
 	bsp_header = BSPHEADER();
 	bsp_header_ex = BSPHEADER_EX();
-	lightmap_samples = 3;
 	parentMap = NULL;
 
 	if (fpath.empty())
@@ -2736,7 +2736,7 @@ void Bsp::write(const std::string& path)
 	unsigned char* freelighting = NULL;
 
 	// first process, for face restore offsets
-	if (lightmap_samples == 1)
+	if (!is_colored_lightmap)
 	{
 		int lightPixels = bsp_header.lump[LUMP_LIGHTING].nLength / sizeof(COLOR3);
 
@@ -3127,7 +3127,7 @@ void Bsp::write(const std::string& path)
 		delete[] freelighting;
 		lumps[LUMP_LIGHTING] = (unsigned char*)oldLighting;
 		bsp_header.lump[LUMP_LIGHTING].nLength = lightDataLength * sizeof(COLOR3);
-		if (lightmap_samples == 1)
+		if (!is_colored_lightmap)
 		{
 			for (int n = 0; n < faceCount; n++)
 			{
@@ -3664,14 +3664,16 @@ bool Bsp::load_lumps(std::string fpath)
 		}
 	}
 
-	lightmap_samples = (int)round(fLightSamples);
-	if (lightmap_samples < 1)
-		lightmap_samples = 1;
+	int tmp_is_colored_lightmap = (int)round(fLightSamples);
+	if (tmp_is_colored_lightmap < 1)
+		tmp_is_colored_lightmap = 1;
+
+	is_colored_lightmap = tmp_is_colored_lightmap > 1;
 
 	if (g_settings.verboseLogs)
-		logf("lighting: {}\n", lightmap_samples <= 1 ? "monochrome" : "colored");
+		logf("lighting: {}\n", !is_colored_lightmap ? "monochrome" : "colored");
 
-	if (lightmap_samples == 1)
+	if (!is_colored_lightmap)
 	{
 		int lightPixels = bsp_header.lump[LUMP_LIGHTING].nLength;
 

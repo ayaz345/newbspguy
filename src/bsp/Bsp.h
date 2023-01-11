@@ -91,7 +91,7 @@ public:
 	int* surfedges;
 	BSPMODEL* models;
 
-	int lightmap_samples;
+	bool is_colored_lightmap;
 
 	std::string bsp_path;
 	std::string bsp_name;
