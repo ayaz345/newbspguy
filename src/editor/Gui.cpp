@@ -1053,16 +1053,125 @@ void Gui::drawMenuBar()
 		ifd::FileDialog::Instance().Close();
 	}
 
-	if (ImGui::BeginMenu("File"))
+	if (ImGui::BeginMenu("File", map))
 	{
 		if (ImGui::MenuItem("Save", NULL, false, !app->isLoading))
 		{
-			if (map)
+			map->update_ent_lump();
+			map->update_lump_pointers();
+			map->write(map->bsp_path);
+		}
+		if (ImGui::BeginMenu("Save as", !app->isLoading))
+		{
+			bool old_is_bsp30ext = map->is_bsp30ext;
+			bool old_is_bsp2 = map->is_bsp2;
+			bool old_is_bsp2_old = map->is_bsp2_old;
+			bool old_is_bsp29 = map->is_bsp29;
+			bool old_is_32bit_clipnodes = map->is_32bit_clipnodes;
+			bool old_is_broken_clipnodes = map->is_broken_clipnodes;
+			bool old_is_blue_shift = map->is_blue_shift;
+
+			bool is_default_format = !old_is_bsp30ext && !old_is_bsp2 &&
+				!old_is_bsp2_old && !old_is_bsp29 && !old_is_32bit_clipnodes && !old_is_broken_clipnodes
+				&& !old_is_blue_shift;
+
+			bool is_need_reload = false;
+
+			if (ImGui::MenuItem("Half Life", NULL, is_default_format))
 			{
-				map->update_ent_lump();
-				map->update_lump_pointers();
-				map->write(map->bsp_path);
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = false;
+					map->is_bsp2 = false;
+					map->is_bsp2_old = false;
+					map->is_bsp29 = false;
+					map->is_32bit_clipnodes = false;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = false;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
 			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (is_default_format)
+				{
+					ImGui::TextUnformatted("Map already saved in default BSP30 format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to default BSP30 format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to default BSP30 format.");
+				}
+				ImGui::EndTooltip();
+			}
+
+			if (ImGui::MenuItem("Blue Shift", NULL, old_is_blue_shift))
+			{
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = false;
+					map->is_bsp2 = false;
+					map->is_bsp2_old = false;
+					map->is_bsp29 = false;
+					map->is_32bit_clipnodes = false;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = true;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (old_is_blue_shift)
+				{
+					ImGui::TextUnformatted("Map already saved in Blue Shift format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to Blue Shift compatibility format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to Blue Shift.");
+				}
+				ImGui::EndTooltip();
+			}
+
+			map->is_bsp30ext = old_is_bsp30ext;
+			map->is_bsp2 = old_is_bsp2;
+			map->is_bsp2_old = old_is_bsp2_old;
+			map->is_bsp29 = old_is_bsp29;
+			map->is_32bit_clipnodes = old_is_32bit_clipnodes;
+			map->is_broken_clipnodes = old_is_broken_clipnodes;
+			map->is_blue_shift = old_is_blue_shift;
+
+			if (is_need_reload)
+			{
+				app->reloadMaps();
+			}
+			ImGui::EndMenu();
 		}
 		if (ImGui::BeginMenu("Open"))
 		{
@@ -2886,7 +2995,7 @@ void Gui::drawDebugWidget()
 void Gui::drawTextureBrowser()
 {
 	Bsp* map = app->getSelectedMap();
-	BspRenderer * mapRender = map ? map->getBspRender() : NULL;
+	BspRenderer* mapRender = map ? map->getBspRender() : NULL;
 	ImGui::SetNextWindowSize(ImVec2(610.f, 610.f), ImGuiCond_FirstUseEver);
 	ImGui::SetNextWindowSizeConstraints(ImVec2(300.f, 100.f), ImVec2(FLT_MAX, app->windowHeight - 40.f));
 	//ImGui::SetNextWindowContentSize(ImVec2(550, 0.0f));
@@ -2897,7 +3006,7 @@ void Gui::drawTextureBrowser()
 		// Список всех WAD файлов и доступных текстур, с возможностью добавления в карту ссылки или копии текстуры.
 		if (ImGui::BeginTabBar("##tabs", ImGuiTabBarFlags_::ImGuiTabBarFlags_FittingPolicyScroll |
 			ImGuiTabBarFlags_::ImGuiTabBarFlags_NoCloseWithMiddleMouseButton |
-			ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable ))
+			ImGuiTabBarFlags_::ImGuiTabBarFlags_Reorderable))
 		{
 			ImGui::Dummy(ImVec2(0, 10));
 			if (ImGui::BeginTabItem("Internal"))
@@ -2907,7 +3016,7 @@ void Gui::drawTextureBrowser()
 				clipper.Begin(LineOffsets.Size, 30.0f);
 				while (clipper.Step())
 				{
-					
+
 				}
 				clipper.End();
 				ImGui::EndTabItem();
@@ -2916,7 +3025,7 @@ void Gui::drawTextureBrowser()
 			{
 				ImGui::Dummy(ImVec2(0, 10));
 				ImGuiListClipper clipper;
-				clipper.Begin(LineOffsets.Size,30.0f);
+				clipper.Begin(LineOffsets.Size, 30.0f);
 				while (clipper.Step())
 				{
 

@@ -49,6 +49,7 @@ public:
 	unsigned char** extralumps;
 
 	bool is_bsp30ext;
+
 	bool is_bsp2;
 	bool is_bsp2_old;
 	bool is_bsp29;
