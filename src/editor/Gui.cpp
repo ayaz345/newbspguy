@@ -1359,6 +1359,278 @@ void Gui::drawMenuBar()
 
 			}
 
+			if (ImGui::MenuItem("HL BSP2[32 bit][COLOR LIGHT]", NULL, old_is_bsp2 && !old_is_bsp2_old && old_is_colored_lightmap))
+			{
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = false;
+					map->is_bsp2 = true;
+					map->is_bsp2_old = false;
+					map->is_bsp29 = true;
+					map->is_32bit_clipnodes = true;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = false;
+					map->is_colored_lightmap = true;
+
+					map->bsp_header.nVersion = 29;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (old_is_bsp2 && !old_is_bsp2_old && old_is_colored_lightmap)
+				{
+					ImGui::TextUnformatted("Map already saved in BSP2(29) + COLOR LIGHT format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to BSP2(29) + COLOR LIGHT compatibility format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to BSP2(29) + COLOR LIGH.");
+				}
+				ImGui::EndTooltip();
+			}
+
+
+
+			if (ImGui::MenuItem("HL BSP2[32 bit][MONO LIGHT]", NULL, old_is_bsp2 && !old_is_bsp2_old && !old_is_colored_lightmap))
+			{
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = false;
+					map->is_bsp2 = true;
+					map->is_bsp2_old = false;
+					map->is_bsp29 = true;
+					map->is_32bit_clipnodes = true;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = false;
+					map->is_colored_lightmap = false;
+
+					map->bsp_header.nVersion = 29;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (old_is_bsp2 && !old_is_bsp2_old && !old_is_colored_lightmap)
+				{
+					ImGui::TextUnformatted("Map already saved in BSP2(29) + MONO LIGHT format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to BSP2(29) + MONO LIGHT compatibility format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to BSP2(29) + MONO LIGH.");
+				}
+				ImGui::EndTooltip();
+			}
+
+
+			if (ImGui::MenuItem("HL 2BSP[OLD][32 bit][COLOR LIGHT]", NULL, old_is_bsp2_old && old_is_colored_lightmap))
+			{
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = false;
+					map->is_bsp2 = true;
+					map->is_bsp2_old = true;
+					map->is_bsp29 = true;
+					map->is_32bit_clipnodes = true;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = false;
+					map->is_colored_lightmap = true;
+
+					map->bsp_header.nVersion = 29;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
+			}
+
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (old_is_bsp2_old && !old_is_colored_lightmap)
+				{
+					ImGui::TextUnformatted("Map already saved in 2BSP (29)[OLD] + COLOR LIGHT format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to 2BSP (29)[OLD] + COLOR LIGHT compatibility format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to 2BSP (29)[OLD] + COLOR LIGHT.");
+				}
+				ImGui::EndTooltip();
+			}
+
+
+			if (ImGui::MenuItem("HL 2BSP[OLD][32 bit][MONO LIGHT]", NULL, old_is_bsp2_old && !old_is_colored_lightmap))
+			{
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = false;
+					map->is_bsp2 = true;
+					map->is_bsp2_old = true;
+					map->is_bsp29 = true;
+					map->is_32bit_clipnodes = true;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = false;
+					map->is_colored_lightmap = false;
+
+					map->bsp_header.nVersion = 29;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
+			}
+
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (old_is_bsp2_old && !old_is_colored_lightmap)
+				{
+					ImGui::TextUnformatted("Map already saved in 2BSP (29)[OLD] + MONO LIGHT format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to 2BSP (29)[OLD] + MONO LIGHT compatibility format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to 2BSP (29)[OLD] + MONO LIGHT.");
+				}
+				ImGui::EndTooltip();
+			}
+
+
+			if (ImGui::MenuItem("XASH BSP30ex[32 bit][COLOR LIGHT]", NULL, old_is_bsp30ext && old_is_colored_lightmap))
+			{
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = true;
+					map->is_bsp2 = false;
+					map->is_bsp2_old = false;
+					map->is_bsp29 = false;
+					map->is_32bit_clipnodes = true;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = false;
+					map->is_colored_lightmap = true;
+
+					map->bsp_header.nVersion = 30;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (old_is_bsp30ext && old_is_colored_lightmap)
+				{
+					ImGui::TextUnformatted("Map already saved in XASH BSP30ex + COLOR LIGHT format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to XASH BSP30ex + COLOR LIGHT compatibility format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to XASH BSP30ex + COLOR LIGHT.");
+				}
+				ImGui::EndTooltip();
+			}
+
+
+			if (ImGui::MenuItem("XASH BSP30ex[32 bit][MONO LIGHT]", NULL, old_is_bsp2_old && !old_is_colored_lightmap))
+			{
+				if (map->isValid())
+				{
+					map->update_ent_lump();
+					map->update_lump_pointers();
+
+					map->is_bsp30ext = true;
+					map->is_bsp2 = false;
+					map->is_bsp2_old = false;
+					map->is_bsp29 = false;
+					map->is_32bit_clipnodes = true;
+					map->is_broken_clipnodes = false;
+					map->is_blue_shift = false;
+					map->is_colored_lightmap = false;
+
+					map->bsp_header.nVersion = 30;
+
+					if (map->validate() && map->isValid())
+					{
+						is_need_reload = true;
+						map->write(map->bsp_path);
+					}
+				}
+			}
+
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				if (old_is_bsp30ext && !old_is_colored_lightmap)
+				{
+					ImGui::TextUnformatted("Map already saved in XASH BSP30ex + MONO LIGHT format.");
+				}
+				else if (map->isValid())
+				{
+					ImGui::TextUnformatted("Saving map to XASH BSP30ex + MONO LIGHT compatibility format.");
+				}
+				else
+				{
+					ImGui::TextUnformatted("Map limits is reached, and can't be converted to XASH BSP30ex + MONO LIGHT.");
+				}
+				ImGui::EndTooltip();
+			}
+
 
 			map->is_bsp30ext = old_is_bsp30ext;
 			map->is_bsp2 = old_is_bsp2;
