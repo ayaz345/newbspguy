@@ -3010,7 +3010,7 @@ void Bsp::write(const std::string& path)
 	// calculate lump offsets
 	int offset = sizeof(BSPHEADER);
 
-	if (is_bsp30ext)
+	if (is_bsp30ext && extralumps)
 	{
 		offset += sizeof(BSPHEADER_EX);
 
@@ -3059,7 +3059,7 @@ void Bsp::write(const std::string& path)
 
 	file.seekp(0);
 	file.write((char*)&bsp_header, sizeof(BSPHEADER));
-	if (is_bsp30ext)
+	if (is_bsp30ext && extralumps)
 	{
 		file.write((char*)&bsp_header_ex, sizeof(BSPHEADER_EX));
 	}
