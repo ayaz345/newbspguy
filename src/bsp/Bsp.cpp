@@ -6968,7 +6968,7 @@ void Bsp::ImportLightFile()
 	}
 	else
 	{
-		logf("Invalid input file")
+		logf("Invalid input file");
 	}
 }
 
