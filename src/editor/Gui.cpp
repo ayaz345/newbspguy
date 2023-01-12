@@ -1906,7 +1906,7 @@ void Gui::drawMenuBar()
 			if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
-				ImGui::TextUnformatted("Export face extens (.ext) file for rad.exe");
+				ImGui::TextUnformatted("Export lightmap file (.lit)");
 				ImGui::EndTooltip();
 			}
 
@@ -2004,6 +2004,26 @@ void Gui::drawMenuBar()
 				showImportMapWidget_Type = SHOW_IMPORT_MODEL_ENTITY;
 				showImportMapWidget = true;
 			}
+
+			if (map && ImGui::MenuItem("Lighting .lit file", NULL))
+			{
+				if (map)
+				{
+					map->ImportLightFile();
+				}
+				else
+				{
+					logf("Select map first\n");
+				}
+			}
+
+			if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Import lightmap file (.lit)");
+				ImGui::EndTooltip();
+			}
+
 
 			if (ImGui::MenuItem("Entity file", NULL))
 			{

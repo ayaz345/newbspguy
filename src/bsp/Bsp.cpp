@@ -6937,8 +6937,39 @@ void Bsp::ExportLightFile()
 	}
 	int version = 1;
 	targetFile.write("QLIT", 4);
-	targetFile.write((const char*) & version, 4);
+	targetFile.write((const char*)&version, 4);
 	targetFile.write((const char*)lightdata, lightDataLength);
+}
+
+void Bsp::ImportLightFile()
+{
+	if (bsp_path.size() < 4)
+	{
+		logf("ImportLightFile: Invalid filename!\n");
+		return;
+	}
+
+	std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4);
+	std::string targetFileName = targetMapFileName + ".lit";
+	std::ifstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
+	if (!targetFile.is_open())
+	{
+		logf("Failed to open extents file for importing:\n{}\n", targetFileName);
+		return;
+	}
+	char header[16]{};
+	targetFile.read(header, 4);
+	int version;
+	targetFile.read((char*) &version, 4);
+
+	if (version == 1 && header == std::string("QLIT"))
+	{
+		targetFile.read((char*)lightdata, lightDataLength);
+	}
+	else
+	{
+		logf("Invalid input file")
+	}
 }
 
 void Bsp::ExportExtFile()
