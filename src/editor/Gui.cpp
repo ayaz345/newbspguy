@@ -2556,6 +2556,24 @@ void Gui::drawMenuBar()
 				ImGui::TextUnformatted("Swap all bad mins/maxs in models.");
 				ImGui::EndTooltip();
 			}
+
+			if (ImGui::MenuItem("Bad face reference in marksurf"))
+			{
+				for (int i = 0; i < map->marksurfCount; i++)
+				{
+					if (map->marksurfs[i] >= map->faceCount)
+					{
+						map->marksurfs[i] = 0;
+					}
+				}
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Replace all invalid surfaces to zero.");
+				ImGui::EndTooltip();
+			}
+
 			if (ImGui::MenuItem("Missing textures"))
 			{
 				std::set<std::string> textureset = std::set<std::string>();

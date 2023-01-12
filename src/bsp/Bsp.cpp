@@ -3258,8 +3258,8 @@ bool Bsp::load_lumps(std::string fpath)
 
 	const char* classnametmp = "classname";
 
-	if (bsp_header.lump[LUMP_PLANES].nLength < sizeof(BSPPLANE) || 
-		&lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1] != std::search(&lumps[LUMP_PLANES][0],&lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength-1], &classnametmp[0], &classnametmp[strlen(classnametmp)]))
+	if (bsp_header.lump[LUMP_PLANES].nLength < sizeof(BSPPLANE) ||
+		&lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1] != std::search(&lumps[LUMP_PLANES][0], &lumps[LUMP_PLANES][bsp_header.lump[LUMP_PLANES].nLength - 1], &classnametmp[0], &classnametmp[strlen(classnametmp)]))
 	{
 		logf("Found 'BlueShift' v30 map format.\n");
 		is_blue_shift = true;
@@ -4505,6 +4505,11 @@ const char* Bsp::getLeafContentsName(int contents)
 
 void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 {
+	if (iFace > faceCount)
+	{
+		logf("Warning! Found bad surface. Skipping.\n");
+		return;
+	}
 	BSPFACE32& face = faces[iFace];
 	usage->faces[iFace] = true;
 
@@ -4526,6 +4531,11 @@ void Bsp::mark_face_structures(int iFace, STRUCTUSAGE* usage)
 
 void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 {
+	if (iNode > nodeCount)
+	{
+		logf("Warning! Found bad node. Skipping.\n");
+		return;
+	}
 	BSPNODE32& node = nodes[iNode];
 
 	usage->nodes[iNode] = true;
@@ -4558,6 +4568,11 @@ void Bsp::mark_node_structures(int iNode, STRUCTUSAGE* usage, bool skipLeaves)
 
 void Bsp::mark_clipnode_structures(int iNode, STRUCTUSAGE* usage)
 {
+	if (iNode > clipnodeCount)
+	{
+		logf("Warning! Found bad clipnode. Skipping.\n");
+		return;
+	}
 	BSPCLIPNODE32& node = clipnodes[iNode];
 
 	usage->clipnodes[iNode] = true;
@@ -4574,6 +4589,11 @@ void Bsp::mark_clipnode_structures(int iNode, STRUCTUSAGE* usage)
 
 void Bsp::mark_model_structures(int modelIdx, STRUCTUSAGE* usage, bool skipLeaves, bool makeSomething)
 {
+	if (modelIdx > modelCount)
+	{
+		logf("Warning! Found bad model. Skipping.\n");
+		return;
+	}
 	BSPMODEL& model = models[modelIdx];
 
 	for (int i = 0; i < model.nFaces; i++)
@@ -4594,6 +4614,11 @@ void Bsp::mark_model_structures(int modelIdx, STRUCTUSAGE* usage, bool skipLeave
 
 void Bsp::remap_face_structures(int faceIdx, STRUCTREMAP* remap)
 {
+	if (faceIdx > faceCount)
+	{
+		logf("Warning! Found bad face. Skipping.\n");
+		return;
+	}
 	if (remap->visitedFaces[faceIdx])
 	{
 		return;
@@ -4611,6 +4636,11 @@ void Bsp::remap_face_structures(int faceIdx, STRUCTREMAP* remap)
 
 void Bsp::remap_node_structures(int iNode, STRUCTREMAP* remap)
 {
+	if (iNode > nodeCount)
+	{
+		logf("Warning! Found bad node. Skipping.\n");
+		return;
+	}
 	BSPNODE32& node = nodes[iNode];
 
 	remap->visitedNodes[iNode] = true;
@@ -4637,6 +4667,11 @@ void Bsp::remap_node_structures(int iNode, STRUCTREMAP* remap)
 
 void Bsp::remap_clipnode_structures(int iNode, STRUCTREMAP* remap)
 {
+	if (iNode > clipnodeCount)
+	{
+		logf("Warning! Found bad clipnode. Skipping.\n");
+		return;
+	}
 	BSPCLIPNODE32& node = clipnodes[iNode];
 
 	remap->visitedClipnodes[iNode] = true;
@@ -4659,6 +4694,11 @@ void Bsp::remap_clipnode_structures(int iNode, STRUCTREMAP* remap)
 
 void Bsp::remap_model_structures(int modelIdx, STRUCTREMAP* remap)
 {
+	if (modelIdx > modelCount)
+	{
+		logf("Warning! Found bad model. Skipping.\n");
+		return;
+	}
 	BSPMODEL& model = ((BSPMODEL*)lumps[LUMP_MODELS])[modelIdx];
 
 	// sometimes the face index is invalid when the model has no faces
@@ -6960,7 +7000,7 @@ void Bsp::ImportLightFile()
 	char header[16]{};
 	targetFile.read(header, 4);
 	int version;
-	targetFile.read((char*) &version, 4);
+	targetFile.read((char*)&version, 4);
 
 	if (version == 1 && header == std::string("QLIT"))
 	{
