@@ -6932,7 +6932,7 @@ void Bsp::ExportLightFile()
 	std::ofstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
 	if (!targetFile.is_open())
 	{
-		logf("Failed to open extents file for writing:\n{}\n", targetFileName);
+		logf("Failed to open lighting file for writing:\n{}\n", targetFileName);
 		return;
 	}
 	int version = 1;
@@ -6951,10 +6951,10 @@ void Bsp::ImportLightFile()
 
 	std::string targetMapFileName = bsp_path.substr(0, bsp_path.size() - 4);
 	std::string targetFileName = targetMapFileName + ".lit";
-	std::ifstream targetFile(targetFileName, std::ios::trunc | std::ios::binary);
+	std::ifstream targetFile(targetFileName, std::ios::binary);
 	if (!targetFile.is_open())
 	{
-		logf("Failed to open extents file for importing:\n{}\n", targetFileName);
+		logf("Failed to open lighting file for importing:\n{}\n", targetFileName);
 		return;
 	}
 	char header[16]{};
