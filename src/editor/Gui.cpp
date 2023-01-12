@@ -1758,7 +1758,7 @@ void Gui::drawMenuBar()
 					entFile.write(entities.c_str(), entities.size());
 				}
 			}
-			if ((map && !map->is_mdl_model) && ImGui::MenuItem("All embedded textures to wad", NULL))
+			if (map && ImGui::MenuItem("All embedded textures to wad", NULL))
 			{
 				logf("Export wad: {}{}\n", GetWorkDir(), map->bsp_name + ".wad");
 				if (ExportWad(map))
@@ -1777,53 +1777,46 @@ void Gui::drawMenuBar()
 			}
 			if (ImGui::BeginMenu("Wavefront (.obj) [WIP]"))
 			{
-				if (map && map->is_mdl_model)
+				if (ImGui::MenuItem("Scale 1x", NULL))
 				{
-					ImGui::MenuItem("MDL.obj", NULL, false, false);
+					if (map)
+					{
+						map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, 1);
+					}
+					else
+					{
+						logf("Select map first\n");
+					}
 				}
-				else
+
+				for (int scale = 2; scale < 10; scale++, scale++)
 				{
-					if (ImGui::MenuItem("Scale 1x", NULL))
+					std::string scaleitem = "UpScale x" + std::to_string(scale);
+					if (ImGui::MenuItem(scaleitem.c_str(), NULL))
 					{
 						if (map)
 						{
-							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, 1);
+							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, scale);
 						}
 						else
 						{
 							logf("Select map first\n");
 						}
 					}
+				}
 
-					for (int scale = 2; scale < 10; scale++, scale++)
+				for (int scale = 16; scale > 0; scale--, scale--)
+				{
+					std::string scaleitem = "DownScale x" + std::to_string(scale);
+					if (ImGui::MenuItem(scaleitem.c_str(), NULL))
 					{
-						std::string scaleitem = "UpScale x" + std::to_string(scale);
-						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
+						if (map)
 						{
-							if (map)
-							{
-								map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, scale);
-							}
-							else
-							{
-								logf("Select map first\n");
-							}
+							map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, -scale);
 						}
-					}
-
-					for (int scale = 16; scale > 0; scale--, scale--)
-					{
-						std::string scaleitem = "DownScale x" + std::to_string(scale);
-						if (ImGui::MenuItem(scaleitem.c_str(), NULL))
+						else
 						{
-							if (map)
-							{
-								map->ExportToObjWIP(GetWorkDir(), EXPORT_XYZ, -scale);
-							}
-							else
-							{
-								logf("Select map first\n");
-							}
+							logf("Select map first\n");
 						}
 					}
 				}
@@ -1838,7 +1831,7 @@ void Gui::drawMenuBar()
 			}
 
 
-			if ((map && !map->is_mdl_model) && ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL))
+			if (map && ImGui::MenuItem("ValveHammerEditor (.map) [WIP]", NULL))
 			{
 				if (map)
 				{
@@ -1850,7 +1843,7 @@ void Gui::drawMenuBar()
 				}
 			}
 
-			if ((map && !map->is_mdl_model) && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Export .map ( NOT WORKING at this time:) )");
@@ -1877,7 +1870,7 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
-			if ((map && !map->is_mdl_model) && ImGui::MenuItem("RAD .ext & .wa_ files", NULL))
+			if (map && ImGui::MenuItem("RAD.exe .ext & .wa_ files", NULL))
 			{
 				if (map)
 				{
@@ -1889,7 +1882,28 @@ void Gui::drawMenuBar()
 				}
 			}
 
-			if ((map && !map->is_mdl_model) && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Export face extens (.ext) file for rad.exe");
+				ImGui::EndTooltip();
+			}
+
+
+
+			if (map && ImGui::MenuItem("Lighting .lit file", NULL))
+			{
+				if (map)
+				{
+					map->ExportLightFile();
+				}
+				else
+				{
+					logf("Select map first\n");
+				}
+			}
+
+			if (map && ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
 				ImGui::BeginTooltip();
 				ImGui::TextUnformatted("Export face extens (.ext) file for rad.exe");

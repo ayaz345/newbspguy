@@ -287,6 +287,7 @@ public:
 
 	void ExportPortalFile();
 	void ExportExtFile();
+	void ExportLightFile();
 	bool isModelHasFaceIdx(const BSPMODEL& mdl, int faceid);
 
 	void hideEnts(bool hide = true);
