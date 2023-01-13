@@ -482,17 +482,17 @@ void BspRenderer::loadLightmaps()
 
 	int lightmapCount = 0;
 
-	std::vector<int> tmpFaceCount;
-	for (int i = 0; i < map->faceCount; i++)
-	{
-		tmpFaceCount.push_back(i);
-	}
+	//std::vector<int> tmpFaceCount;
+	//for (int i = 0; i < map->faceCount; i++)
+	//{
+	//	tmpFaceCount.push_back(i);
+	//}
 
-	std::vector<int> tmpLightmapCount;
-	for (int i = 0; i < MAXLIGHTMAPS; i++)
-	{
-		tmpLightmapCount.push_back(i);
-	}
+	//std::vector<int> tmpLightmapCount;
+	//for (int i = 0; i < MAXLIGHTMAPS; i++)
+	//{
+	//	tmpLightmapCount.push_back(i);
+	//}
 
 	for (int i = 0; i < map->faceCount; i++)
 	{

@@ -3216,9 +3216,10 @@ bool Bsp::load_lumps(std::string fpath)
 				continue;
 			}
 
-			if (bsp_header_ex.lump[i].nOffset >= size)
+			if (bsp_header_ex.lump[i].nOffset >= size || bsp_header_ex.lump[i].nOffset < 0 || bsp_header_ex.lump[i].nLength < 0)
 			{
 				logf("FAILED TO READ EXTRA BSP LUMP {}\n", i);
+				is_bsp30ext = false;
 				break;
 			}
 
@@ -3226,6 +3227,7 @@ bool Bsp::load_lumps(std::string fpath)
 			if (fin.eof() || bsp_header_ex.lump[i].nOffset + bsp_header_ex.lump[i].nLength >= size)
 			{
 				logf("FAILED TO READ EXTRA BSP LUMP {}\n", i);
+				is_bsp30ext = false;
 				break;
 			}
 			else

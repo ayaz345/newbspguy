@@ -2603,13 +2603,15 @@ void Gui::drawMenuBar()
 							map->models[i].nMins.x, map->models[i].nMins.y, map->models[i].nMins.z,
 							map->models[i].nMaxs.x, map->models[i].nMaxs.y, map->models[i].nMaxs.z);
 					}
-					if (map->getBspRender())
-					{
-						map->getBspRender()->reload();
-					}
 				}
 
 				map->update_ent_lump();
+				if (map->getBspRender())
+				{
+					app->reloading = true;
+					map->getBspRender()->reload();
+					app->reloading = false;
+				}
 			}
 			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 			{
