@@ -600,7 +600,7 @@ void print_help(const std::string& command)
 {
 	if (command == "merge")
 	{
-		logf(
+		logf("{}",
 			"merge - Merges two or more maps together\n\n"
 
 			"Usage:   bspguy merge <mapname> -maps \"map1, map2, ... mapN\" [options]\n"
@@ -630,7 +630,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "info")
 	{
-		logf(
+		logf("{}",
 			"info - Show BSP data summary\n\n"
 
 			"Usage:   bspguy info <mapname> [options]\n"
@@ -644,7 +644,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "noclip")
 	{
-		logf(
+		logf("{}",
 			"noclip - Delete some clipnodes from the BSP\n\n"
 
 			"Usage:   bspguy noclip <mapname> [options]\n"
@@ -666,7 +666,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "simplify")
 	{
-		logf(
+		logf("{}",
 			"simplify - Replaces model hulls with a simple bounding box\n\n"
 
 			"Usage:   bspguy simplify <mapname> [options]\n"
@@ -683,7 +683,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "delete")
 	{
-		logf(
+		logf("{}",
 			"delete - Delete BSP models.\n\n"
 
 			"Usage:   bspguy delete <mapname> [options]\n"
@@ -697,7 +697,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "transform")
 	{
-		logf(
+		logf("{}",
 			"transform - Apply 3D transformations\n\n"
 
 			"Usage:   bspguy transform <mapname> [options]\n"
@@ -710,7 +710,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "unembed")
 	{
-		logf(
+		logf("{}",
 			"unembed - Deletes embedded texture data, so that they reference WADs instead.\n\n"
 
 			"Usage:   bspguy unembed <mapname>\n"
@@ -719,7 +719,7 @@ void print_help(const std::string& command)
 	}
 	else if (command == "exportobj")
 	{
-		logf(
+		logf("{}",
 			"exportobj - Export bsp geometry to obj [WIP].\n\n"
 
 			"Usage:   bspguy exportobj <mapname>\n"
@@ -729,7 +729,7 @@ void print_help(const std::string& command)
 	else
 	{
 		logf("{}\n\n", g_version_string);
-		logf(
+		logf("{}",
 			"This tool modifies Sven Co-op BSPs without having to decompile them.\n\n"
 			"Usage: bspguy <command> <mapname> [options]\n"
 
@@ -860,6 +860,9 @@ int main(int argc, char* argv[])
 {
 	setlocale(LC_ALL, ".utf8");
 	setlocale(LC_NUMERIC, "C");
+
+	std::cout << std::endl << "BSPGUY" << std::endl;
+
 	//std::fesetround(FE_TONEAREST);
 #ifdef WIN32
 	::ShowWindow(::GetConsoleWindow(), SW_SHOW);
@@ -895,7 +898,7 @@ int main(int argc, char* argv[])
 
 	if (cli.command == "version" || cli.command == "--version" || cli.command == "-version")
 	{
-		logf(g_version_string);
+		logf("{}", g_version_string);
 		return 0;
 	}
 

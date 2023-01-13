@@ -109,8 +109,8 @@ Note that unless a minimum field width is defined, the field width will always
 be the same size as the data to fill it, so that the alignment option has no
 meaning in this case.
 
-The *sign* option is only valid for number types, and can be one of the
-following:
+The *sign* option is only valid for floating point and signed integer types,
+and can be one of the following:
 
 +---------+------------------------------------------------------------+
 | Option  | Meaning                                                    |
@@ -497,7 +497,7 @@ Examples::
   fmt::format("{}", std::vector{10, 20, 30});
   // Result: [10, 20, 30]
   fmt::format("{::#x}", std::vector{10, 20, 30});
-  // Result: [0xa, 0x14, 0x13]
+  // Result: [0xa, 0x14, 0x1e]
   fmt::format("{}", vector{'h', 'e', 'l', 'l', 'o'});
   // Result: ['h', 'e', 'l', 'l', 'o']
   fmt::format("{::}", vector{'h', 'e', 'l', 'l', 'o'});

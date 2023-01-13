@@ -2574,6 +2574,50 @@ void Gui::drawMenuBar()
 				ImGui::EndTooltip();
 			}
 
+			if (ImGui::MenuItem("Unused models"))
+			{
+				std::set<int> used_models; // Protected map
+				used_models.insert(0);
+
+				for (auto const& s : map->ents)
+				{
+					int ent_mdl_id = s->getBspModelIdx();
+					if (ent_mdl_id >= 0)
+					{
+						if (!used_models.count(ent_mdl_id))
+						{
+							used_models.insert(ent_mdl_id);
+						}
+					}
+				}
+
+				for (int i = 0; i < map->modelCount; i++)
+				{
+					if (!used_models.count(i))
+					{
+						Entity* ent = new Entity("func_wall");
+						ent->setOrAddKeyvalue("model", "*" + std::to_string(i));
+						map->ents.push_back(ent);
+						logf("Models {}x{}x{} {}x{}x{} {}x{}x{}\n", 
+							map->models[i].vOrigin.x, map->models[i].vOrigin.y, map->models[i].vOrigin.z, 
+							map->models[i].nMins.x, map->models[i].nMins.y, map->models[i].nMins.z,
+							map->models[i].nMaxs.x, map->models[i].nMaxs.y, map->models[i].nMaxs.z);
+					}
+					if (map->getBspRender())
+					{
+						map->getBspRender()->reload();
+					}
+				}
+
+				map->update_ent_lump();
+			}
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
+			{
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Attach all unused models to func_wall.");
+				ImGui::EndTooltip();
+			}
+
 			if (ImGui::MenuItem("Missing textures"))
 			{
 				std::set<std::string> textureset = std::set<std::string>();

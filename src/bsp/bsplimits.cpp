@@ -2,7 +2,7 @@
 
 
 float FLT_MAX_COORD = 32767.f;
-int LIGHTMAP_ATLAS_SIZE = 1024;
+int LIGHTMAP_ATLAS_SIZE = 512;
 unsigned int MAX_MAP_MODELS = 4096;
 unsigned int MAX_MAP_NODES = 32768;
 unsigned int MAX_MAP_CLIPNODES = 32767;

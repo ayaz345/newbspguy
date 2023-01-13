@@ -488,88 +488,90 @@ void BspRenderer::loadLightmaps()
 		tmpFaceCount.push_back(i);
 	}
 
-	std::for_each(std::execution::par_unseq, tmpFaceCount.begin(), tmpFaceCount.end(), [&](int i)
-		{
-			BSPFACE32& face = map->faces[i];
-	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-	if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
+	std::vector<int> tmpLightmapCount;
+	for (int i = 0; i < MAXLIGHTMAPS; i++)
 	{
-
+		tmpLightmapCount.push_back(i);
 	}
-	else
+
+	for (int i = 0; i < map->faceCount; i++)
 	{
-		int size[2];
-		int imins[2];
-		int imaxs[2];
-		GetFaceLightmapSize(map, i, size);
-		GetFaceExtents(map, i, imins, imaxs);
-
-		LightmapInfo& info = lightmaps[i];
-		info.w = size[0];
-		info.h = size[1];
-		info.midTexU = (float)(size[0]) / 2.0f;
-		info.midTexV = (float)(size[1]) / 2.0f;
-
-		// TODO: float mins/maxs not needed?
-		info.midPolyU = (imins[0] + imaxs[0]) * 16.0f / 2.0f;
-		info.midPolyV = (imins[1] + imaxs[1]) * 16.0f / 2.0f;
-
-		for (int s = 0; s < MAXLIGHTMAPS; s++)
+		BSPFACE32& face = map->faces[i];
+		BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
+		if (face.nLightmapOffset < 0 || (texinfo.nFlags & TEX_SPECIAL) || face.nLightmapOffset >= map->bsp_header.lump[LUMP_LIGHTING].nLength)
 		{
-			if (face.nStyles[s] == 255)
-				continue;
 
-			g_mutex_list[1].lock();
-			int atlasId = atlases.size() - 1;
+		}
+		else
+		{
+			int size[2];
+			int imins[2];
+			int imaxs[2];
+			GetFaceLightmapSize(map, i, size);
+			GetFaceExtents(map, i, imins, imaxs);
 
-			// TODO: Try fitting in earlier atlases before using the latest one
-			if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
+			LightmapInfo& info = lightmaps[i];
+			info.w = size[0];
+			info.h = size[1];
+			info.midTexU = (float)(size[0]) / 2.0f;
+			info.midTexV = (float)(size[1]) / 2.0f;
+
+			// TODO: float mins/maxs not needed?
+			info.midPolyU = (imins[0] + imaxs[0]) * 16.0f / 2.0f;
+			info.midPolyV = (imins[1] + imaxs[1]) * 16.0f / 2.0f;
+
+			for (int s = 0; s < MAXLIGHTMAPS; s++)
 			{
-				atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
-				atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
+				if (face.nStyles[s] == 255)
+					continue;
+				int atlasId = atlases.size() - 1;
 
-				atlasId++;
-				memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
-
+				// TODO: Try fitting in earlier atlases before using the latest one
 				if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 				{
-					g_mutex_list[1].unlock();
-					logf("Lightmap too big for atlas size ( {}x{} but allowed {}x{} )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
-					continue;
-				}
-			}
-			lightmapCount++;
+					atlases.push_back(new LightmapNode(0, 0, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE));
+					atlasTextures.push_back(new Texture(LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE, "LIGHTMAP"));
 
-			info.atlasId[s] = atlasId;
-			g_mutex_list[1].unlock();
+					atlasId++;
+					memset(atlasTextures[atlasId]->data, 0, LIGHTMAP_ATLAS_SIZE * LIGHTMAP_ATLAS_SIZE * sizeof(COLOR3));
 
-			// copy lightmap data into atlas
-			int lightmapSz = info.w * info.h * sizeof(COLOR3);
-			int offset = face.nLightmapOffset + s * lightmapSz;
-			COLOR3* lightSrc = (COLOR3*)(map->lightdata + offset);
-			COLOR3* lightDst = (COLOR3*)(atlasTextures[atlasId]->data);
-			for (int y = 0; y < info.h; y++)
-			{
-				for (int x = 0; x < info.w; x++)
-				{
-					int src = y * info.w + x;
-					int dst = (info.y[s] + y) * LIGHTMAP_ATLAS_SIZE + info.x[s] + x;
-					if (offset + src * sizeof(COLOR3) < map->lightDataLength)
+					if (!atlases[atlasId]->insert(info.w, info.h, info.x[s], info.y[s]))
 					{
-						lightDst[dst] = lightSrc[src];
-						//lightDst[dst] = getLightMapRGB(lightSrc[src], face.nStyles[s]);
+						logf("Lightmap too big for atlas size ( {}x{} but allowed {}x{} )!\n", info.w, info.h, LIGHTMAP_ATLAS_SIZE, LIGHTMAP_ATLAS_SIZE);
+						continue;
 					}
-					else
+				}
+				lightmapCount++;
+
+				info.atlasId[s] = atlasId;
+
+				// copy lightmap data into atlas
+				int lightmapSz = info.w * info.h * sizeof(COLOR3);
+				int offset = face.nLightmapOffset + s * lightmapSz;
+				COLOR3* lightSrc = (COLOR3*)(map->lightdata + offset);
+				COLOR3* lightDst = (COLOR3*)(atlasTextures[atlasId]->data);
+				for (int y = 0; y < info.h; y++)
+				{
+					for (int x = 0; x < info.w; x++)
 					{
-						bool checkers = x % 2 == 0 != y % 2 == 0;
-						lightDst[dst] = { (unsigned char)(checkers ? 255 : 0), 0, (unsigned char)(checkers ? 255 : 0) };
+						int src = y * info.w + x;
+						int dst = (info.y[s] + y) * LIGHTMAP_ATLAS_SIZE + info.x[s] + x;
+						if (offset + src * sizeof(COLOR3) < map->lightDataLength)
+						{
+							lightDst[dst] = lightSrc[src];
+							//lightDst[dst] = getLightMapRGB(lightSrc[src], face.nStyles[s]);
+						}
+						else
+						{
+							bool checkers = x % 2 == 0 != y % 2 == 0;
+							lightDst[dst] = { (unsigned char)(checkers ? 255 : 0), 0, (unsigned char)(checkers ? 255 : 0) };
+						}
 					}
 				}
 			}
 		}
 	}
-		}
-	);
+		
 
 	glLightmapTextures = new Texture * [atlasTextures.size()];
 	for (unsigned int i = 0; i < atlasTextures.size(); i++)

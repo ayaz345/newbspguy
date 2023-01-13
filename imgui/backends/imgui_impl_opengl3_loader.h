@@ -621,7 +621,7 @@ static int open_libgl(void)
     return GL3W_OK;
 }
 
-static void __cdecl close_libgl(void) { FreeLibrary(libgl); }
+static void close_libgl(void) { FreeLibrary(libgl); }
 static GL3WglProc get_proc(const char *proc)
 {
     GL3WglProc res;

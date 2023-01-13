@@ -15,8 +15,14 @@
 #include "util.h"         // get_locale
 
 using fmt::runtime;
-
 using testing::Contains;
+
+#if defined(__MINGW32__) && !defined(_UCRT)
+// Only C89 conversion specifiers when using MSVCRT instead of UCRT
+#  define FMT_HAS_C99_STRFTIME 0
+#else
+#  define FMT_HAS_C99_STRFTIME 1
+#endif
 
 auto make_tm() -> std::tm {
   auto time = std::tm();
@@ -123,7 +129,7 @@ TEST(chrono_test, format_tm) {
       make_tm(2000, 1, 3, 12, 14, 16)     // W1
   };
 
-#if defined(__MINGW32__) && !defined(_UCRT)
+#if !FMT_HAS_C99_STRFTIME
   GTEST_SKIP() << "Skip the rest of this test because it relies on strftime() "
                   "conforming to C99, but on this platform, MINGW + MSVCRT, "
                   "the function conforms only to C89.";
@@ -264,15 +270,15 @@ TEST(chrono_test, system_clock_time_point) {
       "%OU", "%W",  "%OW", "%V",  "%OV", "%j",  "%d",  "%Od", "%e",
       "%Oe", "%a",  "%A",  "%w",  "%Ow", "%u",  "%Ou", "%H",  "%OH",
       "%I",  "%OI", "%M",  "%OM", "%S",  "%OS", "%x",  "%Ex", "%X",
-      "%EX", "%D",  "%F",  "%R",  "%T",  "%p",  "%z",  "%Z"};
+      "%EX", "%D",  "%F",  "%R",  "%T",  "%p"};
 #ifndef _WIN32
   // Disabled on Windows because these formats are not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
-#elif defined(__MINGW32__) && !defined(_UCRT)
+#elif !FMT_HAS_C99_STRFTIME
   // Only C89 conversion specifiers when using MSVCRT instead of UCRT
-  spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
-               "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p", "%Z"};
+  spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d",
+               "%a", "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p"};
 #endif
   spec_list.push_back("%Y-%m-%d %H:%M:%S");
 
@@ -287,19 +293,51 @@ TEST(chrono_test, system_clock_time_point) {
     EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
   }
 
-  if (std::find(spec_list.cbegin(), spec_list.cend(), "%z") !=
-      spec_list.cend()) {
+  // Timezone formatters tests makes sense for localtime.
+#if FMT_HAS_C99_STRFTIME
+  spec_list = {"%z", "%Z"};
+#else
+  spec_list = {"%Z"};
+#endif
+  for (const auto& spec : spec_list) {
+    auto t = std::chrono::system_clock::to_time_t(t1);
+    auto tm = *std::localtime(&t);
+
+    auto sys_output = system_strftime(spec, &tm);
+
+    auto fmt_spec = fmt::format("{{:{}}}", spec);
+    EXPECT_EQ(sys_output, fmt::format(fmt::runtime(fmt_spec), tm));
+
+    if (spec == "%z") {
+      sys_output.insert(sys_output.end() - 2, 1, ':');
+      EXPECT_EQ(sys_output, fmt::format("{:%Ez}", tm));
+      EXPECT_EQ(sys_output, fmt::format("{:%Oz}", tm));
+    }
+  }
+
+  // Separate tests for UTC, since std::time_put can use local time and ignoring
+  // the timezone in std::tm (if it presents on platform).
+  if (fmt::detail::has_member_data_tm_zone<std::tm>::value) {
     auto t = std::chrono::system_clock::to_time_t(t1);
     auto tm = *std::gmtime(&t);
 
-    auto sys_output = system_strftime("%z", &tm);
-    sys_output.insert(sys_output.end() - 2, 1, ':');
+    std::vector<std::string> tz_names = {"GMT", "UTC"};
+    EXPECT_THAT(tz_names, Contains(fmt::format("{:%Z}", t1)));
+    EXPECT_THAT(tz_names, Contains(fmt::format("{:%Z}", tm)));
+  }
 
-    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", t1));
-    EXPECT_EQ(sys_output, fmt::format("{:%Ez}", tm));
+  if (fmt::detail::has_member_data_tm_gmtoff<std::tm>::value) {
+    auto t = std::chrono::system_clock::to_time_t(t1);
+    auto tm = *std::gmtime(&t);
 
-    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", t1));
-    EXPECT_EQ(sys_output, fmt::format("{:%Oz}", tm));
+    EXPECT_EQ("+0000", fmt::format("{:%z}", t1));
+    EXPECT_EQ("+0000", fmt::format("{:%z}", tm));
+
+    EXPECT_EQ("+00:00", fmt::format("{:%Ez}", t1));
+    EXPECT_EQ("+00:00", fmt::format("{:%Ez}", tm));
+
+    EXPECT_EQ("+00:00", fmt::format("{:%Oz}", t1));
+    EXPECT_EQ("+00:00", fmt::format("{:%Oz}", tm));
   }
 }
 
@@ -342,7 +380,7 @@ TEST(chrono_test, local_system_clock_time_point) {
   // Disabled on Windows because these formats are not consistent among
   // platforms.
   spec_list.insert(spec_list.end(), {"%c", "%Ec", "%r"});
-#  elif defined(__MINGW32__) && !defined(_UCRT)
+#  elif !FMT_HAS_C99_STRFTIME
   // Only C89 conversion specifiers when using MSVCRT instead of UCRT
   spec_list = {"%%", "%Y", "%y", "%b", "%B", "%m", "%U", "%W", "%j", "%d", "%a",
                "%A", "%w", "%H", "%I", "%M", "%S", "%x", "%X", "%p", "%Z"};
@@ -424,7 +462,7 @@ TEST(chrono_test, format_default) {
       fmt::format("{}", std::chrono::duration<int, std::ratio<15, 4>>(42)));
 }
 
-TEST(chrono_test, align) {
+TEST(chrono_test, duration_align) {
   auto s = std::chrono::seconds(42);
   EXPECT_EQ("42s  ", fmt::format("{:5}", s));
   EXPECT_EQ("42s  ", fmt::format("{:{}}", s, 5));
@@ -438,6 +476,35 @@ TEST(chrono_test, align) {
             fmt::format("{:~^12%H:%M:%S}", std::chrono::seconds(12345)));
   EXPECT_EQ("03:25:45    ",
             fmt::format("{:{}%H:%M:%S}", std::chrono::seconds(12345), 12));
+}
+
+TEST(chrono_test, tm_align) {
+  auto t = make_tm(1975, 12, 29, 12, 14, 16);
+  EXPECT_EQ("1975-12-29 12:14:16", fmt::format("{:%F %T}", t));
+  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:30%F %T}", t));
+  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:{}%F %T}", t, 30));
+  EXPECT_EQ("1975-12-29 12:14:16           ", fmt::format("{:<30%F %T}", t));
+  EXPECT_EQ("     1975-12-29 12:14:16      ", fmt::format("{:^30%F %T}", t));
+  EXPECT_EQ("           1975-12-29 12:14:16", fmt::format("{:>30%F %T}", t));
+
+  EXPECT_EQ("1975-12-29 12:14:16***********", fmt::format("{:*<30%F %T}", t));
+  EXPECT_EQ("*****1975-12-29 12:14:16******", fmt::format("{:*^30%F %T}", t));
+  EXPECT_EQ("***********1975-12-29 12:14:16", fmt::format("{:*>30%F %T}", t));
+}
+
+TEST(chrono_test, tp_align) {
+  auto tp = std::chrono::time_point_cast<std::chrono::microseconds>(
+      std::chrono::system_clock::from_time_t(0));
+  EXPECT_EQ("00:00.000000", fmt::format("{:%M:%S}", tp));
+  EXPECT_EQ("00:00.000000   ", fmt::format("{:15%M:%S}", tp));
+  EXPECT_EQ("00:00.000000   ", fmt::format("{:{}%M:%S}", tp, 15));
+  EXPECT_EQ("00:00.000000   ", fmt::format("{:<15%M:%S}", tp));
+  EXPECT_EQ(" 00:00.000000  ", fmt::format("{:^15%M:%S}", tp));
+  EXPECT_EQ("   00:00.000000", fmt::format("{:>15%M:%S}", tp));
+
+  EXPECT_EQ("00:00.000000***", fmt::format("{:*<15%M:%S}", tp));
+  EXPECT_EQ("*00:00.000000**", fmt::format("{:*^15%M:%S}", tp));
+  EXPECT_EQ("***00:00.000000", fmt::format("{:*>15%M:%S}", tp));
 }
 
 TEST(chrono_test, format_specs) {
@@ -841,4 +908,14 @@ TEST(chrono_test, timestamps_sub_seconds) {
       t10(std::chrono::milliseconds(2000));
 
   EXPECT_EQ(fmt::format("{:%S}", t10), "02.000");
+
+  {
+    const auto epoch = std::chrono::time_point<std::chrono::system_clock,
+                                               std::chrono::milliseconds>();
+    const auto d = std::chrono::milliseconds(250);
+
+    EXPECT_EQ("59.750", fmt::format("{:%S}", epoch - d));
+    EXPECT_EQ("00.000", fmt::format("{:%S}", epoch));
+    EXPECT_EQ("00.250", fmt::format("{:%S}", epoch + d));
+  }
 }
