@@ -2597,11 +2597,8 @@ void Gui::drawMenuBar()
 					{
 						Entity* ent = new Entity("func_wall");
 						ent->setOrAddKeyvalue("model", "*" + std::to_string(i));
+						ent->setOrAddKeyvalue("origin", map->models[i].vOrigin.toKeyvalueString());
 						map->ents.push_back(ent);
-						logf("Models {}x{}x{} {}x{}x{} {}x{}x{}\n", 
-							map->models[i].vOrigin.x, map->models[i].vOrigin.y, map->models[i].vOrigin.z, 
-							map->models[i].nMins.x, map->models[i].nMins.y, map->models[i].nMins.z,
-							map->models[i].nMaxs.x, map->models[i].nMaxs.y, map->models[i].nMaxs.z);
 					}
 				}
 
