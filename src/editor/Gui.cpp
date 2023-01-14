@@ -417,7 +417,6 @@ void ExportModel(Bsp* src_map, int id, int ExportType)
 
 	tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
 
-	//for (int i = 0; i < tmpMap->leafCount; i++)
 	for (int i = 0; i < tmpMap->leafCount; i++)
 	{
 		tmpMap->leaves[i].nVisOffset = -1;
