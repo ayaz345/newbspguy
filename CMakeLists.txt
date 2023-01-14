@@ -98,22 +98,21 @@ add_executable(${PROJECT_NAME} ${SOURCE_FILES})
 add_subdirectory(fmt)
 add_subdirectory(glfw)
 
-find_package(fmt)
-target_link_libraries(${PROJECT_NAME} fmt::fmt ${CMAKE_DL_LIBS})
-target_link_libraries(${PROJECT_NAME} glfw ${CMAKE_DL_LIBS})
-
-add_definitions(-DGLEW_STATIC)
-add_definitions(-DNDEBUG)
-
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 if(MSVC)
 	# compile using the static runtime
+	
+	add_definitions(-DGLEW_STATIC)
+	add_definitions(-DNDEBUG)
+	
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++latest")
 	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /MD /wd4244 /wd4018")
 	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} /MDd /wd4244 /wd4018 /W0")
 
 	set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT bspguy)
+
+	target_link_libraries(${PROJECT_NAME} fmt::fmt glfw)
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 		target_link_libraries(${PROJECT_NAME} opengl32 ${CMAKE_CURRENT_SOURCE_DIR}/glew/lib/Release/x64/glew32s.lib)
@@ -228,7 +227,7 @@ if(MSVC)
 	add_definitions(-DUSE_FILESYSTEM)
 	add_definitions(-DNOMINMAX)
 else()
-	target_link_libraries(${PROJECT_NAME} GL GLU FMT Xxf86vm Xrandr pthread Xi GLEW stdc++fs )
+	target_link_libraries(${PROJECT_NAME} GL GLU fmt::fmt glfw Xxf86vm Xrandr pthread Xi GLEW stdc++fs )
 	set(CMAKE_CXX_STANDARD 20)
 	set(CMAKE_CXX_STANDARD_REQUIRED ON)
 	set(CMAKE_CXX_FLAGS "-Wall -std=c++2a")
