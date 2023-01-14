@@ -98,7 +98,12 @@ void window_maximize_callback(GLFWwindow* window, int maximized)
 
 void window_minimize_callback(GLFWwindow* window, int iconified)
 {
-	g_app->isSleeping = iconified == GLFW_TRUE;
+	g_app->is_minimized = iconified == GLFW_TRUE;
+}
+
+void window_focus_callback(GLFWwindow* window, int focused)
+{
+	g_app->is_focused = focused == GLFW_TRUE;
 }
 
 void window_close_callback(GLFWwindow* window)
@@ -162,6 +167,7 @@ Renderer::Renderer()
 	glfwSetWindowCloseCallback(window, window_close_callback);
 	glfwSetWindowIconifyCallback(window, window_minimize_callback);
 	glfwSetWindowMaximizeCallback(window, window_maximize_callback);
+	glfwSetWindowFocusCallback(window, window_focus_callback);
 
 	glewInit();
 	// init to black screen instead of white
@@ -619,6 +625,12 @@ void Renderer::renderLoop()
 				}
 			}
 			reloading = reloadingGameDir = false;
+		}
+
+		if (is_minimized || !is_focused)
+		{
+			using namespace std::chrono_literals;
+			std::this_thread::sleep_for(25ms);
 		}
 
 		int glerror = glGetError();

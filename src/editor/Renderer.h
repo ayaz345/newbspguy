@@ -112,7 +112,8 @@ public:
 	void saveSettings();
 	void loadSettings();
 
-	bool isSleeping = false;
+	bool is_minimized = false;
+	bool is_focused = true;
 	bool reloading = false;
 	bool isLoading = false;
 	bool reloadingGameDir = false;
