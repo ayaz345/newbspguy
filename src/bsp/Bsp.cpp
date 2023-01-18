@@ -1902,7 +1902,7 @@ void Bsp::clean_unused_texinfos()
 	}
 }
 
-int Bsp::merge_all_verts()
+int Bsp::merge_all_verts(float epsilon)
 {
 	int merged_verts = 0;
 	std::vector<vec3> result_verts;
@@ -1911,14 +1911,14 @@ int Bsp::merge_all_verts()
 	{
 		bool found1 = false;
 		bool found2 = false;
-		for (int v = vertCount - 1; v >= 0; v--)
+		for (int v = 0; v < vertCount; v++)
 		{
-			if (!found1 && VectorCompare(verts[edges[i].iVertex[0]], verts[v], 1.0f))
+			if (!found1 && VectorCompare(verts[edges[i].iVertex[0]], verts[v], epsilon))
 			{
 				edges[i].iVertex[0] = v;
 				found1 = true;
 			}
-			if (!found2 && VectorCompare(verts[edges[i].iVertex[1]], verts[v], 1.0f))
+			if (!found2 && VectorCompare(verts[edges[i].iVertex[1]], verts[v], epsilon))
 			{
 				edges[i].iVertex[1] = v;
 				found2 = true;

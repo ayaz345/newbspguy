@@ -2685,10 +2685,27 @@ bool BspRenderer::pickModelPoly(vec3 start, const vec3& dir, vec3 offset, int mo
 		float t = tempPickInfo.bestDist;
 		if (pickFaceMath(start, dir, faceMath, t))
 		{
-			foundBetterPick = true;
-			tempPickInfo.bestDist = t;
-			tempPickInfo.selectedFaces.clear();
-			tempPickInfo.selectedFaces.push_back(model.iFirstFace + k);
+			vec3 vectest = vec3();
+			bool badface = false;
+			for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+			{
+				int edgeIdx = map->surfedges[e];
+				BSPEDGE32 edge = map->edges[abs(edgeIdx)];
+				vec3& v = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+				if (vectest != vec3() && vectest == v)
+				{
+					badface = true;
+					break;
+				}
+				vectest = v;
+			}
+			if (!badface)
+			{
+				foundBetterPick = true;
+				tempPickInfo.bestDist = t;
+				tempPickInfo.selectedFaces.clear();
+				tempPickInfo.selectedFaces.push_back(model.iFirstFace + k);
+			}
 		}
 	}
 
@@ -2750,7 +2767,7 @@ bool BspRenderer::pickFaceMath(const vec3& start, const vec3& dir, FaceMath& fac
 	}
 
 	float t = dotProduct((faceMath.normal * faceMath.fdist) - start, faceMath.normal) / dot;
-	if (t < EPSILON || t >= bestDist)
+	if (t < EPSILON || t > bestDist)
 	{
 		return false; // intersection behind camera, or not a better pick
 	}

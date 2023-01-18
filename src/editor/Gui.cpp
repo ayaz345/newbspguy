@@ -7753,6 +7753,8 @@ void Gui::drawFaceEditorWidget()
 		static bool updatedTexVec = false;
 		static bool updatedFaceVec = false;
 
+		static float verts_merge_epsilon = 1.0f;
+
 		static int tmpStyles[4] = { 255,255,255,255 };
 		static bool stylesChanged = false;
 
@@ -8015,6 +8017,40 @@ void Gui::drawFaceEditorWidget()
 			}
 
 			//map->edges[0].iVertex
+		}
+
+		if (app->pickInfo.selectedFaces.size() > 1)
+		{
+			ImGui::Separator();
+			ImGui::Text("Optimize verts");
+			ImGui::DragFloat("Merge power:##epsilon", &verts_merge_epsilon, 0.1f, 0.0f, 1000.0f);
+			if (ImGui::Button("Merge verts!"))
+			{
+				for (auto faceIdx : app->pickInfo.selectedFaces)
+				{
+					vec3 lastvec = vec3();
+					BSPFACE32& face = map->faces[faceIdx];
+					for (int e = face.iFirstEdge; e < face.iFirstEdge + face.nEdges; e++)
+					{
+						int edgeIdx = map->surfedges[e];
+						BSPEDGE32 edge = map->edges[abs(edgeIdx)];
+						vec3& vec = edgeIdx >= 0 ? map->verts[edge.iVertex[1]] : map->verts[edge.iVertex[0]];
+
+						for (int v = 0; v < map->vertCount; v++)
+						{
+							if (map->verts[v].z != vec.z && VectorCompare(map->verts[v], vec, verts_merge_epsilon))
+							{
+								vec = map->verts[v];
+								lastvec = vec;
+								break;
+							}
+						}
+					}
+				}
+				map->remove_unused_model_structures(CLEAN_VERTICES);
+				map->getBspRender()->reload();
+			}
+			ImGui::Separator();
 		}
 
 		ImGui::PopItemWidth();
