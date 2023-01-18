@@ -47,7 +47,8 @@ struct vec3
 			z = +0.0f;
 		}
 	}
-	vec3 normalize(float length = 1.0f);
+	vec3 normalize(float length = 1.0f); 
+	vec3 normalize_angles();
 	vec3 swap_xz();
 	float length();
 	bool IsZero();
@@ -306,3 +307,4 @@ void AngleQuaternion(const vec3& angles, vec4& quaternion);
 void R_ConcatTransforms(const float in1[3][4], const float in2[3][4], float out[3][4]);
 void VectorScale(const vec3& v, float scale, vec3& out);
 float VectorNormalize(vec3& v);
+float fullnormalizeangle(float angle);

@@ -41,33 +41,84 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 
 	if (g_settings.start_at_entity)
 	{
+		logf("Move camera to first entity...\n");
+		Entity* foundEnt = NULL;
 		for (auto ent : map->ents)
 		{
 			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
 			{
-				renderCameraOrigin = ent->getOrigin();
+				foundEnt = ent;
+				break;
 			}
 		}
-		if (renderCameraOrigin == vec3())
+		if (!foundEnt)
 		{
 			for (auto ent : map->ents)
 			{
 				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_deathmatch")
 				{
-					renderCameraOrigin = ent->getOrigin();
+					foundEnt = ent;
+					break;
 				}
 			}
 		}
-		if (renderCameraOrigin == vec3())
+		if (!foundEnt)
 		{
 			for (auto ent : map->ents)
 			{
 				if (ent->hasKey("classname") && ent->keyvalues["classname"] == "trigger_camera")
 				{
-					renderCameraOrigin = ent->getOrigin();
+					foundEnt = ent;
+					break;
 				}
 			}
 		}
+
+		
+		if (foundEnt)
+		{
+			renderCameraOrigin = foundEnt->getOrigin();
+			renderCameraOrigin.z += 32;
+			for (unsigned int i = 0; i < foundEnt->keyOrder.size(); i++)
+			{
+				if (foundEnt->keyOrder[i] == "angles")
+				{
+					renderCameraAngles = parseVector(foundEnt->keyvalues["angles"]);
+				}
+				if (foundEnt->keyOrder[i] == "angle")
+				{
+					float y = (float)atof(foundEnt->keyvalues["angle"].c_str());
+
+					if (y >= 0.0f)
+					{
+						renderCameraAngles.y = y;
+					}
+					else if (y == -1.0f)
+					{
+						renderCameraAngles.x = -90.0f;
+						renderCameraAngles.y = 0.0f;
+						renderCameraAngles.z = 0.0f;
+					}
+					else if (y <= -2.0f)
+					{
+						renderCameraAngles.x = 90.0f;
+						renderCameraAngles.y = 0.0f;
+						renderCameraAngles.z = 0.0f;
+					}
+				}
+			}
+
+
+
+			renderCameraAngles = renderCameraAngles.flip();
+
+			renderCameraAngles.z = renderCameraAngles.z + 90.0f;
+
+			renderCameraAngles = renderCameraAngles.normalize_angles();
+
+		}
+
+
 		/*for (auto ent : map->ents)
 		{
 			if (ent->hasKey("classname") && ent->keyvalues["classname"] == "info_player_start")
@@ -136,8 +187,11 @@ BspRenderer::BspRenderer(Bsp* _map, ShaderProgram* _bspShader, ShaderProgram* _f
 }*/
 	}
 
-	cameraOrigin = renderCameraOrigin;
-	cameraAngles = renderCameraAngles;
+	if (map == g_app->getSelectedMap())
+	{
+		cameraOrigin = renderCameraOrigin;
+		cameraAngles = renderCameraAngles;
+	}
 
 	renderEnts = NULL;
 	renderModels = NULL;
@@ -571,7 +625,7 @@ void BspRenderer::loadLightmaps()
 			}
 		}
 	}
-		
+
 
 	glLightmapTextures = new Texture * [atlasTextures.size()];
 	for (unsigned int i = 0; i < atlasTextures.size(); i++)

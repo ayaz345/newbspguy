@@ -185,6 +185,18 @@ vec3 vec3::normalize(float length)
 	return vec3(x * d, y * d, z * d);
 }
 
+
+float fullnormalizeangle(float angle)
+{
+	float retval = fmod(angle, 360.0f);
+	return std::signbit(retval) ? retval + 360.0f : retval;
+}
+
+vec3 vec3::normalize_angles()
+{
+	return vec3(fullnormalizeangle(x), fullnormalizeangle(y), fullnormalizeangle(z));
+}
+
 vec3 vec3::swap_xz()
 {
 	return vec3(z, y, x);

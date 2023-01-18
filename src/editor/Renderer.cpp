@@ -2047,8 +2047,8 @@ void Renderer::setupView()
 	projection.perspective(fov, (float)windowWidth / (float)windowHeight, zNear, zFar);
 
 	matview.loadIdentity();
-	matview.rotateX(PI * cameraAngles.x / 180.0f);
-	matview.rotateY(PI * cameraAngles.z / 180.0f);
+	matview.rotateX(cameraAngles.x * PI / 180.0f);
+	matview.rotateY(cameraAngles.z * PI / 180.0f);
 	matview.translate(-cameraOrigin.x, -cameraOrigin.z, cameraOrigin.y);
 }
 
