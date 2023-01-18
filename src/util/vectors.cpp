@@ -189,7 +189,15 @@ vec3 vec3::normalize(float length)
 float fullnormalizeangle(float angle)
 {
 	float retval = fmod(angle, 360.0f);
-	return std::signbit(retval) ? retval + 360.0f : retval;
+	if (retval < -180.0f)
+	{
+		retval += 360.0f;
+	}
+	else if (retval > 180.0f)
+	{
+		retval -= 360.0f;
+	}
+	return retval;
 }
 
 vec3 vec3::normalize_angles()
