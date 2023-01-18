@@ -4483,7 +4483,7 @@ void Gui::drawKeyvalueEditor_RawEditTab(int entIdx)
 void Gui::drawGOTOWidget()
 {
 	ImGui::SetNextWindowSize(ImVec2(410.f, 200.f), ImGuiCond_FirstUseEver);
-	ImGui::SetNextWindowSizeConstraints(ImVec2(410.f, 200.f), ImVec2(410.f, 200.f));
+	ImGui::SetNextWindowSizeConstraints(ImVec2(410.f, 330.f), ImVec2(410.f, 330.f));
 	static vec3 coordinates = vec3();
 	static vec3 angles = vec3();
 	float angles_y = 0.0f;
@@ -4513,7 +4513,7 @@ void Gui::drawGOTOWidget()
 		ImGui::PushItemWidth(inputWidth);
 		ImGui::DragFloat("##xangles", &angles.x, 0.1f, 0, 0, "X: %.0f");
 		ImGui::SameLine();
-		ImGui::DragFloat("##yangles", &angles_y, 0.1f, 0, 0, "Y: %.0f");
+		ImGui::DragFloat("##yangles", &angles_y, 0.0f, 0, 0, "Y: %.0f");
 		ImGui::SameLine();
 		ImGui::DragFloat("##zangles", &angles.z, 0.1f, 0, 0, "Z: %.0f");
 		ImGui::PopItemWidth();
