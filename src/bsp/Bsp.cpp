@@ -16,6 +16,8 @@
 #include "forcecrc32.h"
 #include "quantizer.h"
 
+#include <unordered_set>
+
 typedef std::map< std::string, vec3 > mapStringToVector;
 
 vec3 default_hull_extents[MAX_MAP_HULLS] = {
@@ -1900,6 +1902,36 @@ void Bsp::clean_unused_texinfos()
 	}
 }
 
+int Bsp::merge_all_verts()
+{
+	int merged_verts = 0;
+	std::vector<vec3> result_verts;
+
+	for (int i = 0; i < edgeCount; i++)
+	{
+		bool found1 = false;
+		bool found2 = false;
+		for (int v = vertCount - 1; v >= 0; v--)
+		{
+			if (!found1 && VectorCompare(verts[edges[i].iVertex[0]], verts[v], 1.0f))
+			{
+				edges[i].iVertex[0] = v;
+				found1 = true;
+			}
+			if (!found2 && VectorCompare(verts[edges[i].iVertex[1]], verts[v], 1.0f))
+			{
+				edges[i].iVertex[1] = v;
+				found2 = true;
+			}
+
+			if (found1 && found2)
+			{
+				break;
+			}
+		}
+	}
+	return merged_verts;
+}
 
 STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 {
@@ -1910,6 +1942,12 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 
 	if (g_settings.mark_unused_texinfos && target & CLEAN_TEXINFOS)
 		clean_unused_texinfos();
+
+	int merged_verts = 0;
+	if (g_settings.merge_verts && target & CLEAN_VERTICES)
+	{
+		merged_verts = merge_all_verts() + merge_all_verts();
+	}
 
 	// marks which structures should not be moved
 	STRUCTUSAGE usedStructures(this);
@@ -1974,7 +2012,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	if (target & CLEAN_EDGES)
 		removeCount.edges = remove_unused_structs(LUMP_EDGES, usedStructures.edges, remap.edges);
 	if (target & CLEAN_VERTICES)
-		removeCount.verts = remove_unused_structs(LUMP_VERTICES, usedStructures.verts, remap.verts);
+		removeCount.verts = remove_unused_structs(LUMP_VERTICES, usedStructures.verts, remap.verts) + merged_verts;
 
 	if (target & CLEAN_TEXTURES)
 	{

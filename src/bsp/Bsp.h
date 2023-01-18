@@ -189,6 +189,7 @@ public:
 											   CLEAN_EDGES | CLEAN_VERTICES | CLEAN_TEXTURES | CLEAN_VISDATA);
 	void delete_model(int modelIdx);
 	void clean_unused_texinfos();
+	int merge_all_verts();
 
 	// conditionally deletes hulls for entities that aren't using them
 	STRUCTCOUNT delete_unused_hulls(bool noProgress = false);

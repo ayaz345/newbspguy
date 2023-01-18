@@ -49,6 +49,7 @@ void AppSettings::loadDefault()
 		| RENDER_ENT_CLIPNODES | RENDER_MODELS | RENDER_MODELS_ANIMATED;
 
 	vsync = true;
+	merge_verts = false;
 	mark_unused_texinfos = false;
 	start_at_entity = false;
 	backUpMap = true;
@@ -246,6 +247,10 @@ void AppSettings::load()
 		else if (key == "mark_unused_texinfos")
 		{
 			g_settings.mark_unused_texinfos = atoi(val.c_str()) != 0;
+		}
+		else if (key == "merge_verts")
+		{
+			g_settings.merge_verts = atoi(val.c_str()) != 0;
 		}
 		else if (key == "start_at_entity")
 		{
@@ -653,6 +658,7 @@ void AppSettings::save(std::string path)
 
 	file << "vsync=" << g_settings.vsync << std::endl;
 	file << "mark_unused_texinfos=" << g_settings.mark_unused_texinfos << std::endl;
+	file << "merge_verts=" << g_settings.merge_verts << std::endl;
 	file << "start_at_entity=" << g_settings.start_at_entity << std::endl;
 #ifdef NDEBUG
 	file << "verbose_logs=" << g_settings.verboseLogs << std::endl;

@@ -506,12 +506,12 @@ vec2 vec4::xy()
 
 
 
-bool VectorCompare(const vec3& v1, const vec3& v2)
+bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon)
 {
 	int		i;
 
 	for (i = 0; i < 3; i++)
-		if (abs(v1[i] - v2[i]) > EPSILON)
+		if (abs(v1[i] - v2[i]) > epsilon)
 			return false;
 
 	return true;

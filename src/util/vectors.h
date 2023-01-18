@@ -47,7 +47,7 @@ struct vec3
 			z = +0.0f;
 		}
 	}
-	vec3 normalize(float length = 1.0f); 
+	vec3 normalize(float length = 1.0f);
 	vec3 normalize_angles();
 	vec3 swap_xz();
 	float length();
@@ -80,12 +80,12 @@ struct vec3
 	{
 		switch (i)
 		{
-			case 0:
-				return x;
-			case 1:
-				return y;
-			case 2:
-				return z;
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
 		}
 		return z;
 	}
@@ -94,12 +94,12 @@ struct vec3
 	{
 		switch (i)
 		{
-			case 0:
-				return x;
-			case 1:
-				return y;
-			case 2:
-				return z;
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
 		}
 		return z;
 	}
@@ -213,12 +213,12 @@ struct vec4
 	{
 		switch (i)
 		{
-			case 0:
-				return x;
-			case 1:
-				return y;
-			case 2:
-				return z;
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
 		}
 		return w;
 	}
@@ -227,12 +227,12 @@ struct vec4
 	{
 		switch (i)
 		{
-			case 0:
-				return x;
-			case 1:
-				return y;
-			case 2:
-				return z;
+		case 0:
+			return x;
+		case 1:
+			return y;
+		case 2:
+			return z;
 		}
 		return w;
 	}
@@ -300,7 +300,7 @@ void VectorTransform(const vec3& in1, const float in2[3][4], vec3& out);
 
 void QuaternionMatrix(const vec4& quaternion, float(*matrix)[4]);
 
-bool VectorCompare(const vec3& v1, const vec3& v2);
+bool VectorCompare(const vec3& v1, const vec3& v2, float epsilon = EPSILON);
 
 void QuaternionSlerp(const vec4& p, vec4& q, float t, vec4& qt);
 void AngleQuaternion(const vec3& angles, vec4& quaternion);

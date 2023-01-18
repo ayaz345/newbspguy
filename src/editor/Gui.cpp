@@ -5425,6 +5425,13 @@ void Gui::drawSettings()
 			}
 			ImGui::Separator();
 
+			ImGui::SetNextItemWidth(pathWidth / 2);
+			ImGui::Checkbox("Merge verts", &g_settings.merge_verts);
+			if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay) {
+				ImGui::BeginTooltip();
+				ImGui::TextUnformatted("Additional cleanup option for clean similar verts.");
+				ImGui::EndTooltip();
+			}
 			ImGui::SetNextItemWidth(pathWidth);
 			ImGui::Text("Conditional Point Ent Triggers");
 

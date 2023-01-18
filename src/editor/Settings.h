@@ -75,6 +75,7 @@ struct AppSettings
 	bool goto_open;
 	bool vsync;
 	bool mark_unused_texinfos;
+	bool merge_verts;
 	bool start_at_entity;
 	bool backUpMap;
 	bool preserveCrc32;
