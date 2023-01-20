@@ -310,7 +310,7 @@ void Gui::pasteLightmap()
 	map->getBspRender()->reloadLightmaps();
 }
 
-void ExportModel(Bsp* src_map, int id, int ExportType)
+void ExportModel(Bsp* src_map, int id, int ExportType, bool movemodel)
 {
 	logf("Save current map to temporary file.\n");
 	src_map->update_ent_lump();
@@ -412,17 +412,9 @@ void ExportModel(Bsp* src_map, int id, int ExportType)
 	}*/
 
 	//tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
-	while (tmpMap->models[0].nVisLeafs >= tmpMap->leafCount)
-		tmpMap->create_leaf(CONTENTS_EMPTY);
 
-	tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
-
-	for (int i = 0; i < tmpMap->leafCount; i++)
-	{
-		tmpMap->leaves[i].nVisOffset = -1;
-	}
-
-	tmpMap->move(-modelOrigin, 0, true, true);
+	if (movemodel)
+		tmpMap->move(-modelOrigin, 0, true, true);
 
 
 	tmpMap->update_lump_pointers();
@@ -436,6 +428,16 @@ void ExportModel(Bsp* src_map, int id, int ExportType)
 
 	if (!removed.allZero())
 		removed.print_delete_stats(1);
+
+	while (tmpMap->models[0].nVisLeafs >= tmpMap->leafCount)
+		tmpMap->create_leaf(CONTENTS_EMPTY);
+
+	tmpMap->models[0].nVisLeafs = tmpMap->leafCount - 1;
+
+	for (int i = 0; i < tmpMap->leafCount; i++)
+	{
+		tmpMap->leaves[i].nVisOffset = -1;
+	}
 
 	if (tmpMap->validate())
 	{
@@ -814,20 +816,40 @@ void Gui::draw3dContextMenus()
 					}
 					if (ImGui::BeginMenu("Export BSP model", !app->isLoading && modelIdx >= 0))
 					{
-						if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && modelIdx >= 0))
+						if (ImGui::BeginMenu("With origin", !app->isLoading && modelIdx >= 0))
 						{
-							ExportModel(map, modelIdx, 0);
+							if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && modelIdx >= 0))
+							{
+								ExportModel(map, modelIdx, 0, false);
+							}
+							if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && modelIdx >= 0))
+							{
+								ExportModel(map, modelIdx, 2, false);
+							}
+							if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && modelIdx >= 0))
+							{
+								ExportModel(map, modelIdx, 1, false);
+							}
 						}
-						if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && modelIdx >= 0))
+						if (ImGui::BeginMenu("Without origin", !app->isLoading && modelIdx >= 0))
 						{
-							ExportModel(map, modelIdx, 2);
+							if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && modelIdx >= 0))
+							{
+								ExportModel(map, modelIdx, 0, true);
+							}
+							if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && modelIdx >= 0))
+							{
+								ExportModel(map, modelIdx, 2, true);
+							}
+							if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && modelIdx >= 0))
+							{
+								ExportModel(map, modelIdx, 1, true);
+							}
 						}
-						if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && modelIdx >= 0))
-						{
-							ExportModel(map, modelIdx, 1);
-						}
+
 						ImGui::EndMenu();
 					}
+
 					if (ImGui::IsItemHovered() && g.HoveredIdTimer > g_tooltip_delay)
 					{
 						ImGui::BeginTooltip();
@@ -1911,7 +1933,7 @@ void Gui::drawMenuBar()
 			}
 
 
-			if ((map && !map->is_mdl_model) && ImGui::BeginMenu(".bsp MODEL with collision"))
+			if ((map && !map->is_mdl_model) && ImGui::BeginMenu("Export BSP model"))
 			{
 				if (map)
 				{
@@ -1928,7 +1950,38 @@ void Gui::drawMenuBar()
 						{
 							if (ImGui::MenuItem(("Export Model" + std::to_string(i) + ".bsp").c_str(), NULL, modelIdx == i))
 							{
-								ExportModel(map, i, 0);
+								if (ImGui::BeginMenu("With origin", !app->isLoading && i >= 0))
+								{
+									if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && i >= 0))
+									{
+										ExportModel(map, i, 0, false);
+									}
+									if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && i >= 0))
+									{
+										ExportModel(map, i, 2, false);
+									}
+									if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && i >= 0))
+									{
+										ExportModel(map, i, 1, false);
+									}
+								}
+								if (ImGui::BeginMenu("Without origin", !app->isLoading && i >= 0))
+								{
+									if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && i >= 0))
+									{
+										ExportModel(map, i, 0, true);
+									}
+									if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && i >= 0))
+									{
+										ExportModel(map, i, 2, true);
+									}
+									if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && i >= 0))
+									{
+										ExportModel(map, i, 1, true);
+									}
+								}
+
+								ImGui::EndMenu();
 							}
 						}
 						ImGui::EndMenu();
@@ -8040,9 +8093,12 @@ void Gui::drawFaceEditorWidget()
 						{
 							if (map->verts[v].z != vec.z && VectorCompare(map->verts[v], vec, verts_merge_epsilon))
 							{
-								vec = map->verts[v];
-								lastvec = vec;
-								break;
+								if (vec != lastvec)
+								{
+									vec = map->verts[v];
+									lastvec = vec;
+									break;
+								}
 							}
 						}
 					}
