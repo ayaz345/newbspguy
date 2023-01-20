@@ -3495,6 +3495,50 @@ void Gui::drawDebugWidget()
 				ImGui::PopTextWrapPos();
 				ImGui::EndTooltip();
 			}
+
+			static int model1 = 0;
+			static int model2 = 0;
+
+			ImGui::DragInt("Model 1 ##mdl1", &model1, 1, 0, MAX_MAP_MODELS);
+
+			ImGui::DragInt("Model 2 ##mdl1", &model2, 1, 0, MAX_MAP_MODELS);
+
+			if (ImGui::Button("Swap two models"))
+			{
+				if (model1 >= 0 && model2 >= 0)
+				{
+					if (model1 != model2)
+					{
+						if (model1 < map->modelCount &&
+							model2 < map->modelCount)
+						{
+							std::swap(map->models[model1], map->models[model1]);
+
+
+							for (int i = 0; i < map->ents.size(); i++)
+							{
+								if (map->ents[i]->getBspModelIdx() == model1)
+								{
+									map->ents[i]->setOrAddKeyvalue("model", "*" + std::to_string(model2));
+								}
+								else if (map->ents[i]->getBspModelIdx() == model2)
+								{
+									map->ents[i]->setOrAddKeyvalue("model", "*" + std::to_string(model1));
+								}
+							}
+						}
+					}
+				}
+			}
+
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::BeginTooltip();
+				ImGui::PushTextWrapPos(ImGui::GetFontSize() * 35.0f);
+				ImGui::TextUnformatted("SWAP TWO MODELS, USEFUL FOR EDITING WITH SAVE CRC");
+				ImGui::PopTextWrapPos();
+				ImGui::EndTooltip();
+			}
 		}
 
 	}
