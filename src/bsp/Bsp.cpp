@@ -1092,7 +1092,8 @@ bool Bsp::move(vec3 offset, int modelIdx, bool onlyModel, bool forceMove, bool l
 void Bsp::move_texinfo(int idx, vec3 offset)
 {
 	BSPTEXTUREINFO& info = texinfos[idx];
-
+	if (info.iMiptex < 0 || info.iMiptex >= textureCount)
+		return;
 	int texOffset = ((int*)textures)[info.iMiptex + 1];
 	if (texOffset < 0)
 		return;
@@ -1175,7 +1176,13 @@ void Bsp::resize_lightmaps(LIGHTMAP* oldLightmaps, LIGHTMAP* newLightmaps, COLOR
 			continue;
 
 		BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
-		int32_t texOffset = ((int32_t*)textures)[info.iMiptex + 1];
+		if (info.iMiptex < 0 || info.iMiptex >= textureCount)
+			continue;
+
+		int texOffset = ((int*)textures)[info.iMiptex + 1];
+		if (texOffset < 0)
+			continue;
+
 		BSPMIPTEX& tex = *((BSPMIPTEX*)(textures + texOffset));
 
 		int size[2];
@@ -1606,6 +1613,17 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 	{
 		if (!usedTextures[i])
 		{
+			for (int t = 0; t < texinfoCount; t++)
+			{
+				BSPTEXTUREINFO& texinfo = texinfos[t];
+				if (texinfo.iMiptex == i)
+				{
+					usedTextures[i] = true;
+				}
+			}
+			if (usedTextures[i])
+				continue;
+
 			int offset = ((int*)textures)[i + 1];
 			if (offset < 0)
 			{
@@ -1673,7 +1691,8 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 		int oldOffset = ((int*)textures)[i + 1];
 		if (oldOffset < 0)
 		{
-
+			texHeader[k + 1] = oldOffset;
+			newOffset += sizeof(int);
 		}
 		else
 		{
@@ -1681,12 +1700,13 @@ unsigned int Bsp::remove_unused_textures(bool* usedTextures, int* remappedIndexe
 			int sz = getBspTextureSize(i);
 
 			memcpy(newTexData + newOffset, textures + oldOffset, sz);
-			texHeader[k + 1] = newOffset;
-			newOffset += sz;
 
-			remappedIndexes[i] = k;
-			k++;
+			texHeader[k + 1] = newOffset;
+
+			newOffset += sz;
 		}
+		remappedIndexes[i] = k;
+		k++;
 	}
 
 	texHeader[0] = k;
@@ -2114,6 +2134,7 @@ STRUCTCOUNT Bsp::remove_unused_model_structures(unsigned int target)
 	}
 
 	delete[] usedModels;
+
 	if (target & CLEAN_TEXTURES)
 		remove_unused_wad_files(this, this);
 
@@ -7124,7 +7145,7 @@ void Bsp::ExportExtFile()
 	{
 		BSPFACE32& face = faces[i];
 		BSPTEXTUREINFO& info = texinfos[face.iTextureInfo];
-		if (info.iMiptex >= 0)
+		if (info.iMiptex >= 0 && info.iMiptex < textureCount)
 		{
 			int texOffset = ((int*)textures)[info.iMiptex + 1];
 			if (texOffset >= 0)

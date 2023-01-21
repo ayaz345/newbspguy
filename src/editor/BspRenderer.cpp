@@ -875,7 +875,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		BSPMIPTEX* tex = NULL;
 
 		int texWidth, texHeight;
-		if (texinfo.iMiptex >= 0)
+		if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 		{
 			int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 			if (texOffset >= 0)
@@ -1051,7 +1051,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 		int groupIdx = -1;
 		for (int k = 0; k < renderGroups.size(); k++)
 		{
-			if (texinfo.iMiptex == -1)
+			if (texinfo.iMiptex == -1 || texinfo.iMiptex >= map->textureCount)
 				continue;
 			bool textureMatch = !texturesLoaded || renderGroups[k].texture == glTextures[texinfo.iMiptex];
 			if (textureMatch && renderGroups[k].transparent == isTransparent)
@@ -1081,7 +1081,7 @@ int BspRenderer::refreshModel(int modelIdx, bool refreshClipnodes, bool noTriang
 			newGroup.verts = NULL;
 			newGroup.transparent = isTransparent;
 			newGroup.special = isSpecial;
-			newGroup.texture = texturesLoaded && texinfo.iMiptex >= 0 ? glTextures[texinfo.iMiptex] : greyTex;
+			newGroup.texture = texturesLoaded && texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount ? glTextures[texinfo.iMiptex] : greyTex;
 			for (int s = 0; s < MAXLIGHTMAPS; s++)
 			{
 				newGroup.lightmapAtlas[s] = lightmapAtlas[s];
@@ -2062,7 +2062,7 @@ void BspRenderer::updateFaceUVs(int faceIdx)
 
 	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-	if (texinfo.iMiptex >= 0)
+	if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 	{
 		int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 		if (texOffset >= 0)
@@ -2107,7 +2107,7 @@ unsigned int BspRenderer::getFaceTextureId(int faceIdx)
 {
 	BSPFACE32& face = map->faces[faceIdx];
 	BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
-	if (texinfo.iMiptex < 0)
+	if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount)
 		return 0;
 	return glTextures[texinfo.iMiptex]->id;
 }

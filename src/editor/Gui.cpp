@@ -235,7 +235,7 @@ void Gui::copyTexture()
 		return;
 	}
 	BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[app->pickInfo.selectedFaces[0]].iTextureInfo];
-	copiedMiptex = texinfo.iMiptex == -1 ? 0 : texinfo.iMiptex;
+	copiedMiptex = texinfo.iMiptex == -1 || texinfo.iMiptex >= map->textureCount ? 0 : texinfo.iMiptex;
 }
 
 void Gui::pasteTexture()
@@ -830,7 +830,9 @@ void Gui::draw3dContextMenus()
 							{
 								ExportModel(map, modelIdx, 1, false);
 							}
+							ImGui::EndMenu();
 						}
+
 						if (ImGui::BeginMenu("Without origin", !app->isLoading && modelIdx >= 0))
 						{
 							if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && modelIdx >= 0))
@@ -845,6 +847,7 @@ void Gui::draw3dContextMenus()
 							{
 								ExportModel(map, modelIdx, 1, true);
 							}
+							ImGui::EndMenu();
 						}
 
 						ImGui::EndMenu();
@@ -1933,61 +1936,59 @@ void Gui::drawMenuBar()
 			}
 
 
-			if ((map && !map->is_mdl_model) && ImGui::BeginMenu("Export BSP model"))
+			if (map && !map->is_mdl_model)
 			{
-				if (map)
+				if (ImGui::BeginMenu("Export BSP model"))
 				{
-					if (ImGui::BeginMenu((std::string("Map ") + map->bsp_name + ".bsp").c_str()))
+					int modelIdx = -1;
+
+					if (app->pickInfo.GetSelectedEnt() >= 0)
 					{
-						int modelIdx = -1;
+						modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
+					}
 
-						if (app->pickInfo.GetSelectedEnt() >= 0)
+					for (int i = 0; i < map->modelCount; i++)
+					{
+						if (ImGui::BeginMenu(((modelIdx != i ? "Export Model" : "+ Export Model") + std::to_string(i) + ".bsp").c_str()))
 						{
-							modelIdx = map->ents[app->pickInfo.GetSelectedEnt()]->getBspModelIdx();
-						}
-
-						for (int i = 0; i < map->modelCount; i++)
-						{
-							if (ImGui::MenuItem(("Export Model" + std::to_string(i) + ".bsp").c_str(), NULL, modelIdx == i))
+							if (ImGui::BeginMenu("With origin", !app->isLoading && i >= 0))
 							{
-								if (ImGui::BeginMenu("With origin", !app->isLoading && i >= 0))
+								if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && i >= 0))
 								{
-									if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && i >= 0))
-									{
-										ExportModel(map, i, 0, false);
-									}
-									if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && i >= 0))
-									{
-										ExportModel(map, i, 2, false);
-									}
-									if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && i >= 0))
-									{
-										ExportModel(map, i, 1, false);
-									}
+									ExportModel(map, i, 0, false);
 								}
-								if (ImGui::BeginMenu("Without origin", !app->isLoading && i >= 0))
+								if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && i >= 0))
 								{
-									if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && i >= 0))
-									{
-										ExportModel(map, i, 0, true);
-									}
-									if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && i >= 0))
-									{
-										ExportModel(map, i, 2, true);
-									}
-									if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && i >= 0))
-									{
-										ExportModel(map, i, 1, true);
-									}
+									ExportModel(map, i, 2, false);
 								}
-
+								if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && i >= 0))
+								{
+									ExportModel(map, i, 1, false);
+								}
 								ImGui::EndMenu();
 							}
+							if (ImGui::BeginMenu("Without origin", !app->isLoading && i >= 0))
+							{
+								if (ImGui::MenuItem("With WAD", 0, false, !app->isLoading && i >= 0))
+								{
+									ExportModel(map, i, 0, true);
+								}
+								if (ImGui::MenuItem("With intenal textures[HL1]", 0, false, !app->isLoading && i >= 0))
+								{
+									ExportModel(map, i, 2, true);
+								}
+								if (ImGui::MenuItem("With intenal textures[QUAKE/HL1+XASH]", 0, false, !app->isLoading && i >= 0))
+								{
+									ExportModel(map, i, 1, true);
+								}
+								ImGui::EndMenu();
+							}
+
+							ImGui::EndMenu();
 						}
-						ImGui::EndMenu();
 					}
+					ImGui::EndMenu();
 				}
-				ImGui::EndMenu();
 			}
 
 			if ((map && !map->is_mdl_model) && ImGui::BeginMenu("WAD"))
@@ -2678,37 +2679,40 @@ void Gui::drawMenuBar()
 				{
 					BSPFACE32& face = map->faces[i];
 					BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
-					int texOffset = ((int*)map->textures)[info.iMiptex + 1];
-					if (info.iMiptex >= 0 && texOffset >= 0)
+					if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
 					{
-						BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
-						if (tex.nOffsets[0] <= 0 && tex.szName[0] != '\0')
+						int texOffset = ((int*)map->textures)[info.iMiptex + 1];
+						if (texOffset >= 0)
 						{
-							if (textureset.count(tex.szName))
-								continue;
-							textureset.insert(tex.szName);
-							bool textureFoundInWad = false;
-							for (auto& s : map->getBspRender()->wads)
+							BSPMIPTEX& tex = *((BSPMIPTEX*)(map->textures + texOffset));
+							if (tex.nOffsets[0] <= 0 && tex.szName[0] != '\0')
 							{
-								if (s->hasTexture(tex.szName))
+								if (textureset.count(tex.szName))
+									continue;
+								textureset.insert(tex.szName);
+								bool textureFoundInWad = false;
+								for (auto& s : map->getBspRender()->wads)
 								{
-									textureFoundInWad = true;
-									break;
+									if (s->hasTexture(tex.szName))
+									{
+										textureFoundInWad = true;
+										break;
+									}
+								}
+								if (!textureFoundInWad)
+								{
+									COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
+									memset(imageData, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
+									map->add_texture(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
+									delete[] imageData;
 								}
 							}
-							if (!textureFoundInWad)
+							else if (tex.nOffsets[0] <= 0)
 							{
-								COLOR3* imageData = new COLOR3[tex.nWidth * tex.nHeight];
-								memset(imageData, 255, tex.nWidth * tex.nHeight * sizeof(COLOR3));
-								map->add_texture(tex.szName, (unsigned char*)imageData, tex.nWidth, tex.nHeight);
-								delete[] imageData;
+								logf("Found unnamed texture in face {}. Replaced by aaatrigger.\n", i);
+								memset(tex.szName, 0, MAXTEXTURENAME);
+								memcpy(tex.szName, "aaatrigger", 10);
 							}
-						}
-						else if (tex.nOffsets[0] <= 0)
-						{
-							logf("Found unnamed texture in face {}. Replaced by aaatrigger.\n", i);
-							memset(tex.szName, 0, MAXTEXTURENAME);
-							memcpy(tex.szName, "aaatrigger", 10);
 						}
 					}
 				}
@@ -3272,7 +3276,7 @@ void Gui::drawDebugWidget()
 						if (face.iTextureInfo < map->texinfoCount)
 						{
 							BSPTEXTUREINFO& info = map->texinfos[face.iTextureInfo];
-							if (info.iMiptex >= 0)
+							if (info.iMiptex >= 0 && info.iMiptex < map->textureCount)
 							{
 								int texOffset = ((int*)map->textures)[info.iMiptex + 1];
 								if (texOffset >= 0)
@@ -3552,7 +3556,7 @@ void Gui::drawDebugWidget()
 		for (int i = 0; i < map->faceCount; i++)
 		{
 			BSPTEXTUREINFO& texinfo = map->texinfos[map->faces[i].iTextureInfo];
-			if (texinfo.iMiptex >= 0)
+			if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 			{
 				int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 				if (texOffset >= 0)
@@ -6248,7 +6252,7 @@ void Gui::drawImportMapWidget()
 					{
 						for (auto& texinfo : newTexinfo)
 						{
-							if (texinfo.iMiptex < 0)
+							if (texinfo.iMiptex < 0 || texinfo.iMiptex >= map->textureCount)
 								continue;
 							int newMiptex = -1;
 							int texOffset = ((int*)bspModel->textures)[texinfo.iMiptex + 1];
@@ -7883,7 +7887,7 @@ void Gui::drawFaceEditorWidget()
 					BSPTEXTUREINFO& texinfo = map->texinfos[face.iTextureInfo];
 					width = height = 0;
 
-					if (texinfo.iMiptex >= 0)
+					if (texinfo.iMiptex >= 0 && texinfo.iMiptex < map->textureCount)
 					{
 						int texOffset = ((int*)map->textures)[texinfo.iMiptex + 1];
 						if (texOffset >= 0)
